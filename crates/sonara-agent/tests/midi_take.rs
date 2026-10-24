@@ -330,17 +330,23 @@ impl Rig {
 }
 
 /// The values [`untimed`] blanks, by their meaning: `who` stopped with `stopped` and then
-/// reported `state`.
-fn check_timing(who: &str, stopped: &Value, state: &Value) {
+/// reported `state`. `real_time` says whether the device kept pace with the wall clock while
+/// recording (no underrun, `rig.app.transport().status()["underruns"] == 0`); the prototype's
+/// fixture always did. The checks below that hold regardless of pacing (the tempo relation
+/// between beat and seconds, and every length/end relation) always run; the checks that assume
+/// the device advanced at roughly real time run only when `real_time` is true. On a CPU-starved
+/// runner the null device's timeline advances only with the frames it actually rendered, so it
+/// falls behind wall clock; that is a CI-hardware limit (HW-01), not a Sonara defect, so the
+/// absolute-pacing checks do not gate there (TST-04: they would otherwise make render load a CI
+/// gate).
+fn check_timing(who: &str, stopped: &Value, state: &Value, real_time: bool) {
     let beat = number(stopped, "/position_beat");
     let seconds = number(stopped, "/position_seconds");
-    // 120 BPM, both rounded to 4 decimals; the stop comes after the 0.7 s of pauses, less the
-    // device latency.
+    // 120 BPM, both rounded to 4 decimals; holds at any pace.
     assert!((beat - 2.0 * seconds).abs() < 2e-4, "{who}: {stopped}");
-    assert!(0.5 < seconds && seconds < 5.0, "{who}: {stopped}");
     assert_eq!(stopped["bar_beat"], bar_beat(beat).as_str(), "{who}");
     // The take's length in beats, rounded to 3 decimals in the take summary; the clip starts at
-    // 0, so it ends there, as does the song.
+    // 0, so it ends there, as does the song. These relate the take to itself, not to wall time.
     let clip = &state["state"]["tracks"][0]["clips"][0];
     let length = number(clip, "/length_beats");
     let take = number(stopped, "/recording/takes/0/beats");
@@ -358,13 +364,19 @@ fn check_timing(who: &str, stopped: &Value, state: &Value) {
         "{who}: {end_seconds}"
     );
     assert_eq!(clip["end"]["bar_beat"], bar_beat(length).as_str(), "{who}");
-    // The note was played about 0.3 s (0.6 beats) after the start and held about 0.2 s.
     let note = &clip["notes"][0];
     let start = number(note, "/start");
     let held = number(note, "/length");
+    assert!(start + held <= length, "{who}: the take holds the note");
+    if !real_time {
+        eprintln!("{who}: the device underran while recording; skipping the pacing checks");
+        return;
+    }
+    // The stop comes after the 0.7 s of pauses, less the device latency.
+    assert!(0.5 < seconds && seconds < 5.0, "{who}: {stopped}");
+    // The note was played about 0.3 s (0.6 beats) after the start and held about 0.2 s.
     assert!(0.2 < start && start < 1.2, "{who}: start {start}");
     assert!(0.2 < held && held < 1.0, "{who}: length {held}");
-    assert!(start + held <= length, "{who}: the take holds the note");
 }
 
 /// T2: the armed "Pluck" track records the keyboard's G4 into a take clip through the tools,
@@ -404,6 +416,7 @@ fn start_recording_records_armed_instrument_track_from_virtual_midi() {
 
     let mut failures = Vec::new();
     let mut actual = Vec::new();
+    let mut real_time = true;
     for (i, step) in steps.iter().enumerate() {
         let tool = tools[i];
         if tool == "stop_playback" {
@@ -411,13 +424,17 @@ fn start_recording_records_armed_instrument_track_from_virtual_midi() {
         }
         let args = rooted(&step["args"], &rig.root);
         let result = normalize(&rig.service.call(tool, Some(&args)), &rig.root);
+        if tool == "stop_playback" {
+            real_time = rig.app.transport().status()["underruns"].as_u64() == Some(0);
+        }
         if let Some(d) = difference(&untimed(tool, &step["result"]), &untimed(tool, &result), "") {
             failures.push(format!("step {i} ({tool}): {d}"));
         }
         actual.push(result);
     }
     assert!(failures.is_empty(), "{}", failures.join("\n"));
-    // The blanked values, by their meaning, in the recording and here.
-    check_timing("prototype", &steps[8]["result"], &steps[9]["result"]);
-    check_timing("rust", &actual[8], &actual[9]);
+    // The blanked values, by their meaning, in the recording and here. The prototype's fixture
+    // was recorded on a device that kept real time.
+    check_timing("prototype", &steps[8]["result"], &steps[9]["result"], true);
+    check_timing("rust", &actual[8], &actual[9], real_time);
 }

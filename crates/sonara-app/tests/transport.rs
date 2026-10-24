@@ -422,6 +422,10 @@ fn live_midi_injected_records_into_clip() {
     keyboard.send(&[0x80, 65, 0]);
     thread::sleep(Duration::from_millis(200));
     let result = transport.stop().expect("stop");
+    // HW-01/TST-04: the null device's timeline only advances with frames it actually rendered.
+    // On a CPU-starved runner it underruns and falls behind wall clock, so the absolute pacing
+    // below (which assumes the device kept real time) is not asserted there.
+    let real_time = transport.status()["underruns"].as_u64() == Some(0);
     let takes = result["recording"]["takes"].as_array().expect("the takes");
     assert_eq!(takes.len(), 1);
     assert_eq!(takes[0]["notes"], 2);
@@ -441,6 +445,12 @@ fn live_midi_injected_records_into_clip() {
     };
     let pitches: Vec<u8> = clip.notes.iter().map(|n| n.pitch).collect();
     assert_eq!(pitches, [62, 65]);
+    assert_eq!(clip.notes[1].velocity, 80);
+    assert_eq!(clip.name, "Keys take");
+    if !real_time {
+        eprintln!("the device underran while recording; skipping the pacing check");
+        return;
+    }
     let first = &clip.notes[0];
     // About 0.3 s after the start at 120 BPM, about 0.6 beats (allow for scheduling and the
     // latency estimates).
@@ -454,8 +464,6 @@ fn live_midi_injected_records_into_clip() {
         "length {}",
         first.length
     );
-    assert_eq!(clip.notes[1].velocity, 80);
-    assert_eq!(clip.name, "Keys take");
 }
 
 /// A MIDI take keeps its controllers (the prototype counted them in `"controllers"` and
@@ -789,8 +797,8 @@ fn service_calls_concurrently() {
 
 /// [M] Row 12, `test_live_midi_plays_while_stopped_and_records_into_a_clip` through the
 /// transport service on the system's MIDI (CoreMIDI): a virtual source plays an armed synth on
-/// a stopped transport, then two notes into a recording. The development container has no MIDI
-/// sequencer, so the test is ignored and runs on the host (HW-01):
+/// a stopped transport, then two notes into a recording. This needs real CoreMIDI or ALSA
+/// virtual ports, so the test is ignored and runs on the host (HW-01):
 ///
 /// ```text
 /// cargo test -p sonara-app --test transport live_midi_plays -- --ignored

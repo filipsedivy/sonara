@@ -34,9 +34,10 @@ independently, see docs/project-format.md).
   hoc and not notarized, with the `sonara` CLI inside, the codec libraries in
   `Contents/Frameworks`, the third-party licences and the LGPL sources. `release.yml` publishes
   them with `SHA256SUMS.txt`.
-- **Development:** the Docker development container (`scripts/dev.sh`) runs the Rust and
-  frontend gates; CI runs them on macOS and in the container. `.mcp.json` runs `sonara mcp`
-  from the checkout. The project rules in `.claude/rules/` describe the Rust application.
+- **Development:** `scripts/dev.sh` runs the Rust and frontend gates natively on macOS; CI runs
+  them the same way (owner decision, 2026-10-24: the Linux Docker development container is
+  gone). `.mcp.json` runs `sonara mcp` from the checkout. The project rules in `.claude/rules/`
+  describe the Rust application.
 
 ### Fixed
 

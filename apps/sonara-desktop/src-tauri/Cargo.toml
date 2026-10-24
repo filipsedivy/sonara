@@ -11,7 +11,7 @@ publish.workspace = true
 
 # A thin crate (ARC-01, QG-06): windows, the menu, Tauri commands and the
 # start and stop of the IPC server. Everything with logic lives in sonara-app and sonara-agent,
-# whose tests run in the development container; this crate builds on macOS only.
+# whose tests run in CI; this crate builds on macOS only.
 
 [build-dependencies]
 # Generates the Tauri context: the configuration, the capabilities and the embedded frontend.

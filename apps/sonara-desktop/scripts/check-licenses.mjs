@@ -8,7 +8,7 @@
 // of the production set. GPL, AGPL and LGPL always fail: a JavaScript bundle links statically.
 //
 // pnpm lists the packages installed for this platform, so the gate checks the native packages
-// of the machine it runs on (macOS on the host, Linux in the development container and CI).
+// of the machine it runs on: macOS, on the host and in CI.
 //
 // With `--notices FILE`, a passing check also writes the licence texts of the production set to
 // FILE, for the app bundle's licences folder (scripts/stage-licenses.mjs).

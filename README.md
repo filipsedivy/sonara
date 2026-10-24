@@ -102,7 +102,7 @@ sonara serve                                   # headless session for agents (IP
 sonara gui                                     # the desktop app
 ```
 
-The development container (`scripts/dev.sh`, Docker) runs the Rust and frontend gates on Linux.
+`scripts/dev.sh` runs the Rust and frontend gates natively; see CONTRIBUTING.md.
 
 ## Use it from Claude Code
 
@@ -141,9 +141,9 @@ are in [docs/agent-api.md](docs/agent-api.md). Reproducible agent workflows are 
 ## Platforms
 
 Sonara is a macOS application: Apple Silicon, macOS 26 or later, Core Audio and CoreMIDI.
-Development and verification happen on macOS 27. The engine and the CLI also build and pass
-their tests on Linux in the development container, which CI uses, but Linux is not a product
-platform.
+Development and verification happen on macOS 27 and CI. The engine and the CLI are also known to
+build and pass their tests on Linux (aarch64, glibc), though CI no longer checks that and Linux
+is not a product platform.
 
 ## Current limitations
 

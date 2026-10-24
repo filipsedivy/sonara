@@ -50,8 +50,8 @@ The lints in the right-hand column (`clippy::unwrap_used`,
 
 ## Commands
 
-The gates run in the development container (`scripts/dev.sh`). The macOS host also has the pinned
-toolchain through rustup (`/opt/homebrew/opt/rustup/bin`), which the desktop crate and the
+The gates run natively on the macOS host (owner decision, 2026-10-24: no Docker, no development
+container), through rustup (`/opt/homebrew/opt/rustup/bin`), which the desktop crate and the
 hardware tests need. Before you call a Rust change done, run:
 
 ```bash
@@ -59,8 +59,8 @@ scripts/dev.sh rust          # all Rust gates: rust-check, rust-deny, rust-loom,
 scripts/dev.sh frontend      # the desktop frontend: licences, svelte-check, build, tests
 ```
 
-`scripts/dev.sh rust-check` is the fast loop. It runs exactly what the macOS and Windows CI jobs
-run, from the workspace root:
+`scripts/dev.sh rust-check` is the fast loop. It runs exactly what the macOS CI job runs, from
+the workspace root:
 
 ```bash
 cargo fmt --all -- --check

@@ -4,7 +4,9 @@
 [graph]
 # Check every feature (including the optional `rtsan` dependencies) on every supported target.
 all-features = true
-# The product targets macOS on Apple Silicon; Linux is the container's build environment.
+# The product targets macOS on Apple Silicon and is never built for Linux; these stay listed so
+# that dependency licences reachable only on Linux (for example Tauri's GTK/WebKitGTK tree) are
+# still checked.
 targets = [
     "aarch64-apple-darwin",
     "aarch64-unknown-linux-gnu",

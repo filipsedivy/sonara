@@ -1,4 +1,4 @@
-# Keeps pinned actions, crates, the frontend's npm packages and the development image current.
+# Keeps pinned actions, crates and the frontend's npm packages current.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -22,7 +22,3 @@ updates:
     groups:
       npm-minor:
         update-types: [minor, patch]
-  - package-ecosystem: docker
-    directory: /docker/dev
-    schedule:
-      interval: weekly

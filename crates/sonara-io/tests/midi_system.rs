@@ -1,9 +1,9 @@
 //! The system's MIDI layer through midir: the API name the golden
 //! transcripts record, and port listings through a real client.
 //!
-//! Listing needs CoreMIDI (macOS) or an ALSA sequencer (Linux). The development container has
-//! no `/dev/snd/seq`: there, and only there, the listing test reports the missing
-//! sequencer and skips.
+//! Listing needs CoreMIDI (macOS) or an ALSA sequencer (Linux). A Linux environment without
+//! `/dev/snd/seq` (most containers and CI runners) has neither: there, and only there, the
+//! listing test reports the missing sequencer and skips.
 
 use sonara_io::MidiError;
 use sonara_io::midi;

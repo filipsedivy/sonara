@@ -31,8 +31,8 @@ defaults:
     shell: bash
 
 env:
-  # The frontend's toolchain: the versions of docker/dev/Dockerfile and package.json's
-  # packageManager. The checksum is the one nodejs.org publishes for the darwin-arm64 tarball.
+  # The frontend's toolchain: the same versions as ci.yml and package.json's packageManager.
+  # The checksum is the one nodejs.org publishes for the darwin-arm64 tarball.
   NODE_VERSION: 26.12.1
   NODE_SHA256: 18830bf448fe187c650dc28c98aa8c968ed1d40b6dd032c081e70a384a1bf660
   PNPM_VERSION: 12.14.0

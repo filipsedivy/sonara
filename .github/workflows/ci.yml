@@ -1,5 +1,6 @@
 # CI for the Rust workspace and the desktop frontend.
-# The product targets macOS on Apple Silicon; Linux runs inside the development container.
+# The product targets macOS on Apple Silicon; every job runs natively on macOS runners (owner
+# decision, 2026-10-24: the Linux development container is gone, native throughout).
 # Third-party actions are pinned to commit SHAs; Dependabot keeps them current.
 name: CI
 
@@ -24,6 +25,11 @@ concurrency:
 
 env:
   QT_QPA_PLATFORM: offscreen
+  # The frontend's toolchain (also pinned in release.yml and apps/sonara-desktop/package.json's
+  # packageManager). The checksum is the one nodejs.org publishes for the darwin-arm64 tarball.
+  NODE_VERSION: 26.12.1
+  NODE_SHA256: 18830bf448fe187c650dc28c98aa8c968ed1d40b6dd032c081e70a384a1bf660
+  PNPM_VERSION: 12.14.0
 
 defaults:
   run:
@@ -80,7 +86,16 @@ jobs:
       - run: cargo doc --locked --workspace --no-deps
         env:
           RUSTDOCFLAGS: -D warnings
-      # The same commands as `scripts/dev.sh rust-rtsan` (docker/dev/tasks.sh).
+      # cargo-deny: licences, advisories, bans and sources (QG-10). rust-cache above covers
+      # ~/.cargo/bin, so a version change is the only time this recompiles.
+      - name: Install cargo-deny
+        run: cargo install --locked cargo-deny@0.20.2
+      - run: cargo deny --locked check
+      - name: loom (sonara-rt protocols over every thread interleaving, RT-04)
+        run: cargo test --locked -p sonara-rt --release
+        env:
+          RUSTFLAGS: --cfg loom
+      # The same commands as `scripts/dev.sh rust-rtsan`.
       - name: RealtimeSanitizer
         run: |
           cargo test --locked -p sonara-rt -p sonara-io --features sonara-rt/rtsan,sonara-io/rtsan
@@ -89,64 +104,44 @@ jobs:
         env:
           RTSAN_ENABLE: "1"
 
-  # The Linux leg runs in the development container, like local development.
-  rust-linux:
-    name: rust (ubuntu-24.04, dev container)
-    runs-on: ubuntu-24.04
-    env:
-      SONARA_DEV_NO_BUILD: "1"
+  # The desktop frontend, natively on macOS (its target platform, ADR 0009): the frozen pnpm
+  # install, the licence gate, svelte-check, the Vite build and the Playwright tests in WebKit.
+  frontend:
+    name: frontend (macos-26)
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # Golden data lives in Git LFS; the cache keeps CI from re-downloading it every run.
-      - name: List golden LFS objects
-        run: git lfs ls-files --long | cut -d ' ' -f1 | sort > .lfs-objects
+      # As in release.yml's bundle job: Node and pnpm from the official tarball, its SHA-256
+      # checked.
+      - name: Node and pnpm
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/node.tar.xz" \
+            "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-darwin-arm64.tar.xz"
+          echo "${NODE_SHA256}  $RUNNER_TEMP/node.tar.xz" | shasum -a 256 -c -
+          mkdir -p "$RUNNER_TEMP/node"
+          tar -xJf "$RUNNER_TEMP/node.tar.xz" -C "$RUNNER_TEMP/node" --strip-components 1
+          echo "$RUNNER_TEMP/node/bin" >>"$GITHUB_PATH"
+          "$RUNNER_TEMP/node/bin/npm" install --global --no-fund --no-audit "pnpm@${PNPM_VERSION}"
+          "$RUNNER_TEMP/node/bin/node" --version
+      - name: pnpm install (frozen)
+        working-directory: apps/sonara-desktop
+        run: pnpm install --frozen-lockfile
+      # Playwright's WebKit build for the "page" project's tests; its version is
+      # @playwright/test in package.json. Cached by that version, since a fresh download is slow.
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: .git/lfs
-          key: lfs-${{ hashFiles('.lfs-objects') }}
-      - name: Pull golden data
-        run: git lfs pull
-      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-      - name: Build the development image
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-        with:
-          context: .
-          file: docker/dev/Dockerfile
-          tags: sonara-dev:local
-          load: true
-          cache-from: type=gha,scope=sonara-dev
-          cache-to: type=gha,scope=sonara-dev,mode=max
-      # Without the desktop crate, which needs WebKitGTK on Linux; cargo deny checks its tree.
-      - name: fmt, clippy, test, doc
-        run: scripts/dev.sh rust-check
-      - name: cargo deny (licences, advisories, bans, sources)
-        run: scripts/dev.sh rust-deny
-      - name: loom
-        run: scripts/dev.sh rust-loom
-      - name: RealtimeSanitizer
-        run: scripts/dev.sh rust-rtsan
-
-  # The desktop frontend, in the development container: the frozen
-  # pnpm install, the licence gate, svelte-check, the Vite build and the Playwright tests in WebKit.
-  frontend:
-    name: frontend (ubuntu-24.04, dev container)
-    runs-on: ubuntu-24.04
-    env:
-      SONARA_DEV_NO_BUILD: "1"
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-      - name: Build the development image
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-        with:
-          context: .
-          file: docker/dev/Dockerfile
-          tags: sonara-dev:local
-          load: true
-          cache-from: type=gha,scope=sonara-dev
-          cache-to: type=gha,scope=sonara-dev,mode=max
-      - name: install, licences, svelte-check, build, tests
-        run: scripts/dev.sh frontend
+          path: ~/Library/Caches/ms-playwright
+          key: playwright-webkit-macos-${{ hashFiles('apps/sonara-desktop/package.json') }}
+      - name: Playwright's WebKit
+        working-directory: apps/sonara-desktop
+        run: pnpm exec playwright install webkit
+      - name: licences, svelte-check, build, tests
+        working-directory: apps/sonara-desktop
+        run: |
+          pnpm run check:licenses
+          pnpm run check
+          pnpm run build
+          pnpm run test
 
   build:
     name: build (macos-26)

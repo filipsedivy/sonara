@@ -6,7 +6,7 @@ rustflags = ["-C", "target-cpu=apple-m1"]
 
 # Where sonara-media looks for its run-time codec libraries (codec_ffi.rs), after the app bundle
 # and before the system. On macOS, scripts/native/build-codecs.sh builds the recording's libsoxr
-# and LAME there. The Linux container finds no .so files in it and falls back to Debian's
+# and LAME there. On Linux, with no .so files built there, it falls back to the system's
 # libraries. A SONARA_NATIVE_LIB_DIR set in the environment wins (no `force`).
 [env]
 SONARA_NATIVE_LIB_DIR = { value = "target/native/lib", relative = true }

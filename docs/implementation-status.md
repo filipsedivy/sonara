@@ -188,7 +188,7 @@ These need hardware or a person and are never CI gates (HW-01). Their results be
 
 | Feature | Status | Notes |
 |---|---|---|
-| Reproducible setup, CI workflow | done | `Cargo.lock`, the pinned toolchain, pnpm's frozen lockfile, the development container and the CI jobs; `release.yml` has not run on GitHub yet |
+| Reproducible setup, CI workflow | done | `Cargo.lock`, the pinned toolchain, pnpm's frozen lockfile and the native macOS CI jobs; `release.yml` has not run on GitHub yet |
 | macOS app bundle and DMG | done | `scripts/bundle-macos.sh` builds `Sonara.app` and its DMG with the Tauri bundler and checks them: the hardened runtime, the microphone entitlement, the bundled `sonara` CLI, the codec libraries in `Contents/Frameworks`, the licences and the LGPL sources; 38.6 MiB, the DMG 16.0 MiB |
 | Signed, notarised app bundles and installers | unsupported | Owner decision (2026-10-23): ad-hoc signing only, no Developer ID and no notarization; users confirm the first launch in System Settings ▸ Privacy & Security ▸ Open Anyway |
-| Windows and Linux | unsupported | macOS (arm64) only. Linux is the development container's build and CI environment, without the desktop application |
+| Windows and Linux | unsupported | macOS (arm64) only; no CI job builds for Linux or Windows |

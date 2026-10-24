@@ -39,7 +39,6 @@ apps/         sonara (CLI and MCP entry point); sonara-desktop (Tauri GUI, src-t
 third_party/  vendored miniaudio
 golden/       golden data recorded from the prototype (Git LFS): the regression oracle
 resources/    brand masters (SVG, PNG, icns)
-docker/       development container (scripts/dev.sh)
 scripts/      dev.sh, check-versions.sh, bundle-macos.sh, native/build-codecs.sh
 docs/         architecture, audio engine, project format, agent API, ADRs, status, dependencies
 examples/     reproducible agent workflows (sonara batch)
@@ -47,7 +46,8 @@ examples/     reproducible agent workflows (sonara batch)
 
 ## Commands
 
-Rust gates in the development container (the desktop crate is excluded there):
+All gates run natively on the macOS host (owner decision, 2026-10-24: no Docker, no development
+container):
 
 ```bash
 scripts/dev.sh rust                # fmt, clippy -D warnings, test, doc, cargo deny, loom, RTSan
@@ -56,7 +56,7 @@ scripts/dev.sh frontend            # the desktop frontend: licences, svelte-chec
 scripts/dev.sh help                # every task
 ```
 
-On the macOS host (the toolchain is rustup's, in `/opt/homebrew/opt/rustup/bin`):
+The toolchain is rustup's, in `/opt/homebrew/opt/rustup/bin`:
 
 ```bash
 export PATH=/opt/homebrew/opt/rustup/bin:$PATH

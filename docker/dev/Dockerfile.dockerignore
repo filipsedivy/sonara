@@ -1,3 +1,0 @@
-# The image needs only the toolchain pin; the repository is bind-mounted at run time.
-*
-!rust-toolchain.toml

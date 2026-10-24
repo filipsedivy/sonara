@@ -1,8 +1,7 @@
 //! [M] MIDI through midir on the host: virtual ports, a round trip through
 //! them, and the port names compared with the prototype's RtMidi names.
 //!
-//! These tests open CoreMIDI or ALSA ports, which the development container cannot (it has no
-//! `/dev/snd/seq`), so they are ignored and run locally (HW-01):
+//! These tests open CoreMIDI or ALSA ports, so they are ignored and run locally (HW-01):
 //!
 //! ```text
 //! cargo test -p sonara-io --test midi_hardware -- --ignored --nocapture

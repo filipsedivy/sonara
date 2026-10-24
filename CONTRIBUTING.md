@@ -17,9 +17,10 @@ the repository root: `Cargo.toml`, `crates/` and `apps/`.
   scripts/bundle-macos.sh                 # Sonara.app and the ad hoc signed DMG
   ```
 
-- **Development container** (Linux, needs only Docker). It runs the same Rust gates as CI,
-  plus loom and RTSan. It keeps build output and caches in Docker volumes and does not build the
-  desktop app.
+- **All gates, natively** (owner decision, 2026-10-24: no Docker, no development container).
+  `scripts/dev.sh rust` needs `cargo-deny` (`cargo install --locked cargo-deny@0.20.2`, the
+  version in `docs/dependencies.md`); `scripts/dev.sh frontend` needs Playwright's WebKit
+  (`pnpm --dir apps/sonara-desktop exec playwright install webkit`).
 
   ```bash
   scripts/dev.sh rust          # fmt, clippy -D warnings, test, doc, cargo deny, loom, RTSan
@@ -29,8 +30,7 @@ the repository root: `Cargo.toml`, `crates/` and `apps/`.
   scripts/dev.sh help          # all tasks
   ```
 
-  If the linker runs out of memory, limit the jobs:
-  `scripts/dev.sh run bash -c 'export CARGO_BUILD_JOBS=4; docker/dev/tasks.sh rust'`.
+  If the linker runs out of memory, limit the jobs: `CARGO_BUILD_JOBS=4 scripts/dev.sh rust`.
 
 The rules for all code are in `.claude/rules/`, indexed from `CLAUDE.md`. QG-13 says library
 first: use an established crate wherever one fits.
@@ -94,7 +94,6 @@ apps/         sonara (CLI/MCP); sonara-desktop (Tauri 2 GUI: Svelte 5, TypeScrip
 third_party/  vendored miniaudio
 golden/       recorded regression data (Git LFS)
 resources/    brand masters and renders
-docker/       development container (scripts/dev.sh)
 docs/         architecture, engine, format, agent API, plugins, ADRs, status
 examples/     reproducible agent workflows (sonara batch)
 scripts/      codec build, macOS bundle, version check

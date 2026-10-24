@@ -5,7 +5,7 @@
 //! to the window's session over IPC, as Claude Code does; its edit reaches the window (the
 //! status bar's "agent: Create Track", which the desktop logs), and a second client's undo and
 //! the MCP server's redo walk one shared history. The event delivery itself and the GUI's own
-//! undo are tested in the container (`sonara-agent`'s `gui_attach`, `sonara-app`'s
+//! undo are tested without a real window (`sonara-agent`'s `gui_attach`, `sonara-app`'s
 //! `interactive`).
 //!
 //! It opens a window, so it needs a macOS display: `cargo test -p sonara-desktop --test attach

@@ -4,8 +4,9 @@ import { defineConfig, devices } from "@playwright/test";
 //
 // - `unit`: pure TypeScript, no browser.
 // - `page`: the built frontend (`vite preview` of dist/) in WebKit, the engine of the system
-//   WebView, with the Tauri commands mocked (tests/page/tauri-mock.ts). The development
-//   container has WebKit (`scripts/dev.sh frontend`); the host runs the unit tests only.
+//   WebView, with the Tauri commands mocked (tests/page/tauri-mock.ts). Needs Playwright's
+//   WebKit installed (`pnpm exec playwright install webkit`), as `scripts/dev.sh frontend` and
+//   CI do; without it, run only the `unit` project.
 export default defineConfig({
   testDir: "tests",
   forbidOnly: true,
