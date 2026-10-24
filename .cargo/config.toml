@@ -1,0 +1,12 @@
+# Builds for the product platform, Apple Silicon Macs. `apple-m1` is the
+# baseline every Apple Silicon CPU supports. It changes instruction selection only: Rust never
+# reassociates or contracts floating-point operations, so results stay identical (RT-11).
+[target.aarch64-apple-darwin]
+rustflags = ["-C", "target-cpu=apple-m1"]
+
+# Where sonara-media looks for its run-time codec libraries (codec_ffi.rs), after the app bundle
+# and before the system. On macOS, scripts/native/build-codecs.sh builds the recording's libsoxr
+# and LAME there. The Linux container finds no .so files in it and falls back to Debian's
+# libraries. A SONARA_NATIVE_LIB_DIR set in the environment wins (no `force`).
+[env]
+SONARA_NATIVE_LIB_DIR = { value = "target/native/lib", relative = true }

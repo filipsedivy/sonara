@@ -1,0 +1,75 @@
+{
+ "analysis": {
+  "balance_db": 0.0,
+  "channels": 2,
+  "clip_events": 0,
+  "clipped_samples": 1,
+  "correlation": 1.0,
+  "crest_factor_db": 49.82271233039568,
+  "dc_offset": [
+   1e-05,
+   1e-05
+  ],
+  "duration_seconds": 2.0,
+  "integrated_lufs": -36.68465701998203,
+  "kind": {
+   "estimated": [
+    "true_peak_dbtp",
+    "plr_db"
+   ],
+   "measured": [
+    "sample_peak_dbfs",
+    "rms_dbfs",
+    "integrated_lufs",
+    "momentary_max_lufs",
+    "short_term_max_lufs",
+    "loudness_range_lu",
+    "clipped_samples",
+    "correlation",
+    "octave_bands_db"
+   ]
+  },
+  "leading_silence_seconds": 0.0,
+  "loudness_range_lu": 0.0,
+  "min_correlation_400ms": 1.0,
+  "momentary_max_lufs": -36.68465701998203,
+  "nonfinite_samples": 0,
+  "octave_bands_db": {},
+  "over_full_scale_samples": 0,
+  "plr_db": 36.68465701998203,
+  "rms_dbfs": -49.82271233039568,
+  "sample_peak_dbfs": 0.0,
+  "sample_rate": 48000,
+  "short_term_lufs": [
+   -43.67
+  ],
+  "short_term_max_lufs": -43.67435706334222,
+  "side_to_mid_db": -120.0,
+  "silence_regions": [
+   [
+    0.05,
+    2.0
+   ]
+  ],
+  "spectral_centroid_hz": 0.0,
+  "trailing_silence_seconds": 1.9500000000000002,
+  "true_peak_dbtp": 0.0
+ },
+ "block": 65536,
+ "channels": 2,
+ "frames": 96000,
+ "issues": [
+  {
+   "code": "TRUE_PEAK",
+   "message": "true peak 0.00 dBTP is above -1 dBTP (risk of codec clipping)",
+   "severity": "warning"
+  },
+  {
+   "code": "QUIET",
+   "message": "integrated loudness -36.7 LUFS is quiet for music delivery",
+   "severity": "info"
+  }
+ ],
+ "sample_rate": 48000,
+ "source": "plugins/signals/impulse.f64"
+}

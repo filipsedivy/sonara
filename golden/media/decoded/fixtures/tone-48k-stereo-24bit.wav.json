@@ -1,0 +1,8 @@
+{
+ "dtype": "f64le",
+ "shape": [
+  96000,
+  2
+ ],
+ "source": "fixtures/tone-48k-stereo-24bit.wav"
+}

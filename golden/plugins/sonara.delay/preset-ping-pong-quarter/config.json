@@ -1,0 +1,46 @@
+{
+ "config": "preset-ping-pong-quarter",
+ "params": {
+  "feedback": 0.45,
+  "highcut_hz": 7000.0,
+  "lowcut_hz": 120.0,
+  "mix": 0.3,
+  "note": "1/4",
+  "ping_pong": true,
+  "sync": true,
+  "time_ms": 375.0
+ },
+ "plugin": "sonara.delay",
+ "renders": {
+  "clipped": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 4.825415591923257
+  },
+  "impulse": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 4.825415591923257
+  },
+  "noise": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 4.825415591923257
+  },
+  "silence": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 4.825415591923257
+  },
+  "sine-1k": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 4.825415591923257
+  },
+  "sweep": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 4.825415591923257
+  }
+ }
+}

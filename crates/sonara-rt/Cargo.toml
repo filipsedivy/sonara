@@ -1,0 +1,33 @@
+[package]
+name = "sonara-rt"
+description = "Sonara real-time primitives: playback and capture rings, flush and fade, meters, stats"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[features]
+# RealtimeSanitizer for the `rtsan` CI job (macOS and Linux only; never part of --workspace builds).
+rtsan = ["dep:rtsan-standalone"]
+
+[dependencies]
+rtrb.workspace = true
+rtsan-standalone = { workspace = true, optional = true }
+thiserror.workspace = true
+
+# The `sync` shim swaps the protocol atomics for loom's under `--cfg loom` (`rust-loom`).
+[target.'cfg(loom)'.dependencies]
+loom.workspace = true
+
+[dev-dependencies]
+assert_no_alloc.workspace = true
+# Also a plain dev-dependency, so that `cargo deny` checks its licences and advisories: it
+# evaluates target cfgs against the triples in deny.toml and drops the `cfg(loom)` entry above
+# (checked 2026-10-22).
+loom.workspace = true
+proptest.workspace = true
+
+[lints]
+workspace = true

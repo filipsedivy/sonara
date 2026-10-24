@@ -1,0 +1,1019 @@
+{
+ "format": "sonara.project",
+ "schema_version": 1,
+ "id": "prj_000000000001",
+ "name": "Transport Position",
+ "settings": {
+  "sample_rate": 48000,
+  "length_beats": null,
+  "record_subtype": "PCM_24"
+ },
+ "tempo_map": [
+  {
+   "beat": 0.0,
+   "bpm": 120.0,
+   "ramp": false
+  }
+ ],
+ "time_signatures": [
+  {
+   "bar": 0,
+   "numerator": 4,
+   "denominator": 4
+  }
+ ],
+ "tracks": [
+  {
+   "id": "trk_000000000002",
+   "name": "Drums",
+   "kind": "instrument",
+   "color": null,
+   "output_id": "master",
+   "parent_id": null,
+   "mixer": {
+    "volume_db": 0.0,
+    "pan": 0.0,
+    "mute": false,
+    "solo": false,
+    "solo_safe": false
+   },
+   "input": {
+    "channels": [
+     0
+    ],
+    "armed": false,
+    "monitor": "auto"
+   },
+   "instrument": {
+    "id": "dev_000000000003",
+    "plugin_id": "sonara.drums",
+    "name": "Sonara Drum Kit",
+    "enabled": true,
+    "params": {
+     "kick_tune": 52.0,
+     "kick_decay": 0.45,
+     "kick_punch": 0.5,
+     "snare_tune": 1.0,
+     "snare_tone": 0.6,
+     "snare_decay": 0.18,
+     "hat_tune": 1.0,
+     "hat_decay": 1.0,
+     "clap_decay": 0.25,
+     "tom_tune": 1.0,
+     "cymbal_decay": 1.6,
+     "drive": 0.1,
+     "kick_level_db": 0.0,
+     "snare_level_db": -2.0,
+     "hat_level_db": -9.0,
+     "cymbal_level_db": -10.0,
+     "perc_level_db": -6.0,
+     "stereo_width": 1.0,
+     "gain_db": -9.0
+    },
+    "sidechain_id": null,
+    "preset": null,
+    "state": {}
+   },
+   "inserts": [],
+   "sends": [],
+   "automation": [],
+   "clips": [
+    {
+     "type": "midi",
+     "id": "clp_000000000060",
+     "name": "MIDI",
+     "start": 0.0,
+     "length": 16.0,
+     "content_offset": 0.0,
+     "loop_length": null,
+     "muted": false,
+     "color": null,
+     "notes": [
+      {
+       "id": "n_000000000004",
+       "pitch": 36,
+       "start": 0.0,
+       "length": 0.25,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000028",
+       "pitch": 42,
+       "start": 0.0,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000029",
+       "pitch": 42,
+       "start": 0.5,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000005",
+       "pitch": 36,
+       "start": 1.0,
+       "length": 0.25,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000020",
+       "pitch": 38,
+       "start": 1.0,
+       "length": 0.25,
+       "velocity": 100,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000030",
+       "pitch": 42,
+       "start": 1.0,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000031",
+       "pitch": 42,
+       "start": 1.5,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000006",
+       "pitch": 36,
+       "start": 2.0,
+       "length": 0.25,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000032",
+       "pitch": 42,
+       "start": 2.0,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000033",
+       "pitch": 42,
+       "start": 2.5,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000007",
+       "pitch": 36,
+       "start": 3.0,
+       "length": 0.25,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000021",
+       "pitch": 38,
+       "start": 3.0,
+       "length": 0.25,
+       "velocity": 100,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000034",
+       "pitch": 42,
+       "start": 3.0,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000035",
+       "pitch": 42,
+       "start": 3.5,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000008",
+       "pitch": 36,
+       "start": 4.0,
+       "length": 0.25,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000036",
+       "pitch": 42,
+       "start": 4.0,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000037",
+       "pitch": 42,
+       "start": 4.5,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000009",
+       "pitch": 36,
+       "start": 5.0,
+       "length": 0.25,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000022",
+       "pitch": 38,
+       "start": 5.0,
+       "length": 0.25,
+       "velocity": 100,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000038",
+       "pitch": 42,
+       "start": 5.0,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000039",
+       "pitch": 42,
+       "start": 5.5,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000010",
+       "pitch": 36,
+       "start": 6.0,
+       "length": 0.25,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000040",
+       "pitch": 42,
+       "start": 6.0,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000041",
+       "pitch": 42,
+       "start": 6.5,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000011",
+       "pitch": 36,
+       "start": 7.0,
+       "length": 0.25,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000023",
+       "pitch": 38,
+       "start": 7.0,
+       "length": 0.25,
+       "velocity": 100,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000042",
+       "pitch": 42,
+       "start": 7.0,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000043",
+       "pitch": 42,
+       "start": 7.5,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000012",
+       "pitch": 36,
+       "start": 8.0,
+       "length": 0.25,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000044",
+       "pitch": 42,
+       "start": 8.0,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000045",
+       "pitch": 42,
+       "start": 8.5,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000013",
+       "pitch": 36,
+       "start": 9.0,
+       "length": 0.25,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000024",
+       "pitch": 38,
+       "start": 9.0,
+       "length": 0.25,
+       "velocity": 100,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000046",
+       "pitch": 42,
+       "start": 9.0,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000047",
+       "pitch": 42,
+       "start": 9.5,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000014",
+       "pitch": 36,
+       "start": 10.0,
+       "length": 0.25,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000048",
+       "pitch": 42,
+       "start": 10.0,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000049",
+       "pitch": 42,
+       "start": 10.5,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000015",
+       "pitch": 36,
+       "start": 11.0,
+       "length": 0.25,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000025",
+       "pitch": 38,
+       "start": 11.0,
+       "length": 0.25,
+       "velocity": 100,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000050",
+       "pitch": 42,
+       "start": 11.0,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000051",
+       "pitch": 42,
+       "start": 11.5,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000016",
+       "pitch": 36,
+       "start": 12.0,
+       "length": 0.25,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000052",
+       "pitch": 42,
+       "start": 12.0,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000053",
+       "pitch": 42,
+       "start": 12.5,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000017",
+       "pitch": 36,
+       "start": 13.0,
+       "length": 0.25,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000026",
+       "pitch": 38,
+       "start": 13.0,
+       "length": 0.25,
+       "velocity": 100,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000054",
+       "pitch": 42,
+       "start": 13.0,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000055",
+       "pitch": 42,
+       "start": 13.5,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000018",
+       "pitch": 36,
+       "start": 14.0,
+       "length": 0.25,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000056",
+       "pitch": 42,
+       "start": 14.0,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000057",
+       "pitch": 42,
+       "start": 14.5,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000019",
+       "pitch": 36,
+       "start": 15.0,
+       "length": 0.25,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000027",
+       "pitch": 38,
+       "start": 15.0,
+       "length": 0.25,
+       "velocity": 100,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000058",
+       "pitch": 42,
+       "start": 15.0,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000059",
+       "pitch": 42,
+       "start": 15.5,
+       "length": 0.125,
+       "velocity": 70,
+       "channel": 0
+      }
+     ],
+     "controls": []
+    }
+   ]
+  },
+  {
+   "id": "trk_000000000061",
+   "name": "Bass",
+   "kind": "instrument",
+   "color": null,
+   "output_id": "master",
+   "parent_id": null,
+   "mixer": {
+    "volume_db": 0.0,
+    "pan": 0.0,
+    "mute": false,
+    "solo": false,
+    "solo_safe": false
+   },
+   "input": {
+    "channels": [
+     0
+    ],
+    "armed": false,
+    "monitor": "auto"
+   },
+   "instrument": {
+    "id": "dev_000000000062",
+    "plugin_id": "sonara.synth.poly",
+    "name": "Sonara Poly Synth",
+    "enabled": true,
+    "params": {
+     "voice_mode": "mono",
+     "polyphony": 16,
+     "glide": 0.03,
+     "osc1_wave": "saw",
+     "osc1_level": 0.8,
+     "osc1_octave": 0,
+     "osc1_detune": 0.0,
+     "osc2_wave": "square",
+     "osc2_level": 0.6,
+     "osc2_octave": -1,
+     "osc2_semitone": 0,
+     "osc2_detune": 0.0,
+     "pulse_width": 0.5,
+     "noise_level": 0.0,
+     "unison": 1,
+     "unison_detune": 15.0,
+     "unison_spread": 0.7,
+     "filter_type": "lowpass",
+     "filter_cutoff": 420.0,
+     "filter_resonance": 0.3,
+     "filter_env_amount": 2.8,
+     "filter_keytrack": 0.3,
+     "filter_attack": 0.005,
+     "filter_decay": 0.22,
+     "filter_sustain": 0.15,
+     "filter_release": 0.3,
+     "amp_attack": 0.002,
+     "amp_decay": 0.3,
+     "amp_sustain": 0.85,
+     "amp_release": 0.08,
+     "lfo_rate": 5.0,
+     "lfo_pitch_cents": 0.0,
+     "lfo_cutoff_oct": 0.0,
+     "velocity_sensitivity": 0.7,
+     "velocity_to_filter": 0.3,
+     "bend_range": 2,
+     "gain_db": -6.0
+    },
+    "sidechain_id": null,
+    "preset": "Analog Bass",
+    "state": {}
+   },
+   "inserts": [],
+   "sends": [],
+   "automation": [],
+   "clips": [
+    {
+     "type": "midi",
+     "id": "clp_000000000079",
+     "name": "MIDI",
+     "start": 0.0,
+     "length": 16.0,
+     "content_offset": 0.0,
+     "loop_length": null,
+     "muted": false,
+     "color": null,
+     "notes": [
+      {
+       "id": "n_000000000063",
+       "pitch": 36,
+       "start": 0.0,
+       "length": 0.75,
+       "velocity": 96,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000064",
+       "pitch": 36,
+       "start": 1.0,
+       "length": 0.75,
+       "velocity": 96,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000065",
+       "pitch": 43,
+       "start": 2.0,
+       "length": 0.75,
+       "velocity": 96,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000066",
+       "pitch": 41,
+       "start": 3.0,
+       "length": 0.75,
+       "velocity": 96,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000067",
+       "pitch": 36,
+       "start": 4.0,
+       "length": 0.75,
+       "velocity": 96,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000068",
+       "pitch": 36,
+       "start": 5.0,
+       "length": 0.75,
+       "velocity": 96,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000069",
+       "pitch": 43,
+       "start": 6.0,
+       "length": 0.75,
+       "velocity": 96,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000070",
+       "pitch": 41,
+       "start": 7.0,
+       "length": 0.75,
+       "velocity": 96,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000071",
+       "pitch": 36,
+       "start": 8.0,
+       "length": 0.75,
+       "velocity": 96,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000072",
+       "pitch": 36,
+       "start": 9.0,
+       "length": 0.75,
+       "velocity": 96,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000073",
+       "pitch": 43,
+       "start": 10.0,
+       "length": 0.75,
+       "velocity": 96,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000074",
+       "pitch": 41,
+       "start": 11.0,
+       "length": 0.75,
+       "velocity": 96,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000075",
+       "pitch": 36,
+       "start": 12.0,
+       "length": 0.75,
+       "velocity": 96,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000076",
+       "pitch": 36,
+       "start": 13.0,
+       "length": 0.75,
+       "velocity": 96,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000077",
+       "pitch": 43,
+       "start": 14.0,
+       "length": 0.75,
+       "velocity": 96,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000078",
+       "pitch": 41,
+       "start": 15.0,
+       "length": 0.75,
+       "velocity": 96,
+       "channel": 0
+      }
+     ],
+     "controls": []
+    }
+   ]
+  },
+  {
+   "id": "trk_000000000080",
+   "name": "Keys",
+   "kind": "instrument",
+   "color": null,
+   "output_id": "master",
+   "parent_id": null,
+   "mixer": {
+    "volume_db": 0.0,
+    "pan": 0.0,
+    "mute": false,
+    "solo": false,
+    "solo_safe": false
+   },
+   "input": {
+    "channels": [
+     0
+    ],
+    "armed": false,
+    "monitor": "auto"
+   },
+   "instrument": {
+    "id": "dev_000000000081",
+    "plugin_id": "sonara.synth.poly",
+    "name": "Sonara Poly Synth",
+    "enabled": true,
+    "params": {
+     "voice_mode": "poly",
+     "polyphony": 16,
+     "glide": 0.0,
+     "osc1_wave": "triangle",
+     "osc1_level": 0.8,
+     "osc1_octave": 0,
+     "osc1_detune": 0.0,
+     "osc2_wave": "sine",
+     "osc2_level": 0.5,
+     "osc2_octave": 1,
+     "osc2_semitone": 0,
+     "osc2_detune": 0.0,
+     "pulse_width": 0.5,
+     "noise_level": 0.0,
+     "unison": 1,
+     "unison_detune": 15.0,
+     "unison_spread": 0.7,
+     "filter_type": "lowpass",
+     "filter_cutoff": 2600.0,
+     "filter_resonance": 0.15,
+     "filter_env_amount": 1.5,
+     "filter_keytrack": 0.5,
+     "filter_attack": 0.005,
+     "filter_decay": 0.6,
+     "filter_sustain": 0.3,
+     "filter_release": 0.3,
+     "amp_attack": 0.002,
+     "amp_decay": 1.4,
+     "amp_sustain": 0.25,
+     "amp_release": 0.4,
+     "lfo_rate": 5.0,
+     "lfo_pitch_cents": 0.0,
+     "lfo_cutoff_oct": 0.0,
+     "velocity_sensitivity": 0.7,
+     "velocity_to_filter": 0.8,
+     "bend_range": 2,
+     "gain_db": -8.0
+    },
+    "sidechain_id": null,
+    "preset": "Electric Keys",
+    "state": {}
+   },
+   "inserts": [
+    {
+     "id": "dev_000000000095",
+     "plugin_id": "sonara.delay",
+     "name": "Delay",
+     "enabled": true,
+     "params": {
+      "time_ms": 375.0,
+      "sync": true,
+      "note": "1/8D",
+      "feedback": 0.35,
+      "mix": 0.25,
+      "ping_pong": false,
+      "lowcut_hz": 120.0,
+      "highcut_hz": 7000.0
+     },
+     "sidechain_id": null,
+     "preset": null,
+     "state": {}
+    }
+   ],
+   "sends": [],
+   "automation": [],
+   "clips": [
+    {
+     "type": "midi",
+     "id": "clp_000000000094",
+     "name": "MIDI",
+     "start": 0.0,
+     "length": 16.0,
+     "content_offset": 0.0,
+     "loop_length": null,
+     "muted": false,
+     "color": null,
+     "notes": [
+      {
+       "id": "n_000000000082",
+       "pitch": 60,
+       "start": 0.0,
+       "length": 3.5,
+       "velocity": 80,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000083",
+       "pitch": 64,
+       "start": 0.0,
+       "length": 3.5,
+       "velocity": 80,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000084",
+       "pitch": 67,
+       "start": 0.0,
+       "length": 3.5,
+       "velocity": 80,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000085",
+       "pitch": 60,
+       "start": 4.0,
+       "length": 3.5,
+       "velocity": 80,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000086",
+       "pitch": 64,
+       "start": 4.0,
+       "length": 3.5,
+       "velocity": 80,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000087",
+       "pitch": 67,
+       "start": 4.0,
+       "length": 3.5,
+       "velocity": 80,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000088",
+       "pitch": 60,
+       "start": 8.0,
+       "length": 3.5,
+       "velocity": 80,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000089",
+       "pitch": 64,
+       "start": 8.0,
+       "length": 3.5,
+       "velocity": 80,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000090",
+       "pitch": 67,
+       "start": 8.0,
+       "length": 3.5,
+       "velocity": 80,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000091",
+       "pitch": 60,
+       "start": 12.0,
+       "length": 3.5,
+       "velocity": 80,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000092",
+       "pitch": 64,
+       "start": 12.0,
+       "length": 3.5,
+       "velocity": 80,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000093",
+       "pitch": 67,
+       "start": 12.0,
+       "length": 3.5,
+       "velocity": 80,
+       "channel": 0
+      }
+     ],
+     "controls": []
+    }
+   ]
+  }
+ ],
+ "master": {
+  "id": "master",
+  "name": "Master",
+  "kind": "master",
+  "color": null,
+  "output_id": null,
+  "parent_id": null,
+  "mixer": {
+   "volume_db": 0.0,
+   "pan": 0.0,
+   "mute": false,
+   "solo": false,
+   "solo_safe": false
+  },
+  "input": {
+   "channels": [
+    0
+   ],
+   "armed": false,
+   "monitor": "auto"
+  },
+  "instrument": null,
+  "inserts": [],
+  "sends": [],
+  "automation": [],
+  "clips": []
+ },
+ "assets": [],
+ "markers": [],
+ "sections": [],
+ "transport": {
+  "loop_enabled": false,
+  "loop_start": 0.0,
+  "loop_end": 16.0,
+  "punch_enabled": false,
+  "punch_in": 0.0,
+  "punch_out": 16.0,
+  "metronome": false,
+  "count_in_bars": 0
+ },
+ "metadata": {
+  "title": "Transport Position",
+  "artist": "",
+  "album": "",
+  "genre": "",
+  "composer": "",
+  "comment": "",
+  "created": "2026-01-01T12:00:00Z",
+  "modified": ""
+ },
+ "editor": {}
+}

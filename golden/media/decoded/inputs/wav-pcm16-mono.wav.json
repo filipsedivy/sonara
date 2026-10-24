@@ -1,0 +1,8 @@
+{
+ "dtype": "f64le",
+ "shape": [
+  400,
+  1
+ ],
+ "source": "media/inputs/wav-pcm16-mono.wav"
+}

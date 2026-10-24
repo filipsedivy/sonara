@@ -1,0 +1,30 @@
+{
+ "config": "default",
+ "params": {
+  "dc_block": false,
+  "gain_db": 0.0,
+  "invert_left": false,
+  "invert_right": false,
+  "mono": false,
+  "swap": false,
+  "width": 1.0
+ },
+ "plugin": "sonara.utility",
+ "renders": {
+  "impulse": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "noise": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "sine-1k": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  }
+ }
+}

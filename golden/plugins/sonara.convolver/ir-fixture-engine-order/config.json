@@ -1,0 +1,49 @@
+{
+ "call_order": [
+  "prepare",
+  "set_state",
+  "set_params"
+ ],
+ "config": "ir-fixture-engine-order",
+ "impulse_response": "fixtures/ir-48k-stereo-float.wav",
+ "params": {
+  "gain_db": 0.0,
+  "input": "mono_sum",
+  "mix": 0.3,
+  "normalize": true
+ },
+ "plugin": "sonara.convolver",
+ "prototype_defect": "D2",
+ "renders": {
+  "clipped": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.5
+  },
+  "impulse": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.5
+  },
+  "noise": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.5
+  },
+  "silence": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.5
+  },
+  "sine-1k": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.5
+  },
+  "sweep": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.5
+  }
+ }
+}

@@ -1,0 +1,1464 @@
+{
+ "harness": {
+  "hold_jobs": "occupy every background worker until release_jobs, so operations submitted meanwhile stay queued",
+  "move_file": "move the file at args.from to args.to (creating the folder), outside any tool",
+  "release_jobs": "free the background workers held by hold_jobs"
+ },
+ "outside_root": "/sonara-golden-outside",
+ "root_placeholder": "<ROOT>",
+ "steps": [
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "get_capabilities"
+  },
+  {
+   "args": {},
+   "expect": "NO_PROJECT",
+   "tool": "list_tracks"
+  },
+  {
+   "args": {},
+   "expect": "NO_PROJECT",
+   "tool": "undo"
+  },
+  {
+   "args": {},
+   "expect": "NO_PROJECT",
+   "tool": "redo"
+  },
+  {
+   "args": {
+    "bogus": 1,
+    "bpm": 5000,
+    "name": "x"
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "create_project"
+  },
+  {
+   "args": {
+    "bpm": 120,
+    "length": "16 bars",
+    "name": "Coverage"
+   },
+   "expect": "ok",
+   "id": "project",
+   "tool": "create_project"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "get_capabilities"
+  },
+  {
+   "args": {
+    "dry_run": true,
+    "name": "Other"
+   },
+   "expect": "ok",
+   "tool": "create_project"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "list_plugins"
+  },
+  {
+   "args": {
+    "kind": "instrument"
+   },
+   "expect": "ok",
+   "tool": "list_plugins"
+  },
+  {
+   "args": {
+    "plugin_id": "sonara.convolver"
+   },
+   "expect": "ok",
+   "tool": "list_plugins"
+  },
+  {
+   "args": {
+    "plugin_id": "vst3.serum"
+   },
+   "expect": "NOT_FOUND",
+   "tool": "list_plugins"
+  },
+  {
+   "args": {
+    "kind": "midi"
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "list_plugins"
+  },
+  {
+   "args": [
+    "not",
+    "an",
+    "object"
+   ],
+   "expect": "INVALID_ARGUMENT",
+   "tool": "get_history"
+  },
+  {
+   "args": {},
+   "expect": "INVALID_ARGUMENT",
+   "tool": "move_clip"
+  },
+  {
+   "args": {
+    "asset_id": 5,
+    "path": 7
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "relink_media"
+  },
+  {
+   "args": {
+    "start": true
+   },
+   "expect": "ok",
+   "tool": "set_loop"
+  },
+  {
+   "args": {
+    "kind": "instrument",
+    "name": "Keys",
+    "preset": "Electric Keys"
+   },
+   "expect": "ok",
+   "id": "keys",
+   "tool": "create_track"
+  },
+  {
+   "args": {
+    "kind": "instrument",
+    "name": "Lead",
+    "preset": "Pluck"
+   },
+   "expect": "ok",
+   "id": "lead",
+   "tool": "create_track"
+  },
+  {
+   "args": {
+    "kind": "bus",
+    "name": "FX Bus"
+   },
+   "expect": "ok",
+   "id": "bus",
+   "tool": "create_track"
+  },
+  {
+   "args": {
+    "kind": "audio",
+    "name": "Spare"
+   },
+   "expect": "ok",
+   "id": "spare",
+   "tool": "create_track"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "list_tracks"
+  },
+  {
+   "args": {
+    "name": "Piano",
+    "track_id": "{{keys.result.track_id}}"
+   },
+   "expect": "ok",
+   "tool": "rename_track"
+  },
+  {
+   "args": {
+    "dry_run": true,
+    "name": "Never",
+    "track_id": "{{keys.result.track_id}}"
+   },
+   "expect": "ok",
+   "tool": "rename_track"
+  },
+  {
+   "args": {
+    "name": "x",
+    "track_id": "trk_missing"
+   },
+   "expect": "NOT_FOUND",
+   "tool": "rename_track"
+  },
+  {
+   "args": {
+    "name": "",
+    "track_id": "{{keys.result.track_id}}"
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "rename_track"
+  },
+  {
+   "args": {
+    "armed": true,
+    "color": "#112233",
+    "mute": true,
+    "solo": true,
+    "track_id": "{{keys.result.track_id}}"
+   },
+   "expect": "ok",
+   "tool": "set_track_state"
+  },
+  {
+   "args": {
+    "armed": false,
+    "mute": false,
+    "solo": false,
+    "solo_safe": true,
+    "track_id": "{{keys.result.track_id}}"
+   },
+   "expect": "ok",
+   "tool": "set_track_state"
+  },
+  {
+   "args": {
+    "track_id": "{{keys.result.track_id}}"
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "set_track_state"
+  },
+  {
+   "args": {
+    "armed": true,
+    "track_id": "{{bus.result.track_id}}"
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "set_track_state"
+  },
+  {
+   "args": {
+    "dry_run": true,
+    "mute": true,
+    "track_id": "{{lead.result.track_id}}"
+   },
+   "expect": "ok",
+   "tool": "set_track_state"
+  },
+  {
+   "args": {
+    "track_id": "{{spare.result.track_id}}"
+   },
+   "expect": "ok",
+   "tool": "delete_track"
+  },
+  {
+   "args": {
+    "track_id": "{{spare.result.track_id}}"
+   },
+   "expect": "NOT_FOUND",
+   "tool": "delete_track"
+  },
+  {
+   "args": {
+    "enabled": true,
+    "end": "4:1",
+    "start": "2:1"
+   },
+   "expect": "ok",
+   "tool": "set_loop"
+  },
+  {
+   "args": {
+    "end": 4,
+    "start": 8
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "set_loop"
+  },
+  {
+   "args": {
+    "dry_run": true,
+    "enabled": false
+   },
+   "expect": "ok",
+   "tool": "set_loop"
+  },
+  {
+   "args": {
+    "length": 8,
+    "name": "Riff",
+    "notes": [
+     {
+      "length": 1,
+      "pitch": "C4",
+      "start": 0
+     },
+     {
+      "length": 1,
+      "pitch": "E4",
+      "start": 1
+     },
+     {
+      "length": 0.9,
+      "pitch": "G4",
+      "start": 2.03,
+      "velocity": 64
+     }
+    ],
+    "start": 0,
+    "track_id": "{{keys.result.track_id}}"
+   },
+   "expect": "ok",
+   "id": "riff",
+   "tool": "create_midi_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{riff.result.clip_id}}",
+    "notes": [
+     {
+      "length": 1,
+      "pitch": "Bb3",
+      "start": 3
+     }
+    ]
+   },
+   "expect": "ok",
+   "id": "added",
+   "tool": "add_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "{{riff.result.clip_id}}",
+    "notes": [
+     {
+      "length": 1,
+      "pitch": "H9",
+      "start": 0
+     }
+    ]
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "add_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "{{riff.result.clip_id}}",
+    "notes": [
+     {
+      "length": 1,
+      "pitch": 200,
+      "start": 0
+     }
+    ]
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "add_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "{{riff.result.clip_id}}",
+    "dry_run": true,
+    "notes": [
+     {
+      "length": 1,
+      "pitch": 72,
+      "start": 4
+     }
+    ]
+   },
+   "expect": "ok",
+   "tool": "add_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "{{riff.result.clip_id}}",
+    "edits": [
+     {
+      "length": 0.5,
+      "note_id": "{{riff.result.note_ids[0]}}",
+      "pitch": "D4",
+      "velocity": 33
+     }
+    ]
+   },
+   "expect": "ok",
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "{{riff.result.clip_id}}",
+    "delete_note_ids": [
+     "{{added.result.note_ids[0]}}"
+    ]
+   },
+   "expect": "ok",
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "{{riff.result.clip_id}}",
+    "note_ids": [
+     "{{riff.result.note_ids[1]}}"
+    ],
+    "transpose": 12
+   },
+   "expect": "ok",
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "{{riff.result.clip_id}}",
+    "quantize": {
+     "grid": 0.25,
+     "strength": 1.0
+    }
+   },
+   "expect": "ok",
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "{{riff.result.clip_id}}",
+    "edits": [
+     {
+      "note_id": "{{riff.result.note_ids[2]}}",
+      "start": 2.5
+     }
+    ],
+    "note_ids": [
+     "{{riff.result.note_ids[2]}}"
+    ],
+    "transpose": -2
+   },
+   "expect": "ok",
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "{{riff.result.clip_id}}",
+    "dry_run": true,
+    "transpose": 5
+   },
+   "expect": "ok",
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "{{riff.result.clip_id}}"
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "{{riff.result.clip_id}}",
+    "edits": [
+     {
+      "note_id": "n_missing",
+      "pitch": 60
+     }
+    ]
+   },
+   "expect": "NOT_FOUND",
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "{{riff.result.clip_id}}",
+    "quantize": {
+     "grid": 0
+    }
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "length": 4,
+    "notes": [
+     {
+      "length": 1,
+      "pitch": 67,
+      "start": 0
+     }
+    ],
+    "start": 8,
+    "track_id": "{{lead.result.track_id}}"
+   },
+   "expect": "ok",
+   "id": "lead_clip",
+   "tool": "create_midi_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{lead_clip.result.clip_id}}",
+    "replace_all": [
+     {
+      "length": 2,
+      "pitch": 48,
+      "start": 0
+     },
+     {
+      "length": 2,
+      "pitch": 55,
+      "start": 2,
+      "velocity": 80
+     }
+    ]
+   },
+   "expect": "ok",
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "{{lead_clip.result.clip_id}}",
+    "start": "4:1"
+   },
+   "expect": "ok",
+   "tool": "move_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{lead_clip.result.clip_id}}",
+    "track_id": "{{keys.result.track_id}}"
+   },
+   "expect": "ok",
+   "tool": "move_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{lead_clip.result.clip_id}}",
+    "start": 8,
+    "track_id": "{{lead.result.track_id}}"
+   },
+   "expect": "ok",
+   "tool": "move_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{lead_clip.result.clip_id}}",
+    "track_id": "{{bus.result.track_id}}"
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "move_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_missing",
+    "start": 0
+   },
+   "expect": "NOT_FOUND",
+   "tool": "move_clip"
+  },
+  {
+   "args": {
+    "at": 4,
+    "clip_id": "{{riff.result.clip_id}}"
+   },
+   "expect": "ok",
+   "id": "split",
+   "tool": "split_clip"
+  },
+  {
+   "args": {
+    "at": 100,
+    "clip_id": "{{riff.result.clip_id}}"
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "split_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{lead_clip.result.clip_id}}",
+    "times": 2
+   },
+   "expect": "ok",
+   "id": "dup",
+   "tool": "duplicate_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{riff.result.clip_id}}",
+    "dry_run": true
+   },
+   "expect": "ok",
+   "tool": "duplicate_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{split.result.right_clip_id}}",
+    "loop_length": 2,
+    "muted": true,
+    "name": "Riff B"
+   },
+   "expect": "ok",
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{split.result.right_clip_id}}",
+    "muted": false
+   },
+   "expect": "ok",
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{riff.result.clip_id}}",
+    "trim_end": 3.5,
+    "trim_start": 1
+   },
+   "expect": "ok",
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{riff.result.clip_id}}",
+    "gain_db": 3
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{riff.result.clip_id}}"
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_ids": [
+     "{{dup.clip_ids[1]}}"
+    ]
+   },
+   "expect": "ok",
+   "tool": "delete_clips"
+  },
+  {
+   "args": {
+    "clip_ids": [
+     "clp_missing"
+    ]
+   },
+   "expect": "NOT_FOUND",
+   "tool": "delete_clips"
+  },
+  {
+   "args": {
+    "clip_ids": []
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "delete_clips"
+  },
+  {
+   "args": {
+    "clip_id": "{{riff.result.clip_id}}",
+    "notes": [
+     {
+      "length": 0,
+      "pitch": [
+       60
+      ],
+      "start": -1
+     }
+    ]
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "add_midi_notes"
+  },
+  {
+   "args": {
+    "dry_run": true,
+    "path": "<ROOT>/inputs/tone-48k-stereo-24bit.wav"
+   },
+   "expect": "ok",
+   "tool": "import_audio"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/tone-48k-stereo-24bit.wav",
+    "start": "2:1",
+    "track_name": "Tone"
+   },
+   "expect": "ok",
+   "id": "tone",
+   "tool": "import_audio"
+  },
+  {
+   "args": {
+    "mode": "link",
+    "path": "<ROOT>/inputs/tone-44k1-mono-16bit.wav",
+    "start": 16,
+    "track_id": "{{tone.track_id}}"
+   },
+   "expect": "ok",
+   "id": "mono",
+   "tool": "import_audio"
+  },
+  {
+   "args": {
+    "operation_id": "{{mono.decode_operation_id}}",
+    "wait_seconds": 60
+   },
+   "expect": "ok",
+   "tool": "get_operation_status"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/chord-48k-stereo.flac",
+    "start": 8,
+    "track_name": "Chord"
+   },
+   "expect": "ok",
+   "id": "chord",
+   "tool": "import_audio"
+  },
+  {
+   "args": {
+    "operation_id": "{{chord.decode_operation_id}}",
+    "wait_seconds": 60
+   },
+   "expect": "ok",
+   "tool": "get_operation_status"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/saw-44k1-stereo.mp3",
+    "start": 12
+   },
+   "expect": "ok",
+   "id": "saw",
+   "tool": "import_audio"
+  },
+  {
+   "args": {
+    "operation_id": "{{saw.decode_operation_id}}",
+    "wait_seconds": 60
+   },
+   "expect": "ok",
+   "tool": "get_operation_status"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/tone-48k-stereo-24bit.wav",
+    "track_id": "{{keys.result.track_id}}"
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "import_audio"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/missing.wav"
+   },
+   "expect": "NOT_FOUND",
+   "tool": "import_audio"
+  },
+  {
+   "args": {
+    "path": "/sonara-golden-outside/x.wav"
+   },
+   "expect": "PERMISSION_DENIED",
+   "tool": "import_audio"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/not-media.wav"
+   },
+   "expect": "UNSUPPORTED",
+   "tool": "import_audio"
+  },
+  {
+   "args": {
+    "asset_id": "{{saw.asset_id}}"
+   },
+   "expect": "ok",
+   "tool": "analyze_audio"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/tone-44k1-mono-16bit.wav"
+   },
+   "expect": "ok",
+   "tool": "analyze_audio"
+  },
+  {
+   "args": {
+    "clip_id": "{{tone.clip_id}}",
+    "fade_curve": "equal_power",
+    "fade_in_seconds": 0.1,
+    "fade_out_seconds": 0.2,
+    "gain_db": -3
+   },
+   "expect": "ok",
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{tone.clip_id}}",
+    "gain_db": -4.5
+   },
+   "expect": "ok",
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{tone.clip_id}}",
+    "gain_db": -6
+   },
+   "expect": "ok",
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{tone.clip_id}}",
+    "fade_in_seconds": 5
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{tone.clip_id}}",
+    "loop_length": 1
+   },
+   "expect": "UNSUPPORTED",
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{tone.clip_id}}",
+    "gain_db": 30
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{chord.clip_id}}",
+    "fade_curve": "s_curve",
+    "fade_out_seconds": 0.25
+   },
+   "expect": "ok",
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{saw.clip_id}}",
+    "fade_curve": "exponential",
+    "fade_in_seconds": 0.05
+   },
+   "expect": "ok",
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{mono.clip_id}}",
+    "trim_end": 18.5,
+    "trim_start": 16.5
+   },
+   "expect": "ok",
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "at": 6,
+    "clip_id": "{{tone.clip_id}}"
+   },
+   "expect": "ok",
+   "id": "tone_split",
+   "tool": "split_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{chord.clip_id}}",
+    "times": 2
+   },
+   "expect": "ok",
+   "id": "chord_dup",
+   "tool": "duplicate_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{tone_split.result.right_clip_id}}",
+    "start": 24,
+    "track_id": "{{chord.track_id}}"
+   },
+   "expect": "ok",
+   "tool": "duplicate_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{saw.clip_id}}",
+    "start": "6:1"
+   },
+   "expect": "ok",
+   "tool": "move_clip"
+  },
+  {
+   "args": {
+    "clip_id": "{{saw.clip_id}}",
+    "track_id": "{{keys.result.track_id}}"
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "move_clip"
+  },
+  {
+   "args": {
+    "clip_ids": [
+     "{{chord_dup.clip_ids[1]}}"
+    ]
+   },
+   "expect": "ok",
+   "tool": "delete_clips"
+  },
+  {
+   "args": {
+    "params": {
+     "mix": 0.4,
+     "normalize": false
+    },
+    "plugin_id": "sonara.convolver",
+    "track_id": "{{tone.track_id}}"
+   },
+   "expect": "ok",
+   "id": "conv",
+   "tool": "add_effect"
+  },
+  {
+   "args": {
+    "device_id": "{{conv.result.device_id}}",
+    "dry_run": true,
+    "path": "<ROOT>/inputs/ir-48k-stereo-float.wav"
+   },
+   "expect": "ok",
+   "tool": "load_impulse_response"
+  },
+  {
+   "args": {
+    "device_id": "{{conv.result.device_id}}",
+    "path": "<ROOT>/inputs/ir-48k-stereo-float.wav"
+   },
+   "expect": "ok",
+   "tool": "load_impulse_response"
+  },
+  {
+   "args": {
+    "plugin_id": "sonara.eq.parametric",
+    "track_id": "{{tone.track_id}}"
+   },
+   "expect": "ok",
+   "id": "eq",
+   "tool": "add_effect"
+  },
+  {
+   "args": {
+    "device_id": "{{eq.result.device_id}}",
+    "path": "<ROOT>/inputs/ir-48k-stereo-float.wav"
+   },
+   "expect": "INVALID_ARGUMENT",
+   "tool": "load_impulse_response"
+  },
+  {
+   "args": {
+    "device_id": "{{conv.result.device_id}}",
+    "path": "<ROOT>/inputs/missing.wav"
+   },
+   "expect": "NOT_FOUND",
+   "tool": "load_impulse_response"
+  },
+  {
+   "args": {
+    "device_id": "{{eq.result.device_id}}"
+   },
+   "expect": "ok",
+   "tool": "remove_effect"
+  },
+  {
+   "args": {
+    "device_id": "{{eq.result.device_id}}"
+   },
+   "expect": "NOT_FOUND",
+   "tool": "remove_effect"
+  },
+  {
+   "args": {
+    "device_id": "{{conv.result.device_id}}",
+    "dry_run": true
+   },
+   "expect": "ok",
+   "tool": "remove_effect"
+  },
+  {
+   "args": {
+    "dry_run": true,
+    "path": "<ROOT>/inputs/song.mid"
+   },
+   "expect": "ok",
+   "tool": "import_midi"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/song.mid",
+    "start": "9:1"
+   },
+   "expect": "ok",
+   "id": "song",
+   "tool": "import_midi"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/not-media.wav"
+   },
+   "expect": "FORMAT_ERROR",
+   "tool": "import_midi"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/missing.mid"
+   },
+   "expect": "NOT_FOUND",
+   "tool": "import_midi"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "stop_playback"
+  },
+  {
+   "args": {
+    "end": 4,
+    "loop": true,
+    "start": 0
+   },
+   "expect": "ENGINE_UNAVAILABLE",
+   "tool": "play_preview"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "stop_playback"
+  },
+  {
+   "args": {
+    "start": 0
+   },
+   "expect": "ENGINE_UNAVAILABLE",
+   "tool": "start_recording"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "list_midi_devices"
+  },
+  {
+   "args": {
+    "enabled": true
+   },
+   "expect": "ENGINE_UNAVAILABLE",
+   "tool": "set_midi_input"
+  },
+  {
+   "args": {
+    "enabled": false
+   },
+   "expect": "ok",
+   "tool": "set_midi_input"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "get_capabilities"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "get_history"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "undo"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "undo"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "redo"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "get_history"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "redo"
+  },
+  {
+   "args": {},
+   "expect": "NOTHING_TO_REDO",
+   "tool": "redo"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/work/previews/full.wav",
+    "per_track_levels": true
+   },
+   "expect": "ok",
+   "id": "full",
+   "tool": "render_preview"
+  },
+  {
+   "args": {
+    "operation_id": "{{full.operation_id}}"
+   },
+   "expect": "ok",
+   "tool": "get_operation_status"
+  },
+  {
+   "args": {
+    "operation_id": "{{full.operation_id}}"
+   },
+   "expect": "ok",
+   "tool": "get_audio_analysis"
+  },
+  {
+   "args": {
+    "include_series": true,
+    "path": "{{full.result.path}}"
+   },
+   "expect": "ok",
+   "tool": "get_audio_analysis"
+  },
+  {
+   "args": {
+    "operation_id": "op_missing"
+   },
+   "expect": "NOT_FOUND",
+   "tool": "get_operation_status"
+  },
+  {
+   "args": {},
+   "harness": "hold_jobs"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/work/previews/cancelled.wav",
+    "wait": false
+   },
+   "expect": "ok",
+   "id": "pending",
+   "tool": "render_preview"
+  },
+  {
+   "args": {
+    "operation_id": "{{pending.operation_id}}"
+   },
+   "expect": "ok",
+   "tool": "get_operation_status"
+  },
+  {
+   "args": {
+    "operation_id": "{{pending.operation_id}}"
+   },
+   "expect": "ok",
+   "tool": "cancel_operation"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "list_operations"
+  },
+  {
+   "args": {},
+   "harness": "release_jobs"
+  },
+  {
+   "args": {
+    "operation_id": "{{pending.operation_id}}",
+    "wait_seconds": 60
+   },
+   "expect": "ok",
+   "tool": "get_operation_status"
+  },
+  {
+   "args": {
+    "operation_id": "{{pending.operation_id}}"
+   },
+   "expect": "NOT_FOUND",
+   "tool": "get_audio_analysis"
+  },
+  {
+   "args": {
+    "operation_id": "{{full.operation_id}}"
+   },
+   "expect": "ok",
+   "tool": "cancel_operation"
+  },
+  {
+   "args": {
+    "operation_id": "op_missing"
+   },
+   "expect": "NOT_FOUND",
+   "tool": "cancel_operation"
+  },
+  {
+   "args": {
+    "directory": "<ROOT>/work/stems",
+    "format": {
+     "bit_depth": 24,
+     "format": "flac"
+    }
+   },
+   "expect": "ok",
+   "tool": "export_stems"
+  },
+  {
+   "args": {
+    "directory": "<ROOT>/work/stems-master",
+    "through_master": true,
+    "track_ids": [
+     "{{tone.track_id}}"
+    ]
+   },
+   "expect": "ok",
+   "tool": "export_stems"
+  },
+  {
+   "args": {
+    "directory": "<ROOT>/work/stems",
+    "dry_run": true,
+    "overwrite": true
+   },
+   "expect": "ok",
+   "tool": "export_stems"
+  },
+  {
+   "args": {
+    "directory": "<ROOT>/work/stems",
+    "format": {
+     "bit_depth": 24,
+     "format": "flac"
+    },
+    "overwrite": true,
+    "track_ids": [
+     "{{chord.track_id}}"
+    ]
+   },
+   "expect": "CONFIRMATION_REQUIRED",
+   "id": "stems_confirm",
+   "tool": "export_stems"
+  },
+  {
+   "args": {
+    "confirmation_token": "{{stems_confirm.error.details.confirmation_token}}",
+    "directory": "<ROOT>/work/stems",
+    "format": {
+     "bit_depth": 24,
+     "format": "flac"
+    },
+    "overwrite": true,
+    "track_ids": [
+     "{{chord.track_id}}"
+    ]
+   },
+   "expect": "ok",
+   "tool": "export_stems"
+  },
+  {
+   "args": {
+    "directory": "/sonara-golden-outside/stems"
+   },
+   "expect": "PERMISSION_DENIED",
+   "tool": "export_stems"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "list_operations"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/work/Coverage"
+   },
+   "expect": "ok",
+   "id": "saved",
+   "tool": "save_project"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "verify_project"
+  },
+  {
+   "args": {
+    "from": "<ROOT>/inputs/tone-44k1-mono-16bit.wav",
+    "to": "<ROOT>/moved/tone-44k1-mono-16bit.wav"
+   },
+   "harness": "move_file"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "verify_project"
+  },
+  {
+   "args": {
+    "asset_id": "{{mono.asset_id}}",
+    "dry_run": true,
+    "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav"
+   },
+   "expect": "ok",
+   "tool": "relink_media"
+  },
+  {
+   "args": {
+    "asset_id": "{{mono.asset_id}}",
+    "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav"
+   },
+   "expect": "ok",
+   "tool": "relink_media"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "verify_project"
+  },
+  {
+   "args": {
+    "asset_id": "{{mono.asset_id}}",
+    "path": "<ROOT>/inputs/tone-48k-stereo-24bit.wav"
+   },
+   "expect": "ok",
+   "tool": "relink_media"
+  },
+  {
+   "args": {
+    "asset_id": "{{mono.asset_id}}",
+    "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav"
+   },
+   "expect": "ok",
+   "tool": "relink_media"
+  },
+  {
+   "args": {
+    "asset_id": "{{mono.asset_id}}",
+    "embed": true,
+    "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav"
+   },
+   "expect": "ok",
+   "tool": "relink_media"
+  },
+  {
+   "args": {
+    "asset_id": "med_missing",
+    "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav"
+   },
+   "expect": "NOT_FOUND",
+   "tool": "relink_media"
+  },
+  {
+   "args": {
+    "asset_id": "{{mono.asset_id}}",
+    "path": "<ROOT>/inputs/missing.wav"
+   },
+   "expect": "NOT_FOUND",
+   "tool": "relink_media"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "verify_project"
+  },
+  {
+   "args": {
+    "dry_run": true,
+    "path": "{{saved.path}}"
+   },
+   "expect": "ok",
+   "tool": "open_project"
+  },
+  {
+   "args": {
+    "path": "{{saved.path}}"
+   },
+   "expect": "CONFIRMATION_REQUIRED",
+   "id": "open_confirm",
+   "tool": "open_project"
+  },
+  {
+   "args": {
+    "confirmation_token": "{{open_confirm.error.details.confirmation_token}}",
+    "path": "{{saved.path}}"
+   },
+   "expect": "ok",
+   "tool": "open_project"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/work/missing.sonara"
+   },
+   "expect": "NOT_FOUND",
+   "tool": "open_project"
+  },
+  {
+   "args": {
+    "path": "/sonara-golden-outside/x.sonara"
+   },
+   "expect": "PERMISSION_DENIED",
+   "tool": "open_project"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "verify_project"
+  },
+  {
+   "args": {
+    "asset_id": "{{mono.asset_id}}",
+    "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav"
+   },
+   "expect": "ok",
+   "tool": "relink_media"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "verify_project"
+  },
+  {
+   "args": {
+    "name": "Second"
+   },
+   "expect": "CONFIRMATION_REQUIRED",
+   "tool": "create_project"
+  },
+  {
+   "args": {
+    "confirmation_token": "not-a-token",
+    "name": "Second"
+   },
+   "expect": "CONFIRMATION_REQUIRED",
+   "tool": "create_project"
+  },
+  {
+   "args": {},
+   "expect": "ok",
+   "tool": "save_project"
+  },
+  {
+   "args": {
+    "detail": "full",
+    "include_notes": true
+   },
+   "expect": "ok",
+   "tool": "get_project_state"
+  }
+ ]
+}

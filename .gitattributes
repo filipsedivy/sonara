@@ -1,0 +1,17 @@
+# Golden regression data, recorded from the Python prototype:
+# binary renders, vectors and encoded exports go through Git LFS; JSON stays in normal git.
+golden/**/*.wav filter=lfs diff=lfs merge=lfs -text
+golden/**/*.f64 filter=lfs diff=lfs merge=lfs -text
+golden/**/*.flac filter=lfs diff=lfs merge=lfs -text
+golden/**/*.mp3 filter=lfs diff=lfs merge=lfs -text
+golden/**/*.f32 filter=lfs diff=lfs merge=lfs -text
+golden/**/*.u64 filter=lfs diff=lfs merge=lfs -text
+golden/**/*.i64 filter=lfs diff=lfs merge=lfs -text
+golden/**/*.rf64 filter=lfs diff=lfs merge=lfs -text
+golden/**/*.w64 filter=lfs diff=lfs merge=lfs -text
+golden/**/*.caf filter=lfs diff=lfs merge=lfs -text
+golden/**/*.aiff filter=lfs diff=lfs merge=lfs -text
+golden/**/*.aif filter=lfs diff=lfs merge=lfs -text
+golden/**/*.ogg filter=lfs diff=lfs merge=lfs -text
+golden/**/*.opus filter=lfs diff=lfs merge=lfs -text
+golden/**/*.mid filter=lfs diff=lfs merge=lfs -text

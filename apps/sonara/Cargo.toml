@@ -1,0 +1,41 @@
+[package]
+name = "sonara"
+description = "The sonara command: CLI, MCP server and application entry point"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+# The command line: commands, arguments, defaults and choices of the prototype's argparse tree.
+clap.workspace = true
+# The `--log-level` logger (the prototype's `logging.basicConfig` on stderr).
+env_logger.workspace = true
+log.workspace = true
+# `{{ref}}` references of `sonara batch`.
+regex.workspace = true
+serde_json.workspace = true
+# Tools, the MCP server and the JSON text of everything printed.
+sonara-agent.workspace = true
+# The application the in-process tools run on; application directories.
+sonara-app.workspace = true
+# Python formatting of batch references; the built-in plugins of `sonara info`.
+sonara-core.workspace = true
+# The project store of `sonara info` and `sonara verify`.
+sonara-project.workspace = true
+thiserror.workspace = true
+# Signals and the one-second autosave tick of `sonara serve` (the MCP server owns its own runtime).
+tokio = { workspace = true, features = ["rt", "time", "signal", "macros"] }
+
+[dev-dependencies]
+# The analyzer, as the oracle of `sonara analyze` on the samples the prototype fed.
+sonara-dsp.workspace = true
+# Golden contracts, transcripts, analysis reports and media data.
+sonara-testkit.workspace = true
+# Temporary working directories and Sonara homes.
+tempfile.workspace = true
+
+[lints]
+workspace = true

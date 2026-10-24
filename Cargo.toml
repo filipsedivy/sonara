@@ -1,0 +1,152 @@
+# Sonara as a native Rust application. Lint and dependency
+# policy: .claude/rules/rust/.
+[workspace]
+resolver = "3"
+# The desktop crate keeps Tauri's layout: the frontend in apps/sonara-desktop, the crate in its
+# src-tauri folder.
+members = ["crates/*", "apps/sonara", "apps/sonara-desktop/src-tauri"]
+
+[workspace.package]
+# The one version of Sonara: the desktop bundle takes it, and release tags must equal it (VER-01).
+version = "0.1.0"
+edition = "2024"
+# Equal to the toolchain pinned in rust-toolchain.toml.
+rust-version = "1.99.1"
+license = "LicenseRef-Proprietary"
+authors = ["Filip Sedivy <mail@filipsedivy.cz>"]
+publish = false
+
+[workspace.dependencies]
+sonara-agent = { path = "crates/sonara-agent" }
+sonara-app = { path = "crates/sonara-app" }
+sonara-core = { path = "crates/sonara-core" }
+sonara-dsp = { path = "crates/sonara-dsp" }
+sonara-engine = { path = "crates/sonara-engine" }
+sonara-io = { path = "crates/sonara-io" }
+sonara-media = { path = "crates/sonara-media" }
+sonara-midi = { path = "crates/sonara-midi" }
+sonara-project = { path = "crates/sonara-project" }
+sonara-rt = { path = "crates/sonara-rt" }
+sonara-testkit = { path = "crates/sonara-testkit" }
+
+assert_no_alloc = "1.1"
+cc = "1.2"
+# Argument parsing of the `sonara` command (apps/sonara), with derive; no colours (argparse has none).
+clap = { version = "4.6", default-features = false, features = ["std", "derive", "help", "usage", "error-context", "suggestions"] }
+# Constant-time comparison of the IPC session token (sonara-agent; `secrets.compare_digest`).
+constant_time_eq = "0.6"
+crc32fast = { version = "1.5", default-features = false }
+criterion = "0.8"
+# The MPMC queue of the job workers in sonara-app (std has no multi-consumer channel).
+crossbeam-channel = "0.5"
+# The `--log-level` logger of the `sonara` binary: no colours, no regex filters, no timestamps.
+env_logger = { version = "0.11", default-features = false }
+flate2 = "1.1"
+# Disk-space queries only (`available_space`); no file-locking extras, no async runtimes.
+fs4 = { version = "1.1", default-features = false }
+getrandom = "0.4"
+hound = "3.5"
+indexmap = "2"
+# UTC timestamps only: no time zone database.
+jiff = { version = "0.2", default-features = false, features = ["std"] }
+# No HTTP or file resolver: the project schemas are embedded and reference only themselves.
+jsonschema = { version = "0.59", default-features = false }
+# Loads the LGPL codec libraries at run time (libsoxr and LAME, R1 and R2): from the
+# app bundle, SONARA_NATIVE_LIB_DIR (scripts/native/build-codecs.sh), then the system.
+libloading = "0.9"
+# Logging facade for the warnings the prototype logs (settings, jobs); binaries pick the logger.
+log = "0.4"
+# Model checker of the sonara-rt protocols (`rust-loom`, `--cfg loom`); test builds only.
+loom = "0.7.2"
+# MIDI device I/O of sonara-io. Its default feature set is empty: CoreMIDI (macOS)
+# and ALSA (Linux) are target dependencies, not features. The `jack` feature stays off.
+midir = { version = "0.11.1", default-features = false }
+midly = "0.5"
+# The desktop's App Nap opt-out (NSProcessInfo activity): safe bindings, no
+# `unsafe`. Already in the tree through midir (objc2) and Tauri (objc2-foundation).
+objc2 = { version = "0.6", default-features = false, features = ["std"] }
+# The macOS close button's dot of unsaved changes (`NSWindow.setDocumentEdited`):
+# safe bindings, no `unsafe`. Already in the tree through Tauri, with these features.
+objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSApplication", "NSResponder", "NSWindow"] }
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSArray", "NSProcessInfo", "NSString"] }
+# Ogg muxing and demuxing of the Opus export and its verification (sonara-media).
+ogg = "0.9"
+# libopus (BSD-3-Clause, built and linked statically by opusic-sys) for the Opus export.
+opus = "0.4"
+# The same libopus, for its multistream decoder (Ogg Opus import of every channel mapping, which
+# the `opus` crate does not wrap); already in the tree through `opus`.
+opusic-sys = "0.7"
+proptest = "1.12"
+# Real FFTs of the convolver and the Analyzer's spectrum (rustfft underneath). No SIMD features:
+# the scalar path is the same on every target, so the measured golden tolerances carry over.
+realfft = { version = "3.5", default-features = false }
+rand_mt = "6.1"
+regex = "1.13"
+# The MCP server of `sonara mcp` over stdio. Exact pin: the SDK changes fast.
+rmcp = { version = "=3.5.1", default-features = false, features = ["server", "transport-io"] }
+# The SPSC rings of sonara-rt. RUSTSEC-2026-0274 affects versions before 0.3.5.
+rtrb = "0.4.0"
+rtsan-standalone = "0.3.0"
+# Safe system calls std lacks: `kill(pid, 0)` and `getuid` for IPC discovery (sonara-agent, Unix).
+rustix = { version = "1.1", default-features = false, features = ["std", "process"] }
+serde ={ version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["float_roundtrip", "preserve_order"] }
+sha1 = "0.11"
+sha2 = "0.11"
+# MPL-2.0, used unmodified. Crates enable the containers and codecs they need; no SIMD.
+symphonia = { version = "0.6.1", default-features = false }
+# The desktop application (ADR 0009): Tauri 2.12 with its dialog plugin.
+tauri = { version = "2.12", features = [] }
+tauri-build = { version = "2.7", features = [] }
+tauri-plugin-dialog = "2.8"
+tempfile = "3.27"
+thiserror = "2.0"
+# The async runtime rmcp needs; confined to the MCP module of sonara-agent and the binary.
+tokio = { version = "1.53", default-features = false, features = ["rt"] }
+unicode-normalization = "0.1"
+# Timed waits on the FFmpeg fallback's `ffprobe` and `ffmpeg` processes (std has none).
+wait-timeout = "0.2"
+# Ogg Vorbis export (libvorbis aoTuV/Lancer and libogg, BSD-3-Clause, built with cc); the
+# stream serial comes from the exporter, so no random-number feature.
+vorbis_rs = { version = "0.5", default-features = false }
+walkdir = "2.5"
+# Deflate through flate2 with the pure-Rust zlib-rs backend; no other codecs, no encryption.
+zip = { version = "9", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+
+[workspace.lints.rust]
+# `forbid` cannot be relaxed per module, so the workspace denies and each crate root without an
+# RT-10 module adds `#![forbid(unsafe_code)]` (.claude/rules/rust/realtime.md).
+unsafe_code = "deny"
+missing_docs = "warn"
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(loom)"] }
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+undocumented_unsafe_blocks = "deny"
+# QG-03: outside tests, a fallible call either propagates or uses `expect` with the invariant.
+unwrap_used = "deny"
+# The disallowed lists in clippy.toml apply to real-time modules only; their lint block denies
+# these two lints (RT-03).
+disallowed_methods = "allow"
+disallowed_macros = "allow"
+
+# Tests replay complete golden renders, which take minutes unoptimized. Optimizing the DSP and
+# engine code and the dependencies changes no result: Rust never reassociates or contracts
+# floating-point operations at any level (RT-11), and debug assertions and overflow checks stay
+# on (RT-05).
+[profile.dev.package.sonara-dsp]
+opt-level = 3
+
+[profile.dev.package.sonara-engine]
+opt-level = 3
+
+[profile.dev.package."*"]
+opt-level = 2
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+# A panic in a worker or job thread is caught at the thread boundary and reported (real-time code
+# never panics, RT-05).
+panic = "unwind"

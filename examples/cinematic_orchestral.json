@@ -1,0 +1,42 @@
+{
+  "description": "Cinematic orchestral cue in D minor at 72 BPM from the 'orchestral' template (strings, brass, choir, percussion, cathedral reverb). Evolving dynamics: strings and brass volume crescendos into the climax, quieter (velocity-scaled) percussion in the rising section, a horn melody and choir at the climax, and a ritardando (tempo ramp) into the final chord.",
+  "steps": [
+    {"id": "project", "tool": "create_project", "args": {"name": "Ascension", "bpm": 72, "template": "orchestral", "length": "33 bars"}},
+    {"tool": "set_metadata", "args": {"title": "Ascension", "artist": "Sonara Examples", "genre": "Soundtrack"}},
+    {"tool": "add_section", "args": {"name": "Opening", "start": "1:1", "length": "8 bars"}},
+    {"tool": "add_section", "args": {"name": "Rising", "start": "9:1", "length": "8 bars"}},
+    {"tool": "add_section", "args": {"name": "Climax", "start": "17:1", "length": "12 bars"}},
+    {"tool": "add_section", "args": {"name": "Resolution", "start": "29:1", "length": "5 bars"}},
+    {"tool": "set_tempo", "args": {"bpm": 72, "at": "29:1", "ramp": true}},
+    {"tool": "set_tempo", "args": {"bpm": 56, "at": "33:1"}},
+
+    {"id": "horn", "tool": "create_track", "args": {"name": "Horn Melody", "kind": "instrument", "preset": "Brass", "color": "#e0b050"}},
+    {"tool": "configure_routing", "args": {"track_id": "{{horn.result.track_id}}", "add_sends": [{"target": "{{project.state.tracks[4].track_id}}", "level_db": -7}]}},
+
+    {"id": "strings", "tool": "generate_midi", "args": {"track_id": "{{project.state.tracks[0].track_id}}", "kind": "chords", "key": "D minor", "progression": ["i", "VI", "III", "VII", "iv", "i", "V", "i"], "beats_per_chord": 4, "style": "sustain", "octave": 4, "velocity": 80, "start": "1:1", "length": "32 bars", "name": "Strings"}},
+    {"tool": "generate_midi", "args": {"track_id": "{{project.state.tracks[0].track_id}}", "kind": "chords", "key": "D minor", "progression": ["i"], "beats_per_chord": 4, "style": "sustain", "octave": 4, "velocity": 70, "start": "33:1", "length": "1 bars", "name": "Final Chord"}},
+    {"tool": "generate_midi", "args": {"track_id": "{{project.state.tracks[1].track_id}}", "kind": "chords", "key": "D minor", "progression": ["i", "VI", "III", "VII", "iv", "i", "V", "i"], "beats_per_chord": 4, "style": "half", "octave": 3, "velocity": 90, "start": "9:1", "length": "20 bars", "name": "Low Brass"}},
+    {"tool": "generate_midi", "args": {"track_id": "{{project.state.tracks[2].track_id}}", "kind": "chords", "key": "D minor", "progression": ["i", "VI", "III", "VII", "iv", "i", "V", "i"], "beats_per_chord": 4, "style": "sustain", "octave": 5, "velocity": 75, "start": "17:1", "length": "16 bars", "name": "Choir"}},
+    {"id": "perc_rise", "tool": "generate_midi", "args": {"track_id": "{{project.state.tracks[3].track_id}}", "kind": "drums", "style": "cinematic", "bars": 8, "start": "9:1", "seed": 21, "name": "Rising Toms"}},
+    {"tool": "edit_midi_notes", "args": {"clip_id": "{{perc_rise.clip_id}}", "velocity_scale": 0.6}},
+    {"tool": "generate_midi", "args": {"track_id": "{{project.state.tracks[3].track_id}}", "kind": "drums", "style": "cinematic", "bars": 12, "start": "17:1", "seed": 22, "variation": 0.4, "name": "Climax Toms"}},
+    {"tool": "generate_midi", "args": {"track_id": "{{horn.result.track_id}}", "kind": "melody", "key": "D minor", "progression": ["i", "VI", "III", "VII", "iv", "i", "V", "i"], "beats_per_chord": 4, "octave": 4, "rate": 1.0, "velocity": 92, "seed": 5, "start": "17:1", "length": "8 bars", "name": "Horn Theme"}},
+    {"tool": "edit_midi_notes", "args": {"clip_id": "{{strings.clip_id}}", "humanize": {"timing": 0.01, "velocity": 6, "seed": 2}}},
+
+    {"tool": "create_automation", "args": {"track_id": "{{project.state.tracks[0].track_id}}", "target": "volume", "points": [
+      {"at": "1:1", "value": -20}, {"at": "17:1", "value": 0, "curve": "smooth"}, {"at": "29:1", "value": 0}, {"at": "34:1", "value": -10, "curve": "smooth"}]}},
+    {"tool": "create_automation", "args": {"track_id": "{{project.state.tracks[1].track_id}}", "target": "volume", "points": [
+      {"at": "9:1", "value": -24}, {"at": "17:1", "value": 0, "curve": "smooth"}, {"at": "25:1", "value": 0}, {"at": "29:1", "value": -12, "curve": "smooth"}]}},
+    {"tool": "create_automation", "args": {"track_id": "{{project.state.tracks[2].track_id}}", "target": "volume", "points": [
+      {"at": "17:1", "value": -12}, {"at": "21:1", "value": -2, "curve": "smooth"}, {"at": "34:1", "value": -8}]}},
+    {"tool": "set_track_volume", "args": {"track_id": "{{project.state.tracks[3].track_id}}", "volume_db": -4}},
+    {"tool": "set_track_volume", "args": {"track_id": "{{horn.result.track_id}}", "volume_db": -3}},
+
+    {"id": "preview", "tool": "render_preview", "args": {"path": "examples/output/cinematic_orchestral/preview.wav"}},
+    {"id": "climax", "tool": "render_preview", "args": {"start": "17:1", "end": "25:1", "preroll_seconds": 4, "per_track_levels": true, "path": "examples/output/cinematic_orchestral/climax.wav"}},
+    {"tool": "export_audio", "confirm": true, "args": {"path": "examples/output/cinematic_orchestral/ascension.wav", "overwrite": true, "normalize": "loudness", "target_db": -18, "true_peak_ceiling_db": -1,
+      "formats": [{"format": "wav", "bit_depth": 24}, {"format": "flac", "bit_depth": 24}]}},
+    {"tool": "export_midi", "confirm": true, "args": {"path": "examples/output/cinematic_orchestral/ascension.mid", "overwrite": true}},
+    {"tool": "save_project", "confirm": true, "args": {"path": "examples/output/cinematic_orchestral/Ascension.sonara"}}
+  ]
+}

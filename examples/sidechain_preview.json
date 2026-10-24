@@ -1,0 +1,24 @@
+{
+  "description": "\"Add a sidechain compressor to the bass, triggered by the kick, and export a preview.\" Builds a small kick + bass groove, measures the bass in isolation, inserts a compressor on the bass keyed by the kick track, measures again (the ducking lowers the bass's integrated loudness) and exports an 8-bar preview as WAV and MP3.",
+  "steps": [
+    {"tool": "create_project", "args": {"name": "Sidechain Demo", "bpm": 126, "length": "8 bars"}},
+    {"id": "kick", "tool": "create_track", "args": {"name": "Kick", "kind": "instrument", "instrument": "sonara.drums", "preset": "Tight House"}},
+    {"id": "bass", "tool": "create_track", "args": {"name": "Bass", "kind": "instrument", "preset": "Sub Bass"}},
+    {"tool": "create_midi_clip", "args": {"track_id": "{{kick.result.track_id}}", "start": 0, "length": "8 bars", "loop_length": 1, "name": "Four on the floor",
+      "notes": [{"pitch": 36, "start": 0, "length": 0.25, "velocity": 120}]}},
+    {"tool": "generate_midi", "args": {"track_id": "{{bass.result.track_id}}", "kind": "bass", "key": "F minor", "progression": ["i", "VI", "VII", "i"], "beats_per_chord": 8, "style": "pulse", "rate": 0.5, "octave": 2, "humanize": false}},
+    {"tool": "set_track_volume", "args": {"track_id": "{{bass.result.track_id}}", "volume_db": 4}},
+
+    {"id": "before", "tool": "analyze_audio", "args": {"render": {"start": "1:1", "end": "9:1", "tail": "none", "track_id": "{{bass.result.track_id}}"}}},
+
+    {"id": "comp", "tool": "add_effect", "args": {"track_id": "{{bass.result.track_id}}", "plugin_id": "sonara.dynamics.compressor", "preset": "Sidechain Pump", "sidechain_source": "{{kick.result.track_id}}"}},
+    {"tool": "set_effect_parameter", "args": {"device_id": "{{comp.result.device_id}}", "params": {"release_ms": 140, "threshold_db": -32}}},
+    {"tool": "add_effect", "args": {"track_id": "master", "plugin_id": "sonara.dynamics.limiter", "preset": "Master -1 dBTP"}},
+
+    {"id": "after", "tool": "analyze_audio", "args": {"render": {"start": "1:1", "end": "9:1", "tail": "none", "track_id": "{{bass.result.track_id}}"}}},
+    {"id": "preview", "tool": "render_preview", "args": {"start": "1:1", "end": "9:1", "per_track_levels": true, "path": "examples/output/sidechain_preview/preview.wav"}},
+    {"tool": "export_audio", "confirm": true, "args": {"path": "examples/output/sidechain_preview/sidechain-preview.wav", "start": "1:1", "end": "9:1", "overwrite": true,
+      "formats": [{"format": "wav", "bit_depth": 24}, {"format": "mp3", "bitrate_kbps": 256}]}},
+    {"tool": "save_project", "confirm": true, "args": {"path": "examples/output/sidechain_preview/Sidechain Demo.sonara"}}
+  ]
+}

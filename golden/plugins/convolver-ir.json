@@ -1,0 +1,46 @@
+{
+ "block_size": 512,
+ "bpm": 120.0,
+ "configs": [
+  {
+   "call_order": [
+    "prepare",
+    "set_params",
+    "set_state"
+   ],
+   "config": "ir-fixture",
+   "impulse_response": "fixtures/ir-48k-stereo-float.wav",
+   "kind": "effect",
+   "plugin": "sonara.convolver"
+  },
+  {
+   "call_order": [
+    "prepare",
+    "set_params",
+    "set_state"
+   ],
+   "config": "ir-fixture-stereo-raw",
+   "impulse_response": "fixtures/ir-48k-stereo-float.wav",
+   "kind": "effect",
+   "plugin": "sonara.convolver"
+  },
+  {
+   "call_order": [
+    "prepare",
+    "set_state",
+    "set_params"
+   ],
+   "config": "ir-fixture-engine-order",
+   "impulse_response": "fixtures/ir-48k-stereo-float.wav",
+   "kind": "effect",
+   "plugin": "sonara.convolver",
+   "prototype_defect": "D2"
+  }
+ ],
+ "impulse_response": "fixtures/ir-48k-stereo-float.wav",
+ "impulse_response_shape": [
+  24000,
+  2
+ ],
+ "sample_rate": 48000
+}

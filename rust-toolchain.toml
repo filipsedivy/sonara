@@ -1,0 +1,6 @@
+# The single toolchain pin for the Rust workspace: the development container, CI and any host
+# toolchain all read this file.
+[toolchain]
+channel = "1.99.1"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

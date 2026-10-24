@@ -1,0 +1,8 @@
+{
+ "dtype": "f32le",
+ "shape": [
+  401,
+  1
+ ],
+ "source": "inputs/ogg-opus-input-44100.ogg"
+}

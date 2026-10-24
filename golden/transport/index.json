@@ -1,0 +1,67 @@
+{
+ "backend": "native-null",
+ "block_frames": 512,
+ "click_frames": 1440,
+ "scenarios": [
+  {
+   "blocks": 0,
+   "description": "The control calls without playback: the answers before a player exists, the MIDI tools, the rejected calls and the stopped transport with an open stream.",
+   "scenario": "controls",
+   "steps": 18
+  },
+  {
+   "blocks": 112,
+   "description": "Play from a position; pause, seek while paused and resume; seek while playing; stop.",
+   "scenario": "play-position",
+   "steps": 13
+  },
+  {
+   "blocks": 103,
+   "description": "A play range that stops by itself, with a limiter on the master (graph latency).",
+   "scenario": "play-range",
+   "steps": 4
+  },
+  {
+   "blocks": 200,
+   "d8_wrap_blocks": 2,
+   "description": "A loop that is not aligned to beats, with the metronome on, over more than two passes.",
+   "scenario": "loop-metronome",
+   "steps": 4
+  },
+  {
+   "blocks": 170,
+   "description": "A duplex recording from beat 3 with a one-bar count-in in 3/4 (the null device captures silence), with an instrument playing along.",
+   "scenario": "record-count-in",
+   "steps": 5
+  }
+ ],
+ "volatile": {
+  "always": [
+   "callback_load",
+   "created",
+   "duration_seconds",
+   "elapsed_seconds",
+   "finished",
+   "queued_ms",
+   "realtime_factor",
+   "render_load",
+   "render_seconds",
+   "started",
+   "underruns"
+  ],
+  "device_position": [
+   "bar_beat",
+   "position_beat",
+   "position_seconds"
+  ],
+  "take": [
+   "seconds"
+  ],
+  "take_summary": [
+   "asset.frames",
+   "asset.size_bytes",
+   "asset.sha256",
+   "clip.length"
+  ]
+ }
+}

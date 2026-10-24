@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "sonara": {
+      "command": "/opt/homebrew/opt/rustup/bin/cargo",
+      "args": ["run", "--quiet", "--release", "--locked", "-p", "sonara", "--", "mcp"],
+      "env": {
+        "PATH": "/opt/homebrew/opt/rustup/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      }
+    }
+  }
+}

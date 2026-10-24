@@ -1,0 +1,8 @@
+{
+ "accent": true,
+ "dtype": "f64le",
+ "sample_rate": 48000,
+ "shape": [
+  1440
+ ]
+}

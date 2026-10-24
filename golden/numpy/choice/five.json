@@ -1,0 +1,21 @@
+{
+ "after": {
+  "has_uint32": false,
+  "inc": "0x50c8fb163c7cea4ed0f51ce6006e4325",
+  "state": "0xb7e234724c9377f9349bc9329db5ae4b",
+  "uinteger": 3926296886
+ },
+ "dtype": "f64le",
+ "population": [
+  0.5,
+  -2.0,
+  3.25,
+  7.0,
+  -0.125
+ ],
+ "seed": 1234,
+ "shape": [
+  500,
+  7
+ ]
+}

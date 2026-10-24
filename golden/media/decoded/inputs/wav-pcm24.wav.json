@@ -1,0 +1,8 @@
+{
+ "dtype": "f64le",
+ "shape": [
+  400,
+  2
+ ],
+ "source": "media/inputs/wav-pcm24.wav"
+}

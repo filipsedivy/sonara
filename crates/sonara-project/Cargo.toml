@@ -1,0 +1,30 @@
+[package]
+name = "sonara-project"
+description = "Sonara project format: the .sonara bundle and archive"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+fs4.workspace = true
+jiff.workspace = true
+jsonschema.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha1.workspace = true
+sha2.workspace = true
+sonara-core.workspace = true
+tempfile.workspace = true
+thiserror.workspace = true
+walkdir.workspace = true
+zip.workspace = true
+
+[dev-dependencies]
+hound.workspace = true
+sonara-testkit.workspace = true
+
+[lints]
+workspace = true

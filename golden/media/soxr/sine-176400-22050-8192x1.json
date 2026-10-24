@@ -1,0 +1,14 @@
+{
+ "chunk_frames": [
+  1024
+ ],
+ "dtype": "f32le",
+ "engine": "cr64",
+ "in_rate": 176400,
+ "input": "media/soxr/input-sine-176400-8192x1.f32",
+ "out_rate": 22050,
+ "shape": [
+  1024,
+  1
+ ]
+}

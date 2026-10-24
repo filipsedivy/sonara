@@ -1,0 +1,44 @@
+{
+ "config": "preset-wah",
+ "params": {
+  "cutoff_hz": 900.0,
+  "lfo_depth_oct": 1.5,
+  "lfo_rate_hz": 2.0,
+  "mix": 1.0,
+  "mode": "bandpass",
+  "resonance": 0.6
+ },
+ "plugin": "sonara.filter",
+ "renders": {
+  "clipped": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "impulse": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "noise": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "silence": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "sine-1k": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "sweep": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  }
+ }
+}

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Audio input under the hardened runtime. No JIT exception: the
+	     ADR 0009 spike verified that the system WebView needs none. No App Sandbox. -->
+	<key>com.apple.security.device.audio-input</key>
+	<true/>
+	<!-- The one com.apple.security.cs.* exception, for a
+	     reproduced failure. sonara-media's codec FFI loads libsoxr, libmp3lame and libFLAC from
+	     Contents/Frameworks at run time (LIC-01). Under the hardened runtime, library
+	     validation refused all three in the ad-hoc bundle (2026-10-23, dlopen from a hardened
+	     process): "code signature in … not valid for use in process: mapping process and mapped
+	     file (non-platform) have different Team IDs". MP3 and FLAC export and resampling were
+	     then unavailable. It also lets a user replace LAME or libsoxr with their own build
+	     without signing the app again, which the LGPL requires (NOTICE-LGPL.txt). Kept
+	     permanently: there is no Developer ID signing (owner, 2026-10-23). -->
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
+</dict>
+</plist>

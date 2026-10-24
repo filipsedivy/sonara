@@ -1,0 +1,926 @@
+{
+ "final_project": "9a4a57aafed77748eae4a9490769df267940dc6ec4b89240c9a56ef6ba36a1dc",
+ "redo": {
+  "hashes": [
+   "491096e75ad488b1f6b3583a37bed46954edf4e2e1918d1f7193b52597b936ad",
+   "8c70b5823ae96ebfcd19edcf73d94ee6cbe85c0fd3b5344c35745852ac315df6",
+   "4bc03c6f205e7d687ca46fe583f09d673c1f420ae77c1b4648a9e13994079f98",
+   "6524fe7eeb98d80ae8918c8e2e060186fb75219da905b3715c8ddc737e1ad79d",
+   "81bd1ca06c87e775b8258b39fbfb71d587f64cce39c58b30e891a06c2a027e13",
+   "af316f3b0839b854194dac78ebe716237e26526b990eb45484b245fc91a1104b",
+   "68660a958aa6dc22ca182ea5e037900f92ce6089265d0cbf72689bd60ac736c7",
+   "9a4a57aafed77748eae4a9490769df267940dc6ec4b89240c9a56ef6ba36a1dc"
+  ],
+  "labels": [
+   "Redo Create Track",
+   "Redo Create Track",
+   "Redo Create MIDI Clip",
+   "Redo Create MIDI Clip",
+   "Redo Track Volume",
+   "Redo Add Effect",
+   "Redo Set Parameter",
+   "Redo Add Effect"
+  ],
+  "moves": 8
+ },
+ "render": {
+  "frames": 739330,
+  "latency": 102,
+  "sample_rate": 48000,
+  "start_frame": 0,
+  "tail_frames": 7901,
+  "warnings": []
+ },
+ "roundtrip_equal": true,
+ "smf_export": {
+  "max_rounding_error_beats": 0.0,
+  "notes": 96,
+  "tracks": 3
+ },
+ "steps": [
+  {
+   "id": "step0",
+   "project": "bd5f9b6dcd43a843506f879bb36500c0af37bedb774311cc439c350abb63a4d0",
+   "result": {
+    "committed": true,
+    "ok": true,
+    "project_id": "prj_000000000002",
+    "project_version": 1,
+    "state": {
+     "assets": [],
+     "content_end": {
+      "bar_beat": "1:1",
+      "beat": 0.0,
+      "seconds": 0.0
+     },
+     "length": {
+      "bar_beat": "9:1",
+      "beat": 32.0,
+      "explicit": true,
+      "seconds": 15.2381
+     },
+     "loop": {
+      "enabled": false,
+      "end": 16.0,
+      "start": 0.0
+     },
+     "markers": [],
+     "master": {
+      "kind": "master",
+      "mute": false,
+      "name": "Master",
+      "output": null,
+      "pan": 0.0,
+      "solo": false,
+      "track_id": "master",
+      "volume_db": 0.0
+     },
+     "metadata": {
+      "created": "<VOLATILE>",
+      "title": "Sidechain Demo"
+     },
+     "name": "Sidechain Demo",
+     "project_id": "prj_000000000002",
+     "sample_rate": 48000,
+     "sections": [],
+     "tempo": [
+      {
+       "beat": 0.0,
+       "bpm": 126.0,
+       "ramp": false
+      }
+     ],
+     "time_signatures": [
+      {
+       "bar": 1,
+       "beat": 0.0,
+       "signature": "4/4"
+      }
+     ],
+     "tracks": []
+    },
+    "tool": "create_project"
+   },
+   "tool": "create_project"
+  },
+  {
+   "id": "kick",
+   "project": "491096e75ad488b1f6b3583a37bed46954edf4e2e1918d1f7193b52597b936ad",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "routing",
+      "tracks"
+     ],
+     "updated": []
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Create Track",
+    "project_version": 2,
+    "result": {
+     "instrument_device_id": "dev_000000000004",
+     "track_id": "trk_000000000003"
+    },
+    "tool": "create_track"
+   },
+   "tool": "create_track"
+  },
+  {
+   "id": "bass",
+   "project": "8c70b5823ae96ebfcd19edcf73d94ee6cbe85c0fd3b5344c35745852ac315df6",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "routing",
+      "tracks"
+     ],
+     "updated": []
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Create Track",
+    "project_version": 3,
+    "result": {
+     "instrument_device_id": "dev_000000000006",
+     "track_id": "trk_000000000005"
+    },
+    "tool": "create_track"
+   },
+   "tool": "create_track"
+  },
+  {
+   "id": "step3",
+   "project": "4bc03c6f205e7d687ca46fe583f09d673c1f420ae77c1b4648a9e13994079f98",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips",
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000003",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Create MIDI Clip",
+    "project_version": 4,
+    "result": {
+     "clip_id": "clp_000000000008",
+     "end_seconds": 15.238095238095237,
+     "length_beats": 32.0,
+     "note_ids": [
+      "n_000000000007"
+     ],
+     "start_beat": 0.0,
+     "start_seconds": 0.0
+    },
+    "tool": "create_midi_clip"
+   },
+   "tool": "create_midi_clip"
+  },
+  {
+   "id": "step4",
+   "project": "6524fe7eeb98d80ae8918c8e2e060186fb75219da905b3715c8ddc737e1ad79d",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips",
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000005",
+       "kind": "track"
+      }
+     ]
+    },
+    "clip_id": "clp_000000000073",
+    "committed": true,
+    "content_beats": 32.0,
+    "dry_run": false,
+    "note_count": 64,
+    "ok": true,
+    "operation": "Create MIDI Clip",
+    "pitch_range": [
+     37,
+     41
+    ],
+    "project_version": 5,
+    "result": {
+     "clip_id": "clp_000000000073",
+     "end_seconds": 15.238095238095237,
+     "length_beats": 32.0,
+     "note_ids": [
+      "n_000000000009",
+      "n_000000000010",
+      "n_000000000011",
+      "n_000000000012",
+      "n_000000000013",
+      "n_000000000014",
+      "n_000000000015",
+      "n_000000000016",
+      "n_000000000017",
+      "n_000000000018",
+      "n_000000000019",
+      "n_000000000020",
+      "n_000000000021",
+      "n_000000000022",
+      "n_000000000023",
+      "n_000000000024",
+      "n_000000000025",
+      "n_000000000026",
+      "n_000000000027",
+      "n_000000000028",
+      "n_000000000029",
+      "n_000000000030",
+      "n_000000000031",
+      "n_000000000032",
+      "n_000000000033",
+      "n_000000000034",
+      "n_000000000035",
+      "n_000000000036",
+      "n_000000000037",
+      "n_000000000038",
+      "n_000000000039",
+      "n_000000000040",
+      "n_000000000041",
+      "n_000000000042",
+      "n_000000000043",
+      "n_000000000044",
+      "n_000000000045",
+      "n_000000000046",
+      "n_000000000047",
+      "n_000000000048",
+      "n_000000000049",
+      "n_000000000050",
+      "n_000000000051",
+      "n_000000000052",
+      "n_000000000053",
+      "n_000000000054",
+      "n_000000000055",
+      "n_000000000056",
+      "n_000000000057",
+      "n_000000000058",
+      "n_000000000059",
+      "n_000000000060",
+      "n_000000000061",
+      "n_000000000062",
+      "n_000000000063",
+      "n_000000000064",
+      "n_000000000065",
+      "n_000000000066",
+      "n_000000000067",
+      "n_000000000068",
+      "n_000000000069",
+      "n_000000000070",
+      "n_000000000071",
+      "n_000000000072"
+     ],
+     "start_beat": 0.0,
+     "start_seconds": 0.0
+    },
+    "tool": "generate_midi"
+   },
+   "tool": "generate_midi"
+  },
+  {
+   "id": "step5",
+   "project": "81bd1ca06c87e775b8258b39fbfb71d587f64cce39c58b30e891a06c2a027e13",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "mixer"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000005",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Track Volume",
+    "project_version": 6,
+    "result": {
+     "mute": false,
+     "pan": 0.0,
+     "solo": false,
+     "solo_safe": false,
+     "volume_db": 4.0
+    },
+    "tool": "set_track_volume"
+   },
+   "tool": "set_track_volume"
+  },
+  {
+   "id": "before",
+   "project": "81bd1ca06c87e775b8258b39fbfb71d587f64cce39c58b30e891a06c2a027e13",
+   "result": {
+    "analysis": {
+     "balance_db": 0.0,
+     "channels": 2,
+     "clip_events": 0,
+     "clipped_samples": 0,
+     "correlation": 1.0,
+     "crest_factor_db": 7.224911394149722,
+     "dc_offset": [
+      0.00012,
+      0.00012
+     ],
+     "duration_seconds": "<VOLATILE>",
+     "integrated_lufs": -10.98236374998129,
+     "kind": {
+      "estimated": [
+       "true_peak_dbtp",
+       "plr_db"
+      ],
+      "measured": [
+       "sample_peak_dbfs",
+       "rms_dbfs",
+       "integrated_lufs",
+       "momentary_max_lufs",
+       "short_term_max_lufs",
+       "loudness_range_lu",
+       "clipped_samples",
+       "correlation",
+       "octave_bands_db"
+      ]
+     },
+     "leading_silence_seconds": 0.0,
+     "loudness_range_lu": 0.5086320013716623,
+     "min_correlation_400ms": 1.0,
+     "momentary_max_lufs": -9.238315406147963,
+     "nonfinite_samples": 0,
+     "octave_bands_db": {
+      "1000": -56.26139289928092,
+      "125": -10.525785075692976,
+      "16000": -70.02747459688851,
+      "2000": -61.96181805311759,
+      "250": -28.74640849430491,
+      "31.5": -26.600967493726095,
+      "4000": -65.44932543272074,
+      "500": -42.41196389008315,
+      "63": -0.42419709930536886,
+      "8000": -68.30199407774992
+     },
+     "over_full_scale_samples": 0,
+     "plr_db": 6.67256775873748,
+     "rms_dbfs": -11.534887949317298,
+     "sample_peak_dbfs": -4.309976555167576,
+     "sample_rate": 48000,
+     "short_term_max_lufs": -10.602151183437366,
+     "side_to_mid_db": -120.0,
+     "silence_regions": [],
+     "spectral_centroid_hz": 80.48694228885427,
+     "trailing_silence_seconds": 0.0,
+     "true_peak_dbtp": -4.309795991243811
+    },
+    "issues": [
+     {
+      "code": "LOW_END_HEAVY",
+      "message": "the 63 Hz octave dominates the spectrum",
+      "severity": "info"
+     }
+    ],
+    "latency_samples": 0,
+    "missing_media": [],
+    "ok": true,
+    "path": "<ROOT>/workspaces/new-prj_000000000002/cache/previews/preview-20260101-120000-000000.wav",
+    "range_beats": [
+     0.0,
+     32.0
+    ],
+    "realtime_factor": "<VOLATILE>",
+    "render_seconds": "<VOLATILE>",
+    "sample_rate": 48000,
+    "seconds": 15.238,
+    "tail_seconds": 0.0,
+    "tool": "analyze_audio",
+    "warnings": []
+   },
+   "tool": "analyze_audio"
+  },
+  {
+   "id": "comp",
+   "project": "af316f3b0839b854194dac78ebe716237e26526b990eb45484b245fc91a1104b",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "devices"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000005",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Add Effect",
+    "project_version": 7,
+    "result": {
+     "device_id": "dev_000000000075",
+     "index": 0,
+     "params": {
+      "attack_ms": 0.5,
+      "auto_makeup": false,
+      "detector": "peak",
+      "knee_db": 3.0,
+      "makeup_db": 0.0,
+      "mix": 1.0,
+      "ratio": 8.0,
+      "release_ms": 160.0,
+      "sidechain": true,
+      "sidechain_hpf_hz": 20.0,
+      "sidechain_lpf_hz": 150.0,
+      "threshold_db": -30.0
+     }
+    },
+    "tool": "add_effect"
+   },
+   "tool": "add_effect"
+  },
+  {
+   "id": "step8",
+   "project": "68660a958aa6dc22ca182ea5e037900f92ce6089265d0cbf72689bd60ac736c7",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "devices"
+     ],
+     "updated": [
+      {
+       "id": "dev_000000000075",
+       "kind": "device"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Set Parameter",
+    "params": {
+     "attack_ms": 0.5,
+     "auto_makeup": false,
+     "detector": "peak",
+     "knee_db": 3.0,
+     "makeup_db": 0.0,
+     "mix": 1.0,
+     "ratio": 8.0,
+     "release_ms": 140.0,
+     "sidechain": true,
+     "sidechain_hpf_hz": 20.0,
+     "sidechain_lpf_hz": 150.0,
+     "threshold_db": -32.0
+    },
+    "project_version": 8,
+    "result": {
+     "steps": [
+      {
+       "params": {
+        "release_ms": 140.0,
+        "threshold_db": -32.0
+       }
+      }
+     ]
+    },
+    "tool": "set_effect_parameter"
+   },
+   "tool": "set_effect_parameter"
+  },
+  {
+   "id": "step9",
+   "project": "9a4a57aafed77748eae4a9490769df267940dc6ec4b89240c9a56ef6ba36a1dc",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "devices"
+     ],
+     "updated": [
+      {
+       "id": "master",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Add Effect",
+    "project_version": 9,
+    "result": {
+     "device_id": "dev_000000000076",
+     "index": 0,
+     "params": {
+      "ceiling_db": -1.0,
+      "input_gain_db": 0.0,
+      "lookahead_ms": 2.0,
+      "release_ms": 60.0,
+      "true_peak": true
+     }
+    },
+    "tool": "add_effect"
+   },
+   "tool": "add_effect"
+  },
+  {
+   "id": "after",
+   "project": "9a4a57aafed77748eae4a9490769df267940dc6ec4b89240c9a56ef6ba36a1dc",
+   "result": {
+    "analysis": {
+     "balance_db": 0.0,
+     "channels": 2,
+     "clip_events": 0,
+     "clipped_samples": 0,
+     "correlation": 1.0,
+     "crest_factor_db": 8.481356077291775,
+     "dc_offset": [
+      -5.1e-05,
+      -5.1e-05
+     ],
+     "duration_seconds": "<VOLATILE>",
+     "integrated_lufs": -16.679926759333185,
+     "kind": {
+      "estimated": [
+       "true_peak_dbtp",
+       "plr_db"
+      ],
+      "measured": [
+       "sample_peak_dbfs",
+       "rms_dbfs",
+       "integrated_lufs",
+       "momentary_max_lufs",
+       "short_term_max_lufs",
+       "loudness_range_lu",
+       "clipped_samples",
+       "correlation",
+       "octave_bands_db"
+      ]
+     },
+     "leading_silence_seconds": 0.0,
+     "loudness_range_lu": 1.043854860662588,
+     "min_correlation_400ms": 1.0,
+     "momentary_max_lufs": -14.57553932789144,
+     "nonfinite_samples": 0,
+     "octave_bands_db": {
+      "1000": -52.152869380761786,
+      "125": -10.116482645021161,
+      "16000": -67.70459213044094,
+      "2000": -59.60475862590989,
+      "250": -27.56405954850413,
+      "31.5": -26.762903360599655,
+      "4000": -63.18880612120731,
+      "500": -37.44922572567032,
+      "63": -0.4687211974459231,
+      "8000": -65.9941231669683
+     },
+     "over_full_scale_samples": 0,
+     "plr_db": 7.923873934636266,
+     "rms_dbfs": -17.237473116435055,
+     "sample_peak_dbfs": -8.75611703914328,
+     "sample_rate": 48000,
+     "short_term_max_lufs": -15.660394492286908,
+     "side_to_mid_db": -120.0,
+     "silence_regions": [],
+     "spectral_centroid_hz": 81.01412382563899,
+     "trailing_silence_seconds": 0.0,
+     "true_peak_dbtp": -8.75605282469692
+    },
+    "issues": [
+     {
+      "code": "LOW_END_HEAVY",
+      "message": "the 63 Hz octave dominates the spectrum",
+      "severity": "info"
+     }
+    ],
+    "latency_samples": 102,
+    "missing_media": [],
+    "ok": true,
+    "path": "<ROOT>/workspaces/new-prj_000000000002/cache/previews/preview-20260101-120000-000000.wav",
+    "range_beats": [
+     0.0,
+     32.0
+    ],
+    "realtime_factor": "<VOLATILE>",
+    "render_seconds": "<VOLATILE>",
+    "sample_rate": 48000,
+    "seconds": 15.238,
+    "tail_seconds": 0.0,
+    "tool": "analyze_audio",
+    "warnings": []
+   },
+   "tool": "analyze_audio"
+  },
+  {
+   "id": "preview",
+   "project": "9a4a57aafed77748eae4a9490769df267940dc6ec4b89240c9a56ef6ba36a1dc",
+   "result": {
+    "created": "<VOLATILE>",
+    "elapsed_seconds": "<VOLATILE>",
+    "finished": "<VOLATILE>",
+    "kind": "render_preview",
+    "label": "Render preview",
+    "message": "measuring Bass",
+    "ok": true,
+    "operation_id": "op_000000000078",
+    "progress": 1.0,
+    "result": {
+     "analysis": {
+      "balance_db": 0.0,
+      "channels": 2,
+      "clip_events": 0,
+      "clipped_samples": 0,
+      "correlation": 1.0,
+      "crest_factor_db": 12.52810314654668,
+      "dc_offset": [
+       0.000228,
+       0.000228
+      ],
+      "duration_seconds": "<VOLATILE>",
+      "integrated_lufs": -15.381098675072968,
+      "kind": {
+       "estimated": [
+        "true_peak_dbtp",
+        "plr_db"
+       ],
+       "measured": [
+        "sample_peak_dbfs",
+        "rms_dbfs",
+        "integrated_lufs",
+        "momentary_max_lufs",
+        "short_term_max_lufs",
+        "loudness_range_lu",
+        "clipped_samples",
+        "correlation",
+        "octave_bands_db"
+       ]
+      },
+      "leading_silence_seconds": 0.0,
+      "loudness_range_lu": 0.8418887292839425,
+      "min_correlation_400ms": 0.9999999999999998,
+      "momentary_max_lufs": -13.571683225602316,
+      "nonfinite_samples": 0,
+      "octave_bands_db": {
+       "1000": -31.165975582624657,
+       "125": -8.400439548455891,
+       "16000": -34.32048666498405,
+       "2000": -44.0465628698764,
+       "250": -10.665902996025496,
+       "31.5": -27.302142523619352,
+       "4000": -45.00921627605628,
+       "500": -22.291881934477185,
+       "63": -1.1936111173845074,
+       "8000": -39.53661806471825
+      },
+      "over_full_scale_samples": 0,
+      "plr_db": 11.6503330664087,
+      "rms_dbfs": -16.258868755210948,
+      "sample_peak_dbfs": -3.7307656086642673,
+      "sample_rate": 48000,
+      "short_term_max_lufs": -14.656604792472054,
+      "side_to_mid_db": -200.0,
+      "silence_regions": [],
+      "spectral_centroid_hz": 111.99326701775777,
+      "trailing_silence_seconds": 0.30000000000000004,
+      "true_peak_dbtp": -3.7307656086642673
+     },
+     "issues": [
+      {
+       "code": "LOW_END_HEAVY",
+       "message": "the 63 Hz octave dominates the spectrum",
+       "severity": "info"
+      }
+     ],
+     "latency_samples": 102,
+     "missing_media": [],
+     "path": "<ROOT>/work/examples/output/sidechain_preview/preview.wav",
+     "range_beats": [
+      0.0,
+      32.0
+     ],
+     "realtime_factor": "<VOLATILE>",
+     "render_seconds": "<VOLATILE>",
+     "sample_rate": 48000,
+     "seconds": 15.646,
+     "tail_seconds": 0.408,
+     "track_levels": {
+      "trk_000000000003": {
+       "integrated_lufs": -21.07,
+       "name": "Kick",
+       "peak_dbfs": -9.64,
+       "short_term_max_lufs": -20.69
+      },
+      "trk_000000000005": {
+       "integrated_lufs": -16.68,
+       "name": "Bass",
+       "peak_dbfs": -8.76,
+       "short_term_max_lufs": -15.66
+      }
+     },
+     "warnings": []
+    },
+    "started": "<VOLATILE>",
+    "status": "succeeded",
+    "tool": "render_preview"
+   },
+   "tool": "render_preview"
+  },
+  {
+   "id": "step12",
+   "project": "9a4a57aafed77748eae4a9490769df267940dc6ec4b89240c9a56ef6ba36a1dc",
+   "result": {
+    "created": "<VOLATILE>",
+    "elapsed_seconds": "<VOLATILE>",
+    "finished": "<VOLATILE>",
+    "kind": "export_audio",
+    "label": "Export audio",
+    "message": "encoding",
+    "ok": true,
+    "operation_id": "op_000000000079",
+    "progress": 1.0,
+    "result": {
+     "analysis_before_gain": {
+      "balance_db": 0.0,
+      "channels": 2,
+      "clip_events": 0,
+      "clipped_samples": 0,
+      "correlation": 1.0,
+      "crest_factor_db": 12.52810314654668,
+      "dc_offset": [
+       0.000228,
+       0.000228
+      ],
+      "duration_seconds": "<VOLATILE>",
+      "integrated_lufs": -15.381098675072968,
+      "kind": {
+       "estimated": [
+        "true_peak_dbtp",
+        "plr_db"
+       ],
+       "measured": [
+        "sample_peak_dbfs",
+        "rms_dbfs",
+        "integrated_lufs",
+        "momentary_max_lufs",
+        "short_term_max_lufs",
+        "loudness_range_lu",
+        "clipped_samples",
+        "correlation",
+        "octave_bands_db"
+       ]
+      },
+      "leading_silence_seconds": 0.0,
+      "loudness_range_lu": 0.8418887292839425,
+      "min_correlation_400ms": 0.9999999999999998,
+      "momentary_max_lufs": -13.571683225602316,
+      "nonfinite_samples": 0,
+      "octave_bands_db": {
+       "1000": -31.165975582624657,
+       "125": -8.400439548455891,
+       "16000": -34.32048666498405,
+       "2000": -44.0465628698764,
+       "250": -10.665902996025496,
+       "31.5": -27.302142523619352,
+       "4000": -45.00921627605628,
+       "500": -22.291881934477185,
+       "63": -1.1936111173845074,
+       "8000": -39.53661806471825
+      },
+      "over_full_scale_samples": 0,
+      "plr_db": 11.6503330664087,
+      "rms_dbfs": -16.258868755210948,
+      "sample_peak_dbfs": -3.7307656086642673,
+      "sample_rate": 48000,
+      "short_term_max_lufs": -14.656604792472054,
+      "side_to_mid_db": -200.0,
+      "silence_regions": [],
+      "spectral_centroid_hz": 111.99326701775777,
+      "trailing_silence_seconds": 0.30000000000000004,
+      "true_peak_dbtp": -3.7307656086642673
+     },
+     "final_integrated_lufs": -15.38,
+     "final_true_peak_dbtp": -3.73,
+     "gain_db": 0.0,
+     "normalization_target_reached": null,
+     "outputs": [
+      {
+       "bit_depth": 24,
+       "bitrate_kbps": null,
+       "channels": 2,
+       "clipped_samples": 0,
+       "container": "wav",
+       "decoded_true_peak_dbtp": null,
+       "dithered": true,
+       "floating_point": false,
+       "frames": 751002,
+       "metadata_written": [
+        "title",
+        "software"
+       ],
+       "path": "<ROOT>/work/examples/output/sidechain_preview/sidechain-preview.wav",
+       "resampled_from": null,
+       "sample_rate": 48000,
+       "seconds": 15.645875,
+       "size_bytes": 4506126,
+       "verified": true
+      },
+      {
+       "bit_depth": null,
+       "bitrate_kbps": 256.9,
+       "channels": 2,
+       "clipped_samples": 0,
+       "container": "mp3",
+       "decoded_true_peak_dbtp": -3.71,
+       "dithered": false,
+       "floating_point": false,
+       "frames": 751002,
+       "metadata_written": [
+        "title",
+        "software"
+       ],
+       "path": "<ROOT>/work/examples/output/sidechain_preview/sidechain-preview.mp3",
+       "resampled_from": null,
+       "sample_rate": 48000,
+       "seconds": 15.645875,
+       "size_bytes": 502400,
+       "verified": true
+      }
+     ],
+     "warnings": []
+    },
+    "started": "<VOLATILE>",
+    "status": "succeeded",
+    "tool": "export_audio"
+   },
+   "tool": "export_audio"
+  },
+  {
+   "id": "step13",
+   "project": "9a4a57aafed77748eae4a9490769df267940dc6ec4b89240c9a56ef6ba36a1dc",
+   "result": {
+    "assets": 0,
+    "backup": null,
+    "committed": true,
+    "dirty": false,
+    "layout": "bundle",
+    "ok": true,
+    "path": "<ROOT>/work/examples/output/sidechain_preview/Sidechain Demo.sonara",
+    "project_sha256": "9a4a57aafed77748eae4a9490769df267940dc6ec4b89240c9a56ef6ba36a1dc",
+    "tool": "save_project"
+   },
+   "tool": "save_project"
+  }
+ ],
+ "undo": {
+  "hashes": [
+   "68660a958aa6dc22ca182ea5e037900f92ce6089265d0cbf72689bd60ac736c7",
+   "af316f3b0839b854194dac78ebe716237e26526b990eb45484b245fc91a1104b",
+   "81bd1ca06c87e775b8258b39fbfb71d587f64cce39c58b30e891a06c2a027e13",
+   "6524fe7eeb98d80ae8918c8e2e060186fb75219da905b3715c8ddc737e1ad79d",
+   "4bc03c6f205e7d687ca46fe583f09d673c1f420ae77c1b4648a9e13994079f98",
+   "8c70b5823ae96ebfcd19edcf73d94ee6cbe85c0fd3b5344c35745852ac315df6",
+   "491096e75ad488b1f6b3583a37bed46954edf4e2e1918d1f7193b52597b936ad",
+   "bd5f9b6dcd43a843506f879bb36500c0af37bedb774311cc439c350abb63a4d0"
+  ],
+  "labels": [
+   "Undo Add Effect",
+   "Undo Set Parameter",
+   "Undo Add Effect",
+   "Undo Track Volume",
+   "Undo Create MIDI Clip",
+   "Undo Create MIDI Clip",
+   "Undo Create Track",
+   "Undo Create Track"
+  ],
+  "moves": 8
+ },
+ "workflow": "examples/sidechain_preview.json"
+}

@@ -1,0 +1,238 @@
+{
+ "markers": [
+  [
+   64.0,
+   "Bridge"
+  ]
+ ],
+ "tempo": [
+  {
+   "beat": 0.0,
+   "bpm": 120.0,
+   "ramp": false
+  },
+  {
+   "beat": 48.0,
+   "bpm": 100.0,
+   "ramp": false
+  }
+ ],
+ "time_signatures": [
+  {
+   "bar": 0,
+   "denominator": 4,
+   "numerator": 4
+  }
+ ],
+ "tracks": [
+  {
+   "channel": 0,
+   "controls": [],
+   "name": "Piano",
+   "notes": [
+    {
+     "channel": 0,
+     "id": "n_000000002001",
+     "length": 1.0,
+     "pitch": 76,
+     "start": 1.0,
+     "velocity": 100
+    },
+    {
+     "channel": 0,
+     "id": "n_000000002002",
+     "length": 0.8999999999999999,
+     "pitch": 65,
+     "start": 2.5,
+     "velocity": 64
+    },
+    {
+     "channel": 0,
+     "id": "n_000000002003",
+     "length": 0.5,
+     "pitch": 62,
+     "start": 4.0,
+     "velocity": 33
+    },
+    {
+     "channel": 0,
+     "id": "n_000000002004",
+     "length": 1.0,
+     "pitch": 76,
+     "start": 5.0,
+     "velocity": 100
+    },
+    {
+     "channel": 0,
+     "id": "n_000000002005",
+     "length": 0.5,
+     "pitch": 62,
+     "start": 6.0,
+     "velocity": 33
+    },
+    {
+     "channel": 0,
+     "id": "n_000000002006",
+     "length": 1.0,
+     "pitch": 76,
+     "start": 7.0,
+     "velocity": 100
+    }
+   ],
+   "program": null
+  },
+  {
+   "channel": 1,
+   "controls": [],
+   "name": "Lead",
+   "notes": [
+    {
+     "channel": 0,
+     "id": "n_000000002007",
+     "length": 2.0,
+     "pitch": 48,
+     "start": 8.0,
+     "velocity": 100
+    },
+    {
+     "channel": 0,
+     "id": "n_000000002008",
+     "length": 2.0,
+     "pitch": 55,
+     "start": 10.0,
+     "velocity": 80
+    },
+    {
+     "channel": 0,
+     "id": "n_000000002009",
+     "length": 2.0,
+     "pitch": 48,
+     "start": 12.0,
+     "velocity": 100
+    },
+    {
+     "channel": 0,
+     "id": "n_000000002010",
+     "length": 2.0,
+     "pitch": 55,
+     "start": 14.0,
+     "velocity": 80
+    }
+   ],
+   "program": null
+  },
+  {
+   "channel": 2,
+   "controls": [],
+   "name": "Lead",
+   "notes": [
+    {
+     "channel": 0,
+     "id": "n_000000002011",
+     "length": 1.0,
+     "pitch": 60,
+     "start": 32.0,
+     "velocity": 90
+    },
+    {
+     "channel": 0,
+     "id": "n_000000002012",
+     "length": 1.0,
+     "pitch": 64,
+     "start": 33.0,
+     "velocity": 80
+    },
+    {
+     "channel": 0,
+     "id": "n_000000002013",
+     "length": 1.0,
+     "pitch": 67,
+     "start": 34.0,
+     "velocity": 100
+    },
+    {
+     "channel": 0,
+     "id": "n_000000002014",
+     "length": 1.0,
+     "pitch": 72,
+     "start": 35.0,
+     "velocity": 70
+    }
+   ],
+   "program": null
+  },
+  {
+   "channel": 9,
+   "controls": [],
+   "name": "Beat (Drums)",
+   "notes": [
+    {
+     "channel": 0,
+     "id": "n_000000002015",
+     "length": 0.5,
+     "pitch": 36,
+     "start": 32.0,
+     "velocity": 110
+    },
+    {
+     "channel": 0,
+     "id": "n_000000002016",
+     "length": 0.5,
+     "pitch": 42,
+     "start": 32.5,
+     "velocity": 110
+    },
+    {
+     "channel": 0,
+     "id": "n_000000002017",
+     "length": 0.5,
+     "pitch": 38,
+     "start": 33.0,
+     "velocity": 110
+    },
+    {
+     "channel": 0,
+     "id": "n_000000002018",
+     "length": 0.5,
+     "pitch": 42,
+     "start": 33.5,
+     "velocity": 110
+    },
+    {
+     "channel": 0,
+     "id": "n_000000002019",
+     "length": 0.5,
+     "pitch": 36,
+     "start": 34.0,
+     "velocity": 110
+    },
+    {
+     "channel": 0,
+     "id": "n_000000002020",
+     "length": 0.5,
+     "pitch": 36,
+     "start": 34.5,
+     "velocity": 110
+    },
+    {
+     "channel": 0,
+     "id": "n_000000002021",
+     "length": 0.5,
+     "pitch": 38,
+     "start": 35.0,
+     "velocity": 110
+    },
+    {
+     "channel": 0,
+     "id": "n_000000002022",
+     "length": 0.5,
+     "pitch": 46,
+     "start": 35.5,
+     "velocity": 110
+    }
+   ],
+   "program": null
+  }
+ ],
+ "warnings": []
+}

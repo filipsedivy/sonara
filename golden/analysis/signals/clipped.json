@@ -1,0 +1,86 @@
+{
+ "analysis": {
+  "balance_db": 0.0,
+  "channels": 2,
+  "clip_events": 110,
+  "clipped_samples": 10070,
+  "correlation": 1.0,
+  "crest_factor_db": 0.4904232258104475,
+  "dc_offset": [
+   0.0,
+   0.0
+  ],
+  "duration_seconds": 0.25,
+  "integrated_lufs": 1.6882755925635204,
+  "kind": {
+   "estimated": [
+    "true_peak_dbtp",
+    "plr_db"
+   ],
+   "measured": [
+    "sample_peak_dbfs",
+    "rms_dbfs",
+    "integrated_lufs",
+    "momentary_max_lufs",
+    "short_term_max_lufs",
+    "loudness_range_lu",
+    "clipped_samples",
+    "correlation",
+    "octave_bands_db"
+   ]
+  },
+  "leading_silence_seconds": 0.0,
+  "loudness_range_lu": 0.0,
+  "min_correlation_400ms": null,
+  "momentary_max_lufs": 1.6882755925635204,
+  "nonfinite_samples": 0,
+  "octave_bands_db": {
+   "1000": -16.825614144562703,
+   "125": -61.42895871468339,
+   "16000": -50.83641641898232,
+   "2000": -21.42935022332105,
+   "250": -0.5135097554259462,
+   "31.5": -93.60861423470732,
+   "4000": -33.96519563974669,
+   "500": -10.804984209839557,
+   "63": -86.41164459238172,
+   "8000": -42.22497229743443
+  },
+  "over_full_scale_samples": 0,
+  "plr_db": -1.6131578702302243,
+  "rms_dbfs": -0.4904232258104475,
+  "sample_peak_dbfs": 0.0,
+  "sample_rate": 48000,
+  "short_term_lufs": [
+   1.69
+  ],
+  "short_term_max_lufs": 1.6882755925635204,
+  "side_to_mid_db": -120.0,
+  "silence_regions": [],
+  "spectral_centroid_hz": 287.03790562185134,
+  "trailing_silence_seconds": 0.0,
+  "true_peak_dbtp": 0.07511772233329608
+ },
+ "block": 65536,
+ "channels": 2,
+ "frames": 12000,
+ "issues": [
+  {
+   "code": "CLIPPING",
+   "message": "110 probable clipping events (10070 samples at full scale)",
+   "severity": "warning"
+  },
+  {
+   "code": "TRUE_PEAK",
+   "message": "true peak 0.08 dBTP is above -1 dBTP (risk of codec clipping)",
+   "severity": "warning"
+  },
+  {
+   "code": "VERY_LOUD",
+   "message": "integrated loudness 1.7 LUFS is very loud (heavily limited?)",
+   "severity": "warning"
+  }
+ ],
+ "sample_rate": 48000,
+ "source": "plugins/signals/clipped.f64"
+}

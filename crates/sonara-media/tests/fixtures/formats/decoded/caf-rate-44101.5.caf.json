@@ -1,0 +1,8 @@
+{
+ "dtype": "f64le",
+ "shape": [
+  401,
+  1
+ ],
+ "source": "inputs/caf-rate-44101.5.caf"
+}

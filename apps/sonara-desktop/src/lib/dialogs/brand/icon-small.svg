@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Sonara</title>
+  <defs>
+    <linearGradient id="mark" gradientUnits="userSpaceOnUse" x1="300" y1="230" x2="724" y2="794"><stop offset="0" stop-color="#4C9BF0"/><stop offset="1" stop-color="#7D6BD9"/></linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#23252B"/><stop offset="1" stop-color="#16171A"/>
+    </linearGradient>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#bg)"/>
+  <rect x="100.5" y="100.5" width="823" height="823" rx="185.5" fill="none" stroke="#FFFFFF" stroke-opacity="0.06"/>
+  <path d="M 610.70 309.64 A 125.25 125.25 0 1 0 512.00 512.00 A 136.78 136.78 0 1 1 404.21 733.00" fill="none" stroke="url(#mark)" stroke-width="107.12" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

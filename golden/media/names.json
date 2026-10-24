@@ -1,0 +1,588 @@
+{
+ "imports": [
+  {
+   "asset": {
+    "channels": 2,
+    "format": "WAV",
+    "frames": 96000,
+    "id": "med_import",
+    "kind": "audio",
+    "location": "embedded",
+    "metadata": {},
+    "name": "tone-48k-stereo-24bit.wav",
+    "original_path": "<ROOT>/fixtures/tone-48k-stereo-24bit.wav",
+    "path": "media/audio/med_import-tone-48k-stereo-24bit.wav",
+    "relative_hint": null,
+    "sample_rate": 48000,
+    "sha256": "77f1f43332d8c3c547f544ac6ae3101316d6fdbe12c341eb29a6028977f5d0bf",
+    "size_bytes": 576044,
+    "subtype": "PCM_24"
+   },
+   "copied": true,
+   "fixture": "fixtures/tone-48k-stereo-24bit.wav",
+   "kind": "audio",
+   "mode": "copy",
+   "warnings": []
+  },
+  {
+   "asset": {
+    "channels": 2,
+    "format": "WAV",
+    "frames": 96000,
+    "id": "med_import",
+    "kind": "impulse",
+    "location": "embedded",
+    "metadata": {},
+    "name": "tone-48k-stereo-24bit.wav",
+    "original_path": "<ROOT>/fixtures/tone-48k-stereo-24bit.wav",
+    "path": "media/impulses/med_import-tone-48k-stereo-24bit.wav",
+    "relative_hint": null,
+    "sample_rate": 48000,
+    "sha256": "77f1f43332d8c3c547f544ac6ae3101316d6fdbe12c341eb29a6028977f5d0bf",
+    "size_bytes": 576044,
+    "subtype": "PCM_24"
+   },
+   "copied": true,
+   "fixture": "fixtures/tone-48k-stereo-24bit.wav",
+   "kind": "impulse",
+   "mode": "copy",
+   "warnings": []
+  },
+  {
+   "asset": {
+    "channels": 2,
+    "format": "WAV",
+    "frames": 96000,
+    "id": "med_import",
+    "kind": "audio",
+    "location": "linked",
+    "metadata": {},
+    "name": "tone-48k-stereo-24bit.wav",
+    "original_path": "<ROOT>/fixtures/tone-48k-stereo-24bit.wav",
+    "path": "<ROOT>/fixtures/tone-48k-stereo-24bit.wav",
+    "relative_hint": null,
+    "sample_rate": 48000,
+    "sha256": "77f1f43332d8c3c547f544ac6ae3101316d6fdbe12c341eb29a6028977f5d0bf",
+    "size_bytes": 576044,
+    "subtype": "PCM_24"
+   },
+   "copied": null,
+   "fixture": "fixtures/tone-48k-stereo-24bit.wav",
+   "kind": "audio",
+   "mode": "link",
+   "warnings": []
+  },
+  {
+   "asset": {
+    "channels": 1,
+    "format": "WAV",
+    "frames": 66150,
+    "id": "med_import",
+    "kind": "audio",
+    "location": "embedded",
+    "metadata": {},
+    "name": "tone-44k1-mono-16bit.wav",
+    "original_path": "<ROOT>/fixtures/tone-44k1-mono-16bit.wav",
+    "path": "media/audio/med_import-tone-44k1-mono-16bit.wav",
+    "relative_hint": null,
+    "sample_rate": 44100,
+    "sha256": "771f9498cc8ad71f19fdb0aed6052355a770897aea1b3bb12283ffc5768a9163",
+    "size_bytes": 132344,
+    "subtype": "PCM_16"
+   },
+   "copied": true,
+   "fixture": "fixtures/tone-44k1-mono-16bit.wav",
+   "kind": "audio",
+   "mode": "copy",
+   "warnings": []
+  },
+  {
+   "asset": {
+    "channels": 1,
+    "format": "WAV",
+    "frames": 66150,
+    "id": "med_import",
+    "kind": "impulse",
+    "location": "embedded",
+    "metadata": {},
+    "name": "tone-44k1-mono-16bit.wav",
+    "original_path": "<ROOT>/fixtures/tone-44k1-mono-16bit.wav",
+    "path": "media/impulses/med_import-tone-44k1-mono-16bit.wav",
+    "relative_hint": null,
+    "sample_rate": 44100,
+    "sha256": "771f9498cc8ad71f19fdb0aed6052355a770897aea1b3bb12283ffc5768a9163",
+    "size_bytes": 132344,
+    "subtype": "PCM_16"
+   },
+   "copied": true,
+   "fixture": "fixtures/tone-44k1-mono-16bit.wav",
+   "kind": "impulse",
+   "mode": "copy",
+   "warnings": []
+  },
+  {
+   "asset": {
+    "channels": 1,
+    "format": "WAV",
+    "frames": 66150,
+    "id": "med_import",
+    "kind": "audio",
+    "location": "linked",
+    "metadata": {},
+    "name": "tone-44k1-mono-16bit.wav",
+    "original_path": "<ROOT>/fixtures/tone-44k1-mono-16bit.wav",
+    "path": "<ROOT>/fixtures/tone-44k1-mono-16bit.wav",
+    "relative_hint": null,
+    "sample_rate": 44100,
+    "sha256": "771f9498cc8ad71f19fdb0aed6052355a770897aea1b3bb12283ffc5768a9163",
+    "size_bytes": 132344,
+    "subtype": "PCM_16"
+   },
+   "copied": null,
+   "fixture": "fixtures/tone-44k1-mono-16bit.wav",
+   "kind": "audio",
+   "mode": "link",
+   "warnings": []
+  },
+  {
+   "asset": {
+    "channels": 2,
+    "format": "FLAC",
+    "frames": 48000,
+    "id": "med_import",
+    "kind": "audio",
+    "location": "embedded",
+    "metadata": {},
+    "name": "chord-48k-stereo.flac",
+    "original_path": "<ROOT>/fixtures/chord-48k-stereo.flac",
+    "path": "media/audio/med_import-chord-48k-stereo.flac",
+    "relative_hint": null,
+    "sample_rate": 48000,
+    "sha256": "d713f5c2eb74d1c5f2b3012323c45ba705474c35c2855bf16267f41cf1153093",
+    "size_bytes": 33667,
+    "subtype": "PCM_16"
+   },
+   "copied": true,
+   "fixture": "fixtures/chord-48k-stereo.flac",
+   "kind": "audio",
+   "mode": "copy",
+   "warnings": []
+  },
+  {
+   "asset": {
+    "channels": 2,
+    "format": "FLAC",
+    "frames": 48000,
+    "id": "med_import",
+    "kind": "impulse",
+    "location": "embedded",
+    "metadata": {},
+    "name": "chord-48k-stereo.flac",
+    "original_path": "<ROOT>/fixtures/chord-48k-stereo.flac",
+    "path": "media/impulses/med_import-chord-48k-stereo.flac",
+    "relative_hint": null,
+    "sample_rate": 48000,
+    "sha256": "d713f5c2eb74d1c5f2b3012323c45ba705474c35c2855bf16267f41cf1153093",
+    "size_bytes": 33667,
+    "subtype": "PCM_16"
+   },
+   "copied": true,
+   "fixture": "fixtures/chord-48k-stereo.flac",
+   "kind": "impulse",
+   "mode": "copy",
+   "warnings": []
+  },
+  {
+   "asset": {
+    "channels": 2,
+    "format": "FLAC",
+    "frames": 48000,
+    "id": "med_import",
+    "kind": "audio",
+    "location": "linked",
+    "metadata": {},
+    "name": "chord-48k-stereo.flac",
+    "original_path": "<ROOT>/fixtures/chord-48k-stereo.flac",
+    "path": "<ROOT>/fixtures/chord-48k-stereo.flac",
+    "relative_hint": null,
+    "sample_rate": 48000,
+    "sha256": "d713f5c2eb74d1c5f2b3012323c45ba705474c35c2855bf16267f41cf1153093",
+    "size_bytes": 33667,
+    "subtype": "PCM_16"
+   },
+   "copied": null,
+   "fixture": "fixtures/chord-48k-stereo.flac",
+   "kind": "audio",
+   "mode": "link",
+   "warnings": []
+  },
+  {
+   "asset": {
+    "channels": 2,
+    "format": "MP3",
+    "frames": 44100,
+    "id": "med_import",
+    "kind": "audio",
+    "location": "embedded",
+    "metadata": {},
+    "name": "saw-44k1-stereo.mp3",
+    "original_path": "<ROOT>/fixtures/saw-44k1-stereo.mp3",
+    "path": "media/audio/med_import-saw-44k1-stereo.mp3",
+    "relative_hint": null,
+    "sample_rate": 44100,
+    "sha256": "2a4be49792d94ed855f07509dce29505139ec7edfbab1e29bbaa5f2f33a69e5a",
+    "size_bytes": 9839,
+    "subtype": "MPEG_LAYER_III"
+   },
+   "copied": true,
+   "fixture": "fixtures/saw-44k1-stereo.mp3",
+   "kind": "audio",
+   "mode": "copy",
+   "warnings": [
+    "saw-44k1-stereo.mp3 is lossy (MPEG_LAYER_III); it is kept as-is and decoded for playback"
+   ]
+  },
+  {
+   "asset": {
+    "channels": 2,
+    "format": "MP3",
+    "frames": 44100,
+    "id": "med_import",
+    "kind": "impulse",
+    "location": "embedded",
+    "metadata": {},
+    "name": "saw-44k1-stereo.mp3",
+    "original_path": "<ROOT>/fixtures/saw-44k1-stereo.mp3",
+    "path": "media/impulses/med_import-saw-44k1-stereo.mp3",
+    "relative_hint": null,
+    "sample_rate": 44100,
+    "sha256": "2a4be49792d94ed855f07509dce29505139ec7edfbab1e29bbaa5f2f33a69e5a",
+    "size_bytes": 9839,
+    "subtype": "MPEG_LAYER_III"
+   },
+   "copied": true,
+   "fixture": "fixtures/saw-44k1-stereo.mp3",
+   "kind": "impulse",
+   "mode": "copy",
+   "warnings": [
+    "saw-44k1-stereo.mp3 is lossy (MPEG_LAYER_III); it is kept as-is and decoded for playback"
+   ]
+  },
+  {
+   "asset": {
+    "channels": 2,
+    "format": "MP3",
+    "frames": 44100,
+    "id": "med_import",
+    "kind": "audio",
+    "location": "linked",
+    "metadata": {},
+    "name": "saw-44k1-stereo.mp3",
+    "original_path": "<ROOT>/fixtures/saw-44k1-stereo.mp3",
+    "path": "<ROOT>/fixtures/saw-44k1-stereo.mp3",
+    "relative_hint": null,
+    "sample_rate": 44100,
+    "sha256": "2a4be49792d94ed855f07509dce29505139ec7edfbab1e29bbaa5f2f33a69e5a",
+    "size_bytes": 9839,
+    "subtype": "MPEG_LAYER_III"
+   },
+   "copied": null,
+   "fixture": "fixtures/saw-44k1-stereo.mp3",
+   "kind": "audio",
+   "mode": "link",
+   "warnings": [
+    "saw-44k1-stereo.mp3 is lossy (MPEG_LAYER_III); it is kept as-is and decoded for playback"
+   ]
+  },
+  {
+   "asset": {
+    "channels": 2,
+    "format": "WAV",
+    "frames": 24000,
+    "id": "med_import",
+    "kind": "audio",
+    "location": "embedded",
+    "metadata": {},
+    "name": "ir-48k-stereo-float.wav",
+    "original_path": "<ROOT>/fixtures/ir-48k-stereo-float.wav",
+    "path": "media/audio/med_import-ir-48k-stereo-float.wav",
+    "relative_hint": null,
+    "sample_rate": 48000,
+    "sha256": "f26fc00c14259c07feea8022ec20622b125fa98b0ece1ea5fb6dfc3ab3dcfcce",
+    "size_bytes": 192056,
+    "subtype": "FLOAT"
+   },
+   "copied": true,
+   "fixture": "fixtures/ir-48k-stereo-float.wav",
+   "kind": "audio",
+   "mode": "copy",
+   "warnings": []
+  },
+  {
+   "asset": {
+    "channels": 2,
+    "format": "WAV",
+    "frames": 24000,
+    "id": "med_import",
+    "kind": "impulse",
+    "location": "embedded",
+    "metadata": {},
+    "name": "ir-48k-stereo-float.wav",
+    "original_path": "<ROOT>/fixtures/ir-48k-stereo-float.wav",
+    "path": "media/impulses/med_import-ir-48k-stereo-float.wav",
+    "relative_hint": null,
+    "sample_rate": 48000,
+    "sha256": "f26fc00c14259c07feea8022ec20622b125fa98b0ece1ea5fb6dfc3ab3dcfcce",
+    "size_bytes": 192056,
+    "subtype": "FLOAT"
+   },
+   "copied": true,
+   "fixture": "fixtures/ir-48k-stereo-float.wav",
+   "kind": "impulse",
+   "mode": "copy",
+   "warnings": []
+  },
+  {
+   "asset": {
+    "channels": 2,
+    "format": "WAV",
+    "frames": 24000,
+    "id": "med_import",
+    "kind": "audio",
+    "location": "linked",
+    "metadata": {},
+    "name": "ir-48k-stereo-float.wav",
+    "original_path": "<ROOT>/fixtures/ir-48k-stereo-float.wav",
+    "path": "<ROOT>/fixtures/ir-48k-stereo-float.wav",
+    "relative_hint": null,
+    "sample_rate": 48000,
+    "sha256": "f26fc00c14259c07feea8022ec20622b125fa98b0ece1ea5fb6dfc3ab3dcfcce",
+    "size_bytes": 192056,
+    "subtype": "FLOAT"
+   },
+   "copied": null,
+   "fixture": "fixtures/ir-48k-stereo-float.wav",
+   "kind": "audio",
+   "mode": "link",
+   "warnings": []
+  },
+  {
+   "error": {
+    "code": "UNSUPPORTED",
+    "message": "not-media.wav: format not supported by libsndfile and FFmpeg is not installed (Error opening '<ROOT>/fixtures/not-media.wav': Format not recognised.)"
+   },
+   "fixture": "fixtures/not-media.wav",
+   "kind": "audio",
+   "mode": "copy"
+  },
+  {
+   "error": {
+    "code": "UNSUPPORTED",
+    "message": "not-media.wav: format not supported by libsndfile and FFmpeg is not installed (Error opening '<ROOT>/fixtures/not-media.wav': Format not recognised.)"
+   },
+   "fixture": "fixtures/not-media.wav",
+   "kind": "impulse",
+   "mode": "copy"
+  },
+  {
+   "error": {
+    "code": "UNSUPPORTED",
+    "message": "not-media.wav: format not supported by libsndfile and FFmpeg is not installed (Error opening '<ROOT>/fixtures/not-media.wav': Format not recognised.)"
+   },
+   "fixture": "fixtures/not-media.wav",
+   "kind": "audio",
+   "mode": "link"
+  }
+ ],
+ "paths": [
+  {
+   "copy_path": "media/audio/med_x-Kick-Drum.wav",
+   "kind": "audio",
+   "source": "Kick Drum.WAV",
+   "stem": "Kick Drum",
+   "suffix": ".WAV"
+  },
+  {
+   "copy_path": "media/impulses/med_x-Kick-Drum.wav",
+   "kind": "impulse",
+   "source": "Kick Drum.WAV",
+   "stem": "Kick Drum",
+   "suffix": ".WAV"
+  },
+  {
+   "copy_path": "media/audio/med_x-take.final.flac",
+   "kind": "audio",
+   "source": "take.final.flac",
+   "stem": "take.final",
+   "suffix": ".flac"
+  },
+  {
+   "copy_path": "media/impulses/med_x-take.final.flac",
+   "kind": "impulse",
+   "source": "take.final.flac",
+   "stem": "take.final",
+   "suffix": ".flac"
+  },
+  {
+   "copy_path": "media/audio/med_x-hidden",
+   "kind": "audio",
+   "source": ".hidden",
+   "stem": ".hidden",
+   "suffix": ""
+  },
+  {
+   "copy_path": "media/impulses/med_x-hidden",
+   "kind": "impulse",
+   "source": ".hidden",
+   "stem": ".hidden",
+   "suffix": ""
+  },
+  {
+   "copy_path": "media/audio/med_x-no-extension",
+   "kind": "audio",
+   "source": "no-extension",
+   "stem": "no-extension",
+   "suffix": ""
+  },
+  {
+   "copy_path": "media/impulses/med_x-no-extension",
+   "kind": "impulse",
+   "source": "no-extension",
+   "stem": "no-extension",
+   "suffix": ""
+  },
+  {
+   "copy_path": "media/audio/med_x-trailing",
+   "kind": "audio",
+   "source": "trailing.",
+   "stem": "trailing.",
+   "suffix": ""
+  },
+  {
+   "copy_path": "media/impulses/med_x-trailing",
+   "kind": "impulse",
+   "source": "trailing.",
+   "stem": "trailing.",
+   "suffix": ""
+  },
+  {
+   "copy_path": "media/audio/med_x-Cestina.mp3",
+   "kind": "audio",
+   "source": "Čeština.Mp3",
+   "stem": "Čeština",
+   "suffix": ".Mp3"
+  },
+  {
+   "copy_path": "media/impulses/med_x-Cestina.mp3",
+   "kind": "impulse",
+   "source": "Čeština.Mp3",
+   "stem": "Čeština",
+   "suffix": ".Mp3"
+  },
+  {
+   "copy_path": "media/audio/med_x-a.b.c.aiff",
+   "kind": "audio",
+   "source": "a.b.c.Aiff",
+   "stem": "a.b.c",
+   "suffix": ".Aiff"
+  },
+  {
+   "copy_path": "media/impulses/med_x-a.b.c.aiff",
+   "kind": "impulse",
+   "source": "a.b.c.Aiff",
+   "stem": "a.b.c",
+   "suffix": ".Aiff"
+  }
+ ],
+ "recordings": [
+  {
+   "name": "Audio 1",
+   "rel": "media/audio/med_rec-Audio-1.wav"
+  },
+  {
+   "name": "Vocals (take 2)",
+   "rel": "media/audio/med_rec-Vocals-take-2.wav"
+  },
+  {
+   "name": "Žluťoučký",
+   "rel": "media/audio/med_rec-Zlutoucky.wav"
+  }
+ ],
+ "safe_stem": [
+  {
+   "limit": 48,
+   "name": "Kick Drum",
+   "safe_stem": "Kick-Drum"
+  },
+  {
+   "limit": 48,
+   "name": "Příliš žluťoučký kůň úpěl ďábelské ódy",
+   "safe_stem": "Prilis-zlutoucky-kun-upel-dabelske-ody"
+  },
+  {
+   "limit": 48,
+   "name": "Ångström—café ﬁnal",
+   "safe_stem": "Angstromcafe-final"
+  },
+  {
+   "limit": 48,
+   "name": "...--hidden--...",
+   "safe_stem": "hidden"
+  },
+  {
+   "limit": 48,
+   "name": "日本語のファイル",
+   "safe_stem": "audio"
+  },
+  {
+   "limit": 48,
+   "name": "",
+   "safe_stem": "audio"
+  },
+  {
+   "limit": 48,
+   "name": "a/b\\c:d*e?f",
+   "safe_stem": "a-b-c-d-e-f"
+  },
+  {
+   "limit": 48,
+   "name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "safe_stem": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  {
+   "limit": 48,
+   "name": "name.with.dots.",
+   "safe_stem": "name.with.dots"
+  },
+  {
+   "limit": 48,
+   "name": "Ⅻ ① ㎒ ½",
+   "safe_stem": "XII-1-MHz-12"
+  },
+  {
+   "limit": 120,
+   "name": "My Song - 01 Lead Vox",
+   "safe_stem": "My-Song---01-Lead-Vox"
+  },
+  {
+   "limit": 120,
+   "name": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+   "safe_stem": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+  },
+  {
+   "limit": 48,
+   "name": "tab\tand\nnewline",
+   "safe_stem": "tab-and-newline"
+  },
+  {
+   "limit": 48,
+   "name": "-.-",
+   "safe_stem": "audio"
+  },
+  {
+   "limit": 48,
+   "name": "UPPER lower 123 _-.",
+   "safe_stem": "UPPER-lower-123-_"
+  }
+ ]
+}

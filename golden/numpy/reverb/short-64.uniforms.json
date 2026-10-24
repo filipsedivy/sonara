@@ -1,0 +1,21 @@
+{
+ "delays": [
+  475,
+  325,
+  131,
+  150,
+  512,
+  440,
+  91,
+  505
+ ],
+ "drawn": [],
+ "dtype": "f64le",
+ "frames": 64,
+ "n_early": 8,
+ "sample_rate": 44100,
+ "shape": [
+  8
+ ],
+ "spread_ms": 10.0
+}

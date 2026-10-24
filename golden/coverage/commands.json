@@ -1,0 +1,3627 @@
+{
+ "batch": "coverage/batch.json",
+ "commands": [
+  {
+   "before": "bfb117cd5d4a1865533bcd6ba87cf8e392b34067af5acb6d72d14a97d095e38e",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "transport"
+    ],
+    "updated": [
+     {
+      "id": "project",
+      "kind": "project"
+     }
+    ]
+   },
+   "command": "SetTransportSettings",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "values": {
+     "loop_enabled": true,
+     "loop_end": 16.0,
+     "loop_start": 1.0
+    }
+   },
+   "label": "Transport Settings",
+   "project": "ba9e4d7071f5db117018a6806cc31b8efaecd4b956e28101d6010aad3c08a047",
+   "result": {},
+   "step": 16
+  },
+  {
+   "before": "ba9e4d7071f5db117018a6806cc31b8efaecd4b956e28101d6010aad3c08a047",
+   "changes": {
+    "created": [
+     {
+      "id": "trk_000000000003",
+      "kind": "track"
+     },
+     {
+      "id": "dev_000000000004",
+      "kind": "device"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "routing",
+     "tracks"
+    ],
+    "updated": []
+   },
+   "command": "CreateTrack",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "color": null,
+    "index": null,
+    "instrument_id": "dev_000000000004",
+    "instrument_plugin": "sonara.synth.poly",
+    "instrument_preset": "Electric Keys",
+    "kind": "instrument",
+    "name": "Keys",
+    "output_id": "master",
+    "parent_id": null,
+    "track_id": "trk_000000000003"
+   },
+   "label": "Create Track",
+   "project": "5094d4e3e5a514daad51fa422540d2872d55292d743ce3c624d5dcb1e72af3f0",
+   "result": {
+    "instrument_device_id": "dev_000000000004",
+    "track_id": "trk_000000000003"
+   },
+   "step": 17
+  },
+  {
+   "before": "5094d4e3e5a514daad51fa422540d2872d55292d743ce3c624d5dcb1e72af3f0",
+   "changes": {
+    "created": [
+     {
+      "id": "trk_000000000005",
+      "kind": "track"
+     },
+     {
+      "id": "dev_000000000006",
+      "kind": "device"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "routing",
+     "tracks"
+    ],
+    "updated": []
+   },
+   "command": "CreateTrack",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "color": null,
+    "index": null,
+    "instrument_id": "dev_000000000006",
+    "instrument_plugin": "sonara.synth.poly",
+    "instrument_preset": "Pluck",
+    "kind": "instrument",
+    "name": "Lead",
+    "output_id": "master",
+    "parent_id": null,
+    "track_id": "trk_000000000005"
+   },
+   "label": "Create Track",
+   "project": "b4466b24ecc2a35f91b147ad36a9a83e49bfef1a69608816b20e9beb087f5687",
+   "result": {
+    "instrument_device_id": "dev_000000000006",
+    "track_id": "trk_000000000005"
+   },
+   "step": 18
+  },
+  {
+   "before": "b4466b24ecc2a35f91b147ad36a9a83e49bfef1a69608816b20e9beb087f5687",
+   "changes": {
+    "created": [
+     {
+      "id": "trk_000000000007",
+      "kind": "track"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "routing",
+     "tracks"
+    ],
+    "updated": []
+   },
+   "command": "CreateTrack",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "color": null,
+    "index": null,
+    "instrument_id": "dev_000000000008",
+    "instrument_plugin": null,
+    "instrument_preset": null,
+    "kind": "bus",
+    "name": "FX Bus",
+    "output_id": "master",
+    "parent_id": null,
+    "track_id": "trk_000000000007"
+   },
+   "label": "Create Track",
+   "project": "b77d660cabe79207972d3a8d629768eab0882766059d3c756c831de9decfd79d",
+   "result": {
+    "track_id": "trk_000000000007"
+   },
+   "step": 19
+  },
+  {
+   "before": "b77d660cabe79207972d3a8d629768eab0882766059d3c756c831de9decfd79d",
+   "changes": {
+    "created": [
+     {
+      "id": "trk_000000000009",
+      "kind": "track"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "routing",
+     "tracks"
+    ],
+    "updated": []
+   },
+   "command": "CreateTrack",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "color": null,
+    "index": null,
+    "instrument_id": "dev_000000000010",
+    "instrument_plugin": null,
+    "instrument_preset": null,
+    "kind": "audio",
+    "name": "Spare",
+    "output_id": "master",
+    "parent_id": null,
+    "track_id": "trk_000000000009"
+   },
+   "label": "Create Track",
+   "project": "3389676907804e6e77e85a634479920bc5ac3fde21a89df6d573960882c42652",
+   "result": {
+    "track_id": "trk_000000000009"
+   },
+   "step": 20
+  },
+  {
+   "before": "3389676907804e6e77e85a634479920bc5ac3fde21a89df6d573960882c42652",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "tracks"
+    ],
+    "updated": [
+     {
+      "id": "trk_000000000003",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "RenameTrack",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "name": "Piano",
+    "track_id": "trk_000000000003"
+   },
+   "label": "Rename Track",
+   "project": "22349c78953c48ec84c17882878c1a6ae57872577ab7689c4b069f77b19c8cba",
+   "result": {},
+   "step": 22
+  },
+  {
+   "before": "22349c78953c48ec84c17882878c1a6ae57872577ab7689c4b069f77b19c8cba",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "tracks"
+    ],
+    "updated": [
+     {
+      "id": "trk_000000000003",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "RenameTrack",
+   "committed": false,
+   "dry_run": true,
+   "fields": {
+    "name": "Never",
+    "track_id": "trk_000000000003"
+   },
+   "label": "Rename Track",
+   "project": null,
+   "result": {},
+   "step": 23
+  },
+  {
+   "before": "22349c78953c48ec84c17882878c1a6ae57872577ab7689c4b069f77b19c8cba",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "mixer",
+     "tracks"
+    ],
+    "updated": [
+     {
+      "id": "trk_000000000003",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "mute": true,
+      "pan": null,
+      "solo": true,
+      "solo_safe": null,
+      "track_id": "trk_000000000003",
+      "volume_db": null
+     },
+     {
+      "color": "#112233",
+      "track_id": "trk_000000000003"
+     },
+     {
+      "armed": true,
+      "channels": null,
+      "monitor": null,
+      "track_id": "trk_000000000003"
+     }
+    ],
+    "name": "Track State",
+    "types": [
+     "SetTrackMixer",
+     "SetTrackColor",
+     "SetTrackInput"
+    ]
+   },
+   "label": "Track State",
+   "project": "68cda347e816e13f9fd17597a41ec3769d3828c80a5b18a234338ee7619a656d",
+   "result": {
+    "steps": [
+     {
+      "mute": true,
+      "pan": 0.0,
+      "solo": true,
+      "solo_safe": false,
+      "volume_db": 0.0
+     },
+     {},
+     {}
+    ]
+   },
+   "step": 26
+  },
+  {
+   "before": "68cda347e816e13f9fd17597a41ec3769d3828c80a5b18a234338ee7619a656d",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "mixer",
+     "tracks"
+    ],
+    "updated": [
+     {
+      "id": "trk_000000000003",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "mute": false,
+      "pan": null,
+      "solo": false,
+      "solo_safe": true,
+      "track_id": "trk_000000000003",
+      "volume_db": null
+     },
+     {
+      "armed": false,
+      "channels": null,
+      "monitor": null,
+      "track_id": "trk_000000000003"
+     }
+    ],
+    "name": "Track State",
+    "types": [
+     "SetTrackMixer",
+     "SetTrackInput"
+    ]
+   },
+   "label": "Track State",
+   "project": "236ffa7703e2e452879f97a41460022faf4b3d4d981673621b881abb5300a10f",
+   "result": {
+    "steps": [
+     {
+      "mute": false,
+      "pan": 0.0,
+      "solo": false,
+      "solo_safe": true,
+      "volume_db": 0.0
+     },
+     {}
+    ]
+   },
+   "step": 27
+  },
+  {
+   "before": "236ffa7703e2e452879f97a41460022faf4b3d4d981673621b881abb5300a10f",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "mixer"
+    ],
+    "updated": [
+     {
+      "id": "trk_000000000005",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": false,
+   "dry_run": true,
+   "fields": {
+    "commands": [
+     {
+      "mute": true,
+      "pan": null,
+      "solo": null,
+      "solo_safe": null,
+      "track_id": "trk_000000000005",
+      "volume_db": null
+     }
+    ],
+    "name": "Track State",
+    "types": [
+     "SetTrackMixer"
+    ]
+   },
+   "label": "Track State",
+   "project": null,
+   "result": {
+    "steps": [
+     {
+      "mute": true,
+      "pan": 0.0,
+      "solo": false,
+      "solo_safe": false,
+      "volume_db": 0.0
+     }
+    ]
+   },
+   "step": 30
+  },
+  {
+   "before": "236ffa7703e2e452879f97a41460022faf4b3d4d981673621b881abb5300a10f",
+   "changes": {
+    "created": [],
+    "deleted": [
+     {
+      "id": "trk_000000000009",
+      "kind": "track"
+     }
+    ],
+    "flags": [
+     "clips",
+     "routing",
+     "tracks"
+    ],
+    "updated": []
+   },
+   "command": "DeleteTrack",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "track_id": "trk_000000000009"
+   },
+   "label": "Delete Track",
+   "project": "920585346b2a7c9d2f58069c4654b1bde221ac24ace15cd1bd3b628ff4e3ae9a",
+   "result": {
+    "deleted_clips": 0,
+    "rerouted_tracks": []
+   },
+   "step": 31
+  },
+  {
+   "before": "920585346b2a7c9d2f58069c4654b1bde221ac24ace15cd1bd3b628ff4e3ae9a",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "transport"
+    ],
+    "updated": [
+     {
+      "id": "project",
+      "kind": "project"
+     }
+    ]
+   },
+   "command": "SetTransportSettings",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "values": {
+     "loop_enabled": true,
+     "loop_end": 12.0,
+     "loop_start": 4.0
+    }
+   },
+   "label": "Transport Settings",
+   "project": "c6aa5d9f2641748b364dfecb2d1008d59dfc3831069405a0a8f29910db352f95",
+   "result": {},
+   "step": 33
+  },
+  {
+   "before": "c6aa5d9f2641748b364dfecb2d1008d59dfc3831069405a0a8f29910db352f95",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "transport"
+    ],
+    "updated": [
+     {
+      "id": "project",
+      "kind": "project"
+     }
+    ]
+   },
+   "command": "SetTransportSettings",
+   "committed": false,
+   "dry_run": true,
+   "fields": {
+    "values": {
+     "loop_enabled": false,
+     "loop_end": 12.0,
+     "loop_start": 4.0
+    }
+   },
+   "label": "Transport Settings",
+   "project": null,
+   "result": {},
+   "step": 35
+  },
+  {
+   "before": "c6aa5d9f2641748b364dfecb2d1008d59dfc3831069405a0a8f29910db352f95",
+   "changes": {
+    "created": [
+     {
+      "id": "clp_000000000014",
+      "kind": "clip"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "clips",
+     "notes"
+    ],
+    "updated": [
+     {
+      "id": "trk_000000000003",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "CreateMidiClip",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "clip_id": "clp_000000000014",
+    "color": null,
+    "length": 8.0,
+    "loop_length": null,
+    "name": "Riff",
+    "notes": [
+     {
+      "channel": 0,
+      "id": "n_000000000011",
+      "length": 1.0,
+      "pitch": 60,
+      "start": 0.0,
+      "velocity": 100
+     },
+     {
+      "channel": 0,
+      "id": "n_000000000012",
+      "length": 1.0,
+      "pitch": 64,
+      "start": 1.0,
+      "velocity": 100
+     },
+     {
+      "channel": 0,
+      "id": "n_000000000013",
+      "length": 0.9,
+      "pitch": 67,
+      "start": 2.03,
+      "velocity": 64
+     }
+    ],
+    "start": 0.0,
+    "track_id": "trk_000000000003"
+   },
+   "label": "Create MIDI Clip",
+   "project": "5a1a0822cc03f57d7cfb1b3ecd38ef11970f5a6726acbf0a1c93a05907aa9213",
+   "result": {
+    "clip_id": "clp_000000000014",
+    "end_seconds": 4.0,
+    "length_beats": 8.0,
+    "note_ids": [
+     "n_000000000011",
+     "n_000000000012",
+     "n_000000000013"
+    ],
+    "start_beat": 0.0,
+    "start_seconds": 0.0
+   },
+   "step": 36
+  },
+  {
+   "before": "5a1a0822cc03f57d7cfb1b3ecd38ef11970f5a6726acbf0a1c93a05907aa9213",
+   "changes": {
+    "created": [
+     {
+      "id": "n_000000000015",
+      "kind": "note"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "notes"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000014",
+      "kind": "clip"
+     }
+    ]
+   },
+   "command": "AddNotes",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "clip_id": "clp_000000000014",
+    "notes": [
+     {
+      "channel": 0,
+      "id": "n_000000000015",
+      "length": 1.0,
+      "pitch": 58,
+      "start": 3.0,
+      "velocity": 100
+     }
+    ]
+   },
+   "label": "Add Notes",
+   "project": "e3ece44464ccc55684ec7562c4d69fd68e10d160e60d81268350d55198d2d188",
+   "result": {
+    "note_count": 4,
+    "note_ids": [
+     "n_000000000015"
+    ]
+   },
+   "step": 37
+  },
+  {
+   "before": "e3ece44464ccc55684ec7562c4d69fd68e10d160e60d81268350d55198d2d188",
+   "changes": {
+    "created": [
+     {
+      "id": "n_000000000016",
+      "kind": "note"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "notes"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000014",
+      "kind": "clip"
+     }
+    ]
+   },
+   "command": "AddNotes",
+   "committed": false,
+   "dry_run": true,
+   "fields": {
+    "clip_id": "clp_000000000014",
+    "notes": [
+     {
+      "channel": 0,
+      "id": "n_000000000016",
+      "length": 1.0,
+      "pitch": 72,
+      "start": 4.0,
+      "velocity": 100
+     }
+    ]
+   },
+   "label": "Add Notes",
+   "project": null,
+   "result": {
+    "note_count": 5,
+    "note_ids": [
+     "n_000000000016"
+    ]
+   },
+   "step": 40
+  },
+  {
+   "before": "e3ece44464ccc55684ec7562c4d69fd68e10d160e60d81268350d55198d2d188",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "notes"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000014",
+      "kind": "clip"
+     },
+     {
+      "id": "n_000000000011",
+      "kind": "note"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000014",
+      "edits": [
+       {
+        "channel": null,
+        "length": 0.5,
+        "note_id": "n_000000000011",
+        "pitch": 62,
+        "start": null,
+        "velocity": 33
+       }
+      ]
+     }
+    ],
+    "name": "Edit Notes",
+    "types": [
+     "EditNotes"
+    ]
+   },
+   "label": "Edit Notes",
+   "project": "35a0538f847fe54677abbd77c160adc9256719a24221a2f0d32053d3572d19f7",
+   "result": {
+    "steps": [
+     {}
+    ]
+   },
+   "step": 41
+  },
+  {
+   "before": "35a0538f847fe54677abbd77c160adc9256719a24221a2f0d32053d3572d19f7",
+   "changes": {
+    "created": [],
+    "deleted": [
+     {
+      "id": "n_000000000015",
+      "kind": "note"
+     }
+    ],
+    "flags": [
+     "notes"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000014",
+      "kind": "clip"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000014",
+      "note_ids": [
+       "n_000000000015"
+      ]
+     }
+    ],
+    "name": "Edit Notes",
+    "types": [
+     "DeleteNotes"
+    ]
+   },
+   "label": "Edit Notes",
+   "project": "637f3939837baf94a3d380afaa5cc585580520c5063401ef84cb43bef350c605",
+   "result": {
+    "steps": [
+     {}
+    ]
+   },
+   "step": 42
+  },
+  {
+   "before": "637f3939837baf94a3d380afaa5cc585580520c5063401ef84cb43bef350c605",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "notes"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000014",
+      "kind": "clip"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000014",
+      "name": "Transform Notes",
+      "notes": [
+       {
+        "channel": 0,
+        "id": "n_000000000011",
+        "length": 0.5,
+        "pitch": 62,
+        "start": 0.0,
+        "velocity": 33
+       },
+       {
+        "channel": 0,
+        "id": "n_000000000013",
+        "length": 0.9,
+        "pitch": 67,
+        "start": 2.03,
+        "velocity": 64
+       },
+       {
+        "channel": 0,
+        "id": "n_000000000012",
+        "length": 1.0,
+        "pitch": 76,
+        "start": 1.0,
+        "velocity": 100
+       }
+      ]
+     }
+    ],
+    "name": "Edit Notes",
+    "types": [
+     "ReplaceNotes"
+    ]
+   },
+   "label": "Edit Notes",
+   "project": "19161c29d3b012ce7089160945b1135f0ea55ac5455e63557e24606139b579d0",
+   "result": {
+    "steps": [
+     {
+      "note_count": 3
+     }
+    ]
+   },
+   "step": 43
+  },
+  {
+   "before": "19161c29d3b012ce7089160945b1135f0ea55ac5455e63557e24606139b579d0",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "notes"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000014",
+      "kind": "clip"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000014",
+      "name": "Transform Notes",
+      "notes": [
+       {
+        "channel": 0,
+        "id": "n_000000000011",
+        "length": 0.5,
+        "pitch": 62,
+        "start": 0.0,
+        "velocity": 33
+       },
+       {
+        "channel": 0,
+        "id": "n_000000000012",
+        "length": 1.0,
+        "pitch": 76,
+        "start": 1.0,
+        "velocity": 100
+       },
+       {
+        "channel": 0,
+        "id": "n_000000000013",
+        "length": 0.9,
+        "pitch": 67,
+        "start": 2.0,
+        "velocity": 64
+       }
+      ]
+     }
+    ],
+    "name": "Edit Notes",
+    "types": [
+     "ReplaceNotes"
+    ]
+   },
+   "label": "Edit Notes",
+   "project": "c4c1da944ebd1649589b87ccf1dadf624fcd8a1e575e07a449caf102acf8c219",
+   "result": {
+    "steps": [
+     {
+      "note_count": 3
+     }
+    ]
+   },
+   "step": 44
+  },
+  {
+   "before": "c4c1da944ebd1649589b87ccf1dadf624fcd8a1e575e07a449caf102acf8c219",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "notes"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000014",
+      "kind": "clip"
+     },
+     {
+      "id": "n_000000000013",
+      "kind": "note"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000014",
+      "edits": [
+       {
+        "channel": null,
+        "length": null,
+        "note_id": "n_000000000013",
+        "pitch": null,
+        "start": 2.5,
+        "velocity": null
+       }
+      ]
+     },
+     {
+      "clip_id": "clp_000000000014",
+      "name": "Transform Notes",
+      "notes": [
+       {
+        "channel": 0,
+        "id": "n_000000000011",
+        "length": 0.5,
+        "pitch": 62,
+        "start": 0.0,
+        "velocity": 33
+       },
+       {
+        "channel": 0,
+        "id": "n_000000000012",
+        "length": 1.0,
+        "pitch": 76,
+        "start": 1.0,
+        "velocity": 100
+       },
+       {
+        "channel": 0,
+        "id": "n_000000000013",
+        "length": 0.9,
+        "pitch": 65,
+        "start": 2.5,
+        "velocity": 64
+       }
+      ]
+     }
+    ],
+    "name": "Edit Notes",
+    "types": [
+     "EditNotes",
+     "ReplaceNotes"
+    ]
+   },
+   "label": "Edit Notes",
+   "project": "915cc599a0a9aa2ee6d2194c2127dc3aa1146ab9fb728e443231b52cdc948d12",
+   "result": {
+    "steps": [
+     {},
+     {
+      "note_count": 3
+     }
+    ]
+   },
+   "step": 45
+  },
+  {
+   "before": "915cc599a0a9aa2ee6d2194c2127dc3aa1146ab9fb728e443231b52cdc948d12",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "notes"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000014",
+      "kind": "clip"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": false,
+   "dry_run": true,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000014",
+      "name": "Transform Notes",
+      "notes": [
+       {
+        "channel": 0,
+        "id": "n_000000000011",
+        "length": 0.5,
+        "pitch": 67,
+        "start": 0.0,
+        "velocity": 33
+       },
+       {
+        "channel": 0,
+        "id": "n_000000000012",
+        "length": 1.0,
+        "pitch": 81,
+        "start": 1.0,
+        "velocity": 100
+       },
+       {
+        "channel": 0,
+        "id": "n_000000000013",
+        "length": 0.9,
+        "pitch": 70,
+        "start": 2.5,
+        "velocity": 64
+       }
+      ]
+     }
+    ],
+    "name": "Edit Notes",
+    "types": [
+     "ReplaceNotes"
+    ]
+   },
+   "label": "Edit Notes",
+   "project": null,
+   "result": {
+    "steps": [
+     {
+      "note_count": 3
+     }
+    ]
+   },
+   "step": 46
+  },
+  {
+   "before": "915cc599a0a9aa2ee6d2194c2127dc3aa1146ab9fb728e443231b52cdc948d12",
+   "changes": {
+    "created": [
+     {
+      "id": "clp_000000000018",
+      "kind": "clip"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "clips",
+     "notes"
+    ],
+    "updated": [
+     {
+      "id": "trk_000000000005",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "CreateMidiClip",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "clip_id": "clp_000000000018",
+    "color": null,
+    "length": 4.0,
+    "loop_length": null,
+    "name": "MIDI",
+    "notes": [
+     {
+      "channel": 0,
+      "id": "n_000000000017",
+      "length": 1.0,
+      "pitch": 67,
+      "start": 0.0,
+      "velocity": 100
+     }
+    ],
+    "start": 8.0,
+    "track_id": "trk_000000000005"
+   },
+   "label": "Create MIDI Clip",
+   "project": "4384d004071182a71b5a9cdda26976a70be5fd0395461dd18227b760372d6d31",
+   "result": {
+    "clip_id": "clp_000000000018",
+    "end_seconds": 6.0,
+    "length_beats": 4.0,
+    "note_ids": [
+     "n_000000000017"
+    ],
+    "start_beat": 8.0,
+    "start_seconds": 4.0
+   },
+   "step": 50
+  },
+  {
+   "before": "4384d004071182a71b5a9cdda26976a70be5fd0395461dd18227b760372d6d31",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "notes"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000018",
+      "kind": "clip"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000018",
+      "name": "Replace Notes",
+      "notes": [
+       {
+        "channel": 0,
+        "id": "n_000000000019",
+        "length": 2.0,
+        "pitch": 48,
+        "start": 0.0,
+        "velocity": 100
+       },
+       {
+        "channel": 0,
+        "id": "n_000000000020",
+        "length": 2.0,
+        "pitch": 55,
+        "start": 2.0,
+        "velocity": 80
+       }
+      ]
+     }
+    ],
+    "name": "Edit Notes",
+    "types": [
+     "ReplaceNotes"
+    ]
+   },
+   "label": "Edit Notes",
+   "project": "09e1bd660aaf8fda6f8144c64648b107683b1c19988cd07db6662a9099f4f831",
+   "result": {
+    "steps": [
+     {
+      "note_count": 2
+     }
+    ]
+   },
+   "step": 51
+  },
+  {
+   "before": "09e1bd660aaf8fda6f8144c64648b107683b1c19988cd07db6662a9099f4f831",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "clips"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000018",
+      "kind": "clip"
+     },
+     {
+      "id": "trk_000000000005",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "MoveClip",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "clip_id": "clp_000000000018",
+    "start": 12.0,
+    "track_id": null
+   },
+   "label": "Move Clip",
+   "project": "d61cb3a4cc4eff3f729b3129298da018a14fcee7de69d414a900e4e909ca0e29",
+   "result": {
+    "clip_id": "clp_000000000018",
+    "end_seconds": 8.0,
+    "length_beats": 4.0,
+    "start_beat": 12.0,
+    "start_seconds": 6.0
+   },
+   "step": 52
+  },
+  {
+   "before": "d61cb3a4cc4eff3f729b3129298da018a14fcee7de69d414a900e4e909ca0e29",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "clips"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000018",
+      "kind": "clip"
+     },
+     {
+      "id": "trk_000000000005",
+      "kind": "track"
+     },
+     {
+      "id": "trk_000000000003",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "MoveClip",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "clip_id": "clp_000000000018",
+    "start": null,
+    "track_id": "trk_000000000003"
+   },
+   "label": "Move Clip",
+   "project": "9280f66addad62a12939e3d4639c253ff3f508bc1137b91616c36555d93fb0ce",
+   "result": {
+    "clip_id": "clp_000000000018",
+    "end_seconds": 8.0,
+    "length_beats": 4.0,
+    "start_beat": 12.0,
+    "start_seconds": 6.0
+   },
+   "step": 53
+  },
+  {
+   "before": "9280f66addad62a12939e3d4639c253ff3f508bc1137b91616c36555d93fb0ce",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "clips"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000018",
+      "kind": "clip"
+     },
+     {
+      "id": "trk_000000000003",
+      "kind": "track"
+     },
+     {
+      "id": "trk_000000000005",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "MoveClip",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "clip_id": "clp_000000000018",
+    "start": 8.0,
+    "track_id": "trk_000000000005"
+   },
+   "label": "Move Clip",
+   "project": "09e1bd660aaf8fda6f8144c64648b107683b1c19988cd07db6662a9099f4f831",
+   "result": {
+    "clip_id": "clp_000000000018",
+    "end_seconds": 6.0,
+    "length_beats": 4.0,
+    "start_beat": 8.0,
+    "start_seconds": 4.0
+   },
+   "step": 54
+  },
+  {
+   "before": "09e1bd660aaf8fda6f8144c64648b107683b1c19988cd07db6662a9099f4f831",
+   "changes": {
+    "created": [
+     {
+      "id": "clp_000000000021",
+      "kind": "clip"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "clips"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000014",
+      "kind": "clip"
+     }
+    ]
+   },
+   "command": "SplitClip",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "at": 4.0,
+    "clip_id": "clp_000000000014",
+    "new_clip_id": "clp_000000000021"
+   },
+   "label": "Split Clip",
+   "project": "8ad85f077df3dee166e2c1659e03c4f2c7e5061ca3c262072957c2d40300c5a5",
+   "result": {
+    "left_clip_id": "clp_000000000014",
+    "right_clip_id": "clp_000000000021"
+   },
+   "step": 57
+  },
+  {
+   "before": "8ad85f077df3dee166e2c1659e03c4f2c7e5061ca3c262072957c2d40300c5a5",
+   "changes": {
+    "created": [
+     {
+      "id": "clp_000000000023",
+      "kind": "clip"
+     },
+     {
+      "id": "clp_000000000024",
+      "kind": "clip"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "clips"
+    ],
+    "updated": [
+     {
+      "id": "trk_000000000005",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000018",
+      "new_clip_id": "clp_000000000023",
+      "start": 12.0,
+      "track_id": null
+     },
+     {
+      "clip_id": "clp_000000000018",
+      "new_clip_id": "clp_000000000024",
+      "start": 16.0,
+      "track_id": null
+     }
+    ],
+    "name": "Duplicate Clip",
+    "types": [
+     "DuplicateClip",
+     "DuplicateClip"
+    ]
+   },
+   "label": "Duplicate Clip",
+   "project": "daa824bce3cc1bef215e5f7f28481a2acf9e8810425f9b6813c6b4a9471172df",
+   "result": {
+    "steps": [
+     {
+      "clip_id": "clp_000000000023",
+      "end_seconds": 8.0,
+      "length_beats": 4.0,
+      "start_beat": 12.0,
+      "start_seconds": 6.0
+     },
+     {
+      "clip_id": "clp_000000000024",
+      "end_seconds": 10.0,
+      "length_beats": 4.0,
+      "start_beat": 16.0,
+      "start_seconds": 8.0
+     }
+    ]
+   },
+   "step": 59
+  },
+  {
+   "before": "daa824bce3cc1bef215e5f7f28481a2acf9e8810425f9b6813c6b4a9471172df",
+   "changes": {
+    "created": [
+     {
+      "id": "clp_000000000025",
+      "kind": "clip"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "clips"
+    ],
+    "updated": [
+     {
+      "id": "trk_000000000003",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": false,
+   "dry_run": true,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000014",
+      "new_clip_id": "clp_000000000025",
+      "start": 4.0,
+      "track_id": null
+     }
+    ],
+    "name": "Duplicate Clip",
+    "types": [
+     "DuplicateClip"
+    ]
+   },
+   "label": "Duplicate Clip",
+   "project": null,
+   "result": {
+    "steps": [
+     {
+      "clip_id": "clp_000000000025",
+      "end_seconds": 4.0,
+      "length_beats": 4.0,
+      "start_beat": 4.0,
+      "start_seconds": 2.0
+     }
+    ]
+   },
+   "step": 60
+  },
+  {
+   "before": "daa824bce3cc1bef215e5f7f28481a2acf9e8810425f9b6813c6b4a9471172df",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "clips"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000021",
+      "kind": "clip"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000021",
+      "color": null,
+      "fade_in": null,
+      "fade_out": null,
+      "gain_db": null,
+      "loop_length": 2.0,
+      "muted": true,
+      "name": "Riff B"
+     }
+    ],
+    "name": "Edit Clip",
+    "types": [
+     "SetClipProperties"
+    ]
+   },
+   "label": "Edit Clip",
+   "project": "edb266cf58da50c7f557526c2542da65eca9a470f0c9480ef248569089664dfc",
+   "result": {
+    "steps": [
+     {}
+    ]
+   },
+   "step": 61
+  },
+  {
+   "before": "edb266cf58da50c7f557526c2542da65eca9a470f0c9480ef248569089664dfc",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "clips"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000021",
+      "kind": "clip"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000021",
+      "color": null,
+      "fade_in": null,
+      "fade_out": null,
+      "gain_db": null,
+      "loop_length": "<UNSET>",
+      "muted": false,
+      "name": null
+     }
+    ],
+    "name": "Edit Clip",
+    "types": [
+     "SetClipProperties"
+    ]
+   },
+   "label": "Edit Clip",
+   "project": "b106242f0be50f2265730373386cc9794687b5f224c0234c3c603eb8a3eb46ac",
+   "result": {
+    "steps": [
+     {}
+    ]
+   },
+   "step": 62
+  },
+  {
+   "before": "b106242f0be50f2265730373386cc9794687b5f224c0234c3c603eb8a3eb46ac",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "clips"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000014",
+      "kind": "clip"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000014",
+      "end": 3.5,
+      "start": 1.0
+     }
+    ],
+    "name": "Edit Clip",
+    "types": [
+     "TrimClip"
+    ]
+   },
+   "label": "Edit Clip",
+   "project": "bd3d007408cc2873c03130afbcb797928f7b37d5199b65279c49d875edf60c37",
+   "result": {
+    "steps": [
+     {
+      "clip_id": "clp_000000000014",
+      "end_seconds": 1.75,
+      "length_beats": 2.5,
+      "start_beat": 1.0,
+      "start_seconds": 0.5
+     }
+    ]
+   },
+   "step": 63
+  },
+  {
+   "before": "bd3d007408cc2873c03130afbcb797928f7b37d5199b65279c49d875edf60c37",
+   "changes": {
+    "created": [],
+    "deleted": [
+     {
+      "id": "clp_000000000024",
+      "kind": "clip"
+     }
+    ],
+    "flags": [
+     "clips"
+    ],
+    "updated": []
+   },
+   "command": "DeleteClips",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "clip_ids": [
+     "clp_000000000024"
+    ]
+   },
+   "label": "Delete Clips",
+   "project": "2e5c7b3c934bfed34a2f1e73090b023df4e5b4000d0632212aa3c8ef8214ed72",
+   "result": {},
+   "step": 66
+  },
+  {
+   "before": "2e5c7b3c934bfed34a2f1e73090b023df4e5b4000d0632212aa3c8ef8214ed72",
+   "changes": {
+    "created": [
+     {
+      "id": "med_000000000026",
+      "kind": "asset"
+     },
+     {
+      "id": "trk_000000000027",
+      "kind": "track"
+     },
+     {
+      "id": "clp_000000000029",
+      "kind": "clip"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "clips",
+     "media",
+     "routing",
+     "tracks"
+    ],
+    "updated": []
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "asset": {
+       "channels": 2,
+       "extra": {},
+       "format": "WAV",
+       "frames": 96000,
+       "id": "med_000000000026",
+       "kind": "audio",
+       "location": "embedded",
+       "metadata": {},
+       "name": "tone-48k-stereo-24bit.wav",
+       "original_path": "<ROOT>/inputs/tone-48k-stereo-24bit.wav",
+       "path": "media/audio/med_000000000026-tone-48k-stereo-24bit.wav",
+       "relative_hint": null,
+       "sample_rate": 48000,
+       "sha256": "77f1f43332d8c3c547f544ac6ae3101316d6fdbe12c341eb29a6028977f5d0bf",
+       "size_bytes": 576044,
+       "subtype": "PCM_24"
+      }
+     },
+     {
+      "color": null,
+      "index": null,
+      "instrument_id": "dev_000000000028",
+      "instrument_plugin": null,
+      "instrument_preset": null,
+      "kind": "audio",
+      "name": "Tone",
+      "output_id": "master",
+      "parent_id": null,
+      "track_id": "trk_000000000027"
+     },
+     {
+      "asset_id": "med_000000000026",
+      "clip_id": "clp_000000000029",
+      "gain_db": 0.0,
+      "length": null,
+      "name": "tone-48k-stereo-24bit",
+      "source_offset": 0,
+      "start": 4.0,
+      "track_id": "trk_000000000027"
+     }
+    ],
+    "name": "Import Audio",
+    "types": [
+     "AddAsset",
+     "CreateTrack",
+     "AddAudioClip"
+    ]
+   },
+   "label": "Import Audio",
+   "project": "7693d0c9585c092deb6efe7479ed061460ba006672fc2c15cb4439e9eb12f554",
+   "result": {
+    "steps": [
+     {
+      "asset_id": "med_000000000026"
+     },
+     {
+      "track_id": "trk_000000000027"
+     },
+     {
+      "clip_id": "clp_000000000029",
+      "end_seconds": 4.0,
+      "length_beats": 4.0,
+      "start_beat": 4.0,
+      "start_seconds": 2.0
+     }
+    ]
+   },
+   "step": 71
+  },
+  {
+   "before": "7693d0c9585c092deb6efe7479ed061460ba006672fc2c15cb4439e9eb12f554",
+   "changes": {
+    "created": [
+     {
+      "id": "med_000000000030",
+      "kind": "asset"
+     },
+     {
+      "id": "clp_000000000031",
+      "kind": "clip"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "clips",
+     "media"
+    ],
+    "updated": [
+     {
+      "id": "trk_000000000027",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "asset": {
+       "channels": 1,
+       "extra": {},
+       "format": "WAV",
+       "frames": 66150,
+       "id": "med_000000000030",
+       "kind": "audio",
+       "location": "linked",
+       "metadata": {},
+       "name": "tone-44k1-mono-16bit.wav",
+       "original_path": "<ROOT>/inputs/tone-44k1-mono-16bit.wav",
+       "path": "<ROOT>/inputs/tone-44k1-mono-16bit.wav",
+       "relative_hint": null,
+       "sample_rate": 44100,
+       "sha256": "771f9498cc8ad71f19fdb0aed6052355a770897aea1b3bb12283ffc5768a9163",
+       "size_bytes": 132344,
+       "subtype": "PCM_16"
+      }
+     },
+     {
+      "asset_id": "med_000000000030",
+      "clip_id": "clp_000000000031",
+      "gain_db": 0.0,
+      "length": null,
+      "name": "tone-44k1-mono-16bit",
+      "source_offset": 0,
+      "start": 16.0,
+      "track_id": "trk_000000000027"
+     }
+    ],
+    "name": "Import Audio",
+    "types": [
+     "AddAsset",
+     "AddAudioClip"
+    ]
+   },
+   "label": "Import Audio",
+   "project": "b536c4b387576907c9037d450e601d1aebf9c124f88769cfdd70e769199dcddc",
+   "result": {
+    "steps": [
+     {
+      "asset_id": "med_000000000030"
+     },
+     {
+      "clip_id": "clp_000000000031",
+      "end_seconds": 9.5,
+      "length_beats": 3.0,
+      "start_beat": 16.0,
+      "start_seconds": 8.0
+     }
+    ]
+   },
+   "step": 72
+  },
+  {
+   "before": "b536c4b387576907c9037d450e601d1aebf9c124f88769cfdd70e769199dcddc",
+   "changes": {
+    "created": [
+     {
+      "id": "med_000000000033",
+      "kind": "asset"
+     },
+     {
+      "id": "trk_000000000034",
+      "kind": "track"
+     },
+     {
+      "id": "clp_000000000036",
+      "kind": "clip"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "clips",
+     "media",
+     "routing",
+     "tracks"
+    ],
+    "updated": []
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "asset": {
+       "channels": 2,
+       "extra": {},
+       "format": "FLAC",
+       "frames": 48000,
+       "id": "med_000000000033",
+       "kind": "audio",
+       "location": "embedded",
+       "metadata": {},
+       "name": "chord-48k-stereo.flac",
+       "original_path": "<ROOT>/inputs/chord-48k-stereo.flac",
+       "path": "media/audio/med_000000000033-chord-48k-stereo.flac",
+       "relative_hint": null,
+       "sample_rate": 48000,
+       "sha256": "d713f5c2eb74d1c5f2b3012323c45ba705474c35c2855bf16267f41cf1153093",
+       "size_bytes": 33667,
+       "subtype": "PCM_16"
+      }
+     },
+     {
+      "color": null,
+      "index": null,
+      "instrument_id": "dev_000000000035",
+      "instrument_plugin": null,
+      "instrument_preset": null,
+      "kind": "audio",
+      "name": "Chord",
+      "output_id": "master",
+      "parent_id": null,
+      "track_id": "trk_000000000034"
+     },
+     {
+      "asset_id": "med_000000000033",
+      "clip_id": "clp_000000000036",
+      "gain_db": 0.0,
+      "length": null,
+      "name": "chord-48k-stereo",
+      "source_offset": 0,
+      "start": 8.0,
+      "track_id": "trk_000000000034"
+     }
+    ],
+    "name": "Import Audio",
+    "types": [
+     "AddAsset",
+     "CreateTrack",
+     "AddAudioClip"
+    ]
+   },
+   "label": "Import Audio",
+   "project": "6fb17058aaf1f63875500f3f8567ead00fb3cc7b600913aa08a965de8ec47c7b",
+   "result": {
+    "steps": [
+     {
+      "asset_id": "med_000000000033"
+     },
+     {
+      "track_id": "trk_000000000034"
+     },
+     {
+      "clip_id": "clp_000000000036",
+      "end_seconds": 5.0,
+      "length_beats": 2.0,
+      "start_beat": 8.0,
+      "start_seconds": 4.0
+     }
+    ]
+   },
+   "step": 74
+  },
+  {
+   "before": "6fb17058aaf1f63875500f3f8567ead00fb3cc7b600913aa08a965de8ec47c7b",
+   "changes": {
+    "created": [
+     {
+      "id": "med_000000000038",
+      "kind": "asset"
+     },
+     {
+      "id": "trk_000000000039",
+      "kind": "track"
+     },
+     {
+      "id": "clp_000000000041",
+      "kind": "clip"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "clips",
+     "media",
+     "routing",
+     "tracks"
+    ],
+    "updated": []
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "asset": {
+       "channels": 2,
+       "extra": {},
+       "format": "MP3",
+       "frames": 44100,
+       "id": "med_000000000038",
+       "kind": "audio",
+       "location": "embedded",
+       "metadata": {},
+       "name": "saw-44k1-stereo.mp3",
+       "original_path": "<ROOT>/inputs/saw-44k1-stereo.mp3",
+       "path": "media/audio/med_000000000038-saw-44k1-stereo.mp3",
+       "relative_hint": null,
+       "sample_rate": 44100,
+       "sha256": "2a4be49792d94ed855f07509dce29505139ec7edfbab1e29bbaa5f2f33a69e5a",
+       "size_bytes": 9839,
+       "subtype": "MPEG_LAYER_III"
+      }
+     },
+     {
+      "color": null,
+      "index": null,
+      "instrument_id": "dev_000000000040",
+      "instrument_plugin": null,
+      "instrument_preset": null,
+      "kind": "audio",
+      "name": "saw-44k1-stereo",
+      "output_id": "master",
+      "parent_id": null,
+      "track_id": "trk_000000000039"
+     },
+     {
+      "asset_id": "med_000000000038",
+      "clip_id": "clp_000000000041",
+      "gain_db": 0.0,
+      "length": null,
+      "name": "saw-44k1-stereo",
+      "source_offset": 0,
+      "start": 12.0,
+      "track_id": "trk_000000000039"
+     }
+    ],
+    "name": "Import Audio",
+    "types": [
+     "AddAsset",
+     "CreateTrack",
+     "AddAudioClip"
+    ]
+   },
+   "label": "Import Audio",
+   "project": "03b0309fd824bcf49e57bfb8c04165b83ec91553744635c27f063b0c3a3675d7",
+   "result": {
+    "steps": [
+     {
+      "asset_id": "med_000000000038"
+     },
+     {
+      "track_id": "trk_000000000039"
+     },
+     {
+      "clip_id": "clp_000000000041",
+      "end_seconds": 7.0,
+      "length_beats": 2.0,
+      "start_beat": 12.0,
+      "start_seconds": 6.0
+     }
+    ]
+   },
+   "step": 76
+  },
+  {
+   "before": "03b0309fd824bcf49e57bfb8c04165b83ec91553744635c27f063b0c3a3675d7",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "clips"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000029",
+      "kind": "clip"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000029",
+      "color": null,
+      "fade_in": {
+       "curve": "equal_power",
+       "seconds": 0.1
+      },
+      "fade_out": {
+       "curve": "equal_power",
+       "seconds": 0.2
+      },
+      "gain_db": -3.0,
+      "loop_length": "<UNSET>",
+      "muted": null,
+      "name": null
+     }
+    ],
+    "name": "Edit Clip",
+    "types": [
+     "SetClipProperties"
+    ]
+   },
+   "label": "Edit Clip",
+   "project": "8dbe696ce05c0c79f5ec73f2d4e391cc4ba9c9c4fb560bb6621bf7d963ccfd52",
+   "result": {
+    "steps": [
+     {}
+    ]
+   },
+   "step": 84
+  },
+  {
+   "before": "8dbe696ce05c0c79f5ec73f2d4e391cc4ba9c9c4fb560bb6621bf7d963ccfd52",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "clips"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000029",
+      "kind": "clip"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000029",
+      "color": null,
+      "fade_in": null,
+      "fade_out": null,
+      "gain_db": -4.5,
+      "loop_length": "<UNSET>",
+      "muted": null,
+      "name": null
+     }
+    ],
+    "name": "Edit Clip",
+    "types": [
+     "SetClipProperties"
+    ]
+   },
+   "label": "Edit Clip",
+   "project": "11c4822f3fde1eb222048b9eebeb9a3596eaac4785a74017b745283d1925cb2a",
+   "result": {
+    "steps": [
+     {}
+    ]
+   },
+   "step": 85
+  },
+  {
+   "before": "11c4822f3fde1eb222048b9eebeb9a3596eaac4785a74017b745283d1925cb2a",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "clips"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000029",
+      "kind": "clip"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000029",
+      "color": null,
+      "fade_in": null,
+      "fade_out": null,
+      "gain_db": -6.0,
+      "loop_length": "<UNSET>",
+      "muted": null,
+      "name": null
+     }
+    ],
+    "name": "Edit Clip",
+    "types": [
+     "SetClipProperties"
+    ]
+   },
+   "label": "Edit Clip",
+   "project": "6d8811483f58a20e835e7bbc7047ab50e40ddf43d6aee9482904e9caee141ee8",
+   "result": {
+    "steps": [
+     {}
+    ]
+   },
+   "step": 86
+  },
+  {
+   "before": "6d8811483f58a20e835e7bbc7047ab50e40ddf43d6aee9482904e9caee141ee8",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "clips"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000036",
+      "kind": "clip"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000036",
+      "color": null,
+      "fade_in": null,
+      "fade_out": {
+       "curve": "s_curve",
+       "seconds": 0.25
+      },
+      "gain_db": null,
+      "loop_length": "<UNSET>",
+      "muted": null,
+      "name": null
+     }
+    ],
+    "name": "Edit Clip",
+    "types": [
+     "SetClipProperties"
+    ]
+   },
+   "label": "Edit Clip",
+   "project": "4253bbf98bde344fd7be1cea3bb5e27b95c187edd58c9d66880e7e2f14766b96",
+   "result": {
+    "steps": [
+     {}
+    ]
+   },
+   "step": 90
+  },
+  {
+   "before": "4253bbf98bde344fd7be1cea3bb5e27b95c187edd58c9d66880e7e2f14766b96",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "clips"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000041",
+      "kind": "clip"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000041",
+      "color": null,
+      "fade_in": {
+       "curve": "exponential",
+       "seconds": 0.05
+      },
+      "fade_out": null,
+      "gain_db": null,
+      "loop_length": "<UNSET>",
+      "muted": null,
+      "name": null
+     }
+    ],
+    "name": "Edit Clip",
+    "types": [
+     "SetClipProperties"
+    ]
+   },
+   "label": "Edit Clip",
+   "project": "8cc1c1f791836dd14041295d3573e6d9a7804f91fec86581c2d692a4f07e443c",
+   "result": {
+    "steps": [
+     {}
+    ]
+   },
+   "step": 91
+  },
+  {
+   "before": "8cc1c1f791836dd14041295d3573e6d9a7804f91fec86581c2d692a4f07e443c",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "clips"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000031",
+      "kind": "clip"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000031",
+      "end": 18.5,
+      "start": 16.5
+     }
+    ],
+    "name": "Edit Clip",
+    "types": [
+     "TrimClip"
+    ]
+   },
+   "label": "Edit Clip",
+   "project": "29d8a555fc40e96a64110f1e1a02ac0c267bd0ac15823f2c43591c64f315a751",
+   "result": {
+    "steps": [
+     {
+      "clip_id": "clp_000000000031",
+      "end_seconds": 9.25,
+      "length_beats": 2.0,
+      "start_beat": 16.5,
+      "start_seconds": 8.25
+     }
+    ]
+   },
+   "step": 92
+  },
+  {
+   "before": "29d8a555fc40e96a64110f1e1a02ac0c267bd0ac15823f2c43591c64f315a751",
+   "changes": {
+    "created": [
+     {
+      "id": "clp_000000000045",
+      "kind": "clip"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "clips"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000029",
+      "kind": "clip"
+     }
+    ]
+   },
+   "command": "SplitClip",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "at": 6.0,
+    "clip_id": "clp_000000000029",
+    "new_clip_id": "clp_000000000045"
+   },
+   "label": "Split Clip",
+   "project": "a8c0b9a55f65f31671e8fd8c99860a4bbf6ca32b9f4431ca58719b9fb9b5622c",
+   "result": {
+    "left_clip_id": "clp_000000000029",
+    "right_clip_id": "clp_000000000045"
+   },
+   "step": 93
+  },
+  {
+   "before": "a8c0b9a55f65f31671e8fd8c99860a4bbf6ca32b9f4431ca58719b9fb9b5622c",
+   "changes": {
+    "created": [
+     {
+      "id": "clp_000000000046",
+      "kind": "clip"
+     },
+     {
+      "id": "clp_000000000047",
+      "kind": "clip"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "clips"
+    ],
+    "updated": [
+     {
+      "id": "trk_000000000034",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000036",
+      "new_clip_id": "clp_000000000046",
+      "start": 10.0,
+      "track_id": null
+     },
+     {
+      "clip_id": "clp_000000000036",
+      "new_clip_id": "clp_000000000047",
+      "start": 12.0,
+      "track_id": null
+     }
+    ],
+    "name": "Duplicate Clip",
+    "types": [
+     "DuplicateClip",
+     "DuplicateClip"
+    ]
+   },
+   "label": "Duplicate Clip",
+   "project": "c5721a590ba609d5b751c54c4b6bb66baf8e712546183b7378cd065797bb94f5",
+   "result": {
+    "steps": [
+     {
+      "clip_id": "clp_000000000046",
+      "end_seconds": 6.0,
+      "length_beats": 2.0,
+      "start_beat": 10.0,
+      "start_seconds": 5.0
+     },
+     {
+      "clip_id": "clp_000000000047",
+      "end_seconds": 7.0,
+      "length_beats": 2.0,
+      "start_beat": 12.0,
+      "start_seconds": 6.0
+     }
+    ]
+   },
+   "step": 94
+  },
+  {
+   "before": "c5721a590ba609d5b751c54c4b6bb66baf8e712546183b7378cd065797bb94f5",
+   "changes": {
+    "created": [
+     {
+      "id": "clp_000000000048",
+      "kind": "clip"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "clips"
+    ],
+    "updated": [
+     {
+      "id": "trk_000000000034",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000045",
+      "new_clip_id": "clp_000000000048",
+      "start": 24.0,
+      "track_id": "trk_000000000034"
+     }
+    ],
+    "name": "Duplicate Clip",
+    "types": [
+     "DuplicateClip"
+    ]
+   },
+   "label": "Duplicate Clip",
+   "project": "c99a1d72767e3bbc3f6fe0d184a7126db403d80bf39aaa37580c8d9982fcefbc",
+   "result": {
+    "steps": [
+     {
+      "clip_id": "clp_000000000048",
+      "end_seconds": 13.0,
+      "length_beats": 2.0,
+      "start_beat": 24.0,
+      "start_seconds": 12.0
+     }
+    ]
+   },
+   "step": 95
+  },
+  {
+   "before": "c99a1d72767e3bbc3f6fe0d184a7126db403d80bf39aaa37580c8d9982fcefbc",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "clips"
+    ],
+    "updated": [
+     {
+      "id": "clp_000000000041",
+      "kind": "clip"
+     },
+     {
+      "id": "trk_000000000039",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "MoveClip",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "clip_id": "clp_000000000041",
+    "start": 20.0,
+    "track_id": null
+   },
+   "label": "Move Clip",
+   "project": "927213b23dbedba8bca3ddbb73c1817f03f8d45eaec3fed45b92193e1af458f9",
+   "result": {
+    "clip_id": "clp_000000000041",
+    "end_seconds": 11.0,
+    "length_beats": 2.0,
+    "start_beat": 20.0,
+    "start_seconds": 10.0
+   },
+   "step": 96
+  },
+  {
+   "before": "927213b23dbedba8bca3ddbb73c1817f03f8d45eaec3fed45b92193e1af458f9",
+   "changes": {
+    "created": [],
+    "deleted": [
+     {
+      "id": "clp_000000000047",
+      "kind": "clip"
+     }
+    ],
+    "flags": [
+     "clips"
+    ],
+    "updated": []
+   },
+   "command": "DeleteClips",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "clip_ids": [
+     "clp_000000000047"
+    ]
+   },
+   "label": "Delete Clips",
+   "project": "1644d6d127bcc5a01dba9f6be9a7bd6ca0f3ec17e8c9e2516dbfc89fd8a5dc65",
+   "result": {},
+   "step": 98
+  },
+  {
+   "before": "1644d6d127bcc5a01dba9f6be9a7bd6ca0f3ec17e8c9e2516dbfc89fd8a5dc65",
+   "changes": {
+    "created": [
+     {
+      "id": "dev_000000000049",
+      "kind": "device"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "devices"
+    ],
+    "updated": [
+     {
+      "id": "trk_000000000027",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "AddDevice",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "device_id": "dev_000000000049",
+    "index": null,
+    "name": null,
+    "params": {
+     "mix": 0.4,
+     "normalize": false
+    },
+    "plugin_id": "sonara.convolver",
+    "preset": null,
+    "sidechain_id": null,
+    "track_id": "trk_000000000027"
+   },
+   "label": "Add Effect",
+   "project": "96e5efbf90ec5747fb3aeb6ba5db2389c4a52fea01685670ea8523977e92a1e5",
+   "result": {
+    "device_id": "dev_000000000049",
+    "index": 0,
+    "params": {
+     "gain_db": 0.0,
+     "input": "mono_sum",
+     "mix": 0.4,
+     "normalize": false
+    }
+   },
+   "step": 99
+  },
+  {
+   "before": "96e5efbf90ec5747fb3aeb6ba5db2389c4a52fea01685670ea8523977e92a1e5",
+   "changes": {
+    "created": [
+     {
+      "id": "med_000000000050",
+      "kind": "asset"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "devices",
+     "media"
+    ],
+    "updated": [
+     {
+      "id": "dev_000000000049",
+      "kind": "device"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "asset": {
+       "channels": 2,
+       "extra": {},
+       "format": "WAV",
+       "frames": 24000,
+       "id": "med_000000000050",
+       "kind": "impulse",
+       "location": "embedded",
+       "metadata": {},
+       "name": "ir-48k-stereo-float.wav",
+       "original_path": "<ROOT>/inputs/ir-48k-stereo-float.wav",
+       "path": "media/impulses/med_000000000050-ir-48k-stereo-float.wav",
+       "relative_hint": null,
+       "sample_rate": 48000,
+       "sha256": "f26fc00c14259c07feea8022ec20622b125fa98b0ece1ea5fb6dfc3ab3dcfcce",
+       "size_bytes": 192056,
+       "subtype": "FLOAT"
+      }
+     },
+     {
+      "device_id": "dev_000000000049",
+      "values": {
+       "ir_asset_id": "med_000000000050"
+      }
+     }
+    ],
+    "name": "Load Impulse Response",
+    "types": [
+     "AddAsset",
+     "SetDeviceState"
+    ]
+   },
+   "label": "Load Impulse Response",
+   "project": "0be89c5c4112a265db2d42ecda349cb827998b2aac4fbe0210deece601944f68",
+   "result": {
+    "steps": [
+     {
+      "asset_id": "med_000000000050"
+     },
+     {}
+    ]
+   },
+   "step": 101
+  },
+  {
+   "before": "0be89c5c4112a265db2d42ecda349cb827998b2aac4fbe0210deece601944f68",
+   "changes": {
+    "created": [
+     {
+      "id": "dev_000000000051",
+      "kind": "device"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "devices"
+    ],
+    "updated": [
+     {
+      "id": "trk_000000000027",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "AddDevice",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "device_id": "dev_000000000051",
+    "index": null,
+    "name": null,
+    "params": {},
+    "plugin_id": "sonara.eq.parametric",
+    "preset": null,
+    "sidechain_id": null,
+    "track_id": "trk_000000000027"
+   },
+   "label": "Add Effect",
+   "project": "421117652a3c0be8ba112a9ecbf0dac7fb6fc94de3a70ee31ebcdadb11e0e982",
+   "result": {
+    "device_id": "dev_000000000051",
+    "index": 1,
+    "params": {
+     "high_freq": 8000.0,
+     "high_gain": 0.0,
+     "high_on": true,
+     "high_q": 0.71,
+     "high_type": "shelf",
+     "hp_freq": 80.0,
+     "hp_on": false,
+     "hp_slope": "12",
+     "low_freq": 100.0,
+     "low_gain": 0.0,
+     "low_on": true,
+     "low_q": 0.71,
+     "low_type": "shelf",
+     "lp_freq": 18000.0,
+     "lp_on": false,
+     "lp_slope": "12",
+     "mid1_freq": 500.0,
+     "mid1_gain": 0.0,
+     "mid1_on": true,
+     "mid1_q": 1.0,
+     "mid2_freq": 2500.0,
+     "mid2_gain": 0.0,
+     "mid2_on": true,
+     "mid2_q": 1.0,
+     "output_db": 0.0
+    }
+   },
+   "step": 102
+  },
+  {
+   "before": "421117652a3c0be8ba112a9ecbf0dac7fb6fc94de3a70ee31ebcdadb11e0e982",
+   "changes": {
+    "created": [],
+    "deleted": [
+     {
+      "id": "dev_000000000051",
+      "kind": "device"
+     }
+    ],
+    "flags": [
+     "devices"
+    ],
+    "updated": [
+     {
+      "id": "trk_000000000027",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "RemoveDevice",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "device_id": "dev_000000000051"
+   },
+   "label": "Remove Effect",
+   "project": "0be89c5c4112a265db2d42ecda349cb827998b2aac4fbe0210deece601944f68",
+   "result": {},
+   "step": 105
+  },
+  {
+   "before": "0be89c5c4112a265db2d42ecda349cb827998b2aac4fbe0210deece601944f68",
+   "changes": {
+    "created": [],
+    "deleted": [
+     {
+      "id": "dev_000000000049",
+      "kind": "device"
+     }
+    ],
+    "flags": [
+     "devices"
+    ],
+    "updated": [
+     {
+      "id": "trk_000000000027",
+      "kind": "track"
+     }
+    ]
+   },
+   "command": "RemoveDevice",
+   "committed": false,
+   "dry_run": true,
+   "fields": {
+    "device_id": "dev_000000000049"
+   },
+   "label": "Remove Effect",
+   "project": null,
+   "result": {},
+   "step": 107
+  },
+  {
+   "before": "0be89c5c4112a265db2d42ecda349cb827998b2aac4fbe0210deece601944f68",
+   "changes": {
+    "created": [
+     {
+      "id": "mrk_000000000077",
+      "kind": "marker"
+     },
+     {
+      "id": "trk_000000000078",
+      "kind": "track"
+     },
+     {
+      "id": "dev_000000000079",
+      "kind": "device"
+     },
+     {
+      "id": "clp_000000000080",
+      "kind": "clip"
+     },
+     {
+      "id": "trk_000000000081",
+      "kind": "track"
+     },
+     {
+      "id": "dev_000000000082",
+      "kind": "device"
+     },
+     {
+      "id": "clp_000000000083",
+      "kind": "clip"
+     }
+    ],
+    "deleted": [],
+    "flags": [
+     "clips",
+     "markers",
+     "notes",
+     "routing",
+     "tempo",
+     "tracks"
+    ],
+    "updated": [
+     {
+      "id": "project",
+      "kind": "project"
+     }
+    ]
+   },
+   "command": "Transaction",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "commands": [
+     {
+      "beat": 0.0,
+      "bpm": 120.0,
+      "clear_changes": true,
+      "ramp": false
+     },
+     {
+      "beat": 48.0,
+      "bpm": 100.0,
+      "clear_changes": false,
+      "ramp": false
+     },
+     {
+      "bar": 0,
+      "denominator": 4,
+      "numerator": 4
+     },
+     {
+      "beat": 64.0,
+      "color": null,
+      "marker_id": "mrk_000000000077",
+      "name": "Bridge"
+     },
+     {
+      "color": null,
+      "index": null,
+      "instrument_id": "dev_000000000079",
+      "instrument_plugin": "sonara.synth.poly",
+      "instrument_preset": "Electric Keys",
+      "kind": "instrument",
+      "name": "Lead",
+      "output_id": "master",
+      "parent_id": null,
+      "track_id": "trk_000000000078"
+     },
+     {
+      "clip_id": "clp_000000000080",
+      "color": null,
+      "length": 4.0,
+      "loop_length": null,
+      "name": "Lead",
+      "notes": [
+       {
+        "channel": 0,
+        "id": "n_000000000065",
+        "length": 1.0,
+        "pitch": 60,
+        "start": 0.0,
+        "velocity": 90
+       },
+       {
+        "channel": 0,
+        "id": "n_000000000066",
+        "length": 1.0,
+        "pitch": 64,
+        "start": 1.0,
+        "velocity": 80
+       },
+       {
+        "channel": 0,
+        "id": "n_000000000067",
+        "length": 1.0,
+        "pitch": 67,
+        "start": 2.0,
+        "velocity": 100
+       },
+       {
+        "channel": 0,
+        "id": "n_000000000068",
+        "length": 1.0,
+        "pitch": 72,
+        "start": 3.0,
+        "velocity": 70
+       }
+      ],
+      "start": 32.0,
+      "track_id": "trk_000000000078"
+     },
+     {
+      "color": null,
+      "index": null,
+      "instrument_id": "dev_000000000082",
+      "instrument_plugin": "sonara.drums",
+      "instrument_preset": "Punchy 909",
+      "kind": "instrument",
+      "name": "Beat (Drums)",
+      "output_id": "master",
+      "parent_id": null,
+      "track_id": "trk_000000000081"
+     },
+     {
+      "clip_id": "clp_000000000083",
+      "color": null,
+      "length": 4.0,
+      "loop_length": null,
+      "name": "Beat (Drums)",
+      "notes": [
+       {
+        "channel": 0,
+        "id": "n_000000000069",
+        "length": 0.5,
+        "pitch": 36,
+        "start": 0.0,
+        "velocity": 110
+       },
+       {
+        "channel": 0,
+        "id": "n_000000000070",
+        "length": 0.5,
+        "pitch": 42,
+        "start": 0.5,
+        "velocity": 110
+       },
+       {
+        "channel": 0,
+        "id": "n_000000000071",
+        "length": 0.5,
+        "pitch": 38,
+        "start": 1.0,
+        "velocity": 110
+       },
+       {
+        "channel": 0,
+        "id": "n_000000000072",
+        "length": 0.5,
+        "pitch": 42,
+        "start": 1.5,
+        "velocity": 110
+       },
+       {
+        "channel": 0,
+        "id": "n_000000000073",
+        "length": 0.5,
+        "pitch": 36,
+        "start": 2.0,
+        "velocity": 110
+       },
+       {
+        "channel": 0,
+        "id": "n_000000000074",
+        "length": 0.5,
+        "pitch": 36,
+        "start": 2.5,
+        "velocity": 110
+       },
+       {
+        "channel": 0,
+        "id": "n_000000000075",
+        "length": 0.5,
+        "pitch": 38,
+        "start": 3.0,
+        "velocity": 110
+       },
+       {
+        "channel": 0,
+        "id": "n_000000000076",
+        "length": 0.5,
+        "pitch": 46,
+        "start": 3.5,
+        "velocity": 110
+       }
+      ],
+      "start": 32.0,
+      "track_id": "trk_000000000081"
+     }
+    ],
+    "name": "Import MIDI",
+    "types": [
+     "SetTempo",
+     "SetTempo",
+     "SetTimeSignature",
+     "AddMarker",
+     "CreateTrack",
+     "CreateMidiClip",
+     "CreateTrack",
+     "CreateMidiClip"
+    ]
+   },
+   "label": "Import MIDI",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "steps": [
+     {
+      "tempo_points": 1
+     },
+     {
+      "tempo_points": 2
+     },
+     {},
+     {
+      "marker_id": "mrk_000000000077"
+     },
+     {
+      "instrument_device_id": "dev_000000000079",
+      "track_id": "trk_000000000078"
+     },
+     {
+      "clip_id": "clp_000000000080",
+      "end_seconds": 18.0,
+      "length_beats": 4.0,
+      "note_ids": [
+       "n_000000000065",
+       "n_000000000066",
+       "n_000000000067",
+       "n_000000000068"
+      ],
+      "start_beat": 32.0,
+      "start_seconds": 16.0
+     },
+     {
+      "instrument_device_id": "dev_000000000082",
+      "track_id": "trk_000000000081"
+     },
+     {
+      "clip_id": "clp_000000000083",
+      "end_seconds": 18.0,
+      "length_beats": 4.0,
+      "note_ids": [
+       "n_000000000069",
+       "n_000000000070",
+       "n_000000000071",
+       "n_000000000072",
+       "n_000000000073",
+       "n_000000000074",
+       "n_000000000075",
+       "n_000000000076"
+      ],
+      "start_beat": 32.0,
+      "start_seconds": 16.0
+     }
+    ]
+   },
+   "step": 109
+  },
+  {
+   "before": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "media"
+    ],
+    "updated": [
+     {
+      "id": "med_000000000030",
+      "kind": "asset"
+     }
+    ]
+   },
+   "command": "ReplaceAsset",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "asset": {
+     "channels": 1,
+     "extra": {},
+     "format": "WAV",
+     "frames": 66150,
+     "id": "med_000000000030",
+     "kind": "audio",
+     "location": "linked",
+     "metadata": {},
+     "name": "tone-44k1-mono-16bit.wav",
+     "original_path": "<ROOT>/inputs/tone-44k1-mono-16bit.wav",
+     "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav",
+     "relative_hint": null,
+     "sample_rate": 44100,
+     "sha256": "771f9498cc8ad71f19fdb0aed6052355a770897aea1b3bb12283ffc5768a9163",
+     "size_bytes": 132344,
+     "subtype": "PCM_16"
+    }
+   },
+   "label": "Relink Media",
+   "project": "118d5a98db708a12f8ed5018aef96d43d96f6a780371f5c4ac58315ba03f3c4c",
+   "result": {},
+   "step": 154
+  },
+  {
+   "before": "118d5a98db708a12f8ed5018aef96d43d96f6a780371f5c4ac58315ba03f3c4c",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "media"
+    ],
+    "updated": [
+     {
+      "id": "med_000000000030",
+      "kind": "asset"
+     }
+    ]
+   },
+   "command": "ReplaceAsset",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "asset": {
+     "channels": 2,
+     "extra": {},
+     "format": "WAV",
+     "frames": 96000,
+     "id": "med_000000000030",
+     "kind": "audio",
+     "location": "linked",
+     "metadata": {},
+     "name": "tone-44k1-mono-16bit.wav",
+     "original_path": "<ROOT>/inputs/tone-44k1-mono-16bit.wav",
+     "path": "<ROOT>/inputs/tone-48k-stereo-24bit.wav",
+     "relative_hint": null,
+     "sample_rate": 48000,
+     "sha256": "77f1f43332d8c3c547f544ac6ae3101316d6fdbe12c341eb29a6028977f5d0bf",
+     "size_bytes": 576044,
+     "subtype": "PCM_16"
+    }
+   },
+   "label": "Relink Media",
+   "project": "11f56f500f3790b18d66b203c98e6b987f2822ceb0956a76c1630363be23e2dc",
+   "result": {},
+   "step": 156
+  },
+  {
+   "before": "11f56f500f3790b18d66b203c98e6b987f2822ceb0956a76c1630363be23e2dc",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "media"
+    ],
+    "updated": [
+     {
+      "id": "med_000000000030",
+      "kind": "asset"
+     }
+    ]
+   },
+   "command": "ReplaceAsset",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "asset": {
+     "channels": 1,
+     "extra": {},
+     "format": "WAV",
+     "frames": 66150,
+     "id": "med_000000000030",
+     "kind": "audio",
+     "location": "linked",
+     "metadata": {},
+     "name": "tone-44k1-mono-16bit.wav",
+     "original_path": "<ROOT>/inputs/tone-44k1-mono-16bit.wav",
+     "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav",
+     "relative_hint": null,
+     "sample_rate": 44100,
+     "sha256": "771f9498cc8ad71f19fdb0aed6052355a770897aea1b3bb12283ffc5768a9163",
+     "size_bytes": 132344,
+     "subtype": "PCM_16"
+    }
+   },
+   "label": "Relink Media",
+   "project": "118d5a98db708a12f8ed5018aef96d43d96f6a780371f5c4ac58315ba03f3c4c",
+   "result": {},
+   "step": 157
+  },
+  {
+   "before": "118d5a98db708a12f8ed5018aef96d43d96f6a780371f5c4ac58315ba03f3c4c",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "media"
+    ],
+    "updated": [
+     {
+      "id": "med_000000000030",
+      "kind": "asset"
+     }
+    ]
+   },
+   "command": "ReplaceAsset",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "asset": {
+     "channels": 1,
+     "extra": {},
+     "format": "WAV",
+     "frames": 66150,
+     "id": "med_000000000030",
+     "kind": "audio",
+     "location": "embedded",
+     "metadata": {},
+     "name": "tone-44k1-mono-16bit.wav",
+     "original_path": "<ROOT>/inputs/tone-44k1-mono-16bit.wav",
+     "path": "media/audio/med_000000000030-tone-44k1-mono-16bit.wav",
+     "relative_hint": null,
+     "sample_rate": 44100,
+     "sha256": "771f9498cc8ad71f19fdb0aed6052355a770897aea1b3bb12283ffc5768a9163",
+     "size_bytes": 132344,
+     "subtype": "PCM_16"
+    }
+   },
+   "label": "Relink Media",
+   "project": "52263b426af2e584a8fd2b801b0525f7939f5346663049806cdf44b4bd11964c",
+   "result": {},
+   "step": 158
+  },
+  {
+   "before": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "changes": {
+    "created": [],
+    "deleted": [],
+    "flags": [
+     "media"
+    ],
+    "updated": [
+     {
+      "id": "med_000000000030",
+      "kind": "asset"
+     }
+    ]
+   },
+   "command": "ReplaceAsset",
+   "committed": true,
+   "dry_run": false,
+   "fields": {
+    "asset": {
+     "channels": 1,
+     "extra": {},
+     "format": "WAV",
+     "frames": 66150,
+     "id": "med_000000000030",
+     "kind": "audio",
+     "location": "linked",
+     "metadata": {},
+     "name": "tone-44k1-mono-16bit.wav",
+     "original_path": "<ROOT>/inputs/tone-44k1-mono-16bit.wav",
+     "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav",
+     "relative_hint": null,
+     "sample_rate": 44100,
+     "sha256": "771f9498cc8ad71f19fdb0aed6052355a770897aea1b3bb12283ffc5768a9163",
+     "size_bytes": 132344,
+     "subtype": "PCM_16"
+    }
+   },
+   "label": "Relink Media",
+   "project": "118d5a98db708a12f8ed5018aef96d43d96f6a780371f5c4ac58315ba03f3c4c",
+   "result": {},
+   "step": 168
+  }
+ ],
+ "events": [
+  {
+   "at": 0,
+   "before": null,
+   "event": "load",
+   "path": null,
+   "project": "bfb117cd5d4a1865533bcd6ba87cf8e392b34067af5acb6d72d14a97d095e38e",
+   "saved": true,
+   "step": 5,
+   "workspace": "<ROOT>/workspaces/new-prj_000000000002"
+  },
+  {
+   "at": 55,
+   "before": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "event": "undo",
+   "label": "Undo Import MIDI",
+   "project": "0be89c5c4112a265db2d42ecda349cb827998b2aac4fbe0210deece601944f68",
+   "source": "agent",
+   "step": 121
+  },
+  {
+   "at": 55,
+   "before": "0be89c5c4112a265db2d42ecda349cb827998b2aac4fbe0210deece601944f68",
+   "event": "undo",
+   "label": "Undo Remove Effect",
+   "project": "421117652a3c0be8ba112a9ecbf0dac7fb6fc94de3a70ee31ebcdadb11e0e982",
+   "source": "agent",
+   "step": 122
+  },
+  {
+   "at": 55,
+   "before": "421117652a3c0be8ba112a9ecbf0dac7fb6fc94de3a70ee31ebcdadb11e0e982",
+   "event": "redo",
+   "label": "Redo Remove Effect",
+   "project": "0be89c5c4112a265db2d42ecda349cb827998b2aac4fbe0210deece601944f68",
+   "source": "agent",
+   "step": 123
+  },
+  {
+   "at": 55,
+   "before": "0be89c5c4112a265db2d42ecda349cb827998b2aac4fbe0210deece601944f68",
+   "event": "redo",
+   "label": "Redo Import MIDI",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "source": "agent",
+   "step": 125
+  },
+  {
+   "at": 59,
+   "before": "52263b426af2e584a8fd2b801b0525f7939f5346663049806cdf44b4bd11964c",
+   "event": "load",
+   "path": "<ROOT>/work/Coverage.sonara",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "saved": true,
+   "step": 164,
+   "workspace": "<ROOT>/work/Coverage.sonara"
+  }
+ ],
+ "rejected": [
+  {
+   "at": 7,
+   "before": "22349c78953c48ec84c17882878c1a6ae57872577ab7689c4b069f77b19c8cba",
+   "command": "RenameTrack",
+   "dry_run": false,
+   "error": {
+    "code": "NOT_FOUND",
+    "details": {
+     "id": "trk_missing",
+     "kind": "track"
+    },
+    "message": "track 'trk_missing' not found"
+   },
+   "fields": {
+    "name": "x",
+    "track_id": "trk_missing"
+   },
+   "step": 24
+  },
+  {
+   "at": 9,
+   "before": "236ffa7703e2e452879f97a41460022faf4b3d4d981673621b881abb5300a10f",
+   "command": "Transaction",
+   "dry_run": false,
+   "error": {
+    "code": "INVALID_ARGUMENT",
+    "message": "only audio and instrument tracks can record"
+   },
+   "fields": {
+    "commands": [
+     {
+      "armed": true,
+      "channels": null,
+      "monitor": null,
+      "track_id": "trk_000000000007"
+     }
+    ],
+    "name": "Track State",
+    "types": [
+     "SetTrackInput"
+    ]
+   },
+   "step": 29
+  },
+  {
+   "at": 12,
+   "before": "c6aa5d9f2641748b364dfecb2d1008d59dfc3831069405a0a8f29910db352f95",
+   "command": "SetTransportSettings",
+   "dry_run": false,
+   "error": {
+    "code": "INVALID_ARGUMENT",
+    "message": "loop start must be >= 0 and before loop end"
+   },
+   "fields": {
+    "values": {
+     "loop_enabled": true,
+     "loop_end": 4.0,
+     "loop_start": 8.0
+    }
+   },
+   "step": 34
+  },
+  {
+   "at": 22,
+   "before": "915cc599a0a9aa2ee6d2194c2127dc3aa1146ab9fb728e443231b52cdc948d12",
+   "command": "Transaction",
+   "dry_run": false,
+   "error": {
+    "code": "NOT_FOUND",
+    "message": "note 'n_missing' not found in clip 'clp_000000000014'"
+   },
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000014",
+      "edits": [
+       {
+        "channel": null,
+        "length": null,
+        "note_id": "n_missing",
+        "pitch": 60,
+        "start": null,
+        "velocity": null
+       }
+      ]
+     }
+    ],
+    "name": "Edit Notes",
+    "types": [
+     "EditNotes"
+    ]
+   },
+   "step": 48
+  },
+  {
+   "at": 27,
+   "before": "09e1bd660aaf8fda6f8144c64648b107683b1c19988cd07db6662a9099f4f831",
+   "command": "MoveClip",
+   "dry_run": false,
+   "error": {
+    "code": "INVALID_ARGUMENT",
+    "message": "track 'FX Bus' (bus) cannot hold MIDI clips"
+   },
+   "fields": {
+    "clip_id": "clp_000000000018",
+    "start": null,
+    "track_id": "trk_000000000007"
+   },
+   "step": 55
+  },
+  {
+   "at": 27,
+   "before": "09e1bd660aaf8fda6f8144c64648b107683b1c19988cd07db6662a9099f4f831",
+   "command": "MoveClip",
+   "dry_run": false,
+   "error": {
+    "code": "NOT_FOUND",
+    "details": {
+     "id": "clp_missing",
+     "kind": "clip"
+    },
+    "message": "clip 'clp_missing' not found"
+   },
+   "fields": {
+    "clip_id": "clp_missing",
+    "start": 0.0,
+    "track_id": null
+   },
+   "step": 56
+  },
+  {
+   "at": 28,
+   "before": "8ad85f077df3dee166e2c1659e03c4f2c7e5061ca3c262072957c2d40300c5a5",
+   "command": "SplitClip",
+   "dry_run": false,
+   "error": {
+    "code": "INVALID_ARGUMENT",
+    "message": "split position must be inside the clip"
+   },
+   "fields": {
+    "at": 100.0,
+    "clip_id": "clp_000000000014",
+    "new_clip_id": "clp_000000000022"
+   },
+   "step": 58
+  },
+  {
+   "at": 33,
+   "before": "bd3d007408cc2873c03130afbcb797928f7b37d5199b65279c49d875edf60c37",
+   "command": "Transaction",
+   "dry_run": false,
+   "error": {
+    "code": "INVALID_ARGUMENT",
+    "message": "gain and fades apply to audio clips only"
+   },
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000014",
+      "color": null,
+      "fade_in": null,
+      "fade_out": null,
+      "gain_db": 3.0,
+      "loop_length": "<UNSET>",
+      "muted": null,
+      "name": null
+     }
+    ],
+    "name": "Edit Clip",
+    "types": [
+     "SetClipProperties"
+    ]
+   },
+   "step": 64
+  },
+  {
+   "at": 34,
+   "before": "2e5c7b3c934bfed34a2f1e73090b023df4e5b4000d0632212aa3c8ef8214ed72",
+   "command": "DeleteClips",
+   "dry_run": false,
+   "error": {
+    "code": "NOT_FOUND",
+    "details": {
+     "id": "clp_missing",
+     "kind": "clip"
+    },
+    "message": "clip 'clp_missing' not found"
+   },
+   "fields": {
+    "clip_ids": [
+     "clp_missing"
+    ]
+   },
+   "step": 67
+  },
+  {
+   "at": 41,
+   "before": "6d8811483f58a20e835e7bbc7047ab50e40ddf43d6aee9482904e9caee141ee8",
+   "command": "Transaction",
+   "dry_run": false,
+   "error": {
+    "code": "INVALID_ARGUMENT",
+    "message": "fades are longer than the clip"
+   },
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000029",
+      "color": null,
+      "fade_in": {
+       "curve": "linear",
+       "seconds": 5.0
+      },
+      "fade_out": null,
+      "gain_db": null,
+      "loop_length": "<UNSET>",
+      "muted": null,
+      "name": null
+     }
+    ],
+    "name": "Edit Clip",
+    "types": [
+     "SetClipProperties"
+    ]
+   },
+   "step": 87
+  },
+  {
+   "at": 41,
+   "before": "6d8811483f58a20e835e7bbc7047ab50e40ddf43d6aee9482904e9caee141ee8",
+   "command": "Transaction",
+   "dry_run": false,
+   "error": {
+    "code": "UNSUPPORTED",
+    "message": "audio clip looping is not supported yet"
+   },
+   "fields": {
+    "commands": [
+     {
+      "clip_id": "clp_000000000029",
+      "color": null,
+      "fade_in": null,
+      "fade_out": null,
+      "gain_db": null,
+      "loop_length": 1.0,
+      "muted": null,
+      "name": null
+     }
+    ],
+    "name": "Edit Clip",
+    "types": [
+     "SetClipProperties"
+    ]
+   },
+   "step": 88
+  },
+  {
+   "at": 48,
+   "before": "927213b23dbedba8bca3ddbb73c1817f03f8d45eaec3fed45b92193e1af458f9",
+   "command": "MoveClip",
+   "dry_run": false,
+   "error": {
+    "code": "INVALID_ARGUMENT",
+    "message": "track 'Piano' (instrument) cannot hold audio clips"
+   },
+   "fields": {
+    "clip_id": "clp_000000000041",
+    "start": null,
+    "track_id": "trk_000000000003"
+   },
+   "step": 97
+  },
+  {
+   "at": 53,
+   "before": "0be89c5c4112a265db2d42ecda349cb827998b2aac4fbe0210deece601944f68",
+   "command": "RemoveDevice",
+   "dry_run": false,
+   "error": {
+    "code": "NOT_FOUND",
+    "details": {
+     "id": "dev_000000000051",
+     "kind": "device"
+    },
+    "message": "device 'dev_000000000051' not found"
+   },
+   "fields": {
+    "device_id": "dev_000000000051"
+   },
+   "step": 106
+  }
+ ]
+}

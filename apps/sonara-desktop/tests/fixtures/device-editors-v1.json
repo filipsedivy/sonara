@@ -1,0 +1,2191 @@
+{
+ "format": 1,
+ "source": "The prototype's device editor widgets for every built-in plugin at its defaults: group_params, short_label and ParamWidget (src/sonara/ui/devices/panel.py) with ParamWidget.set_value(default), recorded on the host from the frozen prototype; the recorder is in tests/unit/devices.test.ts (GLD-01: never edited by hand).",
+ "plugins": [
+  {
+   "id": "sonara.convolver",
+   "groups": [
+    {
+     "key": "main",
+     "title": "Main",
+     "params": [
+      {
+       "id": "mix",
+       "label": "Mix",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 0.3,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.3,
+       "text": "0.30",
+       "tooltip": "Mix"
+      },
+      {
+       "id": "gain_db",
+       "label": "Wet Gain",
+       "control": "knob",
+       "min": -24.0,
+       "max": 24.0,
+       "default": 0.0,
+       "bipolar": true,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5,
+       "text": "0.0 dB",
+       "tooltip": "Wet Gain (dB)"
+      },
+      {
+       "id": "input",
+       "label": "Input",
+       "control": "combo",
+       "items": [
+        "mono_sum",
+        "stereo"
+       ],
+       "current": "mono_sum",
+       "tooltip": "Input\nmono_sum: L+R into a stereo IR"
+      },
+      {
+       "id": "normalize",
+       "label": "Normalize IR",
+       "control": "toggle",
+       "text": "On",
+       "checked": true,
+       "tooltip": "Normalize IR"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sonara.delay",
+   "groups": [
+    {
+     "key": "main",
+     "title": "Main",
+     "params": [
+      {
+       "id": "time_ms",
+       "label": "Time",
+       "control": "knob",
+       "min": 1.0,
+       "max": 4000.0,
+       "default": 375.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.7145997773287383,
+       "text": "375 ms",
+       "tooltip": "Time (ms)"
+      },
+      {
+       "id": "sync",
+       "label": "Tempo Sync",
+       "control": "toggle",
+       "text": "On",
+       "checked": true,
+       "tooltip": "Tempo Sync"
+      },
+      {
+       "id": "note",
+       "label": "Note Value",
+       "control": "combo",
+       "items": [
+        "1/32",
+        "1/16T",
+        "1/16",
+        "1/16D",
+        "1/8T",
+        "1/8",
+        "1/8D",
+        "1/4T",
+        "1/4",
+        "1/4D",
+        "1/2",
+        "1/2D",
+        "1/1"
+       ],
+       "current": "1/8D",
+       "tooltip": "Note Value"
+      },
+      {
+       "id": "feedback",
+       "label": "Feedback",
+       "control": "knob",
+       "min": 0.0,
+       "max": 0.98,
+       "default": 0.35,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.35714285714285715,
+       "text": "0.35",
+       "tooltip": "Feedback"
+      },
+      {
+       "id": "mix",
+       "label": "Mix",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 0.25,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.25,
+       "text": "0.25",
+       "tooltip": "Mix"
+      },
+      {
+       "id": "ping_pong",
+       "label": "Ping-Pong",
+       "control": "toggle",
+       "text": "Off",
+       "checked": false,
+       "tooltip": "Ping-Pong"
+      },
+      {
+       "id": "lowcut_hz",
+       "label": "Feedback Low Cut",
+       "control": "knob",
+       "min": 20.0,
+       "max": 2000.0,
+       "default": 120.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.38907562519182176,
+       "text": "120 Hz",
+       "tooltip": "Feedback Low Cut (Hz)"
+      },
+      {
+       "id": "highcut_hz",
+       "label": "Feedback High Cut",
+       "control": "knob",
+       "min": 1000.0,
+       "max": 20000.0,
+       "default": 7000.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.6495607655709434,
+       "text": "7.00 kHz",
+       "tooltip": "Feedback High Cut (Hz)"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sonara.drums",
+   "groups": [
+    {
+     "key": "main",
+     "title": "Main",
+     "params": [
+      {
+       "id": "clap_decay",
+       "label": "Clap Decay",
+       "control": "knob",
+       "min": 0.05,
+       "max": 1.0,
+       "default": 0.25,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.2105263157894737,
+       "text": "0.25 s",
+       "tooltip": "Clap Decay (s)"
+      },
+      {
+       "id": "tom_tune",
+       "label": "Tom Tune",
+       "control": "knob",
+       "min": 0.5,
+       "max": 2.0,
+       "default": 1.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.3333333333333333,
+       "text": "1.00x",
+       "tooltip": "Tom Tune (x)"
+      },
+      {
+       "id": "drive",
+       "label": "Drive",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 0.1,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.1,
+       "text": "0.10",
+       "tooltip": "Drive"
+      },
+      {
+       "id": "perc_level_db",
+       "label": "Percussion Level",
+       "control": "knob",
+       "min": -48.0,
+       "max": 12.0,
+       "default": -6.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.7,
+       "text": "-6.0 dB",
+       "tooltip": "Percussion Level (dB)"
+      },
+      {
+       "id": "stereo_width",
+       "label": "Stereo Width",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 1.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 1.0,
+       "text": "1.00",
+       "tooltip": "Stereo Width"
+      },
+      {
+       "id": "gain_db",
+       "label": "Output",
+       "control": "knob",
+       "min": -48.0,
+       "max": 12.0,
+       "default": -9.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.65,
+       "text": "-9.0 dB",
+       "tooltip": "Output (dB)"
+      }
+     ]
+    },
+    {
+     "key": "kick",
+     "title": "Kick",
+     "params": [
+      {
+       "id": "kick_tune",
+       "label": "Tune",
+       "control": "knob",
+       "min": 30.0,
+       "max": 120.0,
+       "default": 52.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.24444444444444444,
+       "text": "52.0 Hz",
+       "tooltip": "Kick Tune (Hz)"
+      },
+      {
+       "id": "kick_decay",
+       "label": "Decay",
+       "control": "knob",
+       "min": 0.08,
+       "max": 2.0,
+       "default": 0.45,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.19270833333333334,
+       "text": "0.45 s",
+       "tooltip": "Kick Decay (s)"
+      },
+      {
+       "id": "kick_punch",
+       "label": "Punch",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 0.5,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5,
+       "text": "0.50",
+       "tooltip": "Kick Punch"
+      },
+      {
+       "id": "kick_level_db",
+       "label": "Level",
+       "control": "knob",
+       "min": -48.0,
+       "max": 12.0,
+       "default": 0.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.8,
+       "text": "0.0 dB",
+       "tooltip": "Kick Level (dB)"
+      }
+     ]
+    },
+    {
+     "key": "snare",
+     "title": "Snare",
+     "params": [
+      {
+       "id": "snare_tune",
+       "label": "Tune",
+       "control": "knob",
+       "min": 0.5,
+       "max": 2.0,
+       "default": 1.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.3333333333333333,
+       "text": "1.00x",
+       "tooltip": "Snare Tune (x)"
+      },
+      {
+       "id": "snare_tone",
+       "label": "Snappiness",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 0.6,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.6,
+       "text": "0.60",
+       "tooltip": "Snare Snappiness"
+      },
+      {
+       "id": "snare_decay",
+       "label": "Decay",
+       "control": "knob",
+       "min": 0.05,
+       "max": 1.0,
+       "default": 0.18,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.1368421052631579,
+       "text": "0.18 s",
+       "tooltip": "Snare Decay (s)"
+      },
+      {
+       "id": "snare_level_db",
+       "label": "Level",
+       "control": "knob",
+       "min": -48.0,
+       "max": 12.0,
+       "default": -2.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.7666666666666667,
+       "text": "-2.0 dB",
+       "tooltip": "Snare Level (dB)"
+      }
+     ]
+    },
+    {
+     "key": "hat",
+     "title": "Hi-Hat",
+     "params": [
+      {
+       "id": "hat_tune",
+       "label": "Tune",
+       "control": "knob",
+       "min": 0.5,
+       "max": 2.0,
+       "default": 1.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.3333333333333333,
+       "text": "1.00x",
+       "tooltip": "Hi-Hat Tune (x)"
+      },
+      {
+       "id": "hat_decay",
+       "label": "Decay",
+       "control": "knob",
+       "min": 0.3,
+       "max": 3.0,
+       "default": 1.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.25925925925925924,
+       "text": "1.00x",
+       "tooltip": "Hi-Hat Decay (x)"
+      },
+      {
+       "id": "hat_level_db",
+       "label": "Level",
+       "control": "knob",
+       "min": -48.0,
+       "max": 12.0,
+       "default": -9.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.65,
+       "text": "-9.0 dB",
+       "tooltip": "Hi-Hat Level (dB)"
+      }
+     ]
+    },
+    {
+     "key": "cymbal",
+     "title": "Cymbal",
+     "params": [
+      {
+       "id": "cymbal_decay",
+       "label": "Decay",
+       "control": "knob",
+       "min": 0.3,
+       "max": 5.0,
+       "default": 1.6,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.2765957446808511,
+       "text": "1.60 s",
+       "tooltip": "Cymbal Decay (s)"
+      },
+      {
+       "id": "cymbal_level_db",
+       "label": "Level",
+       "control": "knob",
+       "min": -48.0,
+       "max": 12.0,
+       "default": -10.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.6333333333333333,
+       "text": "-10.0 dB",
+       "tooltip": "Cymbal Level (dB)"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sonara.dynamics.compressor",
+   "groups": [
+    {
+     "key": "main",
+     "title": "Main",
+     "params": [
+      {
+       "id": "threshold_db",
+       "label": "Threshold",
+       "control": "knob",
+       "min": -60.0,
+       "max": 0.0,
+       "default": -18.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.7,
+       "text": "-18.0 dB",
+       "tooltip": "Threshold (dB)"
+      },
+      {
+       "id": "ratio",
+       "label": "Ratio",
+       "control": "knob",
+       "min": 1.0,
+       "max": 20.0,
+       "default": 4.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.46275642631951835,
+       "text": "4.0:1",
+       "tooltip": "Ratio (:1)"
+      },
+      {
+       "id": "attack_ms",
+       "label": "Attack",
+       "control": "knob",
+       "min": 0.05,
+       "max": 200.0,
+       "default": 10.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.638809459365963,
+       "text": "10.0 ms",
+       "tooltip": "Attack (ms)"
+      },
+      {
+       "id": "release_ms",
+       "label": "Release",
+       "control": "knob",
+       "min": 5.0,
+       "max": 2000.0,
+       "default": 120.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5304302154106811,
+       "text": "120 ms",
+       "tooltip": "Release (ms)"
+      },
+      {
+       "id": "knee_db",
+       "label": "Knee",
+       "control": "knob",
+       "min": 0.0,
+       "max": 24.0,
+       "default": 6.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.25,
+       "text": "+6.0 dB",
+       "tooltip": "Knee (dB)"
+      },
+      {
+       "id": "makeup_db",
+       "label": "Makeup Gain",
+       "control": "knob",
+       "min": -12.0,
+       "max": 24.0,
+       "default": 0.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.3333333333333333,
+       "text": "0.0 dB",
+       "tooltip": "Makeup Gain (dB)"
+      },
+      {
+       "id": "auto_makeup",
+       "label": "Auto Makeup",
+       "control": "toggle",
+       "text": "Off",
+       "checked": false,
+       "tooltip": "Auto Makeup"
+      },
+      {
+       "id": "mix",
+       "label": "Mix",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 1.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 1.0,
+       "text": "1.00",
+       "tooltip": "Mix\nParallel compression: 0 = dry, 1 = fully compressed"
+      },
+      {
+       "id": "detector",
+       "label": "Detector",
+       "control": "combo",
+       "items": [
+        "peak",
+        "rms"
+       ],
+       "current": "peak",
+       "tooltip": "Detector"
+      }
+     ]
+    },
+    {
+     "key": "sidechain",
+     "title": "Sidechain",
+     "params": [
+      {
+       "id": "sidechain",
+       "label": "External Sidechain",
+       "control": "toggle",
+       "text": "Off",
+       "checked": false,
+       "tooltip": "External Sidechain\nUse the sidechain source track as the key signal"
+      },
+      {
+       "id": "sidechain_hpf_hz",
+       "label": "High-Pass",
+       "control": "knob",
+       "min": 20.0,
+       "max": 500.0,
+       "default": 20.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.0,
+       "text": "20.0 Hz",
+       "tooltip": "Sidechain High-Pass (Hz)"
+      },
+      {
+       "id": "sidechain_lpf_hz",
+       "label": "Low-Pass",
+       "control": "knob",
+       "min": 40.0,
+       "max": 20000.0,
+       "default": 20000.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 1.0,
+       "text": "20.00 kHz",
+       "tooltip": "Sidechain Low-Pass (Hz)\nKey on the kick of a full drum bus (e.g. 120 Hz)"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sonara.dynamics.gate",
+   "groups": [
+    {
+     "key": "main",
+     "title": "Main",
+     "params": [
+      {
+       "id": "mode",
+       "label": "Mode",
+       "control": "combo",
+       "items": [
+        "gate",
+        "expander"
+       ],
+       "current": "gate",
+       "tooltip": "Mode"
+      },
+      {
+       "id": "threshold_db",
+       "label": "Threshold",
+       "control": "knob",
+       "min": -80.0,
+       "max": 0.0,
+       "default": -40.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5,
+       "text": "-40.0 dB",
+       "tooltip": "Threshold (dB)"
+      },
+      {
+       "id": "range_db",
+       "label": "Range",
+       "control": "knob",
+       "min": -80.0,
+       "max": 0.0,
+       "default": -80.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.0,
+       "text": "-80.0 dB",
+       "tooltip": "Range (dB)\nMaximum attenuation"
+      },
+      {
+       "id": "ratio",
+       "label": "Expander Ratio",
+       "control": "knob",
+       "min": 1.0,
+       "max": 10.0,
+       "default": 2.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.1111111111111111,
+       "text": "2.0:1",
+       "tooltip": "Expander Ratio (:1)"
+      },
+      {
+       "id": "hysteresis_db",
+       "label": "Hysteresis",
+       "control": "knob",
+       "min": 0.0,
+       "max": 12.0,
+       "default": 3.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.25,
+       "text": "+3.0 dB",
+       "tooltip": "Hysteresis (dB)"
+      },
+      {
+       "id": "attack_ms",
+       "label": "Attack",
+       "control": "knob",
+       "min": 0.05,
+       "max": 50.0,
+       "default": 0.5,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.33333333333333337,
+       "text": "0.50 ms",
+       "tooltip": "Attack (ms)"
+      },
+      {
+       "id": "hold_ms",
+       "label": "Hold",
+       "control": "knob",
+       "min": 0.0,
+       "max": 500.0,
+       "default": 20.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.04,
+       "text": "20.0 ms",
+       "tooltip": "Hold (ms)"
+      },
+      {
+       "id": "release_ms",
+       "label": "Release",
+       "control": "knob",
+       "min": 5.0,
+       "max": 2000.0,
+       "default": 150.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5676737890911627,
+       "text": "150 ms",
+       "tooltip": "Release (ms)"
+      },
+      {
+       "id": "sidechain",
+       "label": "External Sidechain",
+       "control": "toggle",
+       "text": "Off",
+       "checked": false,
+       "tooltip": "External Sidechain"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sonara.dynamics.limiter",
+   "groups": [
+    {
+     "key": "main",
+     "title": "Main",
+     "params": [
+      {
+       "id": "ceiling_db",
+       "label": "Ceiling",
+       "control": "knob",
+       "min": -24.0,
+       "max": 0.0,
+       "default": -1.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.9583333333333334,
+       "text": "-1.0 dBFS",
+       "tooltip": "Ceiling (dBFS)"
+      },
+      {
+       "id": "input_gain_db",
+       "label": "Input Gain",
+       "control": "knob",
+       "min": 0.0,
+       "max": 24.0,
+       "default": 0.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.0,
+       "text": "0.0 dB",
+       "tooltip": "Input Gain (dB)"
+      },
+      {
+       "id": "release_ms",
+       "label": "Release",
+       "control": "knob",
+       "min": 1.0,
+       "max": 1000.0,
+       "default": 60.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5927170834612145,
+       "text": "60.0 ms",
+       "tooltip": "Release (ms)"
+      },
+      {
+       "id": "lookahead_ms",
+       "label": "Lookahead",
+       "control": "knob",
+       "min": 0.1,
+       "max": 10.0,
+       "default": 2.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.1919191919191919,
+       "text": "2.0 ms",
+       "tooltip": "Lookahead (ms)"
+      },
+      {
+       "id": "true_peak",
+       "label": "True-Peak Detection",
+       "control": "toggle",
+       "text": "On",
+       "checked": true,
+       "tooltip": "True-Peak Detection\nDetect inter-sample peaks with 4x oversampling"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sonara.eq.parametric",
+   "groups": [
+    {
+     "key": "main",
+     "title": "Main",
+     "params": [
+      {
+       "id": "output_db",
+       "label": "Output",
+       "control": "knob",
+       "min": -24.0,
+       "max": 24.0,
+       "default": 0.0,
+       "bipolar": true,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5,
+       "text": "0.0 dB",
+       "tooltip": "Output (dB)"
+      }
+     ]
+    },
+    {
+     "key": "hp",
+     "title": "High-Pass",
+     "params": [
+      {
+       "id": "hp_on",
+       "label": "On",
+       "control": "toggle",
+       "text": "Off",
+       "checked": false,
+       "tooltip": "High-Pass On"
+      },
+      {
+       "id": "hp_freq",
+       "label": "Frequency",
+       "control": "knob",
+       "min": 20.0,
+       "max": 2000.0,
+       "default": 80.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.30102999566398114,
+       "text": "80.0 Hz",
+       "tooltip": "High-Pass Frequency (Hz)"
+      },
+      {
+       "id": "hp_slope",
+       "label": "Slope",
+       "control": "combo",
+       "items": [
+        "12",
+        "24",
+        "36",
+        "48"
+       ],
+       "current": "12",
+       "tooltip": "High-Pass Slope\ndB/octave"
+      }
+     ]
+    },
+    {
+     "key": "low",
+     "title": "Low",
+     "params": [
+      {
+       "id": "low_on",
+       "label": "Band On",
+       "control": "toggle",
+       "text": "On",
+       "checked": true,
+       "tooltip": "Low Band On"
+      },
+      {
+       "id": "low_type",
+       "label": "Band Type",
+       "control": "combo",
+       "items": [
+        "shelf",
+        "peak"
+       ],
+       "current": "shelf",
+       "tooltip": "Low Band Type"
+      },
+      {
+       "id": "low_freq",
+       "label": "Frequency",
+       "control": "knob",
+       "min": 20.0,
+       "max": 1000.0,
+       "default": 100.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.41140808993222105,
+       "text": "100 Hz",
+       "tooltip": "Low Frequency (Hz)"
+      },
+      {
+       "id": "low_gain",
+       "label": "Gain",
+       "control": "knob",
+       "min": -24.0,
+       "max": 24.0,
+       "default": 0.0,
+       "bipolar": true,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5,
+       "text": "0.0 dB",
+       "tooltip": "Low Gain (dB)"
+      },
+      {
+       "id": "low_q",
+       "label": "Q",
+       "control": "knob",
+       "min": 0.1,
+       "max": 10.0,
+       "default": 0.71,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.4256291743595376,
+       "text": "0.71",
+       "tooltip": "Low Q"
+      }
+     ]
+    },
+    {
+     "key": "mid1",
+     "title": "Mid 1",
+     "params": [
+      {
+       "id": "mid1_on",
+       "label": "On",
+       "control": "toggle",
+       "text": "On",
+       "checked": true,
+       "tooltip": "Mid 1 On"
+      },
+      {
+       "id": "mid1_freq",
+       "label": "Frequency",
+       "control": "knob",
+       "min": 20.0,
+       "max": 20000.0,
+       "default": 500.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.4659800028906792,
+       "text": "500 Hz",
+       "tooltip": "Mid 1 Frequency (Hz)"
+      },
+      {
+       "id": "mid1_gain",
+       "label": "Gain",
+       "control": "knob",
+       "min": -24.0,
+       "max": 24.0,
+       "default": 0.0,
+       "bipolar": true,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5,
+       "text": "0.0 dB",
+       "tooltip": "Mid 1 Gain (dB)"
+      },
+      {
+       "id": "mid1_q",
+       "label": "Q",
+       "control": "knob",
+       "min": 0.1,
+       "max": 18.0,
+       "default": 1.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.44340539679225754,
+       "text": "1.00",
+       "tooltip": "Mid 1 Q"
+      }
+     ]
+    },
+    {
+     "key": "mid2",
+     "title": "Mid 2",
+     "params": [
+      {
+       "id": "mid2_on",
+       "label": "On",
+       "control": "toggle",
+       "text": "On",
+       "checked": true,
+       "tooltip": "Mid 2 On"
+      },
+      {
+       "id": "mid2_freq",
+       "label": "Frequency",
+       "control": "knob",
+       "min": 20.0,
+       "max": 20000.0,
+       "default": 2500.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.6989700043360189,
+       "text": "2.50 kHz",
+       "tooltip": "Mid 2 Frequency (Hz)"
+      },
+      {
+       "id": "mid2_gain",
+       "label": "Gain",
+       "control": "knob",
+       "min": -24.0,
+       "max": 24.0,
+       "default": 0.0,
+       "bipolar": true,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5,
+       "text": "0.0 dB",
+       "tooltip": "Mid 2 Gain (dB)"
+      },
+      {
+       "id": "mid2_q",
+       "label": "Q",
+       "control": "knob",
+       "min": 0.1,
+       "max": 18.0,
+       "default": 1.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.44340539679225754,
+       "text": "1.00",
+       "tooltip": "Mid 2 Q"
+      }
+     ]
+    },
+    {
+     "key": "high",
+     "title": "High",
+     "params": [
+      {
+       "id": "high_on",
+       "label": "Band On",
+       "control": "toggle",
+       "text": "On",
+       "checked": true,
+       "tooltip": "High Band On"
+      },
+      {
+       "id": "high_type",
+       "label": "Band Type",
+       "control": "combo",
+       "items": [
+        "shelf",
+        "peak"
+       ],
+       "current": "shelf",
+       "tooltip": "High Band Type"
+      },
+      {
+       "id": "high_freq",
+       "label": "Frequency",
+       "control": "knob",
+       "min": 1000.0,
+       "max": 20000.0,
+       "default": 8000.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.6941346394792774,
+       "text": "8.00 kHz",
+       "tooltip": "High Frequency (Hz)"
+      },
+      {
+       "id": "high_gain",
+       "label": "Gain",
+       "control": "knob",
+       "min": -24.0,
+       "max": 24.0,
+       "default": 0.0,
+       "bipolar": true,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5,
+       "text": "0.0 dB",
+       "tooltip": "High Gain (dB)"
+      },
+      {
+       "id": "high_q",
+       "label": "Q",
+       "control": "knob",
+       "min": 0.1,
+       "max": 10.0,
+       "default": 0.71,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.4256291743595376,
+       "text": "0.71",
+       "tooltip": "High Q"
+      }
+     ]
+    },
+    {
+     "key": "lp",
+     "title": "Low-Pass",
+     "params": [
+      {
+       "id": "lp_on",
+       "label": "On",
+       "control": "toggle",
+       "text": "Off",
+       "checked": false,
+       "tooltip": "Low-Pass On"
+      },
+      {
+       "id": "lp_freq",
+       "label": "Frequency",
+       "control": "knob",
+       "min": 1000.0,
+       "max": 20000.0,
+       "default": 18000.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.9648297958439285,
+       "text": "18.00 kHz",
+       "tooltip": "Low-Pass Frequency (Hz)"
+      },
+      {
+       "id": "lp_slope",
+       "label": "Slope",
+       "control": "combo",
+       "items": [
+        "12",
+        "24",
+        "36",
+        "48"
+       ],
+       "current": "12",
+       "tooltip": "Low-Pass Slope\ndB/octave"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sonara.filter",
+   "groups": [
+    {
+     "key": "main",
+     "title": "Main",
+     "params": [
+      {
+       "id": "mode",
+       "label": "Mode",
+       "control": "combo",
+       "items": [
+        "lowpass",
+        "highpass",
+        "bandpass",
+        "notch"
+       ],
+       "current": "lowpass",
+       "tooltip": "Mode"
+      },
+      {
+       "id": "cutoff_hz",
+       "label": "Cutoff",
+       "control": "knob",
+       "min": 20.0,
+       "max": 20000.0,
+       "default": 1000.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5663233347786729,
+       "text": "1.00 kHz",
+       "tooltip": "Cutoff (Hz)"
+      },
+      {
+       "id": "resonance",
+       "label": "Resonance",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 0.2,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.2,
+       "text": "0.20",
+       "tooltip": "Resonance"
+      },
+      {
+       "id": "mix",
+       "label": "Mix",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 1.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 1.0,
+       "text": "1.00",
+       "tooltip": "Mix"
+      }
+     ]
+    },
+    {
+     "key": "lfo",
+     "title": "LFO",
+     "params": [
+      {
+       "id": "lfo_rate_hz",
+       "label": "Rate",
+       "control": "knob",
+       "min": 0.01,
+       "max": 20.0,
+       "default": 0.5,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.514678753773118,
+       "text": "0.5 Hz",
+       "tooltip": "LFO Rate (Hz)"
+      },
+      {
+       "id": "lfo_depth_oct",
+       "label": "Depth",
+       "control": "knob",
+       "min": 0.0,
+       "max": 4.0,
+       "default": 0.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.0,
+       "text": "+0.00 oct",
+       "tooltip": "LFO Depth (oct)"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sonara.reverb",
+   "groups": [
+    {
+     "key": "main",
+     "title": "Main",
+     "params": [
+      {
+       "id": "character",
+       "label": "Character",
+       "control": "combo",
+       "items": [
+        "room",
+        "chamber",
+        "hall",
+        "plate"
+       ],
+       "current": "hall",
+       "tooltip": "Character"
+      },
+      {
+       "id": "decay_s",
+       "label": "Decay (RT60)",
+       "control": "knob",
+       "min": 0.1,
+       "max": 20.0,
+       "default": 2.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5654120103239064,
+       "text": "2.00 s",
+       "tooltip": "Decay (RT60) (s)"
+      },
+      {
+       "id": "predelay_ms",
+       "label": "Pre-Delay",
+       "control": "knob",
+       "min": 0.0,
+       "max": 250.0,
+       "default": 15.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.06,
+       "text": "15.0 ms",
+       "tooltip": "Pre-Delay (ms)"
+      },
+      {
+       "id": "damping",
+       "label": "Damping",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 0.5,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5,
+       "text": "0.50",
+       "tooltip": "Damping\nHigh-frequency decay relative to the RT60"
+      },
+      {
+       "id": "lowcut_hz",
+       "label": "Low Cut",
+       "control": "knob",
+       "min": 20.0,
+       "max": 1000.0,
+       "default": 120.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.45801353078493934,
+       "text": "120 Hz",
+       "tooltip": "Low Cut (Hz)"
+      },
+      {
+       "id": "highcut_hz",
+       "label": "High Cut",
+       "control": "knob",
+       "min": 1000.0,
+       "max": 20000.0,
+       "default": 12000.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.829482217661603,
+       "text": "12.00 kHz",
+       "tooltip": "High Cut (Hz)"
+      },
+      {
+       "id": "width",
+       "label": "Width",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 1.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 1.0,
+       "text": "1.00",
+       "tooltip": "Width"
+      },
+      {
+       "id": "mix",
+       "label": "Mix",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 0.25,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.25,
+       "text": "0.25",
+       "tooltip": "Mix"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sonara.saturation",
+   "groups": [
+    {
+     "key": "main",
+     "title": "Main",
+     "params": [
+      {
+       "id": "mode",
+       "label": "Mode",
+       "control": "combo",
+       "items": [
+        "tanh",
+        "soft_clip",
+        "hard_clip",
+        "tube",
+        "foldback"
+       ],
+       "current": "tanh",
+       "tooltip": "Mode"
+      },
+      {
+       "id": "drive_db",
+       "label": "Drive",
+       "control": "knob",
+       "min": 0.0,
+       "max": 36.0,
+       "default": 6.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.16666666666666666,
+       "text": "+6.0 dB",
+       "tooltip": "Drive (dB)"
+      },
+      {
+       "id": "bias",
+       "label": "Bias",
+       "control": "knob",
+       "min": -0.5,
+       "max": 0.5,
+       "default": 0.0,
+       "bipolar": true,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5,
+       "text": "0.00",
+       "tooltip": "Bias\nAsymmetry (tube mode)"
+      },
+      {
+       "id": "tone_hz",
+       "label": "Tone",
+       "control": "knob",
+       "min": 1000.0,
+       "max": 20000.0,
+       "default": 20000.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 1.0,
+       "text": "20.00 kHz",
+       "tooltip": "Tone (Hz)"
+      },
+      {
+       "id": "mix",
+       "label": "Mix",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 1.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 1.0,
+       "text": "1.00",
+       "tooltip": "Mix"
+      },
+      {
+       "id": "output_db",
+       "label": "Output",
+       "control": "knob",
+       "min": -24.0,
+       "max": 12.0,
+       "default": -3.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5833333333333334,
+       "text": "-3.0 dB",
+       "tooltip": "Output (dB)"
+      },
+      {
+       "id": "oversampling",
+       "label": "Oversampling",
+       "control": "combo",
+       "items": [
+        "1x",
+        "2x",
+        "4x"
+       ],
+       "current": "2x",
+       "tooltip": "Oversampling"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sonara.synth.poly",
+   "groups": [
+    {
+     "key": "main",
+     "title": "Main",
+     "params": [
+      {
+       "id": "voice_mode",
+       "label": "Voice Mode",
+       "control": "combo",
+       "items": [
+        "poly",
+        "mono",
+        "legato"
+       ],
+       "current": "poly",
+       "tooltip": "Voice Mode"
+      },
+      {
+       "id": "polyphony",
+       "label": "Polyphony",
+       "control": "knob",
+       "min": 1.0,
+       "max": 32.0,
+       "default": 16.0,
+       "bipolar": false,
+       "step": 0.03225806451612903,
+       "page": 0.3225806451612903,
+       "norm": 0.4838709677419355,
+       "text": "16 voices",
+       "tooltip": "Polyphony (voices)"
+      },
+      {
+       "id": "glide",
+       "label": "Glide",
+       "control": "knob",
+       "min": 0.0,
+       "max": 2.0,
+       "default": 0.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.0,
+       "text": "0 ms",
+       "tooltip": "Glide (s)"
+      },
+      {
+       "id": "pulse_width",
+       "label": "Pulse Width",
+       "control": "knob",
+       "min": 0.05,
+       "max": 0.95,
+       "default": 0.5,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5000000000000001,
+       "text": "0.50",
+       "tooltip": "Pulse Width"
+      },
+      {
+       "id": "noise_level",
+       "label": "Noise",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 0.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.0,
+       "text": "0.00",
+       "tooltip": "Noise"
+      },
+      {
+       "id": "bend_range",
+       "label": "Pitch-Bend Range",
+       "control": "knob",
+       "min": 0.0,
+       "max": 24.0,
+       "default": 2.0,
+       "bipolar": false,
+       "step": 0.041666666666666664,
+       "page": 0.41666666666666663,
+       "norm": 0.08333333333333333,
+       "text": "2 semitones",
+       "tooltip": "Pitch-Bend Range (semitones)"
+      },
+      {
+       "id": "gain_db",
+       "label": "Output",
+       "control": "knob",
+       "min": -48.0,
+       "max": 12.0,
+       "default": -9.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.65,
+       "text": "-9.0 dB",
+       "tooltip": "Output (dB)"
+      }
+     ]
+    },
+    {
+     "key": "osc1",
+     "title": "Osc 1",
+     "params": [
+      {
+       "id": "osc1_wave",
+       "label": "Wave",
+       "control": "combo",
+       "items": [
+        "saw",
+        "square",
+        "pulse",
+        "triangle",
+        "sine"
+       ],
+       "current": "saw",
+       "tooltip": "Osc 1 Wave"
+      },
+      {
+       "id": "osc1_level",
+       "label": "Level",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 0.8,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.8,
+       "text": "0.80",
+       "tooltip": "Osc 1 Level"
+      },
+      {
+       "id": "osc1_octave",
+       "label": "Octave",
+       "control": "knob",
+       "min": -3.0,
+       "max": 3.0,
+       "default": 0.0,
+       "bipolar": true,
+       "step": 0.16666666666666666,
+       "page": 1.0,
+       "norm": 0.5,
+       "text": "0",
+       "tooltip": "Osc 1 Octave"
+      },
+      {
+       "id": "osc1_detune",
+       "label": "Detune",
+       "control": "knob",
+       "min": -100.0,
+       "max": 100.0,
+       "default": 0.0,
+       "bipolar": true,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5,
+       "text": "+0 ct",
+       "tooltip": "Osc 1 Detune (cents)"
+      }
+     ]
+    },
+    {
+     "key": "osc2",
+     "title": "Osc 2",
+     "params": [
+      {
+       "id": "osc2_wave",
+       "label": "Wave",
+       "control": "combo",
+       "items": [
+        "saw",
+        "square",
+        "pulse",
+        "triangle",
+        "sine"
+       ],
+       "current": "square",
+       "tooltip": "Osc 2 Wave"
+      },
+      {
+       "id": "osc2_level",
+       "label": "Level",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 0.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.0,
+       "text": "0.00",
+       "tooltip": "Osc 2 Level"
+      },
+      {
+       "id": "osc2_octave",
+       "label": "Octave",
+       "control": "knob",
+       "min": -3.0,
+       "max": 3.0,
+       "default": 0.0,
+       "bipolar": true,
+       "step": 0.16666666666666666,
+       "page": 1.0,
+       "norm": 0.5,
+       "text": "0",
+       "tooltip": "Osc 2 Octave"
+      },
+      {
+       "id": "osc2_semitone",
+       "label": "Semitone",
+       "control": "knob",
+       "min": -12.0,
+       "max": 12.0,
+       "default": 0.0,
+       "bipolar": true,
+       "step": 0.041666666666666664,
+       "page": 0.41666666666666663,
+       "norm": 0.5,
+       "text": "0",
+       "tooltip": "Osc 2 Semitone"
+      },
+      {
+       "id": "osc2_detune",
+       "label": "Detune",
+       "control": "knob",
+       "min": -100.0,
+       "max": 100.0,
+       "default": 7.0,
+       "bipolar": true,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.535,
+       "text": "+7 ct",
+       "tooltip": "Osc 2 Detune (cents)"
+      }
+     ]
+    },
+    {
+     "key": "unison",
+     "title": "Unison",
+     "params": [
+      {
+       "id": "unison",
+       "label": "Voices",
+       "control": "knob",
+       "min": 1.0,
+       "max": 7.0,
+       "default": 1.0,
+       "bipolar": false,
+       "step": 0.16666666666666666,
+       "page": 1.0,
+       "norm": 0.0,
+       "text": "1",
+       "tooltip": "Unison Voices"
+      },
+      {
+       "id": "unison_detune",
+       "label": "Detune",
+       "control": "knob",
+       "min": 0.0,
+       "max": 100.0,
+       "default": 15.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.15,
+       "text": "+15 ct",
+       "tooltip": "Unison Detune (cents)"
+      },
+      {
+       "id": "unison_spread",
+       "label": "Spread",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 0.7,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.7,
+       "text": "0.70",
+       "tooltip": "Unison Spread"
+      }
+     ]
+    },
+    {
+     "key": "filter",
+     "title": "Filter",
+     "params": [
+      {
+       "id": "filter_type",
+       "label": "Type",
+       "control": "combo",
+       "items": [
+        "lowpass",
+        "highpass",
+        "bandpass"
+       ],
+       "current": "lowpass",
+       "tooltip": "Filter Type"
+      },
+      {
+       "id": "filter_cutoff",
+       "label": "Cutoff",
+       "control": "knob",
+       "min": 20.0,
+       "max": 20000.0,
+       "default": 2500.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.6989700043360189,
+       "text": "2.50 kHz",
+       "tooltip": "Cutoff (Hz)"
+      },
+      {
+       "id": "filter_resonance",
+       "label": "Resonance",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 0.15,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.15,
+       "text": "0.15",
+       "tooltip": "Resonance"
+      },
+      {
+       "id": "filter_env_amount",
+       "label": "Env Amount",
+       "control": "knob",
+       "min": -8.0,
+       "max": 8.0,
+       "default": 2.0,
+       "bipolar": true,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.625,
+       "text": "+2.00 oct",
+       "tooltip": "Filter Env Amount (oct)"
+      },
+      {
+       "id": "filter_keytrack",
+       "label": "Key Tracking",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 0.5,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5,
+       "text": "0.50",
+       "tooltip": "Key Tracking"
+      },
+      {
+       "id": "filter_attack",
+       "label": "Attack",
+       "control": "knob",
+       "min": 0.0005,
+       "max": 10.0,
+       "default": 0.005,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.2325024473226495,
+       "text": "5 ms",
+       "tooltip": "Filter Attack (s)"
+      },
+      {
+       "id": "filter_decay",
+       "label": "Decay",
+       "control": "knob",
+       "min": 0.001,
+       "max": 10.0,
+       "default": 0.4,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.6505149978319905,
+       "text": "0.40 s",
+       "tooltip": "Filter Decay (s)"
+      },
+      {
+       "id": "filter_sustain",
+       "label": "Sustain",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 0.3,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.3,
+       "text": "0.30",
+       "tooltip": "Filter Sustain"
+      },
+      {
+       "id": "filter_release",
+       "label": "Release",
+       "control": "knob",
+       "min": 0.001,
+       "max": 10.0,
+       "default": 0.3,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.6192803136799155,
+       "text": "0.30 s",
+       "tooltip": "Filter Release (s)"
+      }
+     ]
+    },
+    {
+     "key": "amp",
+     "title": "Amp",
+     "params": [
+      {
+       "id": "amp_attack",
+       "label": "Attack",
+       "control": "knob",
+       "min": 0.0005,
+       "max": 10.0,
+       "default": 0.005,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.2325024473226495,
+       "text": "5 ms",
+       "tooltip": "Amp Attack (s)"
+      },
+      {
+       "id": "amp_decay",
+       "label": "Decay",
+       "control": "knob",
+       "min": 0.001,
+       "max": 10.0,
+       "default": 0.3,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.6192803136799155,
+       "text": "0.30 s",
+       "tooltip": "Amp Decay (s)"
+      },
+      {
+       "id": "amp_sustain",
+       "label": "Sustain",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 0.8,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.8,
+       "text": "0.80",
+       "tooltip": "Amp Sustain"
+      },
+      {
+       "id": "amp_release",
+       "label": "Release",
+       "control": "knob",
+       "min": 0.001,
+       "max": 10.0,
+       "default": 0.25,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5994850021680093,
+       "text": "0.25 s",
+       "tooltip": "Amp Release (s)"
+      }
+     ]
+    },
+    {
+     "key": "lfo",
+     "title": "LFO",
+     "params": [
+      {
+       "id": "lfo_rate",
+       "label": "Rate",
+       "control": "knob",
+       "min": 0.01,
+       "max": 20.0,
+       "default": 5.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.8176145045277415,
+       "text": "5.0 Hz",
+       "tooltip": "LFO Rate (Hz)"
+      },
+      {
+       "id": "lfo_pitch_cents",
+       "label": "Vibrato",
+       "control": "knob",
+       "min": 0.0,
+       "max": 100.0,
+       "default": 0.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.0,
+       "text": "+0 ct",
+       "tooltip": "Vibrato (cents)"
+      },
+      {
+       "id": "lfo_cutoff_oct",
+       "label": "to Cutoff",
+       "control": "knob",
+       "min": 0.0,
+       "max": 4.0,
+       "default": 0.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.0,
+       "text": "+0.00 oct",
+       "tooltip": "LFO to Cutoff (oct)"
+      }
+     ]
+    },
+    {
+     "key": "velocity",
+     "title": "Velocity",
+     "params": [
+      {
+       "id": "velocity_sensitivity",
+       "label": "Sensitivity",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 0.7,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.7,
+       "text": "0.70",
+       "tooltip": "Velocity Sensitivity"
+      },
+      {
+       "id": "velocity_to_filter",
+       "label": "to Filter",
+       "control": "knob",
+       "min": 0.0,
+       "max": 1.0,
+       "default": 0.3,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.3,
+       "text": "0.30",
+       "tooltip": "Velocity to Filter"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sonara.utility",
+   "groups": [
+    {
+     "key": "main",
+     "title": "Main",
+     "params": [
+      {
+       "id": "gain_db",
+       "label": "Gain",
+       "control": "knob",
+       "min": -60.0,
+       "max": 24.0,
+       "default": 0.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.7142857142857143,
+       "text": "0.0 dB",
+       "tooltip": "Gain (dB)"
+      },
+      {
+       "id": "width",
+       "label": "Stereo Width",
+       "control": "knob",
+       "min": 0.0,
+       "max": 2.0,
+       "default": 1.0,
+       "bipolar": false,
+       "step": 0.01,
+       "page": 0.1,
+       "norm": 0.5,
+       "text": "1.00x",
+       "tooltip": "Stereo Width (x)\n0 = mono, 1 = unchanged, 2 = doubled side"
+      },
+      {
+       "id": "mono",
+       "label": "Mono",
+       "control": "toggle",
+       "text": "Off",
+       "checked": false,
+       "tooltip": "Mono"
+      },
+      {
+       "id": "swap",
+       "label": "Swap L/R",
+       "control": "toggle",
+       "text": "Off",
+       "checked": false,
+       "tooltip": "Swap L/R"
+      },
+      {
+       "id": "dc_block",
+       "label": "DC Block",
+       "control": "toggle",
+       "text": "Off",
+       "checked": false,
+       "tooltip": "DC Block"
+      }
+     ]
+    },
+    {
+     "key": "invert",
+     "title": "Polarity",
+     "params": [
+      {
+       "id": "invert_left",
+       "label": "Invert Left Polarity",
+       "control": "toggle",
+       "text": "Off",
+       "checked": false,
+       "tooltip": "Invert Left Polarity"
+      },
+      {
+       "id": "invert_right",
+       "label": "Invert Right Polarity",
+       "control": "toggle",
+       "text": "Off",
+       "checked": false,
+       "tooltip": "Invert Right Polarity"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,46 @@
+{
+ "config": "preset-cathedral",
+ "params": {
+  "character": "hall",
+  "damping": 0.6,
+  "decay_s": 7.0,
+  "highcut_hz": 12000.0,
+  "lowcut_hz": 120.0,
+  "mix": 0.35,
+  "predelay_ms": 45.0,
+  "width": 1.0
+ },
+ "plugin": "sonara.reverb",
+ "renders": {
+  "clipped": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 10.8
+  },
+  "impulse": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 10.8
+  },
+  "noise": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 10.8
+  },
+  "silence": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 10.8
+  },
+  "sine-1k": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 10.8
+  },
+  "sweep": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 10.8
+  }
+ }
+}

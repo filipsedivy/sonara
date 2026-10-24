@@ -1,0 +1,572 @@
+{
+ "block_frames": 512,
+ "blocks": [
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 144000
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 144512
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 145024
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 145536
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 146048
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 146560
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 147072
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 147584
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 148096
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 148608
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 149120
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 149632
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 150144
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 150656
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 151168
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 151680
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 152192
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 152704
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 153216
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 153728
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 154240
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 154752
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 155264
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 155776
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 156288
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 156800
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 157312
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 157824
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 158336
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 158848
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 159360
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 159872
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 160384
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 160896
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 161408
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 161920
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 162432
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 162944
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 163456
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 163968
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 164480
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 164992
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 165504
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 166016
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 166528
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 167040
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 167552
+  },
+  {
+   "frames": 512,
+   "generation": 2,
+   "tag": 168064
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 30000
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 30512
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 31024
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 31536
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 32048
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 32560
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 33072
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 33584
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 34096
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 34608
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 35120
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 35632
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 36144
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 36656
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 37168
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 37680
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 38192
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 38704
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 39216
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 39728
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 40240
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 40752
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 41264
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 41776
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 42288
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 42800
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 43312
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 43824
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 44336
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 44848
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 45360
+  },
+  {
+   "frames": 512,
+   "generation": 4,
+   "tag": 45872
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 228000
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 228512
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 229024
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 229536
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 230048
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 230560
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 231072
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 231584
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 232096
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 232608
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 233120
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 233632
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 234144
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 234656
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 235168
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 235680
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 236192
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 236704
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 237216
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 237728
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 238240
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 238752
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 239264
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 239776
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 240288
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 240800
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 241312
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 241824
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 242336
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 242848
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 243360
+  },
+  {
+   "frames": 512,
+   "generation": 5,
+   "tag": 243872
+  }
+ ],
+ "dtype": "f32le",
+ "sample_rate": 48000,
+ "shape": [
+  112,
+  512,
+  2
+ ]
+}

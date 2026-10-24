@@ -1,0 +1,23 @@
+[package]
+name = "sonara-midi"
+description = "Sonara MIDI: theory, generators, Standard MIDI Files"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+midly.workspace = true
+rand_mt.workspace = true
+sonara-core.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+serde_json.workspace = true
+sonara-project.workspace = true
+sonara-testkit.workspace = true
+
+[lints]
+workspace = true

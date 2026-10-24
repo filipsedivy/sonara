@@ -1,0 +1,46 @@
+[package]
+name = "sonara-app"
+description = "Sonara application services and composition root"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+crossbeam-channel.workspace = true
+# The ordered metadata fields of the GUI's `SetMetadata` edit (the command takes an IndexMap).
+indexmap.workspace = true
+# `tz-system` and `tzdb-zoneinfo`: the local time of preview file names (`time.strftime` in the
+# prototype); no new crates (only `windows-link`, already in the lockfile, on Windows).
+jiff = { workspace = true, features = ["tz-system", "tzdb-zoneinfo"] }
+log.workspace = true
+# Python's `json.dumps` text (`pyjson`): serializing a `serde_json::Value` with a formatter.
+serde.workspace = true
+serde_json.workspace = true
+sonara-core.workspace = true
+# The analyzer of previews, track levels and `analyze_file`; the EQ curve of the GUI.
+sonara-dsp.workspace = true
+# The offline renderer of the render service.
+sonara-engine.workspace = true
+# MIDI device I/O through midir: the port listings and the inputs of the MIDI hub.
+sonara-io.workspace = true
+# Audio inspection, the media reader factory and the decode cache of the media service; the
+# exporter and the preview's WAV writer of the render service.
+sonara-media.workspace = true
+# Standard MIDI File import and export; the GUI's quantize.
+sonara-midi.workspace = true
+sonara-project.workspace = true
+# The rings of the MIDI hub's inputs.
+sonara-rt.workspace = true
+thiserror.workspace = true
+walkdir.workspace = true
+
+[dev-dependencies]
+hound.workspace = true
+sonara-testkit.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,2473 @@
+{
+ "generator": "scripts/golden/gui_dialog_oracles.py",
+ "settings": {
+  "choices": {
+   "backends": [
+    [
+     "Automatic",
+     "auto"
+    ],
+    [
+     "System audio (native)",
+     "native"
+    ],
+    [
+     "Simulated device (testing)",
+     "native-null"
+    ],
+    [
+     "Off (offline only)",
+     "null"
+    ]
+   ],
+   "buffers": [
+    [
+     "64 frames",
+     64
+    ],
+    [
+     "128 frames",
+     128
+    ],
+    [
+     "256 frames",
+     256
+    ],
+    [
+     "512 frames",
+     512
+    ],
+    [
+     "1024 frames",
+     1024
+    ],
+    [
+     "2048 frames",
+     2048
+    ]
+   ],
+   "themes": [
+    [
+     "Dark",
+     "dark"
+    ],
+    [
+     "Light",
+     "light"
+    ]
+   ],
+   "lookahead": [
+    20.0,
+    1000.0,
+    2
+   ],
+   "autosave": [
+    0,
+    3600,
+    "off"
+   ],
+   "backups": [
+    0,
+    100
+   ],
+   "undo": [
+    10,
+    10000
+   ]
+  },
+  "cases": [
+   {
+    "name": "unchanged",
+    "before": "{\n  \"window\": {\"x\": 1},\n  \"version\": 1,\n  \"audio\": {\"backend\": \"auto\", \"sample_rate\": 44100, \"buffer_frames\": 256, \"lookahead_ms\": 80, \"midi_inputs\": [\"Keys\"], \"output_channels\": 2},\n  \"theme\": \"dark\",\n  \"recent_projects\": [\"/tmp/a.sonara\", \"/tmp/b.sonara\"],\n  \"ffmpeg_path\": \"/opt/ffmpeg\",\n  \"future_option\": [1, 2.5, \"x\"]\n}\n",
+    "typed": {},
+    "form": {
+     "backend": "auto",
+     "output_device": null,
+     "input_device": null,
+     "buffer_frames": 256,
+     "lookahead_ms": 80.0,
+     "autosave_seconds": 60,
+     "backup_retention": 10,
+     "undo_limit": 500,
+     "theme": "dark",
+     "agent_require_confirmation": true,
+     "agent_allowed_paths": ""
+    },
+    "after": "{\n  \"window\": {\n    \"x\": 1\n  },\n  \"future_option\": [\n    1,\n    2.5,\n    \"x\"\n  ],\n  \"version\": 1,\n  \"audio\": {\n    \"backend\": \"auto\",\n    \"output_device\": null,\n    \"input_device\": null,\n    \"sample_rate\": 44100,\n    \"buffer_frames\": 256,\n    \"lookahead_ms\": 80.0,\n    \"live_lookahead_ms\": 25.0,\n    \"midi_inputs\": [\n      \"Keys\"\n    ],\n    \"output_channels\": 2,\n    \"input_channels\": 2\n  },\n  \"autosave_seconds\": 60,\n  \"backup_retention\": 10,\n  \"undo_limit\": 500,\n  \"theme\": \"dark\",\n  \"recent_projects\": [\n    \"/tmp/a.sonara\",\n    \"/tmp/b.sonara\"\n  ],\n  \"agent_allowed_paths\": [],\n  \"agent_require_confirmation\": true,\n  \"ffmpeg_path\": \"/opt/ffmpeg\"\n}\n"
+   },
+   {
+    "name": "unchanged-fresh",
+    "before": null,
+    "typed": {},
+    "form": {
+     "backend": "auto",
+     "output_device": null,
+     "input_device": null,
+     "buffer_frames": 256,
+     "lookahead_ms": 80.0,
+     "autosave_seconds": 60,
+     "backup_retention": 10,
+     "undo_limit": 500,
+     "theme": "dark",
+     "agent_require_confirmation": true,
+     "agent_allowed_paths": ""
+    },
+    "after": "{\n  \"version\": 1,\n  \"audio\": {\n    \"backend\": \"auto\",\n    \"output_device\": null,\n    \"input_device\": null,\n    \"sample_rate\": 48000,\n    \"buffer_frames\": 256,\n    \"lookahead_ms\": 80.0,\n    \"live_lookahead_ms\": 25.0,\n    \"midi_inputs\": null,\n    \"output_channels\": 2,\n    \"input_channels\": 2\n  },\n  \"autosave_seconds\": 60,\n  \"backup_retention\": 10,\n  \"undo_limit\": 500,\n  \"theme\": \"dark\",\n  \"recent_projects\": [],\n  \"agent_allowed_paths\": [],\n  \"agent_require_confirmation\": true,\n  \"ffmpeg_path\": null\n}\n"
+   },
+   {
+    "name": "every-field",
+    "before": "{\n  \"window\": {\"x\": 1},\n  \"version\": 1,\n  \"audio\": {\"backend\": \"auto\", \"sample_rate\": 44100, \"buffer_frames\": 256, \"lookahead_ms\": 80, \"midi_inputs\": [\"Keys\"], \"output_channels\": 2},\n  \"theme\": \"dark\",\n  \"recent_projects\": [\"/tmp/a.sonara\", \"/tmp/b.sonara\"],\n  \"ffmpeg_path\": \"/opt/ffmpeg\",\n  \"future_option\": [1, 2.5, \"x\"]\n}\n",
+    "typed": {
+     "backend": "native-null",
+     "buffer_frames": 1024,
+     "lookahead_ms": 120.5,
+     "autosave_seconds": 0,
+     "backup_retention": 3,
+     "undo_limit": 2000,
+     "theme": "light",
+     "agent_require_confirmation": false,
+     "agent_allowed_paths": "  /Users/me/Music  \n\n/Volumes/Audio\n   \n~/Samples"
+    },
+    "form": {
+     "backend": "native-null",
+     "output_device": null,
+     "input_device": null,
+     "buffer_frames": 1024,
+     "lookahead_ms": 120.5,
+     "autosave_seconds": 0,
+     "backup_retention": 3,
+     "undo_limit": 2000,
+     "theme": "light",
+     "agent_require_confirmation": false,
+     "agent_allowed_paths": "  /Users/me/Music  \n\n/Volumes/Audio\n   \n~/Samples"
+    },
+    "after": "{\n  \"window\": {\n    \"x\": 1\n  },\n  \"future_option\": [\n    1,\n    2.5,\n    \"x\"\n  ],\n  \"version\": 1,\n  \"audio\": {\n    \"backend\": \"native-null\",\n    \"output_device\": null,\n    \"input_device\": null,\n    \"sample_rate\": 44100,\n    \"buffer_frames\": 1024,\n    \"lookahead_ms\": 120.5,\n    \"live_lookahead_ms\": 25.0,\n    \"midi_inputs\": [\n      \"Keys\"\n    ],\n    \"output_channels\": 2,\n    \"input_channels\": 2\n  },\n  \"autosave_seconds\": 0,\n  \"backup_retention\": 3,\n  \"undo_limit\": 2000,\n  \"theme\": \"light\",\n  \"recent_projects\": [\n    \"/tmp/a.sonara\",\n    \"/tmp/b.sonara\"\n  ],\n  \"agent_allowed_paths\": [\n    \"/Users/me/Music\",\n    \"/Volumes/Audio\",\n    \"~/Samples\"\n  ],\n  \"agent_require_confirmation\": false,\n  \"ffmpeg_path\": \"/opt/ffmpeg\"\n}\n"
+   },
+   {
+    "name": "rounded-lookahead",
+    "before": null,
+    "typed": {
+     "backend": "null",
+     "buffer_frames": 64,
+     "lookahead_ms": 37.555,
+     "autosave_seconds": 3600
+    },
+    "form": {
+     "backend": "null",
+     "output_device": null,
+     "input_device": null,
+     "buffer_frames": 64,
+     "lookahead_ms": 37.55,
+     "autosave_seconds": 3600,
+     "backup_retention": 10,
+     "undo_limit": 500,
+     "theme": "dark",
+     "agent_require_confirmation": true,
+     "agent_allowed_paths": ""
+    },
+    "after": "{\n  \"version\": 1,\n  \"audio\": {\n    \"backend\": \"null\",\n    \"output_device\": null,\n    \"input_device\": null,\n    \"sample_rate\": 48000,\n    \"buffer_frames\": 64,\n    \"lookahead_ms\": 37.55,\n    \"live_lookahead_ms\": 25.0,\n    \"midi_inputs\": null,\n    \"output_channels\": 2,\n    \"input_channels\": 2\n  },\n  \"autosave_seconds\": 3600,\n  \"backup_retention\": 10,\n  \"undo_limit\": 500,\n  \"theme\": \"dark\",\n  \"recent_projects\": [],\n  \"agent_allowed_paths\": [],\n  \"agent_require_confirmation\": true,\n  \"ffmpeg_path\": null\n}\n"
+   },
+   {
+    "name": "native-paths",
+    "before": null,
+    "typed": {
+     "backend": "native",
+     "agent_allowed_paths": "/a\n/b/č\n"
+    },
+    "form": {
+     "backend": "native",
+     "output_device": null,
+     "input_device": null,
+     "buffer_frames": 256,
+     "lookahead_ms": 80.0,
+     "autosave_seconds": 60,
+     "backup_retention": 10,
+     "undo_limit": 500,
+     "theme": "dark",
+     "agent_require_confirmation": true,
+     "agent_allowed_paths": "/a\n/b/č\n"
+    },
+    "after": "{\n  \"version\": 1,\n  \"audio\": {\n    \"backend\": \"native\",\n    \"output_device\": null,\n    \"input_device\": null,\n    \"sample_rate\": 48000,\n    \"buffer_frames\": 256,\n    \"lookahead_ms\": 80.0,\n    \"live_lookahead_ms\": 25.0,\n    \"midi_inputs\": null,\n    \"output_channels\": 2,\n    \"input_channels\": 2\n  },\n  \"autosave_seconds\": 60,\n  \"backup_retention\": 10,\n  \"undo_limit\": 500,\n  \"theme\": \"dark\",\n  \"recent_projects\": [],\n  \"agent_allowed_paths\": [\n    \"/a\",\n    \"/b/\\u010d\"\n  ],\n  \"agent_require_confirmation\": true,\n  \"ffmpeg_path\": null\n}\n"
+   }
+  ]
+ },
+ "new_project": {
+  "fields": {
+   "name": "Untitled",
+   "templates": [
+    [
+     "empty",
+     "Empty",
+     "No tracks."
+    ],
+    [
+     "electronic",
+     "Electronic",
+     "Drums, bass (sidechained to the kick), chords, lead, reverb/delay buses, master limiter."
+    ],
+    [
+     "band",
+     "Band",
+     "Drums, bass, keys, guitar and vocal audio tracks with vocal chain, plate reverb."
+    ],
+    [
+     "orchestral",
+     "Orchestral",
+     "Strings, brass, choir and cinematic percussion with a large hall."
+    ]
+   ],
+   "template": "empty",
+   "bpm": [
+    120.0,
+    10.0,
+    999.0,
+    2
+   ],
+   "signatures": [
+    "4/4",
+    "3/4",
+    "6/8",
+    "5/4",
+    "7/8",
+    "12/8"
+   ],
+   "signature": "4/4",
+   "rates": [
+    [
+     "44.1 kHz",
+     44100
+    ],
+    [
+     "48 kHz",
+     48000
+    ],
+    [
+     "88.2 kHz",
+     88200
+    ],
+    [
+     "96 kHz",
+     96000
+    ]
+   ],
+   "rate": 48000
+  },
+  "values": [
+   {
+    "name": "",
+    "signature": "4/4",
+    "bpm": 120.0,
+    "values": {
+     "name": "Untitled",
+     "template": "empty",
+     "bpm": 120.0,
+     "time_signature": [
+      4,
+      4
+     ],
+     "sample_rate": 48000
+    }
+   },
+   {
+    "name": "  Song  ",
+    "signature": "7/8",
+    "bpm": 97.255,
+    "values": {
+     "name": "Song",
+     "template": "empty",
+     "bpm": 97.25,
+     "time_signature": [
+      7,
+      8
+     ],
+     "sample_rate": 48000
+    }
+   },
+   {
+    "name": "Waltz",
+    "signature": "3/4",
+    "bpm": 10.0,
+    "values": {
+     "name": "Waltz",
+     "template": "empty",
+     "bpm": 10.0,
+     "time_signature": [
+      3,
+      4
+     ],
+     "sample_rate": 48000
+    }
+   }
+  ]
+ },
+ "export": {
+  "project": {
+   "name": "Dialog",
+   "template": "electronic",
+   "tracks": [
+    [
+     "Drums",
+     "instrument"
+    ],
+    [
+     "Bass",
+     "instrument"
+    ],
+    [
+     "Chords",
+     "instrument"
+    ],
+    [
+     "Lead",
+     "instrument"
+    ],
+    [
+     "Reverb",
+     "bus"
+    ],
+    [
+     "Delay",
+     "bus"
+    ]
+   ],
+   "loop": [
+    0.0,
+    16.0
+   ]
+  },
+  "default_dir": "<tmp>/export",
+  "fresh": {
+   "path": "<tmp>/export/Dialog",
+   "preset": "Custom",
+   "formats": [
+    "wav"
+   ],
+   "bit_depth": "24",
+   "sample_rate": null,
+   "channels": 2,
+   "bitrate_kbps": 320,
+   "dither": true,
+   "range": "song",
+   "tail": "auto",
+   "normalize": "none",
+   "target": -14.0,
+   "ceiling": -1.0,
+   "stems": false,
+   "through_master": false,
+   "stem_tracks": [
+    "Drums",
+    "Bass",
+    "Chords",
+    "Lead",
+    "Reverb",
+    "Delay"
+   ]
+  },
+  "format_labels": [
+   [
+    "wav",
+    "WAV"
+   ],
+   [
+    "bwf",
+    "Broadcast WAV"
+   ],
+   [
+    "aiff",
+    "AIFF"
+   ],
+   [
+    "flac",
+    "FLAC"
+   ],
+   [
+    "mp3",
+    "MP3"
+   ],
+   [
+    "ogg",
+    "Ogg Vorbis"
+   ],
+   [
+    "opus",
+    "Opus"
+   ],
+   [
+    "rf64",
+    "RF64 (large WAV)"
+   ],
+   [
+    "w64",
+    "Wave64"
+   ],
+   [
+    "caf",
+    "CAF"
+   ]
+  ],
+  "presets": {
+   "Master (WAV 24-bit)": {
+    "path": "<tmp>/export/Dialog",
+    "preset": "Master (WAV 24-bit)",
+    "formats": [
+     "wav"
+    ],
+    "bit_depth": "24",
+    "sample_rate": null,
+    "channels": 2,
+    "bitrate_kbps": 320,
+    "dither": true,
+    "range": "song",
+    "tail": "auto",
+    "normalize": "none",
+    "target": -14.0,
+    "ceiling": -1.0,
+    "stems": false,
+    "through_master": false,
+    "stem_tracks": [
+     "Drums",
+     "Bass",
+     "Chords",
+     "Lead",
+     "Reverb",
+     "Delay"
+    ]
+   },
+   "Streaming (-14 LUFS, WAV + MP3 320)": {
+    "path": "<tmp>/export/Dialog",
+    "preset": "Streaming (-14 LUFS, WAV + MP3 320)",
+    "formats": [
+     "wav",
+     "mp3"
+    ],
+    "bit_depth": "24",
+    "sample_rate": null,
+    "channels": 2,
+    "bitrate_kbps": 320,
+    "dither": true,
+    "range": "song",
+    "tail": "auto",
+    "normalize": "loudness",
+    "target": -14.0,
+    "ceiling": -1.0,
+    "stems": false,
+    "through_master": false,
+    "stem_tracks": [
+     "Drums",
+     "Bass",
+     "Chords",
+     "Lead",
+     "Reverb",
+     "Delay"
+    ]
+   },
+   "CD (WAV 16-bit 44.1 kHz)": {
+    "path": "<tmp>/export/Dialog",
+    "preset": "CD (WAV 16-bit 44.1 kHz)",
+    "formats": [
+     "wav"
+    ],
+    "bit_depth": "16",
+    "sample_rate": 44100,
+    "channels": 2,
+    "bitrate_kbps": 320,
+    "dither": true,
+    "range": "song",
+    "tail": "auto",
+    "normalize": "none",
+    "target": -14.0,
+    "ceiling": -1.0,
+    "stems": false,
+    "through_master": false,
+    "stem_tracks": [
+     "Drums",
+     "Bass",
+     "Chords",
+     "Lead",
+     "Reverb",
+     "Delay"
+    ]
+   },
+   "Archive (FLAC 24-bit + 32-bit float WAV)": {
+    "path": "<tmp>/export/Dialog",
+    "preset": "Archive (FLAC 24-bit + 32-bit float WAV)",
+    "formats": [
+     "wav",
+     "flac"
+    ],
+    "bit_depth": "24",
+    "sample_rate": null,
+    "channels": 2,
+    "bitrate_kbps": 320,
+    "dither": true,
+    "range": "song",
+    "tail": "auto",
+    "normalize": "none",
+    "target": -14.0,
+    "ceiling": -1.0,
+    "stems": false,
+    "through_master": false,
+    "stem_tracks": [
+     "Drums",
+     "Bass",
+     "Chords",
+     "Lead",
+     "Reverb",
+     "Delay"
+    ]
+   },
+   "Podcast/Web (MP3 192 + Opus)": {
+    "path": "<tmp>/export/Dialog",
+    "preset": "Podcast/Web (MP3 192 + Opus)",
+    "formats": [
+     "mp3",
+     "opus"
+    ],
+    "bit_depth": "24",
+    "sample_rate": null,
+    "channels": 2,
+    "bitrate_kbps": 320,
+    "dither": true,
+    "range": "song",
+    "tail": "auto",
+    "normalize": "none",
+    "target": -14.0,
+    "ceiling": -1.0,
+    "stems": false,
+    "through_master": false,
+    "stem_tracks": [
+     "Drums",
+     "Bass",
+     "Chords",
+     "Lead",
+     "Reverb",
+     "Delay"
+    ]
+   }
+  },
+  "cases": [
+   {
+    "name": "defaults",
+    "form": {
+     "path": "<tmp>/export/Dialog",
+     "preset": "Custom",
+     "formats": [
+      "wav"
+     ],
+     "bit_depth": "24",
+     "sample_rate": null,
+     "channels": 2,
+     "bitrate_kbps": 320,
+     "dither": true,
+     "range": "song",
+     "tail": "auto",
+     "normalize": "none",
+     "target": -14.0,
+     "ceiling": -1.0,
+     "stems": false,
+     "through_master": false,
+     "stem_tracks": [
+      "Drums",
+      "Bass",
+      "Chords",
+      "Lead",
+      "Reverb",
+      "Delay"
+     ]
+    },
+    "outputs": [
+     {
+      "path": "<tmp>/export/Dialog.wav",
+      "container": "wav",
+      "bit_depth": 24,
+      "floating_point": false,
+      "sample_rate": null,
+      "channels": 2,
+      "bitrate_kbps": null,
+      "variable_bitrate": false,
+      "dither": "tpdf"
+     }
+    ],
+    "request": {
+     "start_beat": 0.0,
+     "end_beat": null,
+     "tail": "auto"
+    },
+    "normalize": {
+     "mode": "none",
+     "target_db": -14.0,
+     "ceiling_db": -1.0
+    },
+    "stem_tracks": null,
+    "settings": {
+     "through_master": false
+    }
+   },
+   {
+    "name": "every-format",
+    "form": {
+     "path": "~/Exports/Night Mix",
+     "preset": "Custom",
+     "formats": [
+      "wav",
+      "bwf",
+      "aiff",
+      "flac",
+      "mp3",
+      "ogg",
+      "opus",
+      "rf64",
+      "w64",
+      "caf"
+     ],
+     "bit_depth": "32f",
+     "sample_rate": 44100,
+     "channels": 1,
+     "bitrate_kbps": 128,
+     "dither": false,
+     "range": "song",
+     "tail": "auto",
+     "normalize": "none",
+     "target": -14.0,
+     "ceiling": -1.0,
+     "stems": false,
+     "through_master": false,
+     "stem_tracks": [
+      "Drums",
+      "Bass",
+      "Chords",
+      "Lead",
+      "Reverb",
+      "Delay"
+     ]
+    },
+    "outputs": [
+     {
+      "path": "<home>/Exports/Night Mix.wav",
+      "container": "wav",
+      "bit_depth": 32,
+      "floating_point": true,
+      "sample_rate": 44100,
+      "channels": 1,
+      "bitrate_kbps": null,
+      "variable_bitrate": false,
+      "dither": "none"
+     },
+     {
+      "path": "<home>/Exports/Night Mix-bwf.wav",
+      "container": "bwf",
+      "bit_depth": 32,
+      "floating_point": true,
+      "sample_rate": 44100,
+      "channels": 1,
+      "bitrate_kbps": null,
+      "variable_bitrate": false,
+      "dither": "none"
+     },
+     {
+      "path": "<home>/Exports/Night Mix.aiff",
+      "container": "aiff",
+      "bit_depth": 32,
+      "floating_point": true,
+      "sample_rate": 44100,
+      "channels": 1,
+      "bitrate_kbps": null,
+      "variable_bitrate": false,
+      "dither": "none"
+     },
+     {
+      "path": "<home>/Exports/Night Mix.flac",
+      "container": "flac",
+      "bit_depth": 24,
+      "floating_point": false,
+      "sample_rate": 44100,
+      "channels": 1,
+      "bitrate_kbps": null,
+      "variable_bitrate": false,
+      "dither": "none"
+     },
+     {
+      "path": "<home>/Exports/Night Mix.mp3",
+      "container": "mp3",
+      "bit_depth": 32,
+      "floating_point": false,
+      "sample_rate": 44100,
+      "channels": 1,
+      "bitrate_kbps": 128,
+      "variable_bitrate": false,
+      "dither": "none"
+     },
+     {
+      "path": "<home>/Exports/Night Mix.ogg",
+      "container": "ogg",
+      "bit_depth": 32,
+      "floating_point": false,
+      "sample_rate": 44100,
+      "channels": 1,
+      "bitrate_kbps": 128,
+      "variable_bitrate": false,
+      "dither": "none"
+     },
+     {
+      "path": "<home>/Exports/Night Mix.opus",
+      "container": "opus",
+      "bit_depth": 32,
+      "floating_point": false,
+      "sample_rate": 44100,
+      "channels": 1,
+      "bitrate_kbps": 128,
+      "variable_bitrate": false,
+      "dither": "none"
+     },
+     {
+      "path": "<home>/Exports/Night Mix-rf64.wav",
+      "container": "rf64",
+      "bit_depth": 32,
+      "floating_point": true,
+      "sample_rate": 44100,
+      "channels": 1,
+      "bitrate_kbps": null,
+      "variable_bitrate": false,
+      "dither": "none"
+     },
+     {
+      "path": "<home>/Exports/Night Mix.w64",
+      "container": "w64",
+      "bit_depth": 32,
+      "floating_point": true,
+      "sample_rate": 44100,
+      "channels": 1,
+      "bitrate_kbps": null,
+      "variable_bitrate": false,
+      "dither": "none"
+     },
+     {
+      "path": "<home>/Exports/Night Mix.caf",
+      "container": "caf",
+      "bit_depth": 32,
+      "floating_point": true,
+      "sample_rate": 44100,
+      "channels": 1,
+      "bitrate_kbps": null,
+      "variable_bitrate": false,
+      "dither": "none"
+     }
+    ],
+    "request": {
+     "start_beat": 0.0,
+     "end_beat": null,
+     "tail": "auto"
+    },
+    "normalize": {
+     "mode": "none",
+     "target_db": -14.0,
+     "ceiling_db": -1.0
+    },
+    "stem_tracks": null,
+    "settings": {
+     "through_master": false
+    }
+   },
+   {
+    "name": "sixteen-bit",
+    "form": {
+     "path": "<tmp>/export/Dialog",
+     "preset": "Custom",
+     "formats": [
+      "aiff",
+      "flac",
+      "ogg"
+     ],
+     "bit_depth": "16",
+     "sample_rate": 96000,
+     "channels": 2,
+     "bitrate_kbps": 320,
+     "dither": true,
+     "range": "song",
+     "tail": "auto",
+     "normalize": "none",
+     "target": -14.0,
+     "ceiling": -1.0,
+     "stems": false,
+     "through_master": false,
+     "stem_tracks": [
+      "Drums",
+      "Bass",
+      "Chords",
+      "Lead",
+      "Reverb",
+      "Delay"
+     ]
+    },
+    "outputs": [
+     {
+      "path": "<tmp>/export/Dialog.aiff",
+      "container": "aiff",
+      "bit_depth": 16,
+      "floating_point": false,
+      "sample_rate": 96000,
+      "channels": 2,
+      "bitrate_kbps": null,
+      "variable_bitrate": false,
+      "dither": "tpdf"
+     },
+     {
+      "path": "<tmp>/export/Dialog.flac",
+      "container": "flac",
+      "bit_depth": 16,
+      "floating_point": false,
+      "sample_rate": 96000,
+      "channels": 2,
+      "bitrate_kbps": null,
+      "variable_bitrate": false,
+      "dither": "tpdf"
+     },
+     {
+      "path": "<tmp>/export/Dialog.ogg",
+      "container": "ogg",
+      "bit_depth": 16,
+      "floating_point": false,
+      "sample_rate": 96000,
+      "channels": 2,
+      "bitrate_kbps": 320,
+      "variable_bitrate": false,
+      "dither": "tpdf"
+     }
+    ],
+    "request": {
+     "start_beat": 0.0,
+     "end_beat": null,
+     "tail": "auto"
+    },
+    "normalize": {
+     "mode": "none",
+     "target_db": -14.0,
+     "ceiling_db": -1.0
+    },
+    "stem_tracks": null,
+    "settings": {
+     "through_master": false
+    }
+   },
+   {
+    "name": "loop-range",
+    "form": {
+     "path": "<tmp>/export/Dialog",
+     "preset": "Custom",
+     "formats": [
+      "wav"
+     ],
+     "bit_depth": "24",
+     "sample_rate": null,
+     "channels": 2,
+     "bitrate_kbps": 320,
+     "dither": true,
+     "range": "loop",
+     "tail": 2.0,
+     "normalize": "true_peak",
+     "target": -2.0,
+     "ceiling": -0.5,
+     "stems": false,
+     "through_master": false,
+     "stem_tracks": [
+      "Drums",
+      "Bass",
+      "Chords",
+      "Lead",
+      "Reverb",
+      "Delay"
+     ]
+    },
+    "outputs": [
+     {
+      "path": "<tmp>/export/Dialog.wav",
+      "container": "wav",
+      "bit_depth": 24,
+      "floating_point": false,
+      "sample_rate": null,
+      "channels": 2,
+      "bitrate_kbps": null,
+      "variable_bitrate": false,
+      "dither": "tpdf"
+     }
+    ],
+    "request": {
+     "start_beat": 0.0,
+     "end_beat": 16.0,
+     "tail": 2.0
+    },
+    "normalize": {
+     "mode": "true_peak",
+     "target_db": -2.0,
+     "ceiling_db": -0.5
+    },
+    "stem_tracks": null,
+    "settings": {
+     "through_master": false
+    }
+   },
+   {
+    "name": "no-tail",
+    "form": {
+     "path": "<tmp>/export/Dialog",
+     "preset": "Custom",
+     "formats": [
+      "wav"
+     ],
+     "bit_depth": "24",
+     "sample_rate": null,
+     "channels": 2,
+     "bitrate_kbps": 320,
+     "dither": true,
+     "range": "song",
+     "tail": "none",
+     "normalize": "loudness",
+     "target": -16.25,
+     "ceiling": -1.0,
+     "stems": false,
+     "through_master": false,
+     "stem_tracks": [
+      "Drums",
+      "Bass",
+      "Chords",
+      "Lead",
+      "Reverb",
+      "Delay"
+     ]
+    },
+    "outputs": [
+     {
+      "path": "<tmp>/export/Dialog.wav",
+      "container": "wav",
+      "bit_depth": 24,
+      "floating_point": false,
+      "sample_rate": null,
+      "channels": 2,
+      "bitrate_kbps": null,
+      "variable_bitrate": false,
+      "dither": "tpdf"
+     }
+    ],
+    "request": {
+     "start_beat": 0.0,
+     "end_beat": null,
+     "tail": "none"
+    },
+    "normalize": {
+     "mode": "loudness",
+     "target_db": -16.25,
+     "ceiling_db": -1.0
+    },
+    "stem_tracks": null,
+    "settings": {
+     "through_master": false
+    }
+   },
+   {
+    "name": "stems",
+    "form": {
+     "path": "<tmp>/export/Dialog",
+     "preset": "Custom",
+     "formats": [
+      "wav"
+     ],
+     "bit_depth": "24",
+     "sample_rate": null,
+     "channels": 2,
+     "bitrate_kbps": 320,
+     "dither": true,
+     "range": "song",
+     "tail": 5.0,
+     "normalize": "peak",
+     "target": -0.3,
+     "ceiling": -1.0,
+     "stems": true,
+     "through_master": true,
+     "stem_tracks": [
+      "Drums",
+      "Chords",
+      "Lead",
+      "Reverb",
+      "Delay"
+     ]
+    },
+    "outputs": [
+     {
+      "path": "<tmp>/export/Dialog.wav",
+      "container": "wav",
+      "bit_depth": 24,
+      "floating_point": false,
+      "sample_rate": null,
+      "channels": 2,
+      "bitrate_kbps": null,
+      "variable_bitrate": false,
+      "dither": "tpdf"
+     }
+    ],
+    "request": {
+     "start_beat": 0.0,
+     "end_beat": null,
+     "tail": 5.0
+    },
+    "normalize": {
+     "mode": "peak",
+     "target_db": -0.3,
+     "ceiling_db": -1.0
+    },
+    "stem_tracks": [
+     "Drums",
+     "Chords",
+     "Lead",
+     "Reverb",
+     "Delay"
+    ],
+    "settings": {
+     "through_master": true
+    }
+   },
+   {
+    "name": "preset Master (WAV 24-bit)",
+    "form": {
+     "path": "<tmp>/export/Dialog",
+     "preset": "Master (WAV 24-bit)",
+     "formats": [
+      "wav"
+     ],
+     "bit_depth": "24",
+     "sample_rate": null,
+     "channels": 2,
+     "bitrate_kbps": 320,
+     "dither": true,
+     "range": "song",
+     "tail": "auto",
+     "normalize": "none",
+     "target": -14.0,
+     "ceiling": -1.0,
+     "stems": false,
+     "through_master": false,
+     "stem_tracks": [
+      "Drums",
+      "Bass",
+      "Chords",
+      "Lead",
+      "Reverb",
+      "Delay"
+     ]
+    },
+    "outputs": [
+     {
+      "path": "<tmp>/export/Dialog.wav",
+      "container": "wav",
+      "bit_depth": 24,
+      "floating_point": false,
+      "sample_rate": null,
+      "channels": 2,
+      "bitrate_kbps": null,
+      "variable_bitrate": false,
+      "dither": "tpdf"
+     }
+    ],
+    "request": {
+     "start_beat": 0.0,
+     "end_beat": null,
+     "tail": "auto"
+    },
+    "normalize": {
+     "mode": "none",
+     "target_db": -14.0,
+     "ceiling_db": -1.0
+    },
+    "stem_tracks": null,
+    "settings": {
+     "through_master": false
+    }
+   },
+   {
+    "name": "preset Streaming (-14 LUFS, WAV + MP3 320)",
+    "form": {
+     "path": "<tmp>/export/Dialog",
+     "preset": "Streaming (-14 LUFS, WAV + MP3 320)",
+     "formats": [
+      "wav",
+      "mp3"
+     ],
+     "bit_depth": "24",
+     "sample_rate": null,
+     "channels": 2,
+     "bitrate_kbps": 320,
+     "dither": true,
+     "range": "song",
+     "tail": "auto",
+     "normalize": "loudness",
+     "target": -14.0,
+     "ceiling": -1.0,
+     "stems": false,
+     "through_master": false,
+     "stem_tracks": [
+      "Drums",
+      "Bass",
+      "Chords",
+      "Lead",
+      "Reverb",
+      "Delay"
+     ]
+    },
+    "outputs": [
+     {
+      "path": "<tmp>/export/Dialog.wav",
+      "container": "wav",
+      "bit_depth": 24,
+      "floating_point": false,
+      "sample_rate": null,
+      "channels": 2,
+      "bitrate_kbps": null,
+      "variable_bitrate": false,
+      "dither": "tpdf"
+     },
+     {
+      "path": "<tmp>/export/Dialog.mp3",
+      "container": "mp3",
+      "bit_depth": 24,
+      "floating_point": false,
+      "sample_rate": null,
+      "channels": 2,
+      "bitrate_kbps": 320,
+      "variable_bitrate": false,
+      "dither": "tpdf"
+     }
+    ],
+    "request": {
+     "start_beat": 0.0,
+     "end_beat": null,
+     "tail": "auto"
+    },
+    "normalize": {
+     "mode": "loudness",
+     "target_db": -14.0,
+     "ceiling_db": -1.0
+    },
+    "stem_tracks": null,
+    "settings": {
+     "through_master": false
+    }
+   },
+   {
+    "name": "preset CD (WAV 16-bit 44.1 kHz)",
+    "form": {
+     "path": "<tmp>/export/Dialog",
+     "preset": "CD (WAV 16-bit 44.1 kHz)",
+     "formats": [
+      "wav"
+     ],
+     "bit_depth": "16",
+     "sample_rate": 44100,
+     "channels": 2,
+     "bitrate_kbps": 320,
+     "dither": true,
+     "range": "song",
+     "tail": "auto",
+     "normalize": "none",
+     "target": -14.0,
+     "ceiling": -1.0,
+     "stems": false,
+     "through_master": false,
+     "stem_tracks": [
+      "Drums",
+      "Bass",
+      "Chords",
+      "Lead",
+      "Reverb",
+      "Delay"
+     ]
+    },
+    "outputs": [
+     {
+      "path": "<tmp>/export/Dialog.wav",
+      "container": "wav",
+      "bit_depth": 16,
+      "floating_point": false,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bitrate_kbps": null,
+      "variable_bitrate": false,
+      "dither": "tpdf"
+     }
+    ],
+    "request": {
+     "start_beat": 0.0,
+     "end_beat": null,
+     "tail": "auto"
+    },
+    "normalize": {
+     "mode": "none",
+     "target_db": -14.0,
+     "ceiling_db": -1.0
+    },
+    "stem_tracks": null,
+    "settings": {
+     "through_master": false
+    }
+   },
+   {
+    "name": "preset Archive (FLAC 24-bit + 32-bit float WAV)",
+    "form": {
+     "path": "<tmp>/export/Dialog",
+     "preset": "Archive (FLAC 24-bit + 32-bit float WAV)",
+     "formats": [
+      "wav",
+      "flac"
+     ],
+     "bit_depth": "24",
+     "sample_rate": null,
+     "channels": 2,
+     "bitrate_kbps": 320,
+     "dither": true,
+     "range": "song",
+     "tail": "auto",
+     "normalize": "none",
+     "target": -14.0,
+     "ceiling": -1.0,
+     "stems": false,
+     "through_master": false,
+     "stem_tracks": [
+      "Drums",
+      "Bass",
+      "Chords",
+      "Lead",
+      "Reverb",
+      "Delay"
+     ]
+    },
+    "outputs": [
+     {
+      "path": "<tmp>/export/Dialog.wav",
+      "container": "wav",
+      "bit_depth": 24,
+      "floating_point": false,
+      "sample_rate": null,
+      "channels": 2,
+      "bitrate_kbps": null,
+      "variable_bitrate": false,
+      "dither": "tpdf"
+     },
+     {
+      "path": "<tmp>/export/Dialog.flac",
+      "container": "flac",
+      "bit_depth": 24,
+      "floating_point": false,
+      "sample_rate": null,
+      "channels": 2,
+      "bitrate_kbps": null,
+      "variable_bitrate": false,
+      "dither": "tpdf"
+     }
+    ],
+    "request": {
+     "start_beat": 0.0,
+     "end_beat": null,
+     "tail": "auto"
+    },
+    "normalize": {
+     "mode": "none",
+     "target_db": -14.0,
+     "ceiling_db": -1.0
+    },
+    "stem_tracks": null,
+    "settings": {
+     "through_master": false
+    }
+   },
+   {
+    "name": "preset Podcast/Web (MP3 192 + Opus)",
+    "form": {
+     "path": "<tmp>/export/Dialog",
+     "preset": "Podcast/Web (MP3 192 + Opus)",
+     "formats": [
+      "mp3",
+      "opus"
+     ],
+     "bit_depth": "24",
+     "sample_rate": null,
+     "channels": 2,
+     "bitrate_kbps": 320,
+     "dither": true,
+     "range": "song",
+     "tail": "auto",
+     "normalize": "none",
+     "target": -14.0,
+     "ceiling": -1.0,
+     "stems": false,
+     "through_master": false,
+     "stem_tracks": [
+      "Drums",
+      "Bass",
+      "Chords",
+      "Lead",
+      "Reverb",
+      "Delay"
+     ]
+    },
+    "outputs": [
+     {
+      "path": "<tmp>/export/Dialog.mp3",
+      "container": "mp3",
+      "bit_depth": 24,
+      "floating_point": false,
+      "sample_rate": null,
+      "channels": 2,
+      "bitrate_kbps": 320,
+      "variable_bitrate": false,
+      "dither": "tpdf"
+     },
+     {
+      "path": "<tmp>/export/Dialog.opus",
+      "container": "opus",
+      "bit_depth": 24,
+      "floating_point": false,
+      "sample_rate": null,
+      "channels": 2,
+      "bitrate_kbps": 320,
+      "variable_bitrate": false,
+      "dither": "tpdf"
+     }
+    ],
+    "request": {
+     "start_beat": 0.0,
+     "end_beat": null,
+     "tail": "auto"
+    },
+    "normalize": {
+     "mode": "none",
+     "target_db": -14.0,
+     "ceiling_db": -1.0
+    },
+    "stem_tracks": null,
+    "settings": {
+     "through_master": false
+    }
+   }
+  ],
+  "prototype_defects": {
+   "Podcast/Web (MP3 192 + Opus)": {
+    "defect": "D19",
+    "field": "bitrate_kbps",
+    "rust": 192
+   },
+   "Archive (FLAC 24-bit + 32-bit float WAV)": {
+    "defect": "D28",
+    "field": "bit_depth",
+    "rust": "32f"
+   }
+  }
+ },
+ "browser": [
+  {
+   "text": "Instruments",
+   "plugin": null,
+   "preset": null,
+   "tooltip": "",
+   "children": [
+    {
+     "text": "Sonara Drum Kit",
+     "plugin": "sonara.drums",
+     "preset": null,
+     "tooltip": "Synthesized drum machine on the General MIDI percussion map (36 kick, 38 snare, 39 clap, 42/44/46 hats, 41-50 toms, 49 crash, 51 ride, ...).",
+     "children": [
+      {
+       "text": "Electronic 808",
+       "plugin": "sonara.drums",
+       "preset": "Electronic 808",
+       "tooltip": "Sonara Drum Kit preset",
+       "children": []
+      },
+      {
+       "text": "Punchy 909",
+       "plugin": "sonara.drums",
+       "preset": "Punchy 909",
+       "tooltip": "Sonara Drum Kit preset",
+       "children": []
+      },
+      {
+       "text": "Tight House",
+       "plugin": "sonara.drums",
+       "preset": "Tight House",
+       "tooltip": "Sonara Drum Kit preset",
+       "children": []
+      },
+      {
+       "text": "Cinematic Toms",
+       "plugin": "sonara.drums",
+       "preset": "Cinematic Toms",
+       "tooltip": "Big low toms and long cymbals for orchestral percussion",
+       "children": []
+      },
+      {
+       "text": "Lo-Fi",
+       "plugin": "sonara.drums",
+       "preset": "Lo-Fi",
+       "tooltip": "Sonara Drum Kit preset",
+       "children": []
+      }
+     ]
+    },
+    {
+     "text": "Sonara Poly Synth",
+     "plugin": "sonara.synth.poly",
+     "preset": null,
+     "tooltip": "Polyphonic subtractive synthesizer: 2 band-limited oscillators with unison, noise, resonant state-variable filter with envelope, amp envelope, LFO, mono/legato glide.",
+     "children": [
+      {
+       "text": "Init",
+       "plugin": "sonara.synth.poly",
+       "preset": "Init",
+       "tooltip": "Sonara Poly Synth preset",
+       "children": []
+      },
+      {
+       "text": "Analog Bass",
+       "plugin": "sonara.synth.poly",
+       "preset": "Analog Bass",
+       "tooltip": "Saw plus sub square, mono with slight glide",
+       "children": []
+      },
+      {
+       "text": "Sub Bass",
+       "plugin": "sonara.synth.poly",
+       "preset": "Sub Bass",
+       "tooltip": "Sonara Poly Synth preset",
+       "children": []
+      },
+      {
+       "text": "Acid Bass",
+       "plugin": "sonara.synth.poly",
+       "preset": "Acid Bass",
+       "tooltip": "Sonara Poly Synth preset",
+       "children": []
+      },
+      {
+       "text": "Warm Pad",
+       "plugin": "sonara.synth.poly",
+       "preset": "Warm Pad",
+       "tooltip": "Sonara Poly Synth preset",
+       "children": []
+      },
+      {
+       "text": "Strings",
+       "plugin": "sonara.synth.poly",
+       "preset": "Strings",
+       "tooltip": "Bowed ensemble approximation",
+       "children": []
+      },
+      {
+       "text": "Brass",
+       "plugin": "sonara.synth.poly",
+       "preset": "Brass",
+       "tooltip": "Brass section approximation",
+       "children": []
+      },
+      {
+       "text": "Pluck",
+       "plugin": "sonara.synth.poly",
+       "preset": "Pluck",
+       "tooltip": "Sonara Poly Synth preset",
+       "children": []
+      },
+      {
+       "text": "Supersaw Lead",
+       "plugin": "sonara.synth.poly",
+       "preset": "Supersaw Lead",
+       "tooltip": "Sonara Poly Synth preset",
+       "children": []
+      },
+      {
+       "text": "Square Lead",
+       "plugin": "sonara.synth.poly",
+       "preset": "Square Lead",
+       "tooltip": "Sonara Poly Synth preset",
+       "children": []
+      },
+      {
+       "text": "Electric Keys",
+       "plugin": "sonara.synth.poly",
+       "preset": "Electric Keys",
+       "tooltip": "Sonara Poly Synth preset",
+       "children": []
+      },
+      {
+       "text": "Glass Bells",
+       "plugin": "sonara.synth.poly",
+       "preset": "Glass Bells",
+       "tooltip": "Sonara Poly Synth preset",
+       "children": []
+      },
+      {
+       "text": "Choir Pad",
+       "plugin": "sonara.synth.poly",
+       "preset": "Choir Pad",
+       "tooltip": "Sonara Poly Synth preset",
+       "children": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "text": "Effects",
+   "plugin": null,
+   "preset": null,
+   "tooltip": "",
+   "children": [
+    {
+     "text": "Delay",
+     "plugin": null,
+     "preset": null,
+     "tooltip": "",
+     "children": [
+      {
+       "text": "Delay",
+       "plugin": "sonara.delay",
+       "preset": null,
+       "tooltip": "Stereo feedback delay with tempo sync, ping-pong and band-limited repeats.",
+       "children": [
+        {
+         "text": "Dotted Eighth",
+         "plugin": "sonara.delay",
+         "preset": "Dotted Eighth",
+         "tooltip": "Delay preset",
+         "children": []
+        },
+        {
+         "text": "Ping-Pong Quarter",
+         "plugin": "sonara.delay",
+         "preset": "Ping-Pong Quarter",
+         "tooltip": "Delay preset",
+         "children": []
+        },
+        {
+         "text": "Slapback",
+         "plugin": "sonara.delay",
+         "preset": "Slapback",
+         "tooltip": "Delay preset",
+         "children": []
+        },
+        {
+         "text": "Dub Echo",
+         "plugin": "sonara.delay",
+         "preset": "Dub Echo",
+         "tooltip": "Delay preset",
+         "children": []
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "text": "Distortion",
+     "plugin": null,
+     "preset": null,
+     "tooltip": "",
+     "children": [
+      {
+       "text": "Saturation",
+       "plugin": "sonara.saturation",
+       "preset": null,
+       "tooltip": "Waveshaping saturation and distortion with IIR oversampling against aliasing.",
+       "children": [
+        {
+         "text": "Warm Tape",
+         "plugin": "sonara.saturation",
+         "preset": "Warm Tape",
+         "tooltip": "Saturation preset",
+         "children": []
+        },
+        {
+         "text": "Tube Drive",
+         "plugin": "sonara.saturation",
+         "preset": "Tube Drive",
+         "tooltip": "Saturation preset",
+         "children": []
+        },
+        {
+         "text": "Hard Crunch",
+         "plugin": "sonara.saturation",
+         "preset": "Hard Crunch",
+         "tooltip": "Saturation preset",
+         "children": []
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "text": "Dynamics",
+     "plugin": null,
+     "preset": null,
+     "tooltip": "",
+     "children": [
+      {
+       "text": "Compressor",
+       "plugin": "sonara.dynamics.compressor",
+       "preset": null,
+       "tooltip": "Feed-forward soft-knee compressor with stereo-linked detection, parallel mix and external sidechain input (for ducking, e.g. bass keyed by kick).",
+       "children": [
+        {
+         "text": "Gentle Bus Glue",
+         "plugin": "sonara.dynamics.compressor",
+         "preset": "Gentle Bus Glue",
+         "tooltip": "Compressor preset",
+         "children": []
+        },
+        {
+         "text": "Vocal Leveler",
+         "plugin": "sonara.dynamics.compressor",
+         "preset": "Vocal Leveler",
+         "tooltip": "Compressor preset",
+         "children": []
+        },
+        {
+         "text": "Drum Punch",
+         "plugin": "sonara.dynamics.compressor",
+         "preset": "Drum Punch",
+         "tooltip": "Compressor preset",
+         "children": []
+        },
+        {
+         "text": "Sidechain Pump",
+         "plugin": "sonara.dynamics.compressor",
+         "preset": "Sidechain Pump",
+         "tooltip": "Duck against the kick of the sidechain source (low-passed key)",
+         "children": []
+        },
+        {
+         "text": "Parallel Smash",
+         "plugin": "sonara.dynamics.compressor",
+         "preset": "Parallel Smash",
+         "tooltip": "Compressor preset",
+         "children": []
+        }
+       ]
+      },
+      {
+       "text": "Gate / Expander",
+       "plugin": "sonara.dynamics.gate",
+       "preset": null,
+       "tooltip": "Noise gate with hysteresis and hold, or downward expander.",
+       "children": []
+      },
+      {
+       "text": "Limiter",
+       "plugin": "sonara.dynamics.limiter",
+       "preset": null,
+       "tooltip": "Lookahead brickwall limiter with optional 4x oversampled true-peak detection. Introduces latency equal to the lookahead (compensated automatically).",
+       "children": [
+        {
+         "text": "Master -1 dBTP",
+         "plugin": "sonara.dynamics.limiter",
+         "preset": "Master -1 dBTP",
+         "tooltip": "Limiter preset",
+         "children": []
+        },
+        {
+         "text": "Streaming Loud",
+         "plugin": "sonara.dynamics.limiter",
+         "preset": "Streaming Loud",
+         "tooltip": "Limiter preset",
+         "children": []
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "text": "EQ",
+     "plugin": null,
+     "preset": null,
+     "tooltip": "",
+     "children": [
+      {
+       "text": "Parametric EQ",
+       "plugin": "sonara.eq.parametric",
+       "preset": null,
+       "tooltip": "Six-band parametric equalizer: Butterworth high/low-pass (12-48 dB/oct), low and high shelf/peak bands and two fully parametric mid bands (RBJ biquads).",
+       "children": [
+        {
+         "text": "Low Cut",
+         "plugin": "sonara.eq.parametric",
+         "preset": "Low Cut",
+         "tooltip": "Remove rumble below 100 Hz",
+         "children": []
+        },
+        {
+         "text": "Vocal Presence",
+         "plugin": "sonara.eq.parametric",
+         "preset": "Vocal Presence",
+         "tooltip": "Parametric EQ preset",
+         "children": []
+        },
+        {
+         "text": "Bass Tight",
+         "plugin": "sonara.eq.parametric",
+         "preset": "Bass Tight",
+         "tooltip": "Parametric EQ preset",
+         "children": []
+        },
+        {
+         "text": "Air",
+         "plugin": "sonara.eq.parametric",
+         "preset": "Air",
+         "tooltip": "Parametric EQ preset",
+         "children": []
+        },
+        {
+         "text": "Telephone",
+         "plugin": "sonara.eq.parametric",
+         "preset": "Telephone",
+         "tooltip": "Parametric EQ preset",
+         "children": []
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "text": "Filter",
+     "plugin": null,
+     "preset": null,
+     "tooltip": "",
+     "children": [
+      {
+       "text": "Filter",
+       "plugin": "sonara.filter",
+       "preset": null,
+       "tooltip": "Resonant multimode state-variable filter with cutoff LFO; ideal for automated sweeps.",
+       "children": [
+        {
+         "text": "Slow Sweep",
+         "plugin": "sonara.filter",
+         "preset": "Slow Sweep",
+         "tooltip": "Filter preset",
+         "children": []
+        },
+        {
+         "text": "Wah",
+         "plugin": "sonara.filter",
+         "preset": "Wah",
+         "tooltip": "Filter preset",
+         "children": []
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "text": "Reverb",
+     "plugin": null,
+     "preset": null,
+     "tooltip": "",
+     "children": [
+      {
+       "text": "Convolution Reverb",
+       "plugin": "sonara.convolver",
+       "preset": null,
+       "tooltip": "Convolution with an impulse response loaded from the project's media (device state key 'ir_asset_id').",
+       "children": []
+      },
+      {
+       "text": "Reverb",
+       "plugin": "sonara.reverb",
+       "preset": null,
+       "tooltip": "Algorithmic reverb via a synthesized, frequency-dependent decaying impulse response and partitioned FFT convolution.",
+       "children": [
+        {
+         "text": "Small Room",
+         "plugin": "sonara.reverb",
+         "preset": "Small Room",
+         "tooltip": "Reverb preset",
+         "children": []
+        },
+        {
+         "text": "Vocal Plate",
+         "plugin": "sonara.reverb",
+         "preset": "Vocal Plate",
+         "tooltip": "Reverb preset",
+         "children": []
+        },
+        {
+         "text": "Concert Hall",
+         "plugin": "sonara.reverb",
+         "preset": "Concert Hall",
+         "tooltip": "Reverb preset",
+         "children": []
+        },
+        {
+         "text": "Cathedral",
+         "plugin": "sonara.reverb",
+         "preset": "Cathedral",
+         "tooltip": "Reverb preset",
+         "children": []
+        },
+        {
+         "text": "Ambient Wash",
+         "plugin": "sonara.reverb",
+         "preset": "Ambient Wash",
+         "tooltip": "Reverb preset",
+         "children": []
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "text": "Utility",
+     "plugin": null,
+     "preset": null,
+     "tooltip": "",
+     "children": [
+      {
+       "text": "Utility",
+       "plugin": "sonara.utility",
+       "preset": null,
+       "tooltip": "Trim gain, stereo width (mid/side), mono, channel swap, polarity and DC removal.",
+       "children": []
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "inspector": {
+  "time": {
+   "tempo": [
+    {
+     "beat": 0.0,
+     "bpm": 96.0,
+     "ramp": false
+    },
+    {
+     "beat": 8.0,
+     "bpm": 140.0,
+     "ramp": false
+    },
+    {
+     "beat": 20.0,
+     "bpm": 70.0,
+     "ramp": true
+    },
+    {
+     "beat": 30.0,
+     "bpm": 110.0,
+     "ramp": false
+    }
+   ],
+   "time_signatures": [
+    {
+     "bar": 0,
+     "beat": 0.0,
+     "numerator": 4,
+     "denominator": 4,
+     "beats_per_bar": 4.0
+    },
+    {
+     "bar": 3,
+     "beat": 12.0,
+     "numerator": 3,
+     "denominator": 4,
+     "beats_per_bar": 3.0
+    },
+    {
+     "bar": 6,
+     "beat": 21.0,
+     "numerator": 7,
+     "denominator": 8,
+     "beats_per_bar": 3.5
+    }
+   ]
+  },
+  "sample_rate": 48000,
+  "end_beat": 77.5,
+  "length_beats": 77.5,
+  "audio_clip": [
+   {
+    "title": "Clip",
+    "rows": [
+     [
+      "Name",
+      "text",
+      "inspected tone"
+     ],
+     [
+      "Track",
+      "label",
+      "inspected tone"
+     ],
+     [
+      "Start",
+      "label",
+      "4.2.355  (7.301 s)"
+     ],
+     [
+      "Length",
+      "label",
+      "6.81598 beats  (3.000 s)"
+     ],
+     [
+      "Set length",
+      "spin",
+      6.816,
+      true
+     ],
+     [
+      "Muted",
+      "check",
+      "",
+      false
+     ],
+     [
+      "Gain",
+      "spin",
+      -3.5,
+      true
+     ],
+     [
+      "Fade in",
+      "spin",
+      0.125,
+      true
+     ],
+     [
+      "Fade out",
+      "spin",
+      1.5,
+      true
+     ],
+     [
+      "Fade curve",
+      "combo",
+      "equal_power",
+      [
+       "linear",
+       "equal_power",
+       "exponential",
+       "s_curve"
+      ]
+     ],
+     [
+      "Media",
+      "label",
+      "inspected tone.wav\n44100 Hz · 1 ch · 3.00 s · embedded"
+     ]
+    ]
+   },
+   {
+    "title": "Project",
+    "rows": [
+     [
+      "Name",
+      "text",
+      "Inspected"
+     ],
+     [
+      "Sample rate",
+      "label",
+      "48000 Hz"
+     ],
+     [
+      "Length",
+      "label",
+      "22.14 bars · 42.8 s"
+     ],
+     [
+      "Song end",
+      "spin",
+      77.5,
+      true
+     ],
+     [
+      "Artist",
+      "text",
+      ""
+     ],
+     [
+      "Title",
+      "text",
+      "Inspected"
+     ],
+     [
+      "Album",
+      "text",
+      ""
+     ],
+     [
+      "Genre",
+      "text",
+      ""
+     ]
+    ]
+   }
+  ],
+  "midi_clip": [
+   {
+    "title": "Clip",
+    "rows": [
+     [
+      "Name",
+      "text",
+      "Riff"
+     ],
+     [
+      "Track",
+      "label",
+      "Keys"
+     ],
+     [
+      "Start",
+      "label",
+      "7.2.000  (11.376 s)"
+     ],
+     [
+      "Length",
+      "label",
+      "6.25 beats  (4.266 s)"
+     ],
+     [
+      "Set length",
+      "spin",
+      6.25,
+      true
+     ],
+     [
+      "Muted",
+      "check",
+      "",
+      false
+     ],
+     [
+      "Notes",
+      "label",
+      "5"
+     ],
+     [
+      null,
+      "check",
+      "Loop content",
+      true
+     ],
+     [
+      "Loop length",
+      "spin",
+      2.5,
+      true
+     ]
+    ]
+   },
+   {
+    "title": "Project",
+    "rows": [
+     [
+      "Name",
+      "text",
+      "Inspected"
+     ],
+     [
+      "Sample rate",
+      "label",
+      "48000 Hz"
+     ],
+     [
+      "Length",
+      "label",
+      "22.14 bars · 42.8 s"
+     ],
+     [
+      "Song end",
+      "spin",
+      77.5,
+      true
+     ],
+     [
+      "Artist",
+      "text",
+      ""
+     ],
+     [
+      "Title",
+      "text",
+      "Inspected"
+     ],
+     [
+      "Album",
+      "text",
+      ""
+     ],
+     [
+      "Genre",
+      "text",
+      ""
+     ]
+    ]
+   }
+  ],
+  "plain_clip": [
+   {
+    "title": "Clip",
+    "rows": [
+     [
+      "Name",
+      "text",
+      "Plain"
+     ],
+     [
+      "Track",
+      "label",
+      "Keys"
+     ],
+     [
+      "Start",
+      "label",
+      "12.4.000  (22.377 s)"
+     ],
+     [
+      "Length",
+      "label",
+      "4 beats  (2.182 s)"
+     ],
+     [
+      "Set length",
+      "spin",
+      4.0,
+      true
+     ],
+     [
+      "Muted",
+      "check",
+      "",
+      false
+     ],
+     [
+      "Notes",
+      "label",
+      "1"
+     ],
+     [
+      null,
+      "check",
+      "Loop content",
+      false
+     ],
+     [
+      "Loop length",
+      "spin",
+      7.75,
+      false
+     ]
+    ]
+   },
+   {
+    "title": "Project",
+    "rows": [
+     [
+      "Name",
+      "text",
+      "Inspected"
+     ],
+     [
+      "Sample rate",
+      "label",
+      "48000 Hz"
+     ],
+     [
+      "Length",
+      "label",
+      "22.14 bars · 42.8 s"
+     ],
+     [
+      "Song end",
+      "spin",
+      77.5,
+      true
+     ],
+     [
+      "Artist",
+      "text",
+      ""
+     ],
+     [
+      "Title",
+      "text",
+      "Inspected"
+     ],
+     [
+      "Album",
+      "text",
+      ""
+     ],
+     [
+      "Genre",
+      "text",
+      ""
+     ]
+    ]
+   }
+  ],
+  "audio_track": [
+   {
+    "title": "Track · audio",
+    "rows": [
+     [
+      "Name",
+      "text",
+      "inspected tone"
+     ],
+     [
+      "Volume",
+      "spin",
+      0.0,
+      true
+     ],
+     [
+      "Pan",
+      "spin",
+      0.0,
+      true
+     ],
+     [
+      "Output",
+      "combo",
+      "Master",
+      [
+       "Master"
+      ]
+     ],
+     [
+      "Monitoring",
+      "combo",
+      "auto",
+      [
+       "off",
+       "auto",
+       "on"
+      ]
+     ],
+     [
+      "Input",
+      "combo",
+      "In 1",
+      [
+       "In 1",
+       "In 2",
+       "In 1+2 (stereo)"
+      ]
+     ],
+     [
+      "Clips",
+      "label",
+      "1"
+     ],
+     [
+      "Effects",
+      "label",
+      "—"
+     ]
+    ]
+   },
+   {
+    "title": "Project",
+    "rows": [
+     [
+      "Name",
+      "text",
+      "Inspected"
+     ],
+     [
+      "Sample rate",
+      "label",
+      "48000 Hz"
+     ],
+     [
+      "Length",
+      "label",
+      "22.14 bars · 42.8 s"
+     ],
+     [
+      "Song end",
+      "spin",
+      77.5,
+      true
+     ],
+     [
+      "Artist",
+      "text",
+      ""
+     ],
+     [
+      "Title",
+      "text",
+      "Inspected"
+     ],
+     [
+      "Album",
+      "text",
+      ""
+     ],
+     [
+      "Genre",
+      "text",
+      ""
+     ]
+    ]
+   }
+  ],
+  "instrument_track": [
+   {
+    "title": "Track · instrument",
+    "rows": [
+     [
+      "Name",
+      "text",
+      "Keys"
+     ],
+     [
+      "Volume",
+      "spin",
+      0.0,
+      true
+     ],
+     [
+      "Pan",
+      "spin",
+      0.0,
+      true
+     ],
+     [
+      "Output",
+      "combo",
+      "Master",
+      [
+       "Master"
+      ]
+     ],
+     [
+      "Instrument",
+      "label",
+      "Sonara Poly Synth · Warm Pad"
+     ],
+     [
+      "Clips",
+      "label",
+      "2"
+     ],
+     [
+      "Effects",
+      "label",
+      "Parametric EQ, Reverb"
+     ]
+    ]
+   },
+   {
+    "title": "Project",
+    "rows": [
+     [
+      "Name",
+      "text",
+      "Inspected"
+     ],
+     [
+      "Sample rate",
+      "label",
+      "48000 Hz"
+     ],
+     [
+      "Length",
+      "label",
+      "22.14 bars · 42.8 s"
+     ],
+     [
+      "Song end",
+      "spin",
+      77.5,
+      true
+     ],
+     [
+      "Artist",
+      "text",
+      ""
+     ],
+     [
+      "Title",
+      "text",
+      "Inspected"
+     ],
+     [
+      "Album",
+      "text",
+      ""
+     ],
+     [
+      "Genre",
+      "text",
+      ""
+     ]
+    ]
+   }
+  ],
+  "clips": {
+   "audio_clip": {
+    "start": 13.37,
+    "length": 6.81598131205117,
+    "notes": [],
+    "loop_length": null
+   },
+   "midi_clip": {
+    "start": 21.5,
+    "length": 6.25,
+    "notes": [
+     [
+      0.0,
+      0.5
+     ],
+     [
+      0.75,
+      0.5
+     ],
+     [
+      1.5,
+      0.5
+     ],
+     [
+      2.25,
+      0.5
+     ],
+     [
+      3.0,
+      0.5
+     ]
+    ],
+    "loop_length": 2.5
+   },
+   "plain_clip": {
+    "start": 40.0,
+    "length": 4.0,
+    "notes": [
+     [
+      0.25,
+      7.5
+     ]
+    ],
+    "loop_length": null
+   }
+  },
+  "assets": [
+   {
+    "name": "inspected tone.wav",
+    "sample_rate": 44100,
+    "channels": 1,
+    "duration_seconds": 3.0,
+    "location": "embedded"
+   }
+  ]
+ },
+ "verify": {
+  "consistent": "Verify Project\nProject is consistent.\n\nMissing media: 0\nSize mismatches: 0\nHash mismatches: 0\nUnreferenced files: 0",
+  "missing": "Verify Project\nProblems found.\n\nMissing media: 1\nSize mismatches: 0\nHash mismatches: 0\nUnreferenced files: 0"
+ }
+}

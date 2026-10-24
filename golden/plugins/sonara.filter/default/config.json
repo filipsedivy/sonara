@@ -1,0 +1,44 @@
+{
+ "config": "default",
+ "params": {
+  "cutoff_hz": 1000.0,
+  "lfo_depth_oct": 0.0,
+  "lfo_rate_hz": 0.5,
+  "mix": 1.0,
+  "mode": "lowpass",
+  "resonance": 0.2
+ },
+ "plugin": "sonara.filter",
+ "renders": {
+  "clipped": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "impulse": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "noise": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "silence": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "sine-1k": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "sweep": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  }
+ }
+}

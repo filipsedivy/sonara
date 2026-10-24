@@ -1,0 +1,120 @@
+{
+ "config": "preset-pluck",
+ "params": {
+  "amp_attack": 0.001,
+  "amp_decay": 0.45,
+  "amp_release": 0.25,
+  "amp_sustain": 0.0,
+  "bend_range": 2,
+  "filter_attack": 0.005,
+  "filter_cutoff": 600.0,
+  "filter_decay": 0.18,
+  "filter_env_amount": 4.0,
+  "filter_keytrack": 0.5,
+  "filter_release": 0.3,
+  "filter_resonance": 0.15,
+  "filter_sustain": 0.0,
+  "filter_type": "lowpass",
+  "gain_db": -8.0,
+  "glide": 0.0,
+  "lfo_cutoff_oct": 0.0,
+  "lfo_pitch_cents": 0.0,
+  "lfo_rate": 5.0,
+  "noise_level": 0.0,
+  "osc1_detune": 0.0,
+  "osc1_level": 0.8,
+  "osc1_octave": 0,
+  "osc1_wave": "saw",
+  "osc2_detune": 7.0,
+  "osc2_level": 0.3,
+  "osc2_octave": 1,
+  "osc2_semitone": 0,
+  "osc2_wave": "square",
+  "polyphony": 16,
+  "pulse_width": 0.5,
+  "unison": 1,
+  "unison_detune": 15.0,
+  "unison_spread": 0.7,
+  "velocity_sensitivity": 0.7,
+  "velocity_to_filter": 0.3,
+  "voice_mode": "poly"
+ },
+ "plugin": "sonara.synth.poly",
+ "renders": {
+  "chord": {
+   "notes": [
+    [
+     0.0,
+     1.0,
+     60,
+     80
+    ],
+    [
+     0.0,
+     1.0,
+     64,
+     80
+    ],
+    [
+     0.0,
+     1.0,
+     67,
+     80
+    ]
+   ],
+   "report": {
+    "active_voices": 0.0
+   },
+   "seconds": 2.5,
+   "tail_seconds": 0.3
+  },
+  "legato-line": {
+   "notes": [
+    [
+     0.0,
+     0.3,
+     48,
+     110
+    ],
+    [
+     0.25,
+     0.3,
+     55,
+     70
+    ],
+    [
+     0.5,
+     0.3,
+     60,
+     127
+    ],
+    [
+     0.75,
+     0.6,
+     72,
+     40
+    ]
+   ],
+   "report": {
+    "active_voices": 0.0
+   },
+   "seconds": 2.5,
+   "tail_seconds": 0.3
+  },
+  "single": {
+   "notes": [
+    [
+     0.0,
+     0.5,
+     60,
+     100
+    ]
+   ],
+   "report": {
+    "active_voices": 0.0
+   },
+   "seconds": 2.0,
+   "tail_seconds": 0.3
+  }
+ }
+}

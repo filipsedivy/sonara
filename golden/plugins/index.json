@@ -1,0 +1,287 @@
+{
+ "block_size": 512,
+ "bpm": 120.0,
+ "configs": [
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.utility"
+  },
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.eq.parametric"
+  },
+  {
+   "config": "preset-low-cut",
+   "kind": "effect",
+   "plugin": "sonara.eq.parametric"
+  },
+  {
+   "config": "preset-vocal-presence",
+   "kind": "effect",
+   "plugin": "sonara.eq.parametric"
+  },
+  {
+   "config": "preset-bass-tight",
+   "kind": "effect",
+   "plugin": "sonara.eq.parametric"
+  },
+  {
+   "config": "preset-air",
+   "kind": "effect",
+   "plugin": "sonara.eq.parametric"
+  },
+  {
+   "config": "preset-telephone",
+   "kind": "effect",
+   "plugin": "sonara.eq.parametric"
+  },
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.filter"
+  },
+  {
+   "config": "preset-slow-sweep",
+   "kind": "effect",
+   "plugin": "sonara.filter"
+  },
+  {
+   "config": "preset-wah",
+   "kind": "effect",
+   "plugin": "sonara.filter"
+  },
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.dynamics.compressor"
+  },
+  {
+   "config": "preset-gentle-bus-glue",
+   "kind": "effect",
+   "plugin": "sonara.dynamics.compressor"
+  },
+  {
+   "config": "preset-vocal-leveler",
+   "kind": "effect",
+   "plugin": "sonara.dynamics.compressor"
+  },
+  {
+   "config": "preset-drum-punch",
+   "kind": "effect",
+   "plugin": "sonara.dynamics.compressor"
+  },
+  {
+   "config": "preset-sidechain-pump",
+   "kind": "effect",
+   "plugin": "sonara.dynamics.compressor"
+  },
+  {
+   "config": "preset-parallel-smash",
+   "kind": "effect",
+   "plugin": "sonara.dynamics.compressor"
+  },
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.dynamics.limiter"
+  },
+  {
+   "config": "preset-master-1-dbtp",
+   "kind": "effect",
+   "plugin": "sonara.dynamics.limiter"
+  },
+  {
+   "config": "preset-streaming-loud",
+   "kind": "effect",
+   "plugin": "sonara.dynamics.limiter"
+  },
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.dynamics.gate"
+  },
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.delay"
+  },
+  {
+   "config": "preset-dotted-eighth",
+   "kind": "effect",
+   "plugin": "sonara.delay"
+  },
+  {
+   "config": "preset-ping-pong-quarter",
+   "kind": "effect",
+   "plugin": "sonara.delay"
+  },
+  {
+   "config": "preset-slapback",
+   "kind": "effect",
+   "plugin": "sonara.delay"
+  },
+  {
+   "config": "preset-dub-echo",
+   "kind": "effect",
+   "plugin": "sonara.delay"
+  },
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.reverb"
+  },
+  {
+   "config": "preset-small-room",
+   "kind": "effect",
+   "plugin": "sonara.reverb"
+  },
+  {
+   "config": "preset-vocal-plate",
+   "kind": "effect",
+   "plugin": "sonara.reverb"
+  },
+  {
+   "config": "preset-concert-hall",
+   "kind": "effect",
+   "plugin": "sonara.reverb"
+  },
+  {
+   "config": "preset-cathedral",
+   "kind": "effect",
+   "plugin": "sonara.reverb"
+  },
+  {
+   "config": "preset-ambient-wash",
+   "kind": "effect",
+   "plugin": "sonara.reverb"
+  },
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.convolver"
+  },
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.saturation"
+  },
+  {
+   "config": "preset-warm-tape",
+   "kind": "effect",
+   "plugin": "sonara.saturation"
+  },
+  {
+   "config": "preset-tube-drive",
+   "kind": "effect",
+   "plugin": "sonara.saturation"
+  },
+  {
+   "config": "preset-hard-crunch",
+   "kind": "effect",
+   "plugin": "sonara.saturation"
+  },
+  {
+   "config": "default",
+   "kind": "instrument",
+   "plugin": "sonara.synth.poly"
+  },
+  {
+   "config": "preset-init",
+   "kind": "instrument",
+   "plugin": "sonara.synth.poly"
+  },
+  {
+   "config": "preset-analog-bass",
+   "kind": "instrument",
+   "plugin": "sonara.synth.poly"
+  },
+  {
+   "config": "preset-sub-bass",
+   "kind": "instrument",
+   "plugin": "sonara.synth.poly"
+  },
+  {
+   "config": "preset-acid-bass",
+   "kind": "instrument",
+   "plugin": "sonara.synth.poly"
+  },
+  {
+   "config": "preset-warm-pad",
+   "kind": "instrument",
+   "plugin": "sonara.synth.poly"
+  },
+  {
+   "config": "preset-strings",
+   "kind": "instrument",
+   "plugin": "sonara.synth.poly"
+  },
+  {
+   "config": "preset-brass",
+   "kind": "instrument",
+   "plugin": "sonara.synth.poly"
+  },
+  {
+   "config": "preset-pluck",
+   "kind": "instrument",
+   "plugin": "sonara.synth.poly"
+  },
+  {
+   "config": "preset-supersaw-lead",
+   "kind": "instrument",
+   "plugin": "sonara.synth.poly"
+  },
+  {
+   "config": "preset-square-lead",
+   "kind": "instrument",
+   "plugin": "sonara.synth.poly"
+  },
+  {
+   "config": "preset-electric-keys",
+   "kind": "instrument",
+   "plugin": "sonara.synth.poly"
+  },
+  {
+   "config": "preset-glass-bells",
+   "kind": "instrument",
+   "plugin": "sonara.synth.poly"
+  },
+  {
+   "config": "preset-choir-pad",
+   "kind": "instrument",
+   "plugin": "sonara.synth.poly"
+  },
+  {
+   "config": "default",
+   "kind": "instrument",
+   "plugin": "sonara.drums"
+  },
+  {
+   "config": "preset-electronic-808",
+   "kind": "instrument",
+   "plugin": "sonara.drums"
+  },
+  {
+   "config": "preset-punchy-909",
+   "kind": "instrument",
+   "plugin": "sonara.drums"
+  },
+  {
+   "config": "preset-tight-house",
+   "kind": "instrument",
+   "plugin": "sonara.drums"
+  },
+  {
+   "config": "preset-cinematic-toms",
+   "kind": "instrument",
+   "plugin": "sonara.drums"
+  },
+  {
+   "config": "preset-lo-fi",
+   "kind": "instrument",
+   "plugin": "sonara.drums"
+  }
+ ],
+ "sample_rate": 48000
+}

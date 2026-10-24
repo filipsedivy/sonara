@@ -1,0 +1,1774 @@
+{
+ "final_project": "341be5c1fe683229bfbade69951965401506873a7e148a49b05db9915c62690d",
+ "redo": {
+  "hashes": [
+   "764e26b30f2159dd607d6960523df731cf4a5c709de91907392057fed3486f10",
+   "3129494de159c8aa93e8e26065c7b272184e654733b5a29c31fafd507d9716ca",
+   "3e9db208666e99b4fc92345ab45c8e6b04478c1211ee70ee933ec485c9a21bbb",
+   "6929ff239bccf3c5b4f0601a91f66e210465f30154bfd6e84ee2dd6ef618c8e1",
+   "a3740b85cae5e8d5115ed856968a232fbefa8af353f2b972c98f3dfac7c82853",
+   "b8107b042854144af00923353dbe165ab6fd44945945a88e11f4af24b699a6d9",
+   "bdfb600be58feb63a960006dadc5a350aaa920f87f683d85a53671918d56d42d",
+   "3a65f1214ad2b95d90d3720fbfa45690eaae51410c5a2f444ca0b24cfa139217",
+   "b0fc8b46b1820960bec63c6516a01ce4a530b84c0818b7934864545668dd78a7",
+   "17412c393b552cb052661e316bd6d602d2076152e190b2636b48e6290ee15611",
+   "29804434ea387f1ee807b3c1ded877ccd3a6117e4b45f43a45e676337269d950",
+   "5db32453776793f485fea9c42242a7df4a081251bdf35c2698e6b1bec0aa9904",
+   "ff9e53f8372ac89b9eebbd4bc8d30b1d6e5c65f613b305f673aa91c1a6b95902",
+   "6a4a2fa5f3c9a4796c36999e4948b3f6b1058dadd36d73b92d1b169f113ab01e",
+   "df4b0ccca4f991234e9c843c54020b375b493465a86d221b0ff4f4cb42bb1f96",
+   "85a9058319f66d3c563b55f7b45a29298ff7ce5c1e89405cee2db82ae4ee1018",
+   "5a3670d6d24feb07bf453b7b32b13836321fda4159888bce66f977cca07e3405",
+   "0cc0bab51e04dba784eaf3c84d643866eaf078c6f2255378d0eb6f2d7a3036b4",
+   "73a05825e98ab039beb648ea40d47d45f1b0197ad4b3a50a9a4f2f96b5912522",
+   "43d9ffbe179434b50458cf24fdfa912348d3938e150e897187f95dc63419a254",
+   "b15435877b65151b7a1ae3af6932b03b4ff4ace53f4ba99a73eaf456e3073a76",
+   "46da41197a9eeab387c1c94ed85d5be85969f8e53885bf9e73110f15c5898216",
+   "341be5c1fe683229bfbade69951965401506873a7e148a49b05db9915c62690d"
+  ],
+  "labels": [
+   "Redo Edit Project Info",
+   "Redo Add Section",
+   "Redo Add Section",
+   "Redo Add Section",
+   "Redo Add Section",
+   "Redo Set Tempo",
+   "Redo Set Tempo",
+   "Redo Create Track",
+   "Redo Routing",
+   "Redo Create MIDI Clip",
+   "Redo Create MIDI Clip",
+   "Redo Create MIDI Clip",
+   "Redo Create MIDI Clip",
+   "Redo Create MIDI Clip",
+   "Redo Edit Notes",
+   "Redo Create MIDI Clip",
+   "Redo Create MIDI Clip",
+   "Redo Edit Notes",
+   "Redo Edit Automation",
+   "Redo Edit Automation",
+   "Redo Edit Automation",
+   "Redo Track Volume",
+   "Redo Track Volume"
+  ],
+  "moves": 23
+ },
+ "render": {
+  "frames": 5832469,
+  "latency": 102,
+  "sample_rate": 48000,
+  "start_frame": 0,
+  "tail_frames": 422969,
+  "warnings": []
+ },
+ "roundtrip_equal": true,
+ "smf_export": {
+  "max_rounding_error_beats": 0.0005204132493261682,
+  "notes": 432,
+  "tracks": 6
+ },
+ "steps": [
+  {
+   "id": "project",
+   "project": "725adcf2e78cac36e2ffc5bbaa87a57f70a06d4cd3a6804ad25a41137e4be582",
+   "result": {
+    "committed": true,
+    "ok": true,
+    "project_id": "prj_000000000002",
+    "project_version": 1,
+    "state": {
+     "assets": [],
+     "content_end": {
+      "bar_beat": "1:1",
+      "beat": 0.0,
+      "seconds": 0.0
+     },
+     "length": {
+      "bar_beat": "34:1",
+      "beat": 132.0,
+      "explicit": true,
+      "seconds": 110.0
+     },
+     "loop": {
+      "enabled": false,
+      "end": 16.0,
+      "start": 0.0
+     },
+     "markers": [],
+     "master": {
+      "effects": [
+       {
+        "device_id": "dev_000000000018",
+        "enabled": true,
+        "name": "Limiter",
+        "plugin_id": "sonara.dynamics.limiter",
+        "preset": "Master -1 dBTP"
+       }
+      ],
+      "kind": "master",
+      "mute": false,
+      "name": "Master",
+      "output": null,
+      "pan": 0.0,
+      "solo": false,
+      "track_id": "master",
+      "volume_db": 0.0
+     },
+     "metadata": {
+      "created": "<VOLATILE>",
+      "title": "Ascension"
+     },
+     "name": "Ascension",
+     "project_id": "prj_000000000002",
+     "sample_rate": 48000,
+     "sections": [],
+     "tempo": [
+      {
+       "beat": 0.0,
+       "bpm": 72.0,
+       "ramp": false
+      }
+     ],
+     "time_signatures": [
+      {
+       "bar": 1,
+       "beat": 0.0,
+       "signature": "4/4"
+      }
+     ],
+     "tracks": [
+      {
+       "clips": [],
+       "color": "#8f5bb8",
+       "instrument": {
+        "device_id": "dev_000000000004",
+        "enabled": true,
+        "name": "Sonara Poly Synth",
+        "plugin_id": "sonara.synth.poly",
+        "preset": "Strings"
+       },
+       "kind": "instrument",
+       "mute": false,
+       "name": "Strings",
+       "output": "master",
+       "pan": 0.0,
+       "sends": [
+        {
+         "enabled": true,
+         "level_db": -6.0,
+         "pre_fader": false,
+         "send_id": "snd_000000000014",
+         "target": "trk_000000000011"
+        }
+       ],
+       "solo": false,
+       "track_id": "trk_000000000003",
+       "volume_db": 0.0
+      },
+      {
+       "clips": [],
+       "color": "#d9a24a",
+       "instrument": {
+        "device_id": "dev_000000000006",
+        "enabled": true,
+        "name": "Sonara Poly Synth",
+        "plugin_id": "sonara.synth.poly",
+        "preset": "Brass"
+       },
+       "kind": "instrument",
+       "mute": false,
+       "name": "Brass",
+       "output": "master",
+       "pan": 0.0,
+       "sends": [
+        {
+         "enabled": true,
+         "level_db": -8.0,
+         "pre_fader": false,
+         "send_id": "snd_000000000015",
+         "target": "trk_000000000011"
+        }
+       ],
+       "solo": false,
+       "track_id": "trk_000000000005",
+       "volume_db": 0.0
+      },
+      {
+       "clips": [],
+       "color": "#5b9bb8",
+       "instrument": {
+        "device_id": "dev_000000000008",
+        "enabled": true,
+        "name": "Sonara Poly Synth",
+        "plugin_id": "sonara.synth.poly",
+        "preset": "Choir Pad"
+       },
+       "kind": "instrument",
+       "mute": false,
+       "name": "Choir",
+       "output": "master",
+       "pan": 0.0,
+       "sends": [
+        {
+         "enabled": true,
+         "level_db": -5.0,
+         "pre_fader": false,
+         "send_id": "snd_000000000016",
+         "target": "trk_000000000011"
+        }
+       ],
+       "solo": false,
+       "track_id": "trk_000000000007",
+       "volume_db": 0.0
+      },
+      {
+       "clips": [],
+       "color": "#d9644a",
+       "instrument": {
+        "device_id": "dev_000000000010",
+        "enabled": true,
+        "name": "Sonara Drum Kit",
+        "plugin_id": "sonara.drums",
+        "preset": "Cinematic Toms"
+       },
+       "kind": "instrument",
+       "mute": false,
+       "name": "Percussion",
+       "output": "master",
+       "pan": 0.0,
+       "sends": [
+        {
+         "enabled": true,
+         "level_db": -9.0,
+         "pre_fader": false,
+         "send_id": "snd_000000000017",
+         "target": "trk_000000000011"
+        }
+       ],
+       "solo": false,
+       "track_id": "trk_000000000009",
+       "volume_db": 0.0
+      },
+      {
+       "clips": [],
+       "color": "#5b7db8",
+       "effects": [
+        {
+         "device_id": "dev_000000000013",
+         "enabled": true,
+         "name": "Reverb",
+         "plugin_id": "sonara.reverb",
+         "preset": null
+        }
+       ],
+       "kind": "bus",
+       "mute": false,
+       "name": "Reverb",
+       "output": "master",
+       "pan": 0.0,
+       "solo": false,
+       "track_id": "trk_000000000011",
+       "volume_db": 0.0
+      }
+     ]
+    },
+    "tool": "create_project"
+   },
+   "tool": "create_project"
+  },
+  {
+   "id": "step1",
+   "project": "764e26b30f2159dd607d6960523df731cf4a5c709de91907392057fed3486f10",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "metadata"
+     ],
+     "updated": [
+      {
+       "id": "project",
+       "kind": "project"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Project Info",
+    "project_version": 2,
+    "tool": "set_metadata"
+   },
+   "tool": "set_metadata"
+  },
+  {
+   "id": "step2",
+   "project": "3129494de159c8aa93e8e26065c7b272184e654733b5a29c31fafd507d9716ca",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "markers"
+     ],
+     "updated": []
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Add Section",
+    "project_version": 3,
+    "result": {
+     "section_id": "sec_000000000019"
+    },
+    "tool": "add_section"
+   },
+   "tool": "add_section"
+  },
+  {
+   "id": "step3",
+   "project": "3e9db208666e99b4fc92345ab45c8e6b04478c1211ee70ee933ec485c9a21bbb",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "markers"
+     ],
+     "updated": []
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Add Section",
+    "project_version": 4,
+    "result": {
+     "section_id": "sec_000000000020"
+    },
+    "tool": "add_section"
+   },
+   "tool": "add_section"
+  },
+  {
+   "id": "step4",
+   "project": "6929ff239bccf3c5b4f0601a91f66e210465f30154bfd6e84ee2dd6ef618c8e1",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "markers"
+     ],
+     "updated": []
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Add Section",
+    "project_version": 5,
+    "result": {
+     "section_id": "sec_000000000021"
+    },
+    "tool": "add_section"
+   },
+   "tool": "add_section"
+  },
+  {
+   "id": "step5",
+   "project": "a3740b85cae5e8d5115ed856968a232fbefa8af353f2b972c98f3dfac7c82853",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "markers"
+     ],
+     "updated": []
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Add Section",
+    "project_version": 6,
+    "result": {
+     "section_id": "sec_000000000022"
+    },
+    "tool": "add_section"
+   },
+   "tool": "add_section"
+  },
+  {
+   "id": "step6",
+   "project": "b8107b042854144af00923353dbe165ab6fd44945945a88e11f4af24b699a6d9",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "tempo"
+     ],
+     "updated": [
+      {
+       "id": "project",
+       "kind": "project"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Set Tempo",
+    "project_version": 7,
+    "result": {
+     "tempo_points": 2
+    },
+    "tool": "set_tempo"
+   },
+   "tool": "set_tempo"
+  },
+  {
+   "id": "step7",
+   "project": "bdfb600be58feb63a960006dadc5a350aaa920f87f683d85a53671918d56d42d",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "tempo"
+     ],
+     "updated": [
+      {
+       "id": "project",
+       "kind": "project"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Set Tempo",
+    "project_version": 8,
+    "result": {
+     "tempo_points": 3
+    },
+    "tool": "set_tempo"
+   },
+   "tool": "set_tempo"
+  },
+  {
+   "id": "horn",
+   "project": "3a65f1214ad2b95d90d3720fbfa45690eaae51410c5a2f444ca0b24cfa139217",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "routing",
+      "tracks"
+     ],
+     "updated": []
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Create Track",
+    "project_version": 9,
+    "result": {
+     "instrument_device_id": "dev_000000000024",
+     "track_id": "trk_000000000023"
+    },
+    "tool": "create_track"
+   },
+   "tool": "create_track"
+  },
+  {
+   "id": "step9",
+   "project": "b0fc8b46b1820960bec63c6516a01ce4a530b84c0818b7934864545668dd78a7",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "routing"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000023",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Routing",
+    "project_version": 10,
+    "result": {
+     "steps": [
+      {
+       "send_id": "snd_000000000025"
+      }
+     ]
+    },
+    "send_ids": [
+     "snd_000000000025"
+    ],
+    "tool": "configure_routing"
+   },
+   "tool": "configure_routing"
+  },
+  {
+   "id": "strings",
+   "project": "17412c393b552cb052661e316bd6d602d2076152e190b2636b48e6290ee15611",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips",
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000003",
+       "kind": "track"
+      }
+     ]
+    },
+    "clip_id": "clp_000000000050",
+    "committed": true,
+    "content_beats": 32.0,
+    "dry_run": false,
+    "note_count": 24,
+    "ok": true,
+    "operation": "Create MIDI Clip",
+    "pitch_range": [
+     52,
+     65
+    ],
+    "project_version": 11,
+    "result": {
+     "clip_id": "clp_000000000050",
+     "end_seconds": 108.4121990301877,
+     "length_beats": 128.0,
+     "note_ids": [
+      "n_000000000028",
+      "n_000000000026",
+      "n_000000000027",
+      "n_000000000031",
+      "n_000000000030",
+      "n_000000000029",
+      "n_000000000034",
+      "n_000000000033",
+      "n_000000000032",
+      "n_000000000037",
+      "n_000000000036",
+      "n_000000000035",
+      "n_000000000039",
+      "n_000000000038",
+      "n_000000000040",
+      "n_000000000043",
+      "n_000000000041",
+      "n_000000000042",
+      "n_000000000046",
+      "n_000000000045",
+      "n_000000000044",
+      "n_000000000048",
+      "n_000000000047",
+      "n_000000000049"
+     ],
+     "start_beat": 0.0,
+     "start_seconds": 0.0
+    },
+    "tool": "generate_midi"
+   },
+   "tool": "generate_midi"
+  },
+  {
+   "id": "step11",
+   "project": "29804434ea387f1ee807b3c1ded877ccd3a6117e4b45f43a45e676337269d950",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips",
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000003",
+       "kind": "track"
+      }
+     ]
+    },
+    "clip_id": "clp_000000000054",
+    "committed": true,
+    "content_beats": 4.0,
+    "dry_run": false,
+    "note_count": 3,
+    "ok": true,
+    "operation": "Create MIDI Clip",
+    "pitch_range": [
+     57,
+     65
+    ],
+    "project_version": 12,
+    "result": {
+     "clip_id": "clp_000000000054",
+     "end_seconds": 112.69791331590199,
+     "length_beats": 4.0,
+     "note_ids": [
+      "n_000000000053",
+      "n_000000000051",
+      "n_000000000052"
+     ],
+     "start_beat": 128.0,
+     "start_seconds": 108.4121990301877
+    },
+    "tool": "generate_midi"
+   },
+   "tool": "generate_midi"
+  },
+  {
+   "id": "step12",
+   "project": "5db32453776793f485fea9c42242a7df4a081251bdf35c2698e6b1bec0aa9904",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips",
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000005",
+       "kind": "track"
+      }
+     ]
+    },
+    "clip_id": "clp_000000000103",
+    "committed": true,
+    "content_beats": 32.0,
+    "dry_run": false,
+    "note_count": 48,
+    "ok": true,
+    "operation": "Create MIDI Clip",
+    "pitch_range": [
+     40,
+     53
+    ],
+    "project_version": 13,
+    "result": {
+     "clip_id": "clp_000000000103",
+     "end_seconds": 93.33333333333333,
+     "length_beats": 80.0,
+     "note_ids": [
+      "n_000000000057",
+      "n_000000000055",
+      "n_000000000056",
+      "n_000000000060",
+      "n_000000000059",
+      "n_000000000058",
+      "n_000000000063",
+      "n_000000000062",
+      "n_000000000061",
+      "n_000000000066",
+      "n_000000000065",
+      "n_000000000064",
+      "n_000000000068",
+      "n_000000000067",
+      "n_000000000069",
+      "n_000000000072",
+      "n_000000000070",
+      "n_000000000071",
+      "n_000000000075",
+      "n_000000000074",
+      "n_000000000073",
+      "n_000000000077",
+      "n_000000000076",
+      "n_000000000078",
+      "n_000000000081",
+      "n_000000000079",
+      "n_000000000080",
+      "n_000000000082",
+      "n_000000000084",
+      "n_000000000083",
+      "n_000000000087",
+      "n_000000000085",
+      "n_000000000086",
+      "n_000000000090",
+      "n_000000000089",
+      "n_000000000088",
+      "n_000000000091",
+      "n_000000000093",
+      "n_000000000092",
+      "n_000000000094",
+      "n_000000000096",
+      "n_000000000095",
+      "n_000000000099",
+      "n_000000000097",
+      "n_000000000098",
+      "n_000000000100",
+      "n_000000000101",
+      "n_000000000102"
+     ],
+     "start_beat": 32.0,
+     "start_seconds": 26.666666666666668
+    },
+    "tool": "generate_midi"
+   },
+   "tool": "generate_midi"
+  },
+  {
+   "id": "step13",
+   "project": "ff9e53f8372ac89b9eebbd4bc8d30b1d6e5c65f613b305f673aa91c1a6b95902",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips",
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000007",
+       "kind": "track"
+      }
+     ]
+    },
+    "clip_id": "clp_000000000128",
+    "committed": true,
+    "content_beats": 32.0,
+    "dry_run": false,
+    "note_count": 24,
+    "ok": true,
+    "operation": "Create MIDI Clip",
+    "pitch_range": [
+     64,
+     77
+    ],
+    "project_version": 14,
+    "result": {
+     "clip_id": "clp_000000000128",
+     "end_seconds": 108.4121990301877,
+     "length_beats": 64.0,
+     "note_ids": [
+      "n_000000000106",
+      "n_000000000104",
+      "n_000000000105",
+      "n_000000000109",
+      "n_000000000108",
+      "n_000000000107",
+      "n_000000000112",
+      "n_000000000111",
+      "n_000000000110",
+      "n_000000000115",
+      "n_000000000114",
+      "n_000000000113",
+      "n_000000000117",
+      "n_000000000116",
+      "n_000000000118",
+      "n_000000000121",
+      "n_000000000119",
+      "n_000000000120",
+      "n_000000000124",
+      "n_000000000123",
+      "n_000000000122",
+      "n_000000000126",
+      "n_000000000125",
+      "n_000000000127"
+     ],
+     "start_beat": 64.0,
+     "start_seconds": 53.333333333333336
+    },
+    "tool": "generate_midi"
+   },
+   "tool": "generate_midi"
+  },
+  {
+   "id": "perc_rise",
+   "project": "6a4a2fa5f3c9a4796c36999e4948b3f6b1058dadd36d73b92d1b169f113ab01e",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips",
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000009",
+       "kind": "track"
+      }
+     ]
+    },
+    "clip_id": "clp_000000000186",
+    "committed": true,
+    "content_beats": 32.0,
+    "dry_run": false,
+    "note_count": 57,
+    "ok": true,
+    "operation": "Create MIDI Clip",
+    "pitch_range": [
+     36,
+     50
+    ],
+    "project_version": 15,
+    "result": {
+     "clip_id": "clp_000000000186",
+     "end_seconds": 53.333333333333336,
+     "length_beats": 32.0,
+     "note_ids": [
+      "n_000000000134",
+      "n_000000000129",
+      "n_000000000130",
+      "n_000000000132",
+      "n_000000000131",
+      "n_000000000133",
+      "n_000000000140",
+      "n_000000000135",
+      "n_000000000136",
+      "n_000000000138",
+      "n_000000000137",
+      "n_000000000139",
+      "n_000000000141",
+      "n_000000000146",
+      "n_000000000142",
+      "n_000000000144",
+      "n_000000000143",
+      "n_000000000145",
+      "n_000000000152",
+      "n_000000000147",
+      "n_000000000148",
+      "n_000000000150",
+      "n_000000000149",
+      "n_000000000151",
+      "n_000000000158",
+      "n_000000000153",
+      "n_000000000154",
+      "n_000000000156",
+      "n_000000000155",
+      "n_000000000157",
+      "n_000000000164",
+      "n_000000000159",
+      "n_000000000160",
+      "n_000000000162",
+      "n_000000000161",
+      "n_000000000163",
+      "n_000000000165",
+      "n_000000000170",
+      "n_000000000166",
+      "n_000000000168",
+      "n_000000000167",
+      "n_000000000169",
+      "n_000000000176",
+      "n_000000000171",
+      "n_000000000172",
+      "n_000000000174",
+      "n_000000000177",
+      "n_000000000185",
+      "n_000000000178",
+      "n_000000000179",
+      "n_000000000173",
+      "n_000000000180",
+      "n_000000000181",
+      "n_000000000182",
+      "n_000000000183",
+      "n_000000000175",
+      "n_000000000184"
+     ],
+     "start_beat": 32.0,
+     "start_seconds": 26.666666666666668
+    },
+    "tool": "generate_midi"
+   },
+   "tool": "generate_midi"
+  },
+  {
+   "id": "step15",
+   "project": "df4b0ccca4f991234e9c843c54020b375b493465a86d221b0ff4f4cb42bb1f96",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000186",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Notes",
+    "project_version": 16,
+    "result": {
+     "steps": [
+      {
+       "note_count": 57
+      }
+     ]
+    },
+    "tool": "edit_midi_notes"
+   },
+   "tool": "edit_midi_notes"
+  },
+  {
+   "id": "step16",
+   "project": "85a9058319f66d3c563b55f7b45a29298ff7ce5c1e89405cee2db82ae4ee1018",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips",
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000009",
+       "kind": "track"
+      }
+     ]
+    },
+    "clip_id": "clp_000000000272",
+    "committed": true,
+    "content_beats": 48.0,
+    "dry_run": false,
+    "note_count": 85,
+    "ok": true,
+    "operation": "Create MIDI Clip",
+    "pitch_range": [
+     36,
+     50
+    ],
+    "project_version": 17,
+    "result": {
+     "clip_id": "clp_000000000272",
+     "end_seconds": 93.33333333333333,
+     "length_beats": 48.0,
+     "note_ids": [
+      "n_000000000192",
+      "n_000000000187",
+      "n_000000000188",
+      "n_000000000190",
+      "n_000000000189",
+      "n_000000000191",
+      "n_000000000198",
+      "n_000000000193",
+      "n_000000000194",
+      "n_000000000196",
+      "n_000000000195",
+      "n_000000000197",
+      "n_000000000204",
+      "n_000000000199",
+      "n_000000000200",
+      "n_000000000202",
+      "n_000000000201",
+      "n_000000000203",
+      "n_000000000210",
+      "n_000000000205",
+      "n_000000000206",
+      "n_000000000208",
+      "n_000000000207",
+      "n_000000000209",
+      "n_000000000211",
+      "n_000000000216",
+      "n_000000000212",
+      "n_000000000214",
+      "n_000000000213",
+      "n_000000000215",
+      "n_000000000217",
+      "n_000000000222",
+      "n_000000000218",
+      "n_000000000220",
+      "n_000000000219",
+      "n_000000000223",
+      "n_000000000221",
+      "n_000000000224",
+      "n_000000000229",
+      "n_000000000225",
+      "n_000000000227",
+      "n_000000000226",
+      "n_000000000228",
+      "n_000000000230",
+      "n_000000000235",
+      "n_000000000231",
+      "n_000000000233",
+      "n_000000000236",
+      "n_000000000232",
+      "n_000000000234",
+      "n_000000000237",
+      "n_000000000242",
+      "n_000000000238",
+      "n_000000000240",
+      "n_000000000239",
+      "n_000000000241",
+      "n_000000000248",
+      "n_000000000243",
+      "n_000000000244",
+      "n_000000000246",
+      "n_000000000245",
+      "n_000000000249",
+      "n_000000000247",
+      "n_000000000250",
+      "n_000000000255",
+      "n_000000000251",
+      "n_000000000253",
+      "n_000000000252",
+      "n_000000000254",
+      "n_000000000256",
+      "n_000000000261",
+      "n_000000000262",
+      "n_000000000257",
+      "n_000000000259",
+      "n_000000000263",
+      "n_000000000271",
+      "n_000000000264",
+      "n_000000000258",
+      "n_000000000265",
+      "n_000000000266",
+      "n_000000000267",
+      "n_000000000268",
+      "n_000000000269",
+      "n_000000000260",
+      "n_000000000270"
+     ],
+     "start_beat": 64.0,
+     "start_seconds": 53.333333333333336
+    },
+    "tool": "generate_midi"
+   },
+   "tool": "generate_midi"
+  },
+  {
+   "id": "step17",
+   "project": "5a3670d6d24feb07bf453b7b32b13836321fda4159888bce66f977cca07e3405",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips",
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000023",
+       "kind": "track"
+      }
+     ]
+    },
+    "clip_id": "clp_000000000295",
+    "committed": true,
+    "content_beats": 32.0,
+    "dry_run": false,
+    "note_count": 22,
+    "ok": true,
+    "operation": "Create MIDI Clip",
+    "pitch_range": [
+     69,
+     72
+    ],
+    "project_version": 18,
+    "result": {
+     "clip_id": "clp_000000000295",
+     "end_seconds": 80.0,
+     "length_beats": 32.0,
+     "note_ids": [
+      "n_000000000273",
+      "n_000000000274",
+      "n_000000000275",
+      "n_000000000276",
+      "n_000000000277",
+      "n_000000000278",
+      "n_000000000279",
+      "n_000000000280",
+      "n_000000000281",
+      "n_000000000282",
+      "n_000000000283",
+      "n_000000000284",
+      "n_000000000285",
+      "n_000000000286",
+      "n_000000000287",
+      "n_000000000288",
+      "n_000000000289",
+      "n_000000000290",
+      "n_000000000291",
+      "n_000000000292",
+      "n_000000000293",
+      "n_000000000294"
+     ],
+     "start_beat": 64.0,
+     "start_seconds": 53.333333333333336
+    },
+    "tool": "generate_midi"
+   },
+   "tool": "generate_midi"
+  },
+  {
+   "id": "step18",
+   "project": "0cc0bab51e04dba784eaf3c84d643866eaf078c6f2255378d0eb6f2d7a3036b4",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000050",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Notes",
+    "project_version": 19,
+    "result": {
+     "steps": [
+      {
+       "note_count": 24
+      }
+     ]
+    },
+    "tool": "edit_midi_notes"
+   },
+   "tool": "edit_midi_notes"
+  },
+  {
+   "id": "step19",
+   "project": "73a05825e98ab039beb648ea40d47d45f1b0197ad4b3a50a9a4f2f96b5912522",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "automation"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000003",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Automation",
+    "project_version": 20,
+    "result": {
+     "lane_id": "aut_000000000296",
+     "point_count": 4,
+     "value_range": [
+      -144.0,
+      12.0
+     ]
+    },
+    "tool": "create_automation"
+   },
+   "tool": "create_automation"
+  },
+  {
+   "id": "step20",
+   "project": "43d9ffbe179434b50458cf24fdfa912348d3938e150e897187f95dc63419a254",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "automation"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000005",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Automation",
+    "project_version": 21,
+    "result": {
+     "lane_id": "aut_000000000297",
+     "point_count": 4,
+     "value_range": [
+      -144.0,
+      12.0
+     ]
+    },
+    "tool": "create_automation"
+   },
+   "tool": "create_automation"
+  },
+  {
+   "id": "step21",
+   "project": "b15435877b65151b7a1ae3af6932b03b4ff4ace53f4ba99a73eaf456e3073a76",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "automation"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000007",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Automation",
+    "project_version": 22,
+    "result": {
+     "lane_id": "aut_000000000298",
+     "point_count": 3,
+     "value_range": [
+      -144.0,
+      12.0
+     ]
+    },
+    "tool": "create_automation"
+   },
+   "tool": "create_automation"
+  },
+  {
+   "id": "step22",
+   "project": "46da41197a9eeab387c1c94ed85d5be85969f8e53885bf9e73110f15c5898216",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "mixer"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000009",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Track Volume",
+    "project_version": 23,
+    "result": {
+     "mute": false,
+     "pan": 0.0,
+     "solo": false,
+     "solo_safe": false,
+     "volume_db": -4.0
+    },
+    "tool": "set_track_volume"
+   },
+   "tool": "set_track_volume"
+  },
+  {
+   "id": "step23",
+   "project": "341be5c1fe683229bfbade69951965401506873a7e148a49b05db9915c62690d",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "mixer"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000023",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Track Volume",
+    "project_version": 24,
+    "result": {
+     "mute": false,
+     "pan": 0.0,
+     "solo": false,
+     "solo_safe": false,
+     "volume_db": -3.0
+    },
+    "tool": "set_track_volume"
+   },
+   "tool": "set_track_volume"
+  },
+  {
+   "id": "preview",
+   "project": "341be5c1fe683229bfbade69951965401506873a7e148a49b05db9915c62690d",
+   "result": {
+    "created": "<VOLATILE>",
+    "elapsed_seconds": "<VOLATILE>",
+    "finished": "<VOLATILE>",
+    "kind": "render_preview",
+    "label": "Render preview",
+    "message": "rendering",
+    "ok": true,
+    "operation_id": "op_000000000299",
+    "progress": 1.0,
+    "result": {
+     "analysis": {
+      "balance_db": 0.35748283535963077,
+      "channels": 2,
+      "clip_events": 0,
+      "clipped_samples": 0,
+      "correlation": 0.5248876889506062,
+      "crest_factor_db": 17.758771872648804,
+      "dc_offset": [
+       0.000244,
+       0.000162
+      ],
+      "duration_seconds": "<VOLATILE>",
+      "integrated_lufs": -15.464490203612074,
+      "kind": {
+       "estimated": [
+        "true_peak_dbtp",
+        "plr_db"
+       ],
+       "measured": [
+        "sample_peak_dbfs",
+        "rms_dbfs",
+        "integrated_lufs",
+        "momentary_max_lufs",
+        "short_term_max_lufs",
+        "loudness_range_lu",
+        "clipped_samples",
+        "correlation",
+        "octave_bands_db"
+       ]
+      },
+      "leading_silence_seconds": 0.05,
+      "loudness_range_lu": 20.359913294192772,
+      "min_correlation_400ms": -0.42128665175317215,
+      "momentary_max_lufs": -11.311363975030474,
+      "nonfinite_samples": 0,
+      "octave_bands_db": {
+       "1000": -8.633486169336145,
+       "125": -6.146388066982715,
+       "16000": -44.05543762376727,
+       "2000": -13.43415856135707,
+       "250": -4.828420588399421,
+       "31.5": -23.041697536985065,
+       "4000": -18.833815803492655,
+       "500": -7.52250132917685,
+       "63": -13.023581610740287,
+       "8000": -31.271509917588777
+      },
+      "over_full_scale_samples": 0,
+      "plr_db": 13.639641818413399,
+      "rms_dbfs": -19.58629697602599,
+      "sample_peak_dbfs": -1.8275251033771882,
+      "sample_rate": 48000,
+      "short_term_max_lufs": -12.11436472073578,
+      "side_to_mid_db": -5.059091568771587,
+      "silence_regions": [
+       [
+        115.25,
+        121.75
+       ]
+      ],
+      "spectral_centroid_hz": 507.0119444897515,
+      "trailing_silence_seconds": 6.5,
+      "true_peak_dbtp": -1.8248483851986765
+     },
+     "issues": [],
+     "latency_samples": 102,
+     "missing_media": [],
+     "path": "<ROOT>/work/examples/output/cinematic_orchestral/preview.wav",
+     "range_beats": [
+      0.0,
+      132.0
+     ],
+     "realtime_factor": "<VOLATILE>",
+     "render_seconds": "<VOLATILE>",
+     "sample_rate": 48000,
+     "seconds": 121.758,
+     "tail_seconds": 9.06,
+     "warnings": []
+    },
+    "started": "<VOLATILE>",
+    "status": "succeeded",
+    "tool": "render_preview"
+   },
+   "tool": "render_preview"
+  },
+  {
+   "id": "climax",
+   "project": "341be5c1fe683229bfbade69951965401506873a7e148a49b05db9915c62690d",
+   "result": {
+    "created": "<VOLATILE>",
+    "elapsed_seconds": "<VOLATILE>",
+    "finished": "<VOLATILE>",
+    "kind": "render_preview",
+    "label": "Render preview",
+    "message": "measuring Horn Melody",
+    "ok": true,
+    "operation_id": "op_000000000300",
+    "progress": 1.0,
+    "result": {
+     "analysis": {
+      "balance_db": 0.36254197792781767,
+      "channels": 2,
+      "clip_events": 0,
+      "clipped_samples": 0,
+      "correlation": 0.5265829561774442,
+      "crest_factor_db": 13.969284948776334,
+      "dc_offset": [
+       0.000523,
+       0.000348
+      ],
+      "duration_seconds": "<VOLATILE>",
+      "integrated_lufs": -13.23468407644445,
+      "kind": {
+       "estimated": [
+        "true_peak_dbtp",
+        "plr_db"
+       ],
+       "measured": [
+        "sample_peak_dbfs",
+        "rms_dbfs",
+        "integrated_lufs",
+        "momentary_max_lufs",
+        "short_term_max_lufs",
+        "loudness_range_lu",
+        "clipped_samples",
+        "correlation",
+        "octave_bands_db"
+       ]
+      },
+      "leading_silence_seconds": 0.0,
+      "loudness_range_lu": 1.7402182809864062,
+      "min_correlation_400ms": 0.3104899668073279,
+      "momentary_max_lufs": -11.75784968018354,
+      "nonfinite_samples": 0,
+      "octave_bands_db": {
+       "1000": -8.382486583097217,
+       "125": -5.837093317202848,
+       "16000": -44.27372666586726,
+       "2000": -13.29484428385692,
+       "250": -5.445648534784253,
+       "31.5": -22.71376001477546,
+       "4000": -18.937180423609842,
+       "500": -7.061970253405123,
+       "63": -13.368601084270146,
+       "8000": -31.42824017934497
+      },
+      "over_full_scale_samples": 0,
+      "plr_db": 11.444044356864314,
+      "rms_dbfs": -15.759924668356469,
+      "sample_peak_dbfs": -1.7906397195801356,
+      "sample_rate": 48000,
+      "short_term_max_lufs": -12.462577304941338,
+      "side_to_mid_db": -5.079258205812936,
+      "silence_regions": [],
+      "spectral_centroid_hz": 519.3415648001773,
+      "trailing_silence_seconds": 0.0,
+      "true_peak_dbtp": -1.7906397195801356
+     },
+     "issues": [],
+     "latency_samples": 102,
+     "missing_media": [],
+     "path": "<ROOT>/work/examples/output/cinematic_orchestral/climax.wav",
+     "range_beats": [
+      64.0,
+      96.0
+     ],
+     "realtime_factor": "<VOLATILE>",
+     "render_seconds": "<VOLATILE>",
+     "sample_rate": 48000,
+     "seconds": 37.567,
+     "tail_seconds": 10.9,
+     "track_levels": {
+      "trk_000000000003": {
+       "integrated_lufs": -17.83,
+       "name": "Strings",
+       "peak_dbfs": -6.87,
+       "short_term_max_lufs": -16.63
+      },
+      "trk_000000000005": {
+       "integrated_lufs": -16.91,
+       "name": "Brass",
+       "peak_dbfs": -6.22,
+       "short_term_max_lufs": -16.08
+      },
+      "trk_000000000007": {
+       "integrated_lufs": -20.89,
+       "name": "Choir",
+       "peak_dbfs": -9.02,
+       "short_term_max_lufs": -19.04
+      },
+      "trk_000000000009": {
+       "integrated_lufs": -28.64,
+       "name": "Percussion",
+       "peak_dbfs": -6.36,
+       "short_term_max_lufs": -28.29
+      },
+      "trk_000000000011": {
+       "integrated_lufs": -17.89,
+       "name": "Reverb",
+       "peak_dbfs": -7.33,
+       "short_term_max_lufs": -17.36
+      },
+      "trk_000000000023": {
+       "integrated_lufs": -21.84,
+       "name": "Horn Melody",
+       "peak_dbfs": -12.0,
+       "short_term_max_lufs": -20.97
+      }
+     },
+     "warnings": []
+    },
+    "started": "<VOLATILE>",
+    "status": "succeeded",
+    "tool": "render_preview"
+   },
+   "tool": "render_preview"
+  },
+  {
+   "id": "step26",
+   "project": "341be5c1fe683229bfbade69951965401506873a7e148a49b05db9915c62690d",
+   "result": {
+    "created": "<VOLATILE>",
+    "elapsed_seconds": "<VOLATILE>",
+    "finished": "<VOLATILE>",
+    "kind": "export_audio",
+    "label": "Export audio",
+    "message": "encoding",
+    "ok": true,
+    "operation_id": "op_000000000301",
+    "progress": 1.0,
+    "result": {
+     "analysis_before_gain": {
+      "balance_db": 0.35748283535963077,
+      "channels": 2,
+      "clip_events": 0,
+      "clipped_samples": 0,
+      "correlation": 0.5248876889506062,
+      "crest_factor_db": 17.758771872648804,
+      "dc_offset": [
+       0.000244,
+       0.000162
+      ],
+      "duration_seconds": "<VOLATILE>",
+      "integrated_lufs": -15.464490203612074,
+      "kind": {
+       "estimated": [
+        "true_peak_dbtp",
+        "plr_db"
+       ],
+       "measured": [
+        "sample_peak_dbfs",
+        "rms_dbfs",
+        "integrated_lufs",
+        "momentary_max_lufs",
+        "short_term_max_lufs",
+        "loudness_range_lu",
+        "clipped_samples",
+        "correlation",
+        "octave_bands_db"
+       ]
+      },
+      "leading_silence_seconds": 0.05,
+      "loudness_range_lu": 20.359913294192772,
+      "min_correlation_400ms": -0.42128665175317215,
+      "momentary_max_lufs": -11.311363975030474,
+      "nonfinite_samples": 0,
+      "octave_bands_db": {
+       "1000": -8.633486169336145,
+       "125": -6.146388066982715,
+       "16000": -44.05543762376727,
+       "2000": -13.43415856135707,
+       "250": -4.828420588399421,
+       "31.5": -23.041697536985065,
+       "4000": -18.833815803492655,
+       "500": -7.52250132917685,
+       "63": -13.023581610740287,
+       "8000": -31.271509917588777
+      },
+      "over_full_scale_samples": 0,
+      "plr_db": 13.639641818413399,
+      "rms_dbfs": -19.58629697602599,
+      "sample_peak_dbfs": -1.8275251033771882,
+      "sample_rate": 48000,
+      "short_term_max_lufs": -12.11436472073578,
+      "side_to_mid_db": -5.059091568771587,
+      "silence_regions": [
+       [
+        115.25,
+        121.75
+       ]
+      ],
+      "spectral_centroid_hz": 507.0119444897515,
+      "trailing_silence_seconds": 6.5,
+      "true_peak_dbtp": -1.8248483851986765
+     },
+     "final_integrated_lufs": -18.0,
+     "final_true_peak_dbtp": -4.36,
+     "gain_db": -2.536,
+     "normalization_target_reached": true,
+     "outputs": [
+      {
+       "bit_depth": 24,
+       "bitrate_kbps": null,
+       "channels": 2,
+       "clipped_samples": 0,
+       "container": "wav",
+       "decoded_true_peak_dbtp": null,
+       "dithered": true,
+       "floating_point": false,
+       "frames": 5844378,
+       "metadata_written": [
+        "title",
+        "artist",
+        "genre",
+        "software"
+       ],
+       "path": "<ROOT>/work/examples/output/cinematic_orchestral/ascension.wav",
+       "resampled_from": null,
+       "sample_rate": 48000,
+       "seconds": 121.757875,
+       "size_bytes": 35066420,
+       "verified": true
+      },
+      {
+       "bit_depth": 24,
+       "bitrate_kbps": null,
+       "channels": 2,
+       "clipped_samples": 0,
+       "container": "flac",
+       "decoded_true_peak_dbtp": null,
+       "dithered": true,
+       "floating_point": false,
+       "frames": 5844378,
+       "metadata_written": [
+        "title",
+        "artist",
+        "genre",
+        "software"
+       ],
+       "path": "<ROOT>/work/examples/output/cinematic_orchestral/ascension.flac",
+       "resampled_from": null,
+       "sample_rate": 48000,
+       "seconds": 121.757875,
+       "size_bytes": 20145944,
+       "verified": true
+      }
+     ],
+     "warnings": []
+    },
+    "started": "<VOLATILE>",
+    "status": "succeeded",
+    "tool": "export_audio"
+   },
+   "tool": "export_audio"
+  },
+  {
+   "id": "step27",
+   "project": "341be5c1fe683229bfbade69951965401506873a7e148a49b05db9915c62690d",
+   "result": {
+    "committed": true,
+    "max_rounding_error_beats": 0.0005204132493261682,
+    "notes": 432,
+    "ok": true,
+    "path": "<ROOT>/work/examples/output/cinematic_orchestral/ascension.mid",
+    "ppq": 960,
+    "tool": "export_midi",
+    "tracks": 6
+   },
+   "tool": "export_midi"
+  },
+  {
+   "id": "step28",
+   "project": "341be5c1fe683229bfbade69951965401506873a7e148a49b05db9915c62690d",
+   "result": {
+    "assets": 0,
+    "backup": null,
+    "committed": true,
+    "dirty": false,
+    "layout": "bundle",
+    "ok": true,
+    "path": "<ROOT>/work/examples/output/cinematic_orchestral/Ascension.sonara",
+    "project_sha256": "341be5c1fe683229bfbade69951965401506873a7e148a49b05db9915c62690d",
+    "tool": "save_project"
+   },
+   "tool": "save_project"
+  }
+ ],
+ "undo": {
+  "hashes": [
+   "46da41197a9eeab387c1c94ed85d5be85969f8e53885bf9e73110f15c5898216",
+   "b15435877b65151b7a1ae3af6932b03b4ff4ace53f4ba99a73eaf456e3073a76",
+   "43d9ffbe179434b50458cf24fdfa912348d3938e150e897187f95dc63419a254",
+   "73a05825e98ab039beb648ea40d47d45f1b0197ad4b3a50a9a4f2f96b5912522",
+   "0cc0bab51e04dba784eaf3c84d643866eaf078c6f2255378d0eb6f2d7a3036b4",
+   "5a3670d6d24feb07bf453b7b32b13836321fda4159888bce66f977cca07e3405",
+   "85a9058319f66d3c563b55f7b45a29298ff7ce5c1e89405cee2db82ae4ee1018",
+   "df4b0ccca4f991234e9c843c54020b375b493465a86d221b0ff4f4cb42bb1f96",
+   "6a4a2fa5f3c9a4796c36999e4948b3f6b1058dadd36d73b92d1b169f113ab01e",
+   "ff9e53f8372ac89b9eebbd4bc8d30b1d6e5c65f613b305f673aa91c1a6b95902",
+   "5db32453776793f485fea9c42242a7df4a081251bdf35c2698e6b1bec0aa9904",
+   "29804434ea387f1ee807b3c1ded877ccd3a6117e4b45f43a45e676337269d950",
+   "17412c393b552cb052661e316bd6d602d2076152e190b2636b48e6290ee15611",
+   "b0fc8b46b1820960bec63c6516a01ce4a530b84c0818b7934864545668dd78a7",
+   "3a65f1214ad2b95d90d3720fbfa45690eaae51410c5a2f444ca0b24cfa139217",
+   "bdfb600be58feb63a960006dadc5a350aaa920f87f683d85a53671918d56d42d",
+   "b8107b042854144af00923353dbe165ab6fd44945945a88e11f4af24b699a6d9",
+   "a3740b85cae5e8d5115ed856968a232fbefa8af353f2b972c98f3dfac7c82853",
+   "6929ff239bccf3c5b4f0601a91f66e210465f30154bfd6e84ee2dd6ef618c8e1",
+   "3e9db208666e99b4fc92345ab45c8e6b04478c1211ee70ee933ec485c9a21bbb",
+   "3129494de159c8aa93e8e26065c7b272184e654733b5a29c31fafd507d9716ca",
+   "764e26b30f2159dd607d6960523df731cf4a5c709de91907392057fed3486f10",
+   "725adcf2e78cac36e2ffc5bbaa87a57f70a06d4cd3a6804ad25a41137e4be582"
+  ],
+  "labels": [
+   "Undo Track Volume",
+   "Undo Track Volume",
+   "Undo Edit Automation",
+   "Undo Edit Automation",
+   "Undo Edit Automation",
+   "Undo Edit Notes",
+   "Undo Create MIDI Clip",
+   "Undo Create MIDI Clip",
+   "Undo Edit Notes",
+   "Undo Create MIDI Clip",
+   "Undo Create MIDI Clip",
+   "Undo Create MIDI Clip",
+   "Undo Create MIDI Clip",
+   "Undo Create MIDI Clip",
+   "Undo Routing",
+   "Undo Create Track",
+   "Undo Set Tempo",
+   "Undo Set Tempo",
+   "Undo Add Section",
+   "Undo Add Section",
+   "Undo Add Section",
+   "Undo Add Section",
+   "Undo Edit Project Info"
+  ],
+  "moves": 23
+ },
+ "workflow": "examples/cinematic_orchestral.json"
+}

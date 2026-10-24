@@ -1,0 +1,9 @@
+Copyright (c) 2026 Filip Sedivy <mail@filipsedivy.cz>. All rights reserved.
+
+The licence under which Sonara will be distributed has not been chosen yet. Until a licence
+is added to this file, no permission is granted to use, copy, modify, merge, publish,
+distribute, sublicense or sell copies of this software, beyond what applicable law allows.
+
+Third-party components included in or used by Sonara are licensed under their own terms;
+see docs/dependencies.md (for example, the vendored miniaudio in native/third_party/miniaudio
+is public domain / MIT-0, see native/third_party/miniaudio/LICENSE).

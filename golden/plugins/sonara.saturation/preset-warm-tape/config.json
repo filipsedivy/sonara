@@ -1,0 +1,45 @@
+{
+ "config": "preset-warm-tape",
+ "params": {
+  "bias": 0.0,
+  "drive_db": 4.0,
+  "mix": 1.0,
+  "mode": "tanh",
+  "output_db": -2.0,
+  "oversampling": "2x",
+  "tone_hz": 12000.0
+ },
+ "plugin": "sonara.saturation",
+ "renders": {
+  "clipped": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "impulse": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "noise": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "silence": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "sine-1k": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "sweep": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  }
+ }
+}

@@ -1,0 +1,37 @@
+[package]
+name = "sonara-dsp"
+description = "Sonara DSP kernels and processors (pure computation, real-time safe)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+# `zlib.crc32` of the drum sound names, the seeds of their noise; computed once in
+# `DrumKit::new` (setup).
+crc32fast.workspace = true
+# Plugin descriptors and parameter values, read by the setup-time parameter conversion
+# (`processors::param_slots`); nothing on the render path touches them.
+sonara-core.workspace = true
+# The partitioned convolver's and the Analyzer's real FFTs.
+realfft.workspace = true
+# The Analyzer's JSON report: an insertion-ordered `Value` in the prototype's key order.
+serde_json.workspace = true
+
+[dev-dependencies]
+assert_no_alloc.workspace = true
+criterion.workspace = true
+proptest.workspace = true
+serde_json.workspace = true
+# The drum kit's note map is checked against `sonara_midi::gm::GM_MAP`.
+sonara-midi.workspace = true
+sonara-testkit.workspace = true
+
+[lints]
+workspace = true
+
+[[bench]]
+name = "convolution"
+harness = false

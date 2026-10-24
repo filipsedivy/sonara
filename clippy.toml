@@ -1,0 +1,38 @@
+# Clippy configuration for the whole workspace.
+
+# Proper names that may appear in docs without backticks ("..": keep the defaults).
+doc-valid-idents = ["NumPy", "SciPy", "CoreAudio", "CoreMIDI", "RtMidi", "RealtimeSanitizer", ".."]
+
+# Tests may unwrap (QG-03 covers production code only).
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+
+# RT-03: forbidden on real-time threads. The lints are allowed workspace-wide and denied by the
+# lint block of each real-time module (.claude/rules/rust/realtime.md).
+disallowed-methods = [
+    { path = "std::sync::Mutex::new", reason = "RT-03: no locks on a real-time thread" },
+    { path = "std::sync::Mutex::lock", reason = "RT-03: no locks on a real-time thread" },
+    { path = "std::sync::Mutex::try_lock", reason = "RT-03: no locks on a real-time thread" },
+    { path = "std::sync::RwLock::new", reason = "RT-03: no locks on a real-time thread" },
+    { path = "std::sync::RwLock::read", reason = "RT-03: no locks on a real-time thread" },
+    { path = "std::sync::RwLock::write", reason = "RT-03: no locks on a real-time thread" },
+    { path = "std::sync::Condvar::wait", reason = "RT-03: no blocking on a real-time thread" },
+    { path = "std::thread::sleep", reason = "RT-03: no blocking on a real-time thread" },
+    { path = "std::thread::spawn", reason = "RT-03: no thread management on a real-time thread" },
+    { path = "std::fs::File::open", reason = "RT-03: no file I/O on a real-time thread" },
+    { path = "std::fs::File::create", reason = "RT-03: no file I/O on a real-time thread" },
+    { path = "std::fs::read", reason = "RT-03: no file I/O on a real-time thread" },
+    { path = "std::fs::write", reason = "RT-03: no file I/O on a real-time thread" },
+    { path = "std::vec::Vec::with_capacity", reason = "RT-02: no allocation on a real-time thread" },
+    { path = "std::vec::Vec::push", reason = "RT-02: may reallocate on a real-time thread" },
+    { path = "std::boxed::Box::new", reason = "RT-02: no allocation on a real-time thread" },
+]
+disallowed-macros = [
+    { path = "std::println", reason = "RT-03: no printing on a real-time thread" },
+    { path = "std::eprintln", reason = "RT-03: no printing on a real-time thread" },
+    { path = "std::print", reason = "RT-03: no printing on a real-time thread" },
+    { path = "std::eprint", reason = "RT-03: no printing on a real-time thread" },
+    { path = "std::dbg", reason = "RT-03: no printing on a real-time thread" },
+    { path = "std::format", reason = "RT-02: allocates" },
+    { path = "std::vec", reason = "RT-02: allocates" },
+]

@@ -1,0 +1,37 @@
+{
+ "cases": [
+  "fixture",
+  "partitions",
+  "block-480"
+ ],
+ "channels": 2,
+ "input": "convolution/input",
+ "irs": {
+  "block-512": {
+   "array": "convolution/irs/block-512"
+  },
+  "block-513": {
+   "array": "convolution/irs/block-513"
+  },
+  "fixture": {
+   "file": "fixtures/ir-48k-stereo-float.wav",
+   "sha256": "f26fc00c14259c07feea8022ec20622b125fa98b0ece1ea5fb6dfc3ab3dcfcce"
+  },
+  "head-10000": {
+   "array": "convolution/irs/head-10000"
+  },
+  "mono-300": {
+   "array": "convolution/irs/mono-300"
+  },
+  "one": {
+   "array": "convolution/irs/one"
+  },
+  "short-1100": {
+   "array": "convolution/irs/short-1100"
+  }
+ },
+ "modes": [
+  "double",
+  "single"
+ ]
+}

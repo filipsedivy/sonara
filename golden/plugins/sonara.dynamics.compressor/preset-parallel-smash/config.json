@@ -1,0 +1,67 @@
+{
+ "config": "preset-parallel-smash",
+ "params": {
+  "attack_ms": 1.0,
+  "auto_makeup": false,
+  "detector": "peak",
+  "knee_db": 6.0,
+  "makeup_db": 10.0,
+  "mix": 0.35,
+  "ratio": 12.0,
+  "release_ms": 60.0,
+  "sidechain": false,
+  "sidechain_hpf_hz": 20.0,
+  "sidechain_lpf_hz": 20000.0,
+  "threshold_db": -35.0
+ },
+ "plugin": "sonara.dynamics.compressor",
+ "renders": {
+  "clipped": {
+   "latency": 0,
+   "report": {
+    "gain_reduction_db": 32.07512825742118
+   },
+   "tail_seconds": 0.0
+  },
+  "impulse": {
+   "latency": 0,
+   "report": {
+    "gain_reduction_db": 2.4134784371486743e-15
+   },
+   "tail_seconds": 0.0
+  },
+  "noise": {
+   "latency": 0,
+   "report": {
+    "gain_reduction_db": 32.12397084301433
+   },
+   "tail_seconds": 0.0
+  },
+  "silence": {
+   "latency": 0,
+   "report": {
+    "gain_reduction_db": 0.0
+   },
+   "tail_seconds": 0.0
+  },
+  "sine-1k": {
+   "latency": 0,
+   "report": {
+    "gain_reduction_db": 26.074020541725044
+   },
+   "tail_seconds": 0.0
+  },
+  "sine-1k-with-sidechain": {
+   "report": {
+    "gain_reduction_db": 26.074020541725044
+   }
+  },
+  "sweep": {
+   "latency": 0,
+   "report": {
+    "gain_reduction_db": 26.06188825857091
+   },
+   "tail_seconds": 0.0
+  }
+ }
+}

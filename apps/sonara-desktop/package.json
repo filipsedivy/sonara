@@ -1,0 +1,37 @@
+{
+  "name": "sonara-desktop",
+  "private": true,
+  "description": "The frontend of the Sonara desktop application (ADR 0009)",
+  "license": "UNLICENSED",
+  "type": "module",
+  "packageManager": "pnpm@12.14.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
+    "check:licenses": "node scripts/check-licenses.mjs",
+    "test": "playwright test",
+    "test:unit": "playwright test --project unit",
+    "test:e2e": "node scripts/e2e-timeline.mjs",
+    "bench:timeline": "node scripts/bench-timeline.mjs",
+    "bench:meters": "node scripts/bench-timeline.mjs --suite meters",
+    "bench:pianoroll": "node scripts/bench-timeline.mjs --suite pianoroll",
+    "bench:playback": "node scripts/bench-timeline.mjs --suite playback",
+    "perf:signoff": "node scripts/perf-signoff.mjs",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "2.12.4",
+    "svelte": "5.57.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "@tauri-apps/cli": "2.12.3",
+    "@tsconfig/svelte": "5.0.8",
+    "svelte-check": "4.7.7",
+    "typescript": "6.0.3",
+    "vite": "8.3.5"
+  }
+}

@@ -1,0 +1,65 @@
+{
+ "fixtures": [
+  {
+   "bytes": 576044,
+   "channels": 2,
+   "file": "fixtures/tone-48k-stereo-24bit.wav",
+   "format": "WAV",
+   "frames": 96000,
+   "generator": "2 s at the project rate, 24-bit stereo: 440 Hz left, 660 Hz right.",
+   "sample_rate": 48000,
+   "subtype": "PCM_24"
+  },
+  {
+   "bytes": 132344,
+   "channels": 1,
+   "file": "fixtures/tone-44k1-mono-16bit.wav",
+   "format": "WAV",
+   "frames": 66150,
+   "generator": "1.5 s at 44.1 kHz, 16-bit mono: a decaying 330 Hz tone (needs resampling).",
+   "sample_rate": 44100,
+   "subtype": "PCM_16"
+  },
+  {
+   "bytes": 33667,
+   "channels": 2,
+   "file": "fixtures/chord-48k-stereo.flac",
+   "format": "FLAC",
+   "frames": 48000,
+   "generator": "1 s at 48 kHz, 16-bit stereo FLAC: a C major triad, the right channel 2 dB lower.",
+   "sample_rate": 48000,
+   "subtype": "PCM_16"
+  },
+  {
+   "bytes": 9839,
+   "channels": 2,
+   "file": "fixtures/saw-44k1-stereo.mp3",
+   "format": "MP3",
+   "frames": 44100,
+   "generator": "1 s at 44.1 kHz stereo MP3: a band-limited 220 Hz sawtooth (8 harmonics).",
+   "sample_rate": 44100,
+   "subtype": "MPEG_LAYER_III"
+  },
+  {
+   "bytes": 192056,
+   "channels": 2,
+   "file": "fixtures/ir-48k-stereo-float.wav",
+   "format": "WAV",
+   "frames": 24000,
+   "generator": "The impulse response as a 32-bit float stereo WAV.",
+   "sample_rate": 48000,
+   "subtype": "FLOAT"
+  },
+  {
+   "bytes": 208,
+   "file": "fixtures/song.mid",
+   "generator": "A Type 1 SMF, 480 PPQ: 120 BPM with a change to 100 BPM at beat 48, 4/4, a marker at\nbeat 32, a lead track on channel 1 and a drum track on channel 10."
+  },
+  {
+   "bytes": 44,
+   "file": "fixtures/not-media.wav",
+   "generator": "Plain text, for the UNSUPPORTED and FORMAT_ERROR paths of the importers."
+  }
+ ],
+ "ir_seed": 20261021
+}

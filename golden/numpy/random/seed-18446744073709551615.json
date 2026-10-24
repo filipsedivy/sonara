@@ -1,0 +1,13 @@
+{
+ "after": {
+  "has_uint32": false,
+  "inc": "0x37762aacb3cc854f4ed623c7d18951ed",
+  "state": "0xe1b7045dad62d8670f2ad00b3ff7fdb0",
+  "uinteger": 0
+ },
+ "dtype": "f64le",
+ "seed": 18446744073709551615,
+ "shape": [
+  4096
+ ]
+}

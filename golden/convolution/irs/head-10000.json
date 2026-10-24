@@ -1,0 +1,8 @@
+{
+ "dtype": "f64le",
+ "shape": [
+  10000,
+  2
+ ],
+ "source": "fixtures/ir-48k-stereo-float.wav"
+}

@@ -1,0 +1,150 @@
+{
+ "analysis": {
+  "balance_db": 0.36254197792781767,
+  "channels": 2,
+  "clip_events": 0,
+  "clipped_samples": 0,
+  "correlation": 0.5265829561774442,
+  "crest_factor_db": 13.969284948776334,
+  "dc_offset": [
+   0.000523,
+   0.000348
+  ],
+  "duration_seconds": "<VOLATILE>",
+  "integrated_lufs": -13.23468407644445,
+  "kind": {
+   "estimated": [
+    "true_peak_dbtp",
+    "plr_db"
+   ],
+   "measured": [
+    "sample_peak_dbfs",
+    "rms_dbfs",
+    "integrated_lufs",
+    "momentary_max_lufs",
+    "short_term_max_lufs",
+    "loudness_range_lu",
+    "clipped_samples",
+    "correlation",
+    "octave_bands_db"
+   ]
+  },
+  "leading_silence_seconds": 0.0,
+  "loudness_range_lu": 1.7402182809864062,
+  "min_correlation_400ms": 0.3104899668073279,
+  "momentary_max_lufs": -11.75784968018354,
+  "nonfinite_samples": 0,
+  "octave_bands_db": {
+   "1000": -8.382486583097217,
+   "125": -5.837093317202848,
+   "16000": -44.27372666586726,
+   "2000": -13.29484428385692,
+   "250": -5.445648534784253,
+   "31.5": -22.71376001477546,
+   "4000": -18.937180423609842,
+   "500": -7.061970253405123,
+   "63": -13.368601084270146,
+   "8000": -31.42824017934497
+  },
+  "over_full_scale_samples": 0,
+  "plr_db": 11.444044356864314,
+  "rms_dbfs": -15.759924668356469,
+  "sample_peak_dbfs": -1.7906397195801356,
+  "sample_rate": 48000,
+  "short_term_lufs": [
+   -13.41,
+   -13.04,
+   -13.0,
+   -13.12,
+   -13.51,
+   -13.53,
+   -13.3,
+   -12.91,
+   -12.61,
+   -12.8,
+   -12.66,
+   -12.67,
+   -12.55,
+   -12.63,
+   -12.63,
+   -12.81,
+   -12.88,
+   -13.03,
+   -12.75,
+   -12.57,
+   -12.51,
+   -12.77,
+   -13.0,
+   -12.95,
+   -12.9,
+   -12.86,
+   -12.99,
+   -13.09,
+   -13.49,
+   -13.78,
+   -14.13,
+   -14.42,
+   -14.91,
+   -15.1,
+   -15.24
+  ],
+  "short_term_max_lufs": -12.462577304941338,
+  "side_to_mid_db": -5.079258205812936,
+  "silence_regions": [],
+  "spectral_centroid_hz": 519.3415648001773,
+  "trailing_silence_seconds": 0.0,
+  "true_peak_dbtp": -1.7906397195801356
+ },
+ "issues": [],
+ "latency_samples": 102,
+ "missing_media": [],
+ "path": "<ROOT>/work/examples/output/cinematic_orchestral/climax.wav",
+ "range_beats": [
+  64.0,
+  96.0
+ ],
+ "realtime_factor": "<VOLATILE>",
+ "render_seconds": "<VOLATILE>",
+ "sample_rate": 48000,
+ "seconds": 37.567,
+ "tail_seconds": 10.9,
+ "track_levels": {
+  "trk_000000000003": {
+   "integrated_lufs": -17.83,
+   "name": "Strings",
+   "peak_dbfs": -6.87,
+   "short_term_max_lufs": -16.63
+  },
+  "trk_000000000005": {
+   "integrated_lufs": -16.91,
+   "name": "Brass",
+   "peak_dbfs": -6.22,
+   "short_term_max_lufs": -16.08
+  },
+  "trk_000000000007": {
+   "integrated_lufs": -20.89,
+   "name": "Choir",
+   "peak_dbfs": -9.02,
+   "short_term_max_lufs": -19.04
+  },
+  "trk_000000000009": {
+   "integrated_lufs": -28.64,
+   "name": "Percussion",
+   "peak_dbfs": -6.36,
+   "short_term_max_lufs": -28.29
+  },
+  "trk_000000000011": {
+   "integrated_lufs": -17.89,
+   "name": "Reverb",
+   "peak_dbfs": -7.33,
+   "short_term_max_lufs": -17.36
+  },
+  "trk_000000000023": {
+   "integrated_lufs": -21.84,
+   "name": "Horn Melody",
+   "peak_dbfs": -12.0,
+   "short_term_max_lufs": -20.97
+  }
+ },
+ "warnings": []
+}

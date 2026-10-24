@@ -1,0 +1,76 @@
+{
+ "analysis": {
+  "balance_db": 0.0,
+  "channels": 2,
+  "clip_events": 0,
+  "clipped_samples": 0,
+  "correlation": 1.0,
+  "crest_factor_db": 19.988774645670766,
+  "dc_offset": [
+   0.004431,
+   0.004431
+  ],
+  "duration_seconds": 0.5,
+  "integrated_lufs": -24.819909237693444,
+  "kind": {
+   "estimated": [
+    "true_peak_dbtp",
+    "plr_db"
+   ],
+   "measured": [
+    "sample_peak_dbfs",
+    "rms_dbfs",
+    "integrated_lufs",
+    "momentary_max_lufs",
+    "short_term_max_lufs",
+    "loudness_range_lu",
+    "clipped_samples",
+    "correlation",
+    "octave_bands_db"
+   ]
+  },
+  "leading_silence_seconds": 0.0,
+  "loudness_range_lu": 0.0,
+  "min_correlation_400ms": 1.0,
+  "momentary_max_lufs": -24.819909237693444,
+  "nonfinite_samples": 0,
+  "octave_bands_db": {
+   "1000": -61.118192226813626,
+   "125": -22.247261923629367,
+   "16000": -94.29096563900248,
+   "2000": -70.17778906732423,
+   "250": -42.11807840405251,
+   "31.5": -13.82007256238547,
+   "4000": -79.07219728238204,
+   "500": -51.98115225128866,
+   "63": -0.22004458168563892,
+   "8000": -87.58789377433295
+  },
+  "over_full_scale_samples": 0,
+  "plr_db": 20.587730389353254,
+  "rms_dbfs": -24.220953494010956,
+  "sample_peak_dbfs": -4.232178848340189,
+  "sample_rate": 48000,
+  "short_term_lufs": [
+   -25.79
+  ],
+  "short_term_max_lufs": -25.78900936777401,
+  "side_to_mid_db": -120.0,
+  "silence_regions": [],
+  "spectral_centroid_hz": 59.8658122552903,
+  "trailing_silence_seconds": 0.45,
+  "true_peak_dbtp": -4.232178848340189
+ },
+ "block": 65536,
+ "channels": 2,
+ "frames": 24000,
+ "issues": [
+  {
+   "code": "LOW_END_HEAVY",
+   "message": "the 63 Hz octave dominates the spectrum",
+   "severity": "info"
+  }
+ ],
+ "sample_rate": 48000,
+ "source": "plugins/signals/sidechain-for-sine-1k.f64"
+}

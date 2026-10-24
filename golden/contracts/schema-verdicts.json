@@ -1,0 +1,509 @@
+[
+ {
+  "case": "valid-minimal",
+  "document": {
+   "assets": [],
+   "editor": {},
+   "format": "sonara.project",
+   "id": "prj_000000000001",
+   "markers": [],
+   "master": {
+    "automation": [],
+    "clips": [],
+    "color": null,
+    "id": "master",
+    "input": {
+     "armed": false,
+     "channels": [
+      0
+     ],
+     "monitor": "auto"
+    },
+    "inserts": [],
+    "instrument": null,
+    "kind": "master",
+    "mixer": {
+     "mute": false,
+     "pan": 0.0,
+     "solo": false,
+     "solo_safe": false,
+     "volume_db": 0.0
+    },
+    "name": "Master",
+    "output_id": null,
+    "parent_id": null,
+    "sends": []
+   },
+   "metadata": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "composer": "",
+    "created": "",
+    "genre": "",
+    "modified": "",
+    "title": ""
+   },
+   "name": "Golden",
+   "schema_version": 1,
+   "sections": [],
+   "settings": {
+    "length_beats": null,
+    "record_subtype": "PCM_24",
+    "sample_rate": 48000
+   },
+   "tempo_map": [
+    {
+     "beat": 0.0,
+     "bpm": 120.0,
+     "ramp": false
+    }
+   ],
+   "time_signatures": [
+    {
+     "bar": 0,
+     "denominator": 4,
+     "numerator": 4
+    }
+   ],
+   "tracks": [],
+   "transport": {
+    "count_in_bars": 0,
+    "loop_enabled": false,
+    "loop_end": 16.0,
+    "loop_start": 0.0,
+    "metronome": false,
+    "punch_enabled": false,
+    "punch_in": 0.0,
+    "punch_out": 16.0
+   }
+  },
+  "valid": true
+ },
+ {
+  "case": "missing-schema-version",
+  "code": "FORMAT_ERROR",
+  "document": {
+   "assets": [],
+   "editor": {},
+   "format": "sonara.project",
+   "id": "prj_000000000001",
+   "markers": [],
+   "master": {
+    "automation": [],
+    "clips": [],
+    "color": null,
+    "id": "master",
+    "input": {
+     "armed": false,
+     "channels": [
+      0
+     ],
+     "monitor": "auto"
+    },
+    "inserts": [],
+    "instrument": null,
+    "kind": "master",
+    "mixer": {
+     "mute": false,
+     "pan": 0.0,
+     "solo": false,
+     "solo_safe": false,
+     "volume_db": 0.0
+    },
+    "name": "Master",
+    "output_id": null,
+    "parent_id": null,
+    "sends": []
+   },
+   "metadata": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "composer": "",
+    "created": "",
+    "genre": "",
+    "modified": "",
+    "title": ""
+   },
+   "name": "Golden",
+   "sections": [],
+   "settings": {
+    "length_beats": null,
+    "record_subtype": "PCM_24",
+    "sample_rate": 48000
+   },
+   "tempo_map": [
+    {
+     "beat": 0.0,
+     "bpm": 120.0,
+     "ramp": false
+    }
+   ],
+   "time_signatures": [
+    {
+     "bar": 0,
+     "denominator": 4,
+     "numerator": 4
+    }
+   ],
+   "tracks": [],
+   "transport": {
+    "count_in_bars": 0,
+    "loop_enabled": false,
+    "loop_end": 16.0,
+    "loop_start": 0.0,
+    "metronome": false,
+    "punch_enabled": false,
+    "punch_in": 0.0,
+    "punch_out": 16.0
+   }
+  },
+  "error_count": 1,
+  "message": "project-v1.schema.json: (root): 'schema_version' is a required property",
+  "valid": false
+ },
+ {
+  "case": "schema-version-string",
+  "code": "FORMAT_ERROR",
+  "document": {
+   "assets": [],
+   "editor": {},
+   "format": "sonara.project",
+   "id": "prj_000000000001",
+   "markers": [],
+   "master": {
+    "automation": [],
+    "clips": [],
+    "color": null,
+    "id": "master",
+    "input": {
+     "armed": false,
+     "channels": [
+      0
+     ],
+     "monitor": "auto"
+    },
+    "inserts": [],
+    "instrument": null,
+    "kind": "master",
+    "mixer": {
+     "mute": false,
+     "pan": 0.0,
+     "solo": false,
+     "solo_safe": false,
+     "volume_db": 0.0
+    },
+    "name": "Master",
+    "output_id": null,
+    "parent_id": null,
+    "sends": []
+   },
+   "metadata": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "composer": "",
+    "created": "",
+    "genre": "",
+    "modified": "",
+    "title": ""
+   },
+   "name": "Golden",
+   "schema_version": "1",
+   "sections": [],
+   "settings": {
+    "length_beats": null,
+    "record_subtype": "PCM_24",
+    "sample_rate": 48000
+   },
+   "tempo_map": [
+    {
+     "beat": 0.0,
+     "bpm": 120.0,
+     "ramp": false
+    }
+   ],
+   "time_signatures": [
+    {
+     "bar": 0,
+     "denominator": 4,
+     "numerator": 4
+    }
+   ],
+   "tracks": [],
+   "transport": {
+    "count_in_bars": 0,
+    "loop_enabled": false,
+    "loop_end": 16.0,
+    "loop_start": 0.0,
+    "metronome": false,
+    "punch_enabled": false,
+    "punch_in": 0.0,
+    "punch_out": 16.0
+   }
+  },
+  "error_count": 1,
+  "message": "project-v1.schema.json: schema_version: 1 was expected",
+  "valid": false
+ },
+ {
+  "case": "missing-id",
+  "code": "FORMAT_ERROR",
+  "document": {
+   "assets": [],
+   "editor": {},
+   "format": "sonara.project",
+   "markers": [],
+   "master": {
+    "automation": [],
+    "clips": [],
+    "color": null,
+    "id": "master",
+    "input": {
+     "armed": false,
+     "channels": [
+      0
+     ],
+     "monitor": "auto"
+    },
+    "inserts": [],
+    "instrument": null,
+    "kind": "master",
+    "mixer": {
+     "mute": false,
+     "pan": 0.0,
+     "solo": false,
+     "solo_safe": false,
+     "volume_db": 0.0
+    },
+    "name": "Master",
+    "output_id": null,
+    "parent_id": null,
+    "sends": []
+   },
+   "metadata": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "composer": "",
+    "created": "",
+    "genre": "",
+    "modified": "",
+    "title": ""
+   },
+   "name": "Golden",
+   "schema_version": 1,
+   "sections": [],
+   "settings": {
+    "length_beats": null,
+    "record_subtype": "PCM_24",
+    "sample_rate": 48000
+   },
+   "tempo_map": [
+    {
+     "beat": 0.0,
+     "bpm": 120.0,
+     "ramp": false
+    }
+   ],
+   "time_signatures": [
+    {
+     "bar": 0,
+     "denominator": 4,
+     "numerator": 4
+    }
+   ],
+   "tracks": [],
+   "transport": {
+    "count_in_bars": 0,
+    "loop_enabled": false,
+    "loop_end": 16.0,
+    "loop_start": 0.0,
+    "metronome": false,
+    "punch_enabled": false,
+    "punch_in": 0.0,
+    "punch_out": 16.0
+   }
+  },
+  "error_count": 1,
+  "message": "project-v1.schema.json: (root): 'id' is a required property",
+  "valid": false
+ },
+ {
+  "case": "sample-rate-string",
+  "code": "FORMAT_ERROR",
+  "document": {
+   "assets": [],
+   "editor": {},
+   "format": "sonara.project",
+   "id": "prj_000000000001",
+   "markers": [],
+   "master": {
+    "automation": [],
+    "clips": [],
+    "color": null,
+    "id": "master",
+    "input": {
+     "armed": false,
+     "channels": [
+      0
+     ],
+     "monitor": "auto"
+    },
+    "inserts": [],
+    "instrument": null,
+    "kind": "master",
+    "mixer": {
+     "mute": false,
+     "pan": 0.0,
+     "solo": false,
+     "solo_safe": false,
+     "volume_db": 0.0
+    },
+    "name": "Master",
+    "output_id": null,
+    "parent_id": null,
+    "sends": []
+   },
+   "metadata": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "composer": "",
+    "created": "",
+    "genre": "",
+    "modified": "",
+    "title": ""
+   },
+   "name": "Golden",
+   "schema_version": 1,
+   "sections": [],
+   "settings": {
+    "length_beats": null,
+    "record_subtype": "PCM_24",
+    "sample_rate": "48000"
+   },
+   "tempo_map": [
+    {
+     "beat": 0.0,
+     "bpm": 120.0,
+     "ramp": false
+    }
+   ],
+   "time_signatures": [
+    {
+     "bar": 0,
+     "denominator": 4,
+     "numerator": 4
+    }
+   ],
+   "tracks": [],
+   "transport": {
+    "count_in_bars": 0,
+    "loop_enabled": false,
+    "loop_end": 16.0,
+    "loop_start": 0.0,
+    "metronome": false,
+    "punch_enabled": false,
+    "punch_in": 0.0,
+    "punch_out": 16.0
+   }
+  },
+  "error_count": 1,
+  "message": "project-v1.schema.json: settings/sample_rate: '48000' is not one of [22050, 32000, 44100, 48000, 88200, 96000, 176400, 192000]",
+  "valid": false
+ },
+ {
+  "case": "tracks-not-a-list",
+  "code": "FORMAT_ERROR",
+  "document": {
+   "assets": [],
+   "editor": {},
+   "format": "sonara.project",
+   "id": "prj_000000000001",
+   "markers": [],
+   "master": {
+    "automation": [],
+    "clips": [],
+    "color": null,
+    "id": "master",
+    "input": {
+     "armed": false,
+     "channels": [
+      0
+     ],
+     "monitor": "auto"
+    },
+    "inserts": [],
+    "instrument": null,
+    "kind": "master",
+    "mixer": {
+     "mute": false,
+     "pan": 0.0,
+     "solo": false,
+     "solo_safe": false,
+     "volume_db": 0.0
+    },
+    "name": "Master",
+    "output_id": null,
+    "parent_id": null,
+    "sends": []
+   },
+   "metadata": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "composer": "",
+    "created": "",
+    "genre": "",
+    "modified": "",
+    "title": ""
+   },
+   "name": "Golden",
+   "schema_version": 1,
+   "sections": [],
+   "settings": {
+    "length_beats": null,
+    "record_subtype": "PCM_24",
+    "sample_rate": 48000
+   },
+   "tempo_map": [
+    {
+     "beat": 0.0,
+     "bpm": 120.0,
+     "ramp": false
+    }
+   ],
+   "time_signatures": [
+    {
+     "bar": 0,
+     "denominator": 4,
+     "numerator": 4
+    }
+   ],
+   "tracks": {},
+   "transport": {
+    "count_in_bars": 0,
+    "loop_enabled": false,
+    "loop_end": 16.0,
+    "loop_start": 0.0,
+    "metronome": false,
+    "punch_enabled": false,
+    "punch_in": 0.0,
+    "punch_out": 16.0
+   }
+  },
+  "error_count": 1,
+  "message": "project-v1.schema.json: tracks: {} is not of type 'array'",
+  "valid": false
+ },
+ {
+  "case": "unexpected-root-type",
+  "code": "FORMAT_ERROR",
+  "document": {},
+  "error_count": 9,
+  "message": "project-v1.schema.json: (root): 'format' is a required property",
+  "valid": false
+ }
+]

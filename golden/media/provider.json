@@ -1,0 +1,1721 @@
+{
+ "cache": [
+  {
+   "asset_id": "med_tone44k1mono16bit",
+   "channels": 1,
+   "fixture": "fixtures/tone-44k1-mono-16bit.wav",
+   "frames": 72000,
+   "resampled": true,
+   "sample_rate": 48000,
+   "sha256": "771f9498cc8ad71f19fdb0aed6052355a770897aea1b3bb12283ffc5768a9163",
+   "windows": [
+    {
+     "count": 150,
+     "start": -100
+    },
+    {
+     "count": 512,
+     "start": 0
+    },
+    {
+     "count": 77,
+     "start": 123
+    },
+    {
+     "count": 100,
+     "start": 71950
+    },
+    {
+     "count": 20,
+     "start": 72010
+    },
+    {
+     "count": 100,
+     "start": -300
+    }
+   ]
+  },
+  {
+   "asset_id": "med_tone48kstereo24bit",
+   "channels": 2,
+   "fixture": "fixtures/tone-48k-stereo-24bit.wav",
+   "frames": 88200,
+   "resampled": true,
+   "sample_rate": 44100,
+   "sha256": "77f1f43332d8c3c547f544ac6ae3101316d6fdbe12c341eb29a6028977f5d0bf",
+   "windows": [
+    {
+     "count": 150,
+     "start": -100
+    },
+    {
+     "count": 512,
+     "start": 0
+    },
+    {
+     "count": 77,
+     "start": 123
+    },
+    {
+     "count": 100,
+     "start": 88150
+    },
+    {
+     "count": 20,
+     "start": 88210
+    },
+    {
+     "count": 100,
+     "start": -300
+    }
+   ]
+  },
+  {
+   "asset_id": "med_chord48kstereo",
+   "channels": 2,
+   "fixture": "fixtures/chord-48k-stereo.flac",
+   "frames": 48000,
+   "resampled": false,
+   "sample_rate": 48000,
+   "sha256": "d713f5c2eb74d1c5f2b3012323c45ba705474c35c2855bf16267f41cf1153093",
+   "windows": [
+    {
+     "count": 150,
+     "start": -100
+    },
+    {
+     "count": 512,
+     "start": 0
+    },
+    {
+     "count": 77,
+     "start": 123
+    },
+    {
+     "count": 100,
+     "start": 47950
+    },
+    {
+     "count": 20,
+     "start": 48010
+    },
+    {
+     "count": 100,
+     "start": -300
+    }
+   ]
+  },
+  {
+   "asset_id": "med_chord48kstereo",
+   "channels": 2,
+   "fixture": "fixtures/chord-48k-stereo.flac",
+   "frames": 44100,
+   "resampled": true,
+   "sample_rate": 44100,
+   "sha256": "d713f5c2eb74d1c5f2b3012323c45ba705474c35c2855bf16267f41cf1153093",
+   "windows": [
+    {
+     "count": 150,
+     "start": -100
+    },
+    {
+     "count": 512,
+     "start": 0
+    },
+    {
+     "count": 77,
+     "start": 123
+    },
+    {
+     "count": 100,
+     "start": 44050
+    },
+    {
+     "count": 20,
+     "start": 44110
+    },
+    {
+     "count": 100,
+     "start": -300
+    }
+   ]
+  },
+  {
+   "asset_id": "med_saw44k1stereo",
+   "channels": 2,
+   "fixture": "fixtures/saw-44k1-stereo.mp3",
+   "frames": 44100,
+   "resampled": false,
+   "sample_rate": 44100,
+   "sha256": "2a4be49792d94ed855f07509dce29505139ec7edfbab1e29bbaa5f2f33a69e5a",
+   "windows": [
+    {
+     "count": 150,
+     "start": -100
+    },
+    {
+     "count": 512,
+     "start": 0
+    },
+    {
+     "count": 77,
+     "start": 123
+    },
+    {
+     "count": 100,
+     "start": 44050
+    },
+    {
+     "count": 20,
+     "start": 44110
+    },
+    {
+     "count": 100,
+     "start": -300
+    }
+   ]
+  },
+  {
+   "asset_id": "med_saw44k1stereo",
+   "channels": 2,
+   "fixture": "fixtures/saw-44k1-stereo.mp3",
+   "frames": 48000,
+   "resampled": true,
+   "sample_rate": 48000,
+   "sha256": "2a4be49792d94ed855f07509dce29505139ec7edfbab1e29bbaa5f2f33a69e5a",
+   "windows": [
+    {
+     "count": 150,
+     "start": -100
+    },
+    {
+     "count": 512,
+     "start": 0
+    },
+    {
+     "count": 77,
+     "start": 123
+    },
+    {
+     "count": 100,
+     "start": 47950
+    },
+    {
+     "count": 20,
+     "start": 48010
+    },
+    {
+     "count": 100,
+     "start": -300
+    }
+   ]
+  },
+  {
+   "asset_id": "med_ir48kstereofloat",
+   "channels": 2,
+   "fixture": "fixtures/ir-48k-stereo-float.wav",
+   "frames": 22050,
+   "resampled": true,
+   "sample_rate": 44100,
+   "sha256": "f26fc00c14259c07feea8022ec20622b125fa98b0ece1ea5fb6dfc3ab3dcfcce",
+   "windows": [
+    {
+     "count": 150,
+     "start": -100
+    },
+    {
+     "count": 512,
+     "start": 0
+    },
+    {
+     "count": 77,
+     "start": 123
+    },
+    {
+     "count": 100,
+     "start": 22000
+    },
+    {
+     "count": 20,
+     "start": 22060
+    },
+    {
+     "count": 100,
+     "start": -300
+    }
+   ]
+  }
+ ],
+ "cache_ready": [
+  {
+   "asset_format": "FLAC",
+   "asset_rate": 44100,
+   "asset_sha256": "abababababababababababababababababababababababababababababababab",
+   "cache_dir": true,
+   "case": "valid",
+   "raw": 80,
+   "ready": true,
+   "sidecar": "{\"version\": 1, \"channels\": 2, \"frames\": 10, \"sample_rate\": 48000, \"sha256\": \"abababababababababababababababababababababababababababababababab\"}"
+  },
+  {
+   "asset_format": "FLAC",
+   "asset_rate": 44100,
+   "asset_sha256": "abababababababababababababababababababababababababababababababab",
+   "cache_dir": true,
+   "case": "no-raw",
+   "raw": null,
+   "ready": false,
+   "sidecar": "{\"version\": 1, \"channels\": 2, \"frames\": 10, \"sample_rate\": 48000, \"sha256\": \"abababababababababababababababababababababababababababababababab\"}"
+  },
+  {
+   "asset_format": "FLAC",
+   "asset_rate": 44100,
+   "asset_sha256": "abababababababababababababababababababababababababababababababab",
+   "cache_dir": true,
+   "case": "no-sidecar",
+   "raw": 80,
+   "ready": false,
+   "sidecar": null
+  },
+  {
+   "asset_format": "FLAC",
+   "asset_rate": 44100,
+   "asset_sha256": "abababababababababababababababababababababababababababababababab",
+   "cache_dir": true,
+   "case": "invalid-json",
+   "raw": 80,
+   "ready": false,
+   "sidecar": "{not json"
+  },
+  {
+   "asset_format": "FLAC",
+   "asset_rate": 44100,
+   "asset_sha256": "abababababababababababababababababababababababababababababababab",
+   "cache_dir": true,
+   "case": "version-2",
+   "raw": 80,
+   "ready": false,
+   "sidecar": "{\"version\": 2, \"channels\": 2, \"frames\": 10, \"sample_rate\": 48000, \"sha256\": \"abababababababababababababababababababababababababababababababab\"}"
+  },
+  {
+   "asset_format": "FLAC",
+   "asset_rate": 44100,
+   "asset_sha256": "abababababababababababababababababababababababababababababababab",
+   "cache_dir": true,
+   "case": "sha-mismatch",
+   "raw": 80,
+   "ready": false,
+   "sidecar": "{\"version\": 1, \"channels\": 2, \"frames\": 10, \"sample_rate\": 48000, \"sha256\": \"cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}"
+  },
+  {
+   "asset_format": "FLAC",
+   "asset_rate": 44100,
+   "asset_sha256": "abababababababababababababababababababababababababababababababab",
+   "cache_dir": true,
+   "case": "sha-missing-key",
+   "raw": 80,
+   "ready": false,
+   "sidecar": "{\"version\": 1, \"channels\": 2, \"frames\": 10, \"sample_rate\": 48000}"
+  },
+  {
+   "asset_format": "FLAC",
+   "asset_rate": 44100,
+   "asset_sha256": null,
+   "cache_dir": true,
+   "case": "both-unhashed",
+   "raw": 80,
+   "ready": true,
+   "sidecar": "{\"version\": 1, \"channels\": 2, \"frames\": 10, \"sample_rate\": 48000, \"sha256\": null}"
+  },
+  {
+   "asset_format": "FLAC",
+   "asset_rate": 44100,
+   "asset_sha256": null,
+   "cache_dir": true,
+   "case": "asset-unhashed",
+   "raw": 80,
+   "ready": false,
+   "sidecar": "{\"version\": 1, \"channels\": 2, \"frames\": 10, \"sample_rate\": 48000, \"sha256\": \"abababababababababababababababababababababababababababababababab\"}"
+  },
+  {
+   "asset_format": "FLAC",
+   "asset_rate": 44100,
+   "asset_sha256": "abababababababababababababababababababababababababababababababab",
+   "cache_dir": true,
+   "case": "frames-ignored",
+   "raw": 0,
+   "ready": true,
+   "sidecar": "{\"version\": 1, \"channels\": 7, \"frames\": 999, \"sample_rate\": 48000, \"sha256\": \"abababababababababababababababababababababababababababababababab\"}"
+  },
+  {
+   "asset_format": "FLAC",
+   "asset_rate": 44100,
+   "asset_sha256": "abababababababababababababababababababababababababababababababab",
+   "cache_dir": false,
+   "case": "no-cache-dir",
+   "raw": null,
+   "ready": false,
+   "sidecar": null
+  },
+  {
+   "asset_format": "WAV",
+   "asset_rate": 48000,
+   "asset_sha256": "abababababababababababababababababababababababababababababababab",
+   "cache_dir": false,
+   "case": "direct-asset",
+   "raw": null,
+   "ready": true,
+   "sidecar": null
+  }
+ ],
+ "load_full": [
+  {
+   "case": "direct",
+   "max_seconds": 30.0,
+   "present": true,
+   "sample_rate": 48000,
+   "shape": [
+    24000,
+    2
+   ]
+  },
+  {
+   "case": "cached",
+   "max_seconds": 30.0,
+   "present": true,
+   "sample_rate": 44100,
+   "shape": [
+    22050,
+    2
+   ]
+  },
+  {
+   "case": "cut",
+   "max_seconds": 0.1,
+   "present": true,
+   "sample_rate": 48000,
+   "shape": [
+    4800,
+    2
+   ]
+  },
+  {
+   "case": "cut-cached",
+   "max_seconds": 0.0625,
+   "present": true,
+   "sample_rate": 96000,
+   "shape": [
+    6000,
+    2
+   ]
+  },
+  {
+   "case": "missing",
+   "max_seconds": 30.0,
+   "present": false,
+   "sample_rate": 48000,
+   "shape": [
+    24000,
+    2
+   ]
+  },
+  {
+   "case": "missing-cut",
+   "max_seconds": 0.2,
+   "present": false,
+   "sample_rate": 44100,
+   "shape": [
+    8820,
+    2
+   ]
+  }
+ ],
+ "needs_cache": [
+  {
+   "asset_rate": 48000,
+   "format": "WAV",
+   "needs_cache": true,
+   "rate": 44100,
+   "subtype": "PCM_24"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "WAV",
+   "needs_cache": false,
+   "rate": 48000,
+   "subtype": "PCM_24"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "wav",
+   "needs_cache": true,
+   "rate": 44100,
+   "subtype": "pcm_16"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "wav",
+   "needs_cache": false,
+   "rate": 48000,
+   "subtype": "pcm_16"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "WAVEX",
+   "needs_cache": true,
+   "rate": 44100,
+   "subtype": "FLOAT"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "WAVEX",
+   "needs_cache": false,
+   "rate": 48000,
+   "subtype": "FLOAT"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "AIFF",
+   "needs_cache": true,
+   "rate": 44100,
+   "subtype": "PCM_S8"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "AIFF",
+   "needs_cache": false,
+   "rate": 48000,
+   "subtype": "PCM_S8"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "CAF",
+   "needs_cache": true,
+   "rate": 44100,
+   "subtype": "DOUBLE"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "CAF",
+   "needs_cache": false,
+   "rate": 48000,
+   "subtype": "DOUBLE"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "W64",
+   "needs_cache": true,
+   "rate": 44100,
+   "subtype": "PCM_U8"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "W64",
+   "needs_cache": false,
+   "rate": 48000,
+   "subtype": "PCM_U8"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "RF64",
+   "needs_cache": true,
+   "rate": 44100,
+   "subtype": "PCM_32"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "RF64",
+   "needs_cache": false,
+   "rate": 48000,
+   "subtype": "PCM_32"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "WAV",
+   "needs_cache": true,
+   "rate": 44100,
+   "subtype": "ULAW"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "WAV",
+   "needs_cache": true,
+   "rate": 48000,
+   "subtype": "ULAW"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "CAF",
+   "needs_cache": true,
+   "rate": 44100,
+   "subtype": "ALAC_16"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "CAF",
+   "needs_cache": true,
+   "rate": 48000,
+   "subtype": "ALAC_16"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "FLAC",
+   "needs_cache": true,
+   "rate": 44100,
+   "subtype": "PCM_16"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "FLAC",
+   "needs_cache": true,
+   "rate": 48000,
+   "subtype": "PCM_16"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "MP3",
+   "needs_cache": true,
+   "rate": 44100,
+   "subtype": "MPEG_LAYER_III"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "MP3",
+   "needs_cache": true,
+   "rate": 48000,
+   "subtype": "MPEG_LAYER_III"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "OGG",
+   "needs_cache": true,
+   "rate": 44100,
+   "subtype": "VORBIS"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "OGG",
+   "needs_cache": true,
+   "rate": 48000,
+   "subtype": "VORBIS"
+  },
+  {
+   "asset_rate": 44100,
+   "format": "WAV",
+   "needs_cache": false,
+   "rate": 44100,
+   "subtype": "PCM_24"
+  },
+  {
+   "asset_rate": 44100,
+   "format": "WAV",
+   "needs_cache": true,
+   "rate": 48000,
+   "subtype": "PCM_24"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "AU",
+   "needs_cache": true,
+   "rate": 44100,
+   "subtype": "PCM_16"
+  },
+  {
+   "asset_rate": 48000,
+   "format": "AU",
+   "needs_cache": true,
+   "rate": 48000,
+   "subtype": "PCM_16"
+  }
+ ],
+ "silent": [
+  {
+   "asset_channels": 2,
+   "asset_frames": 96000,
+   "asset_id": "med_tone48kstereo24bit",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 44100,
+   "missing": true,
+   "rate": 22050,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 96000,
+   "asset_id": "med_tone48kstereo24bit",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 64000,
+   "missing": true,
+   "rate": 32000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 96000,
+   "asset_id": "med_tone48kstereo24bit",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 88200,
+   "missing": true,
+   "rate": 44100,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 96000,
+   "asset_id": "med_tone48kstereo24bit",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 96000,
+   "missing": true,
+   "rate": 48000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 96000,
+   "asset_id": "med_tone48kstereo24bit",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 176400,
+   "missing": true,
+   "rate": 88200,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 96000,
+   "asset_id": "med_tone48kstereo24bit",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 192000,
+   "missing": true,
+   "rate": 96000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 96000,
+   "asset_id": "med_tone48kstereo24bit",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 352800,
+   "missing": true,
+   "rate": 176400,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 96000,
+   "asset_id": "med_tone48kstereo24bit",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 384000,
+   "missing": true,
+   "rate": 192000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 66150,
+   "asset_id": "med_tone44k1mono16bit",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 33075,
+   "missing": true,
+   "rate": 22050,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 66150,
+   "asset_id": "med_tone44k1mono16bit",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 48000,
+   "missing": true,
+   "rate": 32000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 66150,
+   "asset_id": "med_tone44k1mono16bit",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 66150,
+   "missing": true,
+   "rate": 44100,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 66150,
+   "asset_id": "med_tone44k1mono16bit",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 72000,
+   "missing": true,
+   "rate": 48000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 66150,
+   "asset_id": "med_tone44k1mono16bit",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 132300,
+   "missing": true,
+   "rate": 88200,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 66150,
+   "asset_id": "med_tone44k1mono16bit",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 144000,
+   "missing": true,
+   "rate": 96000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 66150,
+   "asset_id": "med_tone44k1mono16bit",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 264600,
+   "missing": true,
+   "rate": 176400,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 66150,
+   "asset_id": "med_tone44k1mono16bit",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 288000,
+   "missing": true,
+   "rate": 192000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 48000,
+   "asset_id": "med_chord48kstereo",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 22050,
+   "missing": true,
+   "rate": 22050,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 48000,
+   "asset_id": "med_chord48kstereo",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 32000,
+   "missing": true,
+   "rate": 32000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 48000,
+   "asset_id": "med_chord48kstereo",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 44100,
+   "missing": true,
+   "rate": 44100,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 48000,
+   "asset_id": "med_chord48kstereo",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 48000,
+   "missing": true,
+   "rate": 48000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 48000,
+   "asset_id": "med_chord48kstereo",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 88200,
+   "missing": true,
+   "rate": 88200,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 48000,
+   "asset_id": "med_chord48kstereo",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 96000,
+   "missing": true,
+   "rate": 96000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 48000,
+   "asset_id": "med_chord48kstereo",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 176400,
+   "missing": true,
+   "rate": 176400,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 48000,
+   "asset_id": "med_chord48kstereo",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 192000,
+   "missing": true,
+   "rate": 192000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 44100,
+   "asset_id": "med_saw44k1stereo",
+   "asset_rate": 44100,
+   "channels": 2,
+   "frames": 22050,
+   "missing": true,
+   "rate": 22050,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 44100,
+   "asset_id": "med_saw44k1stereo",
+   "asset_rate": 44100,
+   "channels": 2,
+   "frames": 32000,
+   "missing": true,
+   "rate": 32000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 44100,
+   "asset_id": "med_saw44k1stereo",
+   "asset_rate": 44100,
+   "channels": 2,
+   "frames": 44100,
+   "missing": true,
+   "rate": 44100,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 44100,
+   "asset_id": "med_saw44k1stereo",
+   "asset_rate": 44100,
+   "channels": 2,
+   "frames": 48000,
+   "missing": true,
+   "rate": 48000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 44100,
+   "asset_id": "med_saw44k1stereo",
+   "asset_rate": 44100,
+   "channels": 2,
+   "frames": 88200,
+   "missing": true,
+   "rate": 88200,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 44100,
+   "asset_id": "med_saw44k1stereo",
+   "asset_rate": 44100,
+   "channels": 2,
+   "frames": 96000,
+   "missing": true,
+   "rate": 96000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 44100,
+   "asset_id": "med_saw44k1stereo",
+   "asset_rate": 44100,
+   "channels": 2,
+   "frames": 176400,
+   "missing": true,
+   "rate": 176400,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 44100,
+   "asset_id": "med_saw44k1stereo",
+   "asset_rate": 44100,
+   "channels": 2,
+   "frames": 192000,
+   "missing": true,
+   "rate": 192000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 24000,
+   "asset_id": "med_ir48kstereofloat",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 11025,
+   "missing": true,
+   "rate": 22050,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 24000,
+   "asset_id": "med_ir48kstereofloat",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 16000,
+   "missing": true,
+   "rate": 32000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 24000,
+   "asset_id": "med_ir48kstereofloat",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 22050,
+   "missing": true,
+   "rate": 44100,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 24000,
+   "asset_id": "med_ir48kstereofloat",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 24000,
+   "missing": true,
+   "rate": 48000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 24000,
+   "asset_id": "med_ir48kstereofloat",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 44100,
+   "missing": true,
+   "rate": 88200,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 24000,
+   "asset_id": "med_ir48kstereofloat",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 48000,
+   "missing": true,
+   "rate": 96000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 24000,
+   "asset_id": "med_ir48kstereofloat",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 88200,
+   "missing": true,
+   "rate": 176400,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 2,
+   "asset_frames": 24000,
+   "asset_id": "med_ir48kstereofloat",
+   "asset_rate": 48000,
+   "channels": 2,
+   "frames": 96000,
+   "missing": true,
+   "rate": 192000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 1,
+   "asset_id": "med_f1",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 0,
+   "missing": true,
+   "rate": 22050,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 1,
+   "asset_id": "med_f1",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 1,
+   "missing": true,
+   "rate": 32000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 1,
+   "asset_id": "med_f1",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 1,
+   "missing": true,
+   "rate": 44100,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 1,
+   "asset_id": "med_f1",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 1,
+   "missing": true,
+   "rate": 48000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 1,
+   "asset_id": "med_f1",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 2,
+   "missing": true,
+   "rate": 88200,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 1,
+   "asset_id": "med_f1",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 2,
+   "missing": true,
+   "rate": 96000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 1,
+   "asset_id": "med_f1",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 4,
+   "missing": true,
+   "rate": 176400,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 1,
+   "asset_id": "med_f1",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 4,
+   "missing": true,
+   "rate": 192000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 3,
+   "asset_id": "med_f3",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 2,
+   "missing": true,
+   "rate": 22050,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 3,
+   "asset_id": "med_f3",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 2,
+   "missing": true,
+   "rate": 32000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 3,
+   "asset_id": "med_f3",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 3,
+   "missing": true,
+   "rate": 44100,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 3,
+   "asset_id": "med_f3",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 3,
+   "missing": true,
+   "rate": 48000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 3,
+   "asset_id": "med_f3",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 6,
+   "missing": true,
+   "rate": 88200,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 3,
+   "asset_id": "med_f3",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 7,
+   "missing": true,
+   "rate": 96000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 3,
+   "asset_id": "med_f3",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 12,
+   "missing": true,
+   "rate": 176400,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 3,
+   "asset_id": "med_f3",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 13,
+   "missing": true,
+   "rate": 192000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 5,
+   "asset_id": "med_f5",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 2,
+   "missing": true,
+   "rate": 22050,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 5,
+   "asset_id": "med_f5",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 4,
+   "missing": true,
+   "rate": 32000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 5,
+   "asset_id": "med_f5",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 5,
+   "missing": true,
+   "rate": 44100,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 5,
+   "asset_id": "med_f5",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 5,
+   "missing": true,
+   "rate": 48000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 5,
+   "asset_id": "med_f5",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 10,
+   "missing": true,
+   "rate": 88200,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 5,
+   "asset_id": "med_f5",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 11,
+   "missing": true,
+   "rate": 96000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 5,
+   "asset_id": "med_f5",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 20,
+   "missing": true,
+   "rate": 176400,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 5,
+   "asset_id": "med_f5",
+   "asset_rate": 44100,
+   "channels": 1,
+   "frames": 22,
+   "missing": true,
+   "rate": 192000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 7,
+   "asset_id": "med_f7",
+   "asset_rate": 96000,
+   "channels": 1,
+   "frames": 2,
+   "missing": true,
+   "rate": 22050,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 7,
+   "asset_id": "med_f7",
+   "asset_rate": 96000,
+   "channels": 1,
+   "frames": 2,
+   "missing": true,
+   "rate": 32000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 7,
+   "asset_id": "med_f7",
+   "asset_rate": 96000,
+   "channels": 1,
+   "frames": 3,
+   "missing": true,
+   "rate": 44100,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 7,
+   "asset_id": "med_f7",
+   "asset_rate": 96000,
+   "channels": 1,
+   "frames": 4,
+   "missing": true,
+   "rate": 48000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 7,
+   "asset_id": "med_f7",
+   "asset_rate": 96000,
+   "channels": 1,
+   "frames": 6,
+   "missing": true,
+   "rate": 88200,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 7,
+   "asset_id": "med_f7",
+   "asset_rate": 96000,
+   "channels": 1,
+   "frames": 7,
+   "missing": true,
+   "rate": 96000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 7,
+   "asset_id": "med_f7",
+   "asset_rate": 96000,
+   "channels": 1,
+   "frames": 13,
+   "missing": true,
+   "rate": 176400,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 7,
+   "asset_id": "med_f7",
+   "asset_rate": 96000,
+   "channels": 1,
+   "frames": 14,
+   "missing": true,
+   "rate": 192000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 12345,
+   "asset_id": "med_f12345",
+   "asset_rate": 88200,
+   "channels": 1,
+   "frames": 3086,
+   "missing": true,
+   "rate": 22050,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 12345,
+   "asset_id": "med_f12345",
+   "asset_rate": 88200,
+   "channels": 1,
+   "frames": 4479,
+   "missing": true,
+   "rate": 32000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 12345,
+   "asset_id": "med_f12345",
+   "asset_rate": 88200,
+   "channels": 1,
+   "frames": 6172,
+   "missing": true,
+   "rate": 44100,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 12345,
+   "asset_id": "med_f12345",
+   "asset_rate": 88200,
+   "channels": 1,
+   "frames": 6718,
+   "missing": true,
+   "rate": 48000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 12345,
+   "asset_id": "med_f12345",
+   "asset_rate": 88200,
+   "channels": 1,
+   "frames": 12345,
+   "missing": true,
+   "rate": 88200,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 12345,
+   "asset_id": "med_f12345",
+   "asset_rate": 88200,
+   "channels": 1,
+   "frames": 13437,
+   "missing": true,
+   "rate": 96000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 12345,
+   "asset_id": "med_f12345",
+   "asset_rate": 88200,
+   "channels": 1,
+   "frames": 24690,
+   "missing": true,
+   "rate": 176400,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 12345,
+   "asset_id": "med_f12345",
+   "asset_rate": 88200,
+   "channels": 1,
+   "frames": 26873,
+   "missing": true,
+   "rate": 192000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 99999,
+   "asset_id": "med_f99999",
+   "asset_rate": 22050,
+   "channels": 1,
+   "frames": 99999,
+   "missing": true,
+   "rate": 22050,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 99999,
+   "asset_id": "med_f99999",
+   "asset_rate": 22050,
+   "channels": 1,
+   "frames": 145123,
+   "missing": true,
+   "rate": 32000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 99999,
+   "asset_id": "med_f99999",
+   "asset_rate": 22050,
+   "channels": 1,
+   "frames": 199998,
+   "missing": true,
+   "rate": 44100,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 99999,
+   "asset_id": "med_f99999",
+   "asset_rate": 22050,
+   "channels": 1,
+   "frames": 217685,
+   "missing": true,
+   "rate": 48000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 99999,
+   "asset_id": "med_f99999",
+   "asset_rate": 22050,
+   "channels": 1,
+   "frames": 399996,
+   "missing": true,
+   "rate": 88200,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 99999,
+   "asset_id": "med_f99999",
+   "asset_rate": 22050,
+   "channels": 1,
+   "frames": 435370,
+   "missing": true,
+   "rate": 96000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 99999,
+   "asset_id": "med_f99999",
+   "asset_rate": 22050,
+   "channels": 1,
+   "frames": 799992,
+   "missing": true,
+   "rate": 176400,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 1,
+   "asset_frames": 99999,
+   "asset_id": "med_f99999",
+   "asset_rate": 22050,
+   "channels": 1,
+   "frames": 870740,
+   "missing": true,
+   "rate": 192000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 0,
+   "asset_frames": 0,
+   "asset_id": "med_midi",
+   "asset_rate": 0,
+   "channels": 1,
+   "frames": 0,
+   "missing": true,
+   "rate": 22050,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 0,
+   "asset_frames": 0,
+   "asset_id": "med_midi",
+   "asset_rate": 0,
+   "channels": 1,
+   "frames": 0,
+   "missing": true,
+   "rate": 32000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 0,
+   "asset_frames": 0,
+   "asset_id": "med_midi",
+   "asset_rate": 0,
+   "channels": 1,
+   "frames": 0,
+   "missing": true,
+   "rate": 44100,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 0,
+   "asset_frames": 0,
+   "asset_id": "med_midi",
+   "asset_rate": 0,
+   "channels": 1,
+   "frames": 0,
+   "missing": true,
+   "rate": 48000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 0,
+   "asset_frames": 0,
+   "asset_id": "med_midi",
+   "asset_rate": 0,
+   "channels": 1,
+   "frames": 0,
+   "missing": true,
+   "rate": 88200,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 0,
+   "asset_frames": 0,
+   "asset_id": "med_midi",
+   "asset_rate": 0,
+   "channels": 1,
+   "frames": 0,
+   "missing": true,
+   "rate": 96000,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 0,
+   "asset_frames": 0,
+   "asset_id": "med_midi",
+   "asset_rate": 0,
+   "channels": 1,
+   "frames": 0,
+   "missing": true,
+   "rate": 176400,
+   "reason": "missing"
+  },
+  {
+   "asset_channels": 0,
+   "asset_frames": 0,
+   "asset_id": "med_midi",
+   "asset_rate": 0,
+   "channels": 1,
+   "frames": 0,
+   "missing": true,
+   "rate": 192000,
+   "reason": "missing"
+  }
+ ],
+ "unreadable": [
+  {
+   "asset_rate": 48000,
+   "channels": 2,
+   "format": "WAV",
+   "frames": 1000,
+   "missing": true,
+   "rate": 48000,
+   "reason": "unreadable: Error opening '<ROOT>/fixtures/not-media.wav': Format not recognised.",
+   "subtype": "PCM_16"
+  },
+  {
+   "asset_rate": 44100,
+   "channels": 2,
+   "format": "WAV",
+   "frames": 1088,
+   "missing": true,
+   "rate": 48000,
+   "reason": "unreadable: Error opening '<ROOT>/fixtures/not-media.wav': Format not recognised.",
+   "subtype": "PCM_16"
+  },
+  {
+   "asset_rate": 48000,
+   "channels": 2,
+   "format": "FLAC",
+   "frames": 1000,
+   "missing": true,
+   "rate": 48000,
+   "reason": "unreadable: Error opening '<ROOT>/fixtures/not-media.wav': Format not recognised.",
+   "subtype": "PCM_16"
+  }
+ ]
+}

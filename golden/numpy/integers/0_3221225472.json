@@ -1,0 +1,15 @@
+{
+ "after": {
+  "has_uint32": true,
+  "inc": "0x50c8fb163c7cea4ed0f51ce6006e4325",
+  "state": "0x3ef737be2f4de25992b78977c9555972",
+  "uinteger": 1985435777
+ },
+ "dtype": "i64le",
+ "high": 3221225472,
+ "low": 0,
+ "seed": 1234,
+ "shape": [
+  1000
+ ]
+}

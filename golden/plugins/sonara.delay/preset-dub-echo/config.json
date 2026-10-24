@@ -1,0 +1,46 @@
+{
+ "config": "preset-dub-echo",
+ "params": {
+  "feedback": 0.7,
+  "highcut_hz": 2500.0,
+  "lowcut_hz": 300.0,
+  "mix": 0.35,
+  "note": "1/4D",
+  "ping_pong": false,
+  "sync": true,
+  "time_ms": 375.0
+ },
+ "plugin": "sonara.delay",
+ "renders": {
+  "clipped": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 15.275316530578985
+  },
+  "impulse": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 15.275316530578985
+  },
+  "noise": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 15.275316530578985
+  },
+  "silence": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 15.275316530578985
+  },
+  "sine-1k": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 15.275316530578985
+  },
+  "sweep": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 15.275316530578985
+  }
+ }
+}

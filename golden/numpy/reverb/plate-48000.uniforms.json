@@ -1,0 +1,12 @@
+{
+ "delays": [],
+ "drawn": [],
+ "dtype": "f64le",
+ "frames": 147360,
+ "n_early": 0,
+ "sample_rate": 48000,
+ "shape": [
+  0
+ ],
+ "spread_ms": 0.0
+}

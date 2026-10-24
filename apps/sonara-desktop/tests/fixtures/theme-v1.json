@@ -1,0 +1,96 @@
+{
+ "generator": "scripts/golden/gui_theme_oracles.py",
+ "palettes": {
+  "dark": {
+   "window": "#1e1f22",
+   "panel": "#26282c",
+   "panel_alt": "#2c2f34",
+   "lane": "#232529",
+   "lane_alt": "#27292e",
+   "grid_bar": "#4a4e57",
+   "grid_beat": "#363940",
+   "grid_sub": "#2d3036",
+   "text": "#d8dbe0",
+   "text_dim": "#8b9099",
+   "accent": "#4c9bf0",
+   "selection": "#f0c24c",
+   "playhead": "#ff5f56",
+   "loop": "#4c9bf0",
+   "meter_green": "#46c46b",
+   "meter_yellow": "#e6c84a",
+   "meter_red": "#ee5050",
+   "border": "#141517"
+  },
+  "light": {
+   "window": "#e9eaed",
+   "panel": "#f4f5f7",
+   "panel_alt": "#e2e4e8",
+   "lane": "#f7f8fa",
+   "lane_alt": "#eef0f3",
+   "grid_bar": "#a3a8b2",
+   "grid_beat": "#cdd1d8",
+   "grid_sub": "#e1e4e9",
+   "text": "#202226",
+   "text_dim": "#5d636d",
+   "accent": "#1f6fd1",
+   "selection": "#d18e00",
+   "playhead": "#e23b30",
+   "loop": "#1f6fd1",
+   "meter_green": "#2e9f52",
+   "meter_yellow": "#c8a21e",
+   "meter_red": "#d33a3a",
+   "border": "#b9bdc4"
+  }
+ },
+ "apply": {
+  "dark": "dark",
+  "light": "light",
+  "Light": "dark",
+  "": "dark",
+  "solarized": "dark"
+ },
+ "roles": {
+  "dark": {
+   "Window": "window",
+   "WindowText": "text",
+   "Base": "panel",
+   "AlternateBase": "panel_alt",
+   "ToolTipBase": "panel_alt",
+   "ToolTipText": "text",
+   "Text": "text",
+   "Button": "panel_alt",
+   "ButtonText": "text",
+   "Highlight": "accent",
+   "HighlightedText": "#ffffff",
+   "PlaceholderText": "text_dim"
+  },
+  "light": {
+   "Window": "window",
+   "WindowText": "text",
+   "Base": "panel",
+   "AlternateBase": "panel_alt",
+   "ToolTipBase": "panel_alt",
+   "ToolTipText": "text",
+   "Text": "text",
+   "Button": "panel_alt",
+   "ButtonText": "text",
+   "Highlight": "accent",
+   "HighlightedText": "#ffffff",
+   "PlaceholderText": "text_dim"
+  }
+ },
+ "track_colors": [
+  "#d9644a",
+  "#d9a24a",
+  "#c9c44a",
+  "#7fbf4f",
+  "#4fbf8a",
+  "#4fb3bf",
+  "#5b8fd9",
+  "#7d6bd9",
+  "#b35bd9",
+  "#d95b9f",
+  "#a07850",
+  "#8a8a8a"
+ ]
+}

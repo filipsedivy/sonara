@@ -1,0 +1,46 @@
+{
+ "config": "preset-concert-hall",
+ "params": {
+  "character": "hall",
+  "damping": 0.55,
+  "decay_s": 2.8,
+  "highcut_hz": 12000.0,
+  "lowcut_hz": 120.0,
+  "mix": 0.3,
+  "predelay_ms": 30.0,
+  "width": 1.0
+ },
+ "plugin": "sonara.reverb",
+ "renders": {
+  "clipped": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 4.499999999999999
+  },
+  "impulse": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 4.499999999999999
+  },
+  "noise": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 4.499999999999999
+  },
+  "silence": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 4.499999999999999
+  },
+  "sine-1k": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 4.499999999999999
+  },
+  "sweep": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 4.499999999999999
+  }
+ }
+}

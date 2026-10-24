@@ -1,0 +1,45 @@
+{
+ "config": "preset-hard-crunch",
+ "params": {
+  "bias": 0.0,
+  "drive_db": 18.0,
+  "mix": 1.0,
+  "mode": "hard_clip",
+  "output_db": -10.0,
+  "oversampling": "4x",
+  "tone_hz": 6000.0
+ },
+ "plugin": "sonara.saturation",
+ "renders": {
+  "clipped": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "impulse": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "noise": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "silence": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "sine-1k": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "sweep": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  }
+ }
+}

@@ -1,0 +1,163 @@
+# Release of the macOS application.
+#
+# Both triggers check the versions, run the CI gate and build Sonara.app and its DMG with
+# scripts/bundle-macos.sh, which signs them ad hoc and checks them. Owner decision (2026-10-23): no
+# Developer ID signing and no notarization, so the workflow uses no secrets and no environment.
+# The DMG and SHA256SUMS.txt are uploaded as a workflow artifact.
+# - A `v*` tag then publishes a draft GitHub Release with the DMG, SHA256SUMS.txt and the
+#   version's section of CHANGELOG.md. The owner reviews the draft and publishes it.
+# - `workflow_dispatch` is the dry run: it builds and uploads the artifact, and publishes
+#   nothing.
+#
+# Only the publish job may write to the repository (`contents: write`), and it runs no code from
+# the repository. Third-party actions are pinned to commit SHAs, the same as ci.yml; Dependabot
+# keeps them current.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  # The frontend's toolchain: the versions of docker/dev/Dockerfile and package.json's
+  # packageManager. The checksum is the one nodejs.org publishes for the darwin-arm64 tarball.
+  NODE_VERSION: 26.12.1
+  NODE_SHA256: 18830bf448fe187c650dc28c98aa8c968ed1d40b6dd032c081e70a384a1bf660
+  PNPM_VERSION: 12.14.0
+
+jobs:
+  # the tag equals the versions (VER-01); a dry run checks that the versions agree.
+  # A tag also needs its section in CHANGELOG.md, checked here so that a missing one fails before
+  # the bundle is built.
+  versions:
+    name: versions
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The tag equals the versions (VER-01)
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            scripts/check-versions.sh --tag "$GITHUB_REF_NAME"
+          else
+            scripts/check-versions.sh
+          fi
+      - name: Release notes from CHANGELOG.md
+        if: github.event_name == 'push'
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v heading="## [$version]" '
+            index($0, heading) == 1 { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md >notes.md
+          [ -s notes.md ] || { echo "CHANGELOG.md has no section for $version" >&2; exit 1; }
+      - if: github.event_name == 'push'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-notes
+          path: notes.md
+          if-no-files-found: error
+
+  # the CI gate.
+  ci:
+    name: ci
+    needs: versions
+    uses: ./.github/workflows/ci.yml
+
+  # the release binaries, the ad-hoc signed bundle with the CLI, the codec
+  # libraries, the licences and the LGPL sources, and the checks of scripts/bundle-macos.sh.
+  bundle:
+    name: bundle (macos-26)
+    needs: ci
+    runs-on: macos-26
+    outputs:
+      dmg: ${{ steps.checksums.outputs.dmg }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Toolchain from rust-toolchain.toml
+        run: rustup toolchain install && rustc --version
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      # As in ci.yml: the codec libraries and their source archives, built from pinned sources,
+      # cached under the hash of the build's inputs.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: target/native
+          key: native-codecs-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/native/build-codecs.sh', 'scripts/native/*.patch') }}
+      # cargo-about, a build-time tool, pinned in stage-licenses.mjs.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: target/tools
+          key: tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('apps/sonara-desktop/scripts/stage-licenses.mjs') }}
+      - name: Node and pnpm
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/node.tar.xz" \
+            "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-darwin-arm64.tar.xz"
+          echo "${NODE_SHA256}  $RUNNER_TEMP/node.tar.xz" | shasum -a 256 -c -
+          mkdir -p "$RUNNER_TEMP/node"
+          tar -xJf "$RUNNER_TEMP/node.tar.xz" -C "$RUNNER_TEMP/node" --strip-components 1
+          echo "$RUNNER_TEMP/node/bin" >>"$GITHUB_PATH"
+          "$RUNNER_TEMP/node/bin/npm" install --global --no-fund --no-audit "pnpm@${PNPM_VERSION}"
+          "$RUNNER_TEMP/node/bin/node" --version
+      - name: Bundle (ad hoc)
+        run: scripts/bundle-macos.sh
+      - name: Checksums
+        id: checksums
+        run: |
+          cd target/release/bundle/dmg
+          dmg="$(ls Sonara_*_aarch64.dmg)"
+          shasum -a 256 "$dmg" >SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          echo "dmg=$dmg" >>"$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sonara-dmg
+          path: |
+            target/release/bundle/dmg/Sonara_*_aarch64.dmg
+            target/release/bundle/dmg/SHA256SUMS.txt
+          if-no-files-found: error
+
+  # a draft GitHub Release, for a tag only. It downloads the artifacts and runs
+  # nothing from the repository.
+  publish:
+    name: publish
+    needs: [versions, bundle]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sonara-dmg
+          path: dist
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-notes
+          path: notes
+      - name: The DMG matches its checksum
+        run: cd dist && shasum -a 256 -c SHA256SUMS.txt
+      - name: Draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          DMG: ${{ needs.bundle.outputs.dmg }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --draft --verify-tag \
+            --title "Sonara ${GITHUB_REF_NAME#v}" --notes-file notes/notes.md \
+            "dist/$DMG" dist/SHA256SUMS.txt

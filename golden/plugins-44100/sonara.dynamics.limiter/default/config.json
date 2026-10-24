@@ -1,0 +1,34 @@
+{
+ "config": "default",
+ "params": {
+  "ceiling_db": -1.0,
+  "input_gain_db": 0.0,
+  "lookahead_ms": 2.0,
+  "release_ms": 60.0,
+  "true_peak": true
+ },
+ "plugin": "sonara.dynamics.limiter",
+ "renders": {
+  "impulse": {
+   "latency": 94,
+   "report": {
+    "gain_reduction_db": 1.2758052382500925e-12
+   },
+   "tail_seconds": 0.0
+  },
+  "noise": {
+   "latency": 94,
+   "report": {
+    "gain_reduction_db": 5.409980472062166
+   },
+   "tail_seconds": 0.0
+  },
+  "sine-1k": {
+   "latency": 94,
+   "report": {
+    "gain_reduction_db": -0.0
+   },
+   "tail_seconds": 0.0
+  }
+ }
+}

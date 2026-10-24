@@ -1,0 +1,28 @@
+{
+  "description": "\"Analyze the mix for clipping, excessive peaks, and loudness issues, then propose corrections.\" Builds a deliberately hot mix (faders pushed, no master limiter), renders and analyzes it (issues: OVER_FULL_SCALE / CLIPPING / TRUE_PEAK), applies corrections an agent would propose from that analysis (pull the loud tracks down by the measured overshoot, add a true-peak limiter on the master) and re-analyzes, then exports the corrected mix normalized to -14 LUFS.",
+  "steps": [
+    {"tool": "create_project", "args": {"name": "Hot Mix", "bpm": 120, "length": "8 bars"}},
+    {"id": "drums", "tool": "create_track", "args": {"name": "Drums", "kind": "instrument", "instrument": "sonara.drums", "preset": "Punchy 909"}},
+    {"id": "bass", "tool": "create_track", "args": {"name": "Bass", "kind": "instrument", "preset": "Analog Bass"}},
+    {"id": "keys", "tool": "create_track", "args": {"name": "Keys", "kind": "instrument", "preset": "Electric Keys"}},
+    {"tool": "generate_midi", "args": {"track_id": "{{drums.result.track_id}}", "kind": "drums", "style": "breakbeat", "bars": 8, "seed": 3}},
+    {"tool": "generate_midi", "args": {"track_id": "{{bass.result.track_id}}", "kind": "bass", "key": "G minor", "progression": ["i", "iv", "VII", "III"], "beats_per_chord": 8, "style": "syncopated", "octave": 2}},
+    {"tool": "generate_midi", "args": {"track_id": "{{keys.result.track_id}}", "kind": "chords", "key": "G minor", "progression": ["i", "iv", "VII", "III"], "beats_per_chord": 8, "style": "stabs", "octave": 4}},
+    {"tool": "set_track_volume", "args": {"track_id": "{{drums.result.track_id}}", "volume_db": 8}},
+    {"tool": "set_track_volume", "args": {"track_id": "{{bass.result.track_id}}", "volume_db": 9}},
+    {"tool": "set_track_volume", "args": {"track_id": "{{keys.result.track_id}}", "volume_db": 6}},
+
+    {"id": "hot", "tool": "render_preview", "args": {"per_track_levels": true, "path": "examples/output/mix_analysis/hot.wav"}},
+
+    {"tool": "set_track_volume", "args": {"track_id": "{{drums.result.track_id}}", "volume_db": -4}},
+    {"tool": "set_track_volume", "args": {"track_id": "{{bass.result.track_id}}", "volume_db": 0}},
+    {"tool": "set_track_volume", "args": {"track_id": "{{keys.result.track_id}}", "volume_db": -2}},
+    {"tool": "add_effect", "args": {"track_id": "{{bass.result.track_id}}", "plugin_id": "sonara.eq.parametric", "preset": "Bass Tight"}},
+    {"tool": "add_effect", "args": {"track_id": "master", "plugin_id": "sonara.dynamics.limiter", "preset": "Master -1 dBTP"}},
+
+    {"id": "fixed", "tool": "render_preview", "args": {"per_track_levels": true, "path": "examples/output/mix_analysis/fixed.wav"}},
+    {"tool": "export_audio", "confirm": true, "args": {"path": "examples/output/mix_analysis/fixed-mix.wav", "overwrite": true, "normalize": "loudness", "target_db": -14,
+      "formats": [{"format": "wav", "bit_depth": 24}]}},
+    {"tool": "get_history", "args": {}}
+  ]
+}

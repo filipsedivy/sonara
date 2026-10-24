@@ -1,0 +1,132 @@
+{
+ "analysis": {
+  "balance_db": 0.001048312627920989,
+  "channels": 2,
+  "clip_events": 1497,
+  "clipped_samples": 26566,
+  "correlation": 0.9993424592005983,
+  "crest_factor_db": 16.58268615587469,
+  "dc_offset": [
+   0.000797,
+   0.000761
+  ],
+  "duration_seconds": "<VOLATILE>",
+  "integrated_lufs": -6.032197277101298,
+  "kind": {
+   "estimated": [
+    "true_peak_dbtp",
+    "plr_db"
+   ],
+   "measured": [
+    "sample_peak_dbfs",
+    "rms_dbfs",
+    "integrated_lufs",
+    "momentary_max_lufs",
+    "short_term_max_lufs",
+    "loudness_range_lu",
+    "clipped_samples",
+    "correlation",
+    "octave_bands_db"
+   ]
+  },
+  "leading_silence_seconds": 0.0,
+  "loudness_range_lu": 1.1230467717431534,
+  "min_correlation_400ms": 0.9806699112141719,
+  "momentary_max_lufs": -3.3537932708841693,
+  "nonfinite_samples": 0,
+  "octave_bands_db": {
+   "1000": -18.789675293157238,
+   "125": -7.610529426625254,
+   "16000": -25.426842716583266,
+   "2000": -23.132326324750572,
+   "250": -5.393156491144642,
+   "31.5": -10.709493345652492,
+   "4000": -19.78026727327685,
+   "500": -7.905097177542448,
+   "63": -6.080661884828526,
+   "8000": -19.365507782229983
+  },
+  "over_full_scale_samples": 52557,
+  "plr_db": 15.022550190039778,
+  "rms_dbfs": -7.59233324293621,
+  "sample_peak_dbfs": 8.99035291293848,
+  "sample_rate": 48000,
+  "short_term_lufs": [
+   -5.49,
+   -6.03,
+   -6.22,
+   -6.73,
+   -6.54,
+   -6.57,
+   -6.14,
+   -6.29,
+   -5.98,
+   -6.15,
+   -5.92,
+   -5.97,
+   -5.52,
+   -5.35
+  ],
+  "short_term_max_lufs": -5.200859453383848,
+  "side_to_mid_db": -34.829596748799034,
+  "silence_regions": [],
+  "spectral_centroid_hz": 402.7840912717659,
+  "trailing_silence_seconds": 0.45,
+  "true_peak_dbtp": 8.99035291293848
+ },
+ "issues": [
+  {
+   "code": "OVER_FULL_SCALE",
+   "message": "52557 samples exceed 0 dBFS (will clip in fixed-point exports)",
+   "severity": "error"
+  },
+  {
+   "code": "CLIPPING",
+   "message": "1497 probable clipping events (26566 samples at full scale)",
+   "severity": "warning"
+  },
+  {
+   "code": "TRUE_PEAK",
+   "message": "true peak 8.99 dBTP is above -1 dBTP (risk of codec clipping)",
+   "severity": "warning"
+  },
+  {
+   "code": "VERY_LOUD",
+   "message": "integrated loudness -6.0 LUFS is very loud (heavily limited?)",
+   "severity": "warning"
+  }
+ ],
+ "latency_samples": 0,
+ "missing_media": [],
+ "path": "<ROOT>/work/examples/output/mix_analysis/hot.wav",
+ "range_beats": [
+  0.0,
+  32.0
+ ],
+ "realtime_factor": "<VOLATILE>",
+ "render_seconds": "<VOLATILE>",
+ "sample_rate": 48000,
+ "seconds": 16.725,
+ "tail_seconds": 0.725,
+ "track_levels": {
+  "trk_000000000003": {
+   "integrated_lufs": -11.77,
+   "name": "Drums",
+   "peak_dbfs": 2.52,
+   "short_term_max_lufs": -11.52
+  },
+  "trk_000000000005": {
+   "integrated_lufs": -9.35,
+   "name": "Bass",
+   "peak_dbfs": 3.02,
+   "short_term_max_lufs": -8.26
+  },
+  "trk_000000000007": {
+   "integrated_lufs": -10.89,
+   "name": "Keys",
+   "peak_dbfs": 2.54,
+   "short_term_max_lufs": -10.67
+  }
+ },
+ "warnings": []
+}

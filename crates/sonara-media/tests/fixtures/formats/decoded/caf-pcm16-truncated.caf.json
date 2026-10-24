@@ -1,0 +1,8 @@
+{
+ "dtype": "f64le",
+ "shape": [
+  8747,
+  2
+ ],
+ "source": "inputs/caf-pcm16-truncated.caf"
+}

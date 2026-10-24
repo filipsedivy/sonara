@@ -1,0 +1,8 @@
+{
+ "dtype": "f32le",
+ "shape": [
+  400,
+  2
+ ],
+ "source": "media/inputs/aiff-pcmu8.aiff"
+}

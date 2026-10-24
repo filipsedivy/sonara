@@ -1,0 +1,85 @@
+{
+ "config": "preset-lo-fi",
+ "params": {
+  "clap_decay": 0.25,
+  "cymbal_decay": 1.6,
+  "cymbal_level_db": -10.0,
+  "drive": 0.6,
+  "gain_db": -9.0,
+  "hat_decay": 0.8,
+  "hat_level_db": -9.0,
+  "hat_tune": 0.8,
+  "kick_decay": 0.5,
+  "kick_level_db": 0.0,
+  "kick_punch": 0.5,
+  "kick_tune": 48.0,
+  "perc_level_db": -6.0,
+  "snare_decay": 0.18,
+  "snare_level_db": -2.0,
+  "snare_tone": 0.4,
+  "snare_tune": 1.0,
+  "stereo_width": 1.0,
+  "tom_tune": 1.0
+ },
+ "plugin": "sonara.drums",
+ "renders": {
+  "kit": {
+   "notes": [
+    [
+     0.0,
+     0.1,
+     36,
+     120
+    ],
+    [
+     0.25,
+     0.1,
+     42,
+     80
+    ],
+    [
+     0.5,
+     0.1,
+     38,
+     110
+    ],
+    [
+     0.75,
+     0.1,
+     46,
+     90
+    ],
+    [
+     1.0,
+     0.1,
+     49,
+     100
+    ],
+    [
+     1.25,
+     0.1,
+     37,
+     70
+    ],
+    [
+     1.5,
+     0.1,
+     45,
+     100
+    ],
+    [
+     1.75,
+     0.1,
+     51,
+     60
+    ]
+   ],
+   "report": {
+    "active_hits": 2.0,
+    "ignored_notes": 0.0
+   },
+   "seconds": 2.5,
+   "tail_seconds": 2.5600000000000005
+  }
+ }
+}

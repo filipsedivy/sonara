@@ -1,0 +1,987 @@
+{
+ "format": "sonara.project",
+ "schema_version": 1,
+ "id": "prj_000000000002",
+ "name": "Coverage",
+ "settings": {
+  "sample_rate": 48000,
+  "length_beats": 64.0,
+  "record_subtype": "PCM_24"
+ },
+ "tempo_map": [
+  {
+   "beat": 0.0,
+   "bpm": 120.0,
+   "ramp": false
+  },
+  {
+   "beat": 48.0,
+   "bpm": 100.0,
+   "ramp": false
+  }
+ ],
+ "time_signatures": [
+  {
+   "bar": 0,
+   "numerator": 4,
+   "denominator": 4
+  }
+ ],
+ "tracks": [
+  {
+   "id": "trk_000000000003",
+   "name": "Piano",
+   "kind": "instrument",
+   "color": "#112233",
+   "output_id": "master",
+   "parent_id": null,
+   "mixer": {
+    "volume_db": 0.0,
+    "pan": 0.0,
+    "mute": false,
+    "solo": false,
+    "solo_safe": true
+   },
+   "input": {
+    "channels": [
+     0
+    ],
+    "armed": false,
+    "monitor": "auto"
+   },
+   "instrument": {
+    "id": "dev_000000000004",
+    "plugin_id": "sonara.synth.poly",
+    "name": "Sonara Poly Synth",
+    "enabled": true,
+    "params": {
+     "voice_mode": "poly",
+     "polyphony": 16,
+     "glide": 0.0,
+     "osc1_wave": "triangle",
+     "osc1_level": 0.8,
+     "osc1_octave": 0,
+     "osc1_detune": 0.0,
+     "osc2_wave": "sine",
+     "osc2_level": 0.5,
+     "osc2_octave": 1,
+     "osc2_semitone": 0,
+     "osc2_detune": 0.0,
+     "pulse_width": 0.5,
+     "noise_level": 0.0,
+     "unison": 1,
+     "unison_detune": 15.0,
+     "unison_spread": 0.7,
+     "filter_type": "lowpass",
+     "filter_cutoff": 2600.0,
+     "filter_resonance": 0.15,
+     "filter_env_amount": 1.5,
+     "filter_keytrack": 0.5,
+     "filter_attack": 0.005,
+     "filter_decay": 0.6,
+     "filter_sustain": 0.3,
+     "filter_release": 0.3,
+     "amp_attack": 0.002,
+     "amp_decay": 1.4,
+     "amp_sustain": 0.25,
+     "amp_release": 0.4,
+     "lfo_rate": 5.0,
+     "lfo_pitch_cents": 0.0,
+     "lfo_cutoff_oct": 0.0,
+     "velocity_sensitivity": 0.7,
+     "velocity_to_filter": 0.8,
+     "bend_range": 2,
+     "gain_db": -8.0
+    },
+    "sidechain_id": null,
+    "preset": "Electric Keys",
+    "state": {}
+   },
+   "inserts": [],
+   "sends": [],
+   "automation": [],
+   "clips": [
+    {
+     "type": "midi",
+     "id": "clp_000000000014",
+     "name": "Riff",
+     "start": 1.0,
+     "length": 2.5,
+     "content_offset": 1.0,
+     "loop_length": null,
+     "muted": false,
+     "color": null,
+     "notes": [
+      {
+       "id": "n_000000000011",
+       "pitch": 62,
+       "start": 0.0,
+       "length": 0.5,
+       "velocity": 33,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000012",
+       "pitch": 76,
+       "start": 1.0,
+       "length": 1.0,
+       "velocity": 100,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000013",
+       "pitch": 65,
+       "start": 2.5,
+       "length": 0.9,
+       "velocity": 64,
+       "channel": 0
+      }
+     ],
+     "controls": []
+    },
+    {
+     "type": "midi",
+     "id": "clp_000000000021",
+     "name": "Riff B",
+     "start": 4.0,
+     "length": 4.0,
+     "content_offset": 4.0,
+     "loop_length": 2.0,
+     "muted": false,
+     "color": null,
+     "notes": [
+      {
+       "id": "n_000000000011",
+       "pitch": 62,
+       "start": 0.0,
+       "length": 0.5,
+       "velocity": 33,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000012",
+       "pitch": 76,
+       "start": 1.0,
+       "length": 1.0,
+       "velocity": 100,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000013",
+       "pitch": 65,
+       "start": 2.5,
+       "length": 0.9,
+       "velocity": 64,
+       "channel": 0
+      }
+     ],
+     "controls": []
+    }
+   ]
+  },
+  {
+   "id": "trk_000000000005",
+   "name": "Lead",
+   "kind": "instrument",
+   "color": null,
+   "output_id": "master",
+   "parent_id": null,
+   "mixer": {
+    "volume_db": 0.0,
+    "pan": 0.0,
+    "mute": false,
+    "solo": false,
+    "solo_safe": false
+   },
+   "input": {
+    "channels": [
+     0
+    ],
+    "armed": false,
+    "monitor": "auto"
+   },
+   "instrument": {
+    "id": "dev_000000000006",
+    "plugin_id": "sonara.synth.poly",
+    "name": "Sonara Poly Synth",
+    "enabled": true,
+    "params": {
+     "voice_mode": "poly",
+     "polyphony": 16,
+     "glide": 0.0,
+     "osc1_wave": "saw",
+     "osc1_level": 0.8,
+     "osc1_octave": 0,
+     "osc1_detune": 0.0,
+     "osc2_wave": "square",
+     "osc2_level": 0.3,
+     "osc2_octave": 1,
+     "osc2_semitone": 0,
+     "osc2_detune": 7.0,
+     "pulse_width": 0.5,
+     "noise_level": 0.0,
+     "unison": 1,
+     "unison_detune": 15.0,
+     "unison_spread": 0.7,
+     "filter_type": "lowpass",
+     "filter_cutoff": 600.0,
+     "filter_resonance": 0.15,
+     "filter_env_amount": 4.0,
+     "filter_keytrack": 0.5,
+     "filter_attack": 0.005,
+     "filter_decay": 0.18,
+     "filter_sustain": 0.0,
+     "filter_release": 0.3,
+     "amp_attack": 0.001,
+     "amp_decay": 0.45,
+     "amp_sustain": 0.0,
+     "amp_release": 0.25,
+     "lfo_rate": 5.0,
+     "lfo_pitch_cents": 0.0,
+     "lfo_cutoff_oct": 0.0,
+     "velocity_sensitivity": 0.7,
+     "velocity_to_filter": 0.3,
+     "bend_range": 2,
+     "gain_db": -8.0
+    },
+    "sidechain_id": null,
+    "preset": "Pluck",
+    "state": {}
+   },
+   "inserts": [],
+   "sends": [],
+   "automation": [],
+   "clips": [
+    {
+     "type": "midi",
+     "id": "clp_000000000018",
+     "name": "MIDI",
+     "start": 8.0,
+     "length": 4.0,
+     "content_offset": 0.0,
+     "loop_length": null,
+     "muted": false,
+     "color": null,
+     "notes": [
+      {
+       "id": "n_000000000019",
+       "pitch": 48,
+       "start": 0.0,
+       "length": 2.0,
+       "velocity": 100,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000020",
+       "pitch": 55,
+       "start": 2.0,
+       "length": 2.0,
+       "velocity": 80,
+       "channel": 0
+      }
+     ],
+     "controls": []
+    },
+    {
+     "type": "midi",
+     "id": "clp_000000000023",
+     "name": "MIDI",
+     "start": 12.0,
+     "length": 4.0,
+     "content_offset": 0.0,
+     "loop_length": null,
+     "muted": false,
+     "color": null,
+     "notes": [
+      {
+       "id": "n_000000000019",
+       "pitch": 48,
+       "start": 0.0,
+       "length": 2.0,
+       "velocity": 100,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000020",
+       "pitch": 55,
+       "start": 2.0,
+       "length": 2.0,
+       "velocity": 80,
+       "channel": 0
+      }
+     ],
+     "controls": []
+    }
+   ]
+  },
+  {
+   "id": "trk_000000000007",
+   "name": "FX Bus",
+   "kind": "bus",
+   "color": null,
+   "output_id": "master",
+   "parent_id": null,
+   "mixer": {
+    "volume_db": 0.0,
+    "pan": 0.0,
+    "mute": false,
+    "solo": false,
+    "solo_safe": false
+   },
+   "input": {
+    "channels": [
+     0
+    ],
+    "armed": false,
+    "monitor": "auto"
+   },
+   "instrument": null,
+   "inserts": [],
+   "sends": [],
+   "automation": [],
+   "clips": []
+  },
+  {
+   "id": "trk_000000000027",
+   "name": "Tone",
+   "kind": "audio",
+   "color": null,
+   "output_id": "master",
+   "parent_id": null,
+   "mixer": {
+    "volume_db": 0.0,
+    "pan": 0.0,
+    "mute": false,
+    "solo": false,
+    "solo_safe": false
+   },
+   "input": {
+    "channels": [
+     0
+    ],
+    "armed": false,
+    "monitor": "auto"
+   },
+   "instrument": null,
+   "inserts": [
+    {
+     "id": "dev_000000000049",
+     "plugin_id": "sonara.convolver",
+     "name": "Convolution Reverb",
+     "enabled": true,
+     "params": {
+      "mix": 0.4,
+      "gain_db": 0.0,
+      "input": "mono_sum",
+      "normalize": false
+     },
+     "sidechain_id": null,
+     "preset": null,
+     "state": {
+      "ir_asset_id": "med_000000000050"
+     }
+    }
+   ],
+   "sends": [],
+   "automation": [],
+   "clips": [
+    {
+     "type": "audio",
+     "id": "clp_000000000029",
+     "name": "tone-48k-stereo-24bit",
+     "asset_id": "med_000000000026",
+     "start": 4.0,
+     "length": 2.0,
+     "source_offset": 0,
+     "gain_db": -6.0,
+     "fade_in": {
+      "seconds": 0.1,
+      "curve": "equal_power"
+     },
+     "fade_out": {
+      "seconds": 0.0,
+      "curve": "linear"
+     },
+     "muted": false,
+     "color": null
+    },
+    {
+     "type": "audio",
+     "id": "clp_000000000045",
+     "name": "tone-48k-stereo-24bit",
+     "asset_id": "med_000000000026",
+     "start": 6.0,
+     "length": 2.0,
+     "source_offset": 48000,
+     "gain_db": -6.0,
+     "fade_in": {
+      "seconds": 0.0,
+      "curve": "linear"
+     },
+     "fade_out": {
+      "seconds": 0.2,
+      "curve": "equal_power"
+     },
+     "muted": false,
+     "color": null
+    },
+    {
+     "type": "audio",
+     "id": "clp_000000000031",
+     "name": "tone-44k1-mono-16bit",
+     "asset_id": "med_000000000030",
+     "start": 16.5,
+     "length": 2.0,
+     "source_offset": 11025,
+     "gain_db": 0.0,
+     "fade_in": {
+      "seconds": 0.0,
+      "curve": "linear"
+     },
+     "fade_out": {
+      "seconds": 0.0,
+      "curve": "linear"
+     },
+     "muted": false,
+     "color": null
+    }
+   ]
+  },
+  {
+   "id": "trk_000000000034",
+   "name": "Chord",
+   "kind": "audio",
+   "color": null,
+   "output_id": "master",
+   "parent_id": null,
+   "mixer": {
+    "volume_db": 0.0,
+    "pan": 0.0,
+    "mute": false,
+    "solo": false,
+    "solo_safe": false
+   },
+   "input": {
+    "channels": [
+     0
+    ],
+    "armed": false,
+    "monitor": "auto"
+   },
+   "instrument": null,
+   "inserts": [],
+   "sends": [],
+   "automation": [],
+   "clips": [
+    {
+     "type": "audio",
+     "id": "clp_000000000036",
+     "name": "chord-48k-stereo",
+     "asset_id": "med_000000000033",
+     "start": 8.0,
+     "length": 2.0,
+     "source_offset": 0,
+     "gain_db": 0.0,
+     "fade_in": {
+      "seconds": 0.0,
+      "curve": "linear"
+     },
+     "fade_out": {
+      "seconds": 0.25,
+      "curve": "s_curve"
+     },
+     "muted": false,
+     "color": null
+    },
+    {
+     "type": "audio",
+     "id": "clp_000000000046",
+     "name": "chord-48k-stereo",
+     "asset_id": "med_000000000033",
+     "start": 10.0,
+     "length": 2.0,
+     "source_offset": 0,
+     "gain_db": 0.0,
+     "fade_in": {
+      "seconds": 0.0,
+      "curve": "linear"
+     },
+     "fade_out": {
+      "seconds": 0.25,
+      "curve": "s_curve"
+     },
+     "muted": false,
+     "color": null
+    },
+    {
+     "type": "audio",
+     "id": "clp_000000000048",
+     "name": "tone-48k-stereo-24bit",
+     "asset_id": "med_000000000026",
+     "start": 24.0,
+     "length": 2.0,
+     "source_offset": 48000,
+     "gain_db": -6.0,
+     "fade_in": {
+      "seconds": 0.0,
+      "curve": "linear"
+     },
+     "fade_out": {
+      "seconds": 0.2,
+      "curve": "equal_power"
+     },
+     "muted": false,
+     "color": null
+    }
+   ]
+  },
+  {
+   "id": "trk_000000000039",
+   "name": "saw-44k1-stereo",
+   "kind": "audio",
+   "color": null,
+   "output_id": "master",
+   "parent_id": null,
+   "mixer": {
+    "volume_db": 0.0,
+    "pan": 0.0,
+    "mute": false,
+    "solo": false,
+    "solo_safe": false
+   },
+   "input": {
+    "channels": [
+     0
+    ],
+    "armed": false,
+    "monitor": "auto"
+   },
+   "instrument": null,
+   "inserts": [],
+   "sends": [],
+   "automation": [],
+   "clips": [
+    {
+     "type": "audio",
+     "id": "clp_000000000041",
+     "name": "saw-44k1-stereo",
+     "asset_id": "med_000000000038",
+     "start": 20.0,
+     "length": 2.0,
+     "source_offset": 0,
+     "gain_db": 0.0,
+     "fade_in": {
+      "seconds": 0.05,
+      "curve": "exponential"
+     },
+     "fade_out": {
+      "seconds": 0.0,
+      "curve": "linear"
+     },
+     "muted": false,
+     "color": null
+    }
+   ]
+  },
+  {
+   "id": "trk_000000000078",
+   "name": "Lead",
+   "kind": "instrument",
+   "color": null,
+   "output_id": "master",
+   "parent_id": null,
+   "mixer": {
+    "volume_db": 0.0,
+    "pan": 0.0,
+    "mute": false,
+    "solo": false,
+    "solo_safe": false
+   },
+   "input": {
+    "channels": [
+     0
+    ],
+    "armed": false,
+    "monitor": "auto"
+   },
+   "instrument": {
+    "id": "dev_000000000079",
+    "plugin_id": "sonara.synth.poly",
+    "name": "Sonara Poly Synth",
+    "enabled": true,
+    "params": {
+     "voice_mode": "poly",
+     "polyphony": 16,
+     "glide": 0.0,
+     "osc1_wave": "triangle",
+     "osc1_level": 0.8,
+     "osc1_octave": 0,
+     "osc1_detune": 0.0,
+     "osc2_wave": "sine",
+     "osc2_level": 0.5,
+     "osc2_octave": 1,
+     "osc2_semitone": 0,
+     "osc2_detune": 0.0,
+     "pulse_width": 0.5,
+     "noise_level": 0.0,
+     "unison": 1,
+     "unison_detune": 15.0,
+     "unison_spread": 0.7,
+     "filter_type": "lowpass",
+     "filter_cutoff": 2600.0,
+     "filter_resonance": 0.15,
+     "filter_env_amount": 1.5,
+     "filter_keytrack": 0.5,
+     "filter_attack": 0.005,
+     "filter_decay": 0.6,
+     "filter_sustain": 0.3,
+     "filter_release": 0.3,
+     "amp_attack": 0.002,
+     "amp_decay": 1.4,
+     "amp_sustain": 0.25,
+     "amp_release": 0.4,
+     "lfo_rate": 5.0,
+     "lfo_pitch_cents": 0.0,
+     "lfo_cutoff_oct": 0.0,
+     "velocity_sensitivity": 0.7,
+     "velocity_to_filter": 0.8,
+     "bend_range": 2,
+     "gain_db": -8.0
+    },
+    "sidechain_id": null,
+    "preset": "Electric Keys",
+    "state": {}
+   },
+   "inserts": [],
+   "sends": [],
+   "automation": [],
+   "clips": [
+    {
+     "type": "midi",
+     "id": "clp_000000000080",
+     "name": "Lead",
+     "start": 32.0,
+     "length": 4.0,
+     "content_offset": 0.0,
+     "loop_length": null,
+     "muted": false,
+     "color": null,
+     "notes": [
+      {
+       "id": "n_000000000065",
+       "pitch": 60,
+       "start": 0.0,
+       "length": 1.0,
+       "velocity": 90,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000066",
+       "pitch": 64,
+       "start": 1.0,
+       "length": 1.0,
+       "velocity": 80,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000067",
+       "pitch": 67,
+       "start": 2.0,
+       "length": 1.0,
+       "velocity": 100,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000068",
+       "pitch": 72,
+       "start": 3.0,
+       "length": 1.0,
+       "velocity": 70,
+       "channel": 0
+      }
+     ],
+     "controls": []
+    }
+   ]
+  },
+  {
+   "id": "trk_000000000081",
+   "name": "Beat (Drums)",
+   "kind": "instrument",
+   "color": null,
+   "output_id": "master",
+   "parent_id": null,
+   "mixer": {
+    "volume_db": 0.0,
+    "pan": 0.0,
+    "mute": false,
+    "solo": false,
+    "solo_safe": false
+   },
+   "input": {
+    "channels": [
+     0
+    ],
+    "armed": false,
+    "monitor": "auto"
+   },
+   "instrument": {
+    "id": "dev_000000000082",
+    "plugin_id": "sonara.drums",
+    "name": "Sonara Drum Kit",
+    "enabled": true,
+    "params": {
+     "kick_tune": 55.0,
+     "kick_decay": 0.35,
+     "kick_punch": 0.8,
+     "snare_tune": 1.1,
+     "snare_tone": 0.55,
+     "snare_decay": 0.2,
+     "hat_tune": 1.15,
+     "hat_decay": 1.0,
+     "clap_decay": 0.25,
+     "tom_tune": 1.0,
+     "cymbal_decay": 1.6,
+     "drive": 0.25,
+     "kick_level_db": 0.0,
+     "snare_level_db": -2.0,
+     "hat_level_db": -9.0,
+     "cymbal_level_db": -10.0,
+     "perc_level_db": -6.0,
+     "stereo_width": 1.0,
+     "gain_db": -9.0
+    },
+    "sidechain_id": null,
+    "preset": "Punchy 909",
+    "state": {}
+   },
+   "inserts": [],
+   "sends": [],
+   "automation": [],
+   "clips": [
+    {
+     "type": "midi",
+     "id": "clp_000000000083",
+     "name": "Beat (Drums)",
+     "start": 32.0,
+     "length": 4.0,
+     "content_offset": 0.0,
+     "loop_length": null,
+     "muted": false,
+     "color": null,
+     "notes": [
+      {
+       "id": "n_000000000069",
+       "pitch": 36,
+       "start": 0.0,
+       "length": 0.5,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000070",
+       "pitch": 42,
+       "start": 0.5,
+       "length": 0.5,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000071",
+       "pitch": 38,
+       "start": 1.0,
+       "length": 0.5,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000072",
+       "pitch": 42,
+       "start": 1.5,
+       "length": 0.5,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000073",
+       "pitch": 36,
+       "start": 2.0,
+       "length": 0.5,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000074",
+       "pitch": 36,
+       "start": 2.5,
+       "length": 0.5,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000075",
+       "pitch": 38,
+       "start": 3.0,
+       "length": 0.5,
+       "velocity": 110,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000076",
+       "pitch": 46,
+       "start": 3.5,
+       "length": 0.5,
+       "velocity": 110,
+       "channel": 0
+      }
+     ],
+     "controls": []
+    }
+   ]
+  }
+ ],
+ "master": {
+  "id": "master",
+  "name": "Master",
+  "kind": "master",
+  "color": null,
+  "output_id": null,
+  "parent_id": null,
+  "mixer": {
+   "volume_db": 0.0,
+   "pan": 0.0,
+   "mute": false,
+   "solo": false,
+   "solo_safe": false
+  },
+  "input": {
+   "channels": [
+    0
+   ],
+   "armed": false,
+   "monitor": "auto"
+  },
+  "instrument": null,
+  "inserts": [],
+  "sends": [],
+  "automation": [],
+  "clips": []
+ },
+ "assets": [
+  {
+   "id": "med_000000000026",
+   "kind": "audio",
+   "name": "tone-48k-stereo-24bit.wav",
+   "path": "media/audio/med_000000000026-tone-48k-stereo-24bit.wav",
+   "location": "embedded",
+   "size_bytes": 576044,
+   "sha256": "77f1f43332d8c3c547f544ac6ae3101316d6fdbe12c341eb29a6028977f5d0bf",
+   "sample_rate": 48000,
+   "channels": 2,
+   "frames": 96000,
+   "format": "WAV",
+   "subtype": "PCM_24",
+   "original_path": "<ROOT>/inputs/tone-48k-stereo-24bit.wav",
+   "relative_hint": null,
+   "metadata": {}
+  },
+  {
+   "id": "med_000000000030",
+   "kind": "audio",
+   "name": "tone-44k1-mono-16bit.wav",
+   "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav",
+   "location": "linked",
+   "size_bytes": 132344,
+   "sha256": "771f9498cc8ad71f19fdb0aed6052355a770897aea1b3bb12283ffc5768a9163",
+   "sample_rate": 44100,
+   "channels": 1,
+   "frames": 66150,
+   "format": "WAV",
+   "subtype": "PCM_16",
+   "original_path": "<ROOT>/inputs/tone-44k1-mono-16bit.wav",
+   "relative_hint": null,
+   "metadata": {}
+  },
+  {
+   "id": "med_000000000033",
+   "kind": "audio",
+   "name": "chord-48k-stereo.flac",
+   "path": "media/audio/med_000000000033-chord-48k-stereo.flac",
+   "location": "embedded",
+   "size_bytes": 33667,
+   "sha256": "d713f5c2eb74d1c5f2b3012323c45ba705474c35c2855bf16267f41cf1153093",
+   "sample_rate": 48000,
+   "channels": 2,
+   "frames": 48000,
+   "format": "FLAC",
+   "subtype": "PCM_16",
+   "original_path": "<ROOT>/inputs/chord-48k-stereo.flac",
+   "relative_hint": null,
+   "metadata": {}
+  },
+  {
+   "id": "med_000000000038",
+   "kind": "audio",
+   "name": "saw-44k1-stereo.mp3",
+   "path": "media/audio/med_000000000038-saw-44k1-stereo.mp3",
+   "location": "embedded",
+   "size_bytes": 9839,
+   "sha256": "2a4be49792d94ed855f07509dce29505139ec7edfbab1e29bbaa5f2f33a69e5a",
+   "sample_rate": 44100,
+   "channels": 2,
+   "frames": 44100,
+   "format": "MP3",
+   "subtype": "MPEG_LAYER_III",
+   "original_path": "<ROOT>/inputs/saw-44k1-stereo.mp3",
+   "relative_hint": null,
+   "metadata": {}
+  },
+  {
+   "id": "med_000000000050",
+   "kind": "impulse",
+   "name": "ir-48k-stereo-float.wav",
+   "path": "media/impulses/med_000000000050-ir-48k-stereo-float.wav",
+   "location": "embedded",
+   "size_bytes": 192056,
+   "sha256": "f26fc00c14259c07feea8022ec20622b125fa98b0ece1ea5fb6dfc3ab3dcfcce",
+   "sample_rate": 48000,
+   "channels": 2,
+   "frames": 24000,
+   "format": "WAV",
+   "subtype": "FLOAT",
+   "original_path": "<ROOT>/inputs/ir-48k-stereo-float.wav",
+   "relative_hint": null,
+   "metadata": {}
+  }
+ ],
+ "markers": [
+  {
+   "id": "mrk_000000000077",
+   "beat": 64.0,
+   "name": "Bridge",
+   "color": null
+  }
+ ],
+ "sections": [],
+ "transport": {
+  "loop_enabled": true,
+  "loop_start": 4.0,
+  "loop_end": 12.0,
+  "punch_enabled": false,
+  "punch_in": 0.0,
+  "punch_out": 16.0,
+  "metronome": false,
+  "count_in_bars": 0
+ },
+ "metadata": {
+  "title": "Coverage",
+  "artist": "",
+  "album": "",
+  "genre": "",
+  "composer": "",
+  "comment": "",
+  "created": "2026-01-01T12:00:00Z",
+  "modified": ""
+ },
+ "editor": {}
+}

@@ -1,0 +1,8 @@
+{
+ "dtype": "f32le",
+ "shape": [
+  4800,
+  2
+ ],
+ "source": "media/inputs/wav-pcm16-tagged.wav"
+}

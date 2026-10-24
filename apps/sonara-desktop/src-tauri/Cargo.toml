@@ -1,0 +1,64 @@
+[package]
+name = "sonara-desktop"
+description = "The Sonara desktop application: the Tauri 2 shell around sonara-app (ADR 0009)"
+# The bundle takes this version: tauri.conf.json has none (VER-01).
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+# A thin crate (ARC-01, QG-06): windows, the menu, Tauri commands and the
+# start and stop of the IPC server. Everything with logic lives in sonara-app and sonara-agent,
+# whose tests run in the development container; this crate builds on macOS only.
+
+[build-dependencies]
+# Generates the Tauri context: the configuration, the capabilities and the embedded frontend.
+tauri-build.workspace = true
+
+[dependencies]
+# `--audio`, `--no-ipc`, `--log-level` and the project argument.
+clap.workspace = true
+# The logger of `logs/sonara.log` and stderr, with the prototype's line format.
+env_logger.workspace = true
+# Local time stamps of log lines (`%(asctime)s`).
+jiff = { workspace = true, features = ["tz-system", "tzdb-zoneinfo"] }
+log.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+# The IPC server inside the desktop process (app kind `gui`) and its agent service.
+sonara-agent.workspace = true
+# The application: one session, projects, autosave, the event pump and the window layout.
+sonara-app.workspace = true
+tauri.workspace = true
+# Native message boxes (the unsaved-changes prompt) and the save panel.
+tauri-plugin-dialog.workspace = true
+
+# App Nap opt-out (NSProcessInfo activity) and the close button's dot of unsaved changes
+# (NSWindow.setDocumentEdited): safe bindings, no `unsafe`.
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2.workspace = true
+objc2-app-kit.workspace = true
+objc2-foundation.workspace = true
+
+[features]
+# The timeline benchmark's hook (`src/bench.rs`, scripts/bench-timeline.mjs); never in a release
+# bundle. Its menu and key hooks read the native menu bar and post key events through
+# AppKit's safe bindings: objc2-app-kit's features of NSEvent, NSMenu, NSMenuItem and NSCell are on
+# through Tauri's menu library already, NSGraphicsContext (the key event's constructor) only adds
+# objc2-foundation features; no new crate.
+bench = [
+    "objc2-app-kit/NSCell",
+    "objc2-app-kit/NSEvent",
+    "objc2-app-kit/NSGraphicsContext",
+    "objc2-app-kit/NSMenu",
+    "objc2-app-kit/NSMenuItem",
+]
+
+[dev-dependencies]
+serde_json.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true

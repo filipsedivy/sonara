@@ -1,0 +1,9 @@
+{
+ "dtype": "f32le",
+ "sample_rate": 176400,
+ "shape": [
+  8192,
+  1
+ ],
+ "signal": "sine"
+}

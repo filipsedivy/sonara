@@ -1,0 +1,24 @@
+{
+ "format": "sonara.manifest",
+ "format_version": 1,
+ "sonara_version": "0.1.0",
+ "project_id": "prj_000000000001",
+ "saved": "2026-01-01T12:00:00Z",
+ "required_features": [
+  "automation",
+  "core",
+  "midi-clips",
+  "sections",
+  "sends",
+  "tempo-ramps"
+ ],
+ "project_file": {
+  "path": "project.json",
+  "sha256": "d080ed0e7cdfe239d88ab046d3dd94ba440a8e5ba5bb736bb501d9c0f31a7d80",
+  "size": 308002
+ },
+ "assets": [],
+ "compatibility": {
+  "min_reader_version": 1
+ }
+}

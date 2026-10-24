@@ -1,0 +1,46 @@
+{
+ "config": "preset-small-room",
+ "params": {
+  "character": "room",
+  "damping": 0.5,
+  "decay_s": 0.6,
+  "highcut_hz": 12000.0,
+  "lowcut_hz": 120.0,
+  "mix": 0.2,
+  "predelay_ms": 5.0,
+  "width": 1.0
+ },
+ "plugin": "sonara.reverb",
+ "renders": {
+  "clipped": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 1.2
+  },
+  "impulse": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 1.2
+  },
+  "noise": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 1.2
+  },
+  "silence": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 1.2
+  },
+  "sine-1k": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 1.2
+  },
+  "sweep": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 1.2
+  }
+ }
+}

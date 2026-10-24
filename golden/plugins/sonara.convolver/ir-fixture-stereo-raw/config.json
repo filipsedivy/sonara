@@ -1,0 +1,48 @@
+{
+ "call_order": [
+  "prepare",
+  "set_params",
+  "set_state"
+ ],
+ "config": "ir-fixture-stereo-raw",
+ "impulse_response": "fixtures/ir-48k-stereo-float.wav",
+ "params": {
+  "gain_db": -6.0,
+  "input": "stereo",
+  "mix": 1.0,
+  "normalize": false
+ },
+ "plugin": "sonara.convolver",
+ "renders": {
+  "clipped": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.5
+  },
+  "impulse": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.5
+  },
+  "noise": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.5
+  },
+  "silence": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.5
+  },
+  "sine-1k": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.5
+  },
+  "sweep": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.5
+  }
+ }
+}

@@ -1,0 +1,55 @@
+{
+ "config": "preset-streaming-loud",
+ "params": {
+  "ceiling_db": -1.0,
+  "input_gain_db": 4.0,
+  "lookahead_ms": 2.0,
+  "release_ms": 80.0,
+  "true_peak": true
+ },
+ "plugin": "sonara.dynamics.limiter",
+ "renders": {
+  "clipped": {
+   "latency": 102,
+   "report": {
+    "gain_reduction_db": 5.1780709936149405
+   },
+   "tail_seconds": 0.0
+  },
+  "impulse": {
+   "latency": 102,
+   "report": {
+    "gain_reduction_db": 5.956554328173424e-11
+   },
+   "tail_seconds": 0.0
+  },
+  "noise": {
+   "latency": 102,
+   "report": {
+    "gain_reduction_db": 10.258534458786944
+   },
+   "tail_seconds": 0.0
+  },
+  "silence": {
+   "latency": 102,
+   "report": {
+    "gain_reduction_db": -0.0
+   },
+   "tail_seconds": 0.0
+  },
+  "sine-1k": {
+   "latency": 102,
+   "report": {
+    "gain_reduction_db": -0.0
+   },
+   "tail_seconds": 0.0
+  },
+  "sweep": {
+   "latency": 102,
+   "report": {
+    "gain_reduction_db": -0.0
+   },
+   "tail_seconds": 0.0
+  }
+ }
+}

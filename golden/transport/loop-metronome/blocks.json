@@ -1,0 +1,1277 @@
+{
+ "block_frames": 512,
+ "blocks": [
+  {
+   "clicks": [
+    [
+     40,
+     true
+    ]
+   ],
+   "frames": 512,
+   "generation": 2,
+   "tag": 95960
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 96472
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 96984
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 97496
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 98008
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 98520
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 99032
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 99544
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 100056
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 100568
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 101080
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 101592
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 102104
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 102616
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 103128
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 103640
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 104152
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 104664
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 105176
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 105688
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 106200
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 106712
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 107224
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 107736
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 108248
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 108760
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 109272
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 109784
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 110296
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 110808
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 111320
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 111832
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 112344
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 112856
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 113368
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 113880
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 114392
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 114904
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 115416
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 115928
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 116440
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 116952
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 117464
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 117976
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 118488
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 119000
+  },
+  {
+   "clicks": [
+    [
+     488,
+     false
+    ]
+   ],
+   "frames": 512,
+   "generation": 2,
+   "tag": 119512
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 120024
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 120536
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 121048
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 121560
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 122072
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 122584
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 123096
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 123608
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 124120
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 124632
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 125144
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 125656
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 126168
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 126680
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 127192
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 127704
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 128216
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 128728
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 129240
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 129752
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 130264
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 130776
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 131288
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 131800
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 132312
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 132824
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 133336
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 133848
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 134360
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 134872
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 135384
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 135896
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 136408
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 136920
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 137432
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 137944
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 138456
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 138968
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 139480
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 139992
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 140504
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 141016
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 141528
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 142040
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 142552
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 143064
+  },
+  {
+   "chunks": [
+    [
+     143576,
+     324
+    ],
+    [
+     95960,
+     188
+    ]
+   ],
+   "clicks": [
+    [
+     424,
+     false
+    ]
+   ],
+   "frames": 512,
+   "generation": 2,
+   "per_chunk_clicks": [
+    [
+     364,
+     true
+    ]
+   ],
+   "prototype_defect": "D8",
+   "tag": 143576
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "prototype_defect": "D8",
+   "tag": 96148
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "prototype_defect": "D8",
+   "tag": 96660
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "prototype_defect": "D8",
+   "tag": 97172
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 97684
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 98196
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 98708
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 99220
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 99732
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 100244
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 100756
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 101268
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 101780
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 102292
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 102804
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 103316
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 103828
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 104340
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 104852
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 105364
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 105876
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 106388
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 106900
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 107412
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 107924
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 108436
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 108948
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 109460
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 109972
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 110484
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 110996
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 111508
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 112020
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 112532
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 113044
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 113556
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 114068
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 114580
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 115092
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 115604
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 116116
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 116628
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 117140
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 117652
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 118164
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 118676
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 119188
+  },
+  {
+   "clicks": [
+    [
+     300,
+     false
+    ]
+   ],
+   "frames": 512,
+   "generation": 2,
+   "tag": 119700
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 120212
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 120724
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 121236
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 121748
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 122260
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 122772
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 123284
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 123796
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 124308
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 124820
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 125332
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 125844
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 126356
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 126868
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 127380
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 127892
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 128404
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 128916
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 129428
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 129940
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 130452
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 130964
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 131476
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 131988
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 132500
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 133012
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 133524
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 134036
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 134548
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 135060
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 135572
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 136084
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 136596
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 137108
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 137620
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 138132
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 138644
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 139156
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 139668
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 140180
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 140692
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 141204
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 141716
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 142228
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 142740
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 143252
+  },
+  {
+   "chunks": [
+    [
+     143764,
+     136
+    ],
+    [
+     95960,
+     376
+    ]
+   ],
+   "clicks": [
+    [
+     236,
+     false
+    ]
+   ],
+   "frames": 512,
+   "generation": 2,
+   "per_chunk_clicks": [
+    [
+     176,
+     true
+    ]
+   ],
+   "prototype_defect": "D8",
+   "tag": 143764
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "prototype_defect": "D8",
+   "tag": 96336
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "prototype_defect": "D8",
+   "tag": 96848
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "prototype_defect": "D8",
+   "tag": 97360
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 97872
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 98384
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 98896
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 99408
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 99920
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 100432
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 100944
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 101456
+  },
+  {
+   "clicks": [],
+   "frames": 512,
+   "generation": 2,
+   "tag": 101968
+  }
+ ],
+ "dtype": "f32le",
+ "sample_rate": 48000,
+ "shape": [
+  200,
+  512,
+  2
+ ]
+}

@@ -1,0 +1,181 @@
+{
+ "backend": "native/Null",
+ "graph_latency": 0,
+ "loop_frames": [
+  95960,
+  143900
+ ],
+ "project": "transport/loop-metronome/project.json",
+ "scenario": "loop-metronome",
+ "settings": {
+  "backend": "native-null",
+  "buffer_frames": 256,
+  "input_channels": 2,
+  "input_device": null,
+  "live_lookahead_ms": 25.0,
+  "lookahead_ms": 80.0,
+  "midi_inputs": null,
+  "output_channels": 2,
+  "output_device": null,
+  "sample_rate": 48000
+ },
+ "steps": [
+  {
+   "args": {
+    "end": 5.995833333333334,
+    "loop": true,
+    "start": 3.9983333333333335
+   },
+   "backend": [
+    [
+     "start",
+     {
+      "obtained": {
+       "buffer_frames": 256,
+       "input_channels": 0,
+       "input_device": null,
+       "output_channels": 2,
+       "output_device": null,
+       "ring_frames": 7680,
+       "sample_rate": 48000
+      },
+      "requested": {
+       "buffer_frames": 256,
+       "input_channels": 0,
+       "input_device": null,
+       "output_channels": 2,
+       "output_device": null,
+       "ring_frames": 7680,
+       "sample_rate": 48000
+      }
+     }
+    ],
+    [
+     "flush",
+     2
+    ]
+   ],
+   "call": "play_preview",
+   "result": {
+    "bar_beat": "<VOLATILE>",
+    "buffer_frames": 256,
+    "callback_load": "<VOLATILE>",
+    "device_errors": 0,
+    "device_sample_rate": 48000,
+    "lookahead_ms": 80.0,
+    "loop": [
+     95960,
+     143900
+    ],
+    "ok": true,
+    "output_latency_estimate_ms": 16.0,
+    "position_beat": "<VOLATILE>",
+    "position_seconds": "<VOLATILE>",
+    "queued_ms": "<VOLATILE>",
+    "render_load": "<VOLATILE>",
+    "state": "playing",
+    "tool": "play_preview",
+    "underruns": "<VOLATILE>"
+   },
+   "via": "tool",
+   "volatile": [
+    "bar_beat",
+    "callback_load",
+    "position_beat",
+    "position_seconds",
+    "queued_ms",
+    "render_load",
+    "underruns"
+   ]
+  },
+  {
+   "backend": [
+    [
+     "write",
+     0,
+     0
+    ],
+    [
+     "set_playing",
+     true
+    ],
+    [
+     "write",
+     1,
+     199
+    ]
+   ],
+   "blocks": [
+    0,
+    200
+   ],
+   "until": "blocks",
+   "via": "render"
+  },
+  {
+   "args": [],
+   "backend": [],
+   "call": "status",
+   "result": {
+    "available": true,
+    "backend": "native/Null",
+    "bar_beat": "<VOLATILE>",
+    "buffer_frames": 256,
+    "callback_load": "<VOLATILE>",
+    "device_errors": 0,
+    "device_sample_rate": 48000,
+    "lookahead_ms": 80.0,
+    "loop": [
+     95960,
+     143900
+    ],
+    "output_latency_estimate_ms": 16.0,
+    "position_beat": "<VOLATILE>",
+    "position_seconds": "<VOLATILE>",
+    "queued_ms": "<VOLATILE>",
+    "render_load": "<VOLATILE>",
+    "state": "playing",
+    "underruns": "<VOLATILE>"
+   },
+   "via": "service",
+   "volatile": [
+    "bar_beat",
+    "callback_load",
+    "position_beat",
+    "position_seconds",
+    "queued_ms",
+    "render_load",
+    "underruns"
+   ]
+  },
+  {
+   "args": {},
+   "backend": [
+    [
+     "flush",
+     3
+    ],
+    [
+     "set_playing",
+     false
+    ]
+   ],
+   "call": "stop_playback",
+   "result": {
+    "bar_beat": "<VOLATILE>",
+    "ok": true,
+    "position_beat": "<VOLATILE>",
+    "position_seconds": "<VOLATILE>",
+    "stopped": true,
+    "tool": "stop_playback",
+    "was_playing": true
+   },
+   "via": "tool",
+   "volatile": [
+    "bar_beat",
+    "position_beat",
+    "position_seconds"
+   ]
+  }
+ ]
+}

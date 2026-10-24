@@ -1,0 +1,38 @@
+/* The panels' colours are custom properties that src/lib/theme.svelte.ts sets on the root at
+   startup, from the prototype's dark or light palette (src/lib/theme.ts, A1); the canvases stay dark
+   in both and read src/lib/timeline/colors.ts. */
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  font-size: 13px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--window);
+  color: var(--text);
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}

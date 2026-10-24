@@ -1,0 +1,116 @@
+{
+ "analysis": {
+  "balance_db": 0.00011983172719725657,
+  "channels": 2,
+  "clip_events": 0,
+  "clipped_samples": 0,
+  "correlation": 0.9996528652399433,
+  "crest_factor_db": 15.712055128595075,
+  "dc_offset": [
+   0.000239,
+   0.00023
+  ],
+  "duration_seconds": "<VOLATILE>",
+  "integrated_lufs": -15.320822495242986,
+  "kind": {
+   "estimated": [
+    "true_peak_dbtp",
+    "plr_db"
+   ],
+   "measured": [
+    "sample_peak_dbfs",
+    "rms_dbfs",
+    "integrated_lufs",
+    "momentary_max_lufs",
+    "short_term_max_lufs",
+    "loudness_range_lu",
+    "clipped_samples",
+    "correlation",
+    "octave_bands_db"
+   ]
+  },
+  "leading_silence_seconds": 0.0,
+  "loudness_range_lu": 1.1576613041593795,
+  "min_correlation_400ms": 0.9884728816033619,
+  "momentary_max_lufs": -12.8551452054396,
+  "nonfinite_samples": 0,
+  "octave_bands_db": {
+   "1000": -18.758673369950518,
+   "125": -8.14687968086018,
+   "16000": -28.21599112503984,
+   "2000": -24.77992499443745,
+   "250": -5.383023811879245,
+   "31.5": -11.422314227532057,
+   "4000": -22.54795875119383,
+   "500": -7.362468022947624,
+   "63": -5.66134142118033,
+   "8000": -22.154353876846105
+  },
+  "over_full_scale_samples": 0,
+  "plr_db": 14.220822495242984,
+  "rms_dbfs": -16.812055128595077,
+  "sample_peak_dbfs": -1.1000000000000005,
+  "sample_rate": 48000,
+  "short_term_lufs": [
+   -14.85,
+   -15.39,
+   -15.52,
+   -16.0,
+   -15.9,
+   -15.92,
+   -15.47,
+   -15.51,
+   -15.22,
+   -15.41,
+   -15.2,
+   -15.25,
+   -14.77,
+   -14.73
+  ],
+  "short_term_max_lufs": -14.54689401864948,
+  "side_to_mid_db": -37.604563871523524,
+  "silence_regions": [
+   [
+    16.15,
+    16.7
+   ]
+  ],
+  "spectral_centroid_hz": 324.3792421234386,
+  "trailing_silence_seconds": 0.55,
+  "true_peak_dbtp": -1.1000000000000005
+ },
+ "issues": [],
+ "latency_samples": 102,
+ "missing_media": [],
+ "path": "<ROOT>/work/examples/output/mix_analysis/fixed.wav",
+ "range_beats": [
+  0.0,
+  32.0
+ ],
+ "realtime_factor": "<VOLATILE>",
+ "render_seconds": "<VOLATILE>",
+ "sample_rate": 48000,
+ "seconds": 16.702,
+ "tail_seconds": 0.702,
+ "track_levels": {
+  "trk_000000000003": {
+   "integrated_lufs": -23.77,
+   "name": "Drums",
+   "peak_dbfs": -9.48,
+   "short_term_max_lufs": -23.52
+  },
+  "trk_000000000005": {
+   "integrated_lufs": -18.73,
+   "name": "Bass",
+   "peak_dbfs": -4.06,
+   "short_term_max_lufs": -17.66
+  },
+  "trk_000000000007": {
+   "integrated_lufs": -18.89,
+   "name": "Keys",
+   "peak_dbfs": -5.46,
+   "short_term_max_lufs": -18.67
+  }
+ },
+ "warnings": []
+}

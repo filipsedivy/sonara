@@ -1,0 +1,3565 @@
+{
+ "fixtures/chord-48k-stereo.flac": {
+  "inspect": {
+   "bit_depth": 16,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 1.0,
+   "format": "FLAC",
+   "frames": 48000,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/fixtures/chord-48k-stereo.flac",
+   "sample_rate": 48000,
+   "size_bytes": 33667,
+   "subtype": "PCM_16"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "FLAC",
+   "frames": 48000,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_16"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "fixtures/ir-48k-stereo-float.wav": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 23950
+   },
+   {
+    "count": 20,
+    "start": 24010
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 32,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.5,
+   "format": "WAV",
+   "frames": 24000,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/fixtures/ir-48k-stereo-float.wav",
+   "sample_rate": 48000,
+   "size_bytes": 192056,
+   "subtype": "FLOAT"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "WAV",
+   "frames": 24000,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "FLOAT"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "fixtures/not-media.wav": {
+  "inspect_error": {
+   "code": "UNSUPPORTED",
+   "message": "not-media.wav: format not supported by libsndfile and FFmpeg is not installed (Error opening '<ROOT>/fixtures/not-media.wav': Format not recognised.)"
+  },
+  "sf_error": "Error opening '<ROOT>/fixtures/not-media.wav': Format not recognised."
+ },
+ "fixtures/saw-44k1-stereo.mp3": {
+  "inspect": {
+   "bit_depth": null,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 1.0,
+   "format": "MP3",
+   "frames": 44100,
+   "lossy": true,
+   "metadata": {},
+   "path": "<ROOT>/fixtures/saw-44k1-stereo.mp3",
+   "sample_rate": 44100,
+   "size_bytes": 9839,
+   "subtype": "MPEG_LAYER_III"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "MP3",
+   "frames": 44100,
+   "samplerate": 44100,
+   "sections": 1,
+   "subtype": "MPEG_LAYER_III"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "fixtures/tone-44k1-mono-16bit.wav": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 66100
+   },
+   {
+    "count": 20,
+    "start": 66160
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 16,
+   "channels": 1,
+   "decoder": "libsndfile",
+   "duration_seconds": 1.5,
+   "format": "WAV",
+   "frames": 66150,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/fixtures/tone-44k1-mono-16bit.wav",
+   "sample_rate": 44100,
+   "size_bytes": 132344,
+   "subtype": "PCM_16"
+  },
+  "sf_info": {
+   "channels": 1,
+   "endian": "FILE",
+   "format": "WAV",
+   "frames": 66150,
+   "samplerate": 44100,
+   "sections": 1,
+   "subtype": "PCM_16"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "fixtures/tone-48k-stereo-24bit.wav": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 95950
+   },
+   {
+    "count": 20,
+    "start": 96010
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 24,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 2.0,
+   "format": "WAV",
+   "frames": 96000,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/fixtures/tone-48k-stereo-24bit.wav",
+   "sample_rate": 48000,
+   "size_bytes": 576044,
+   "subtype": "PCM_24"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "WAV",
+   "frames": 96000,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_24"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/aiff-double.aiff": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 64,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "AIFF",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/aiff-double.aiff",
+   "sample_rate": 48000,
+   "size_bytes": 6472,
+   "subtype": "DOUBLE"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "AIFF",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "DOUBLE"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/aiff-float.aiff": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 32,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "AIFF",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/aiff-float.aiff",
+   "sample_rate": 48000,
+   "size_bytes": 3272,
+   "subtype": "FLOAT"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "AIFF",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "FLOAT"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/aiff-pcm16-tagged.aiff": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 4750
+   },
+   {
+    "count": 20,
+    "start": 4810
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 16,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.1,
+   "format": "AIFF",
+   "frames": 4800,
+   "lossy": false,
+   "metadata": {
+    "artist": "Ärtist",
+    "comment": "A comment, with commas",
+    "copyright": "(c) 2026 Owner",
+    "software": "Golden recorder (libsndfile-1.2.2)00",
+    "title": "Tíťle – Sonara"
+   },
+   "path": "<ROOT>/inputs/aiff-pcm16-tagged.aiff",
+   "sample_rate": 48000,
+   "size_bytes": 19394,
+   "subtype": "PCM_16"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "AIFF",
+   "frames": 4800,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_16"
+  },
+  "strings": {
+   "album": "",
+   "artist": "Ärtist",
+   "comment": "A comment, with commas",
+   "copyright": "(c) 2026 Owner",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "Golden recorder (libsndfile-1.2.2)00",
+   "title": "Tíťle – Sonara",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/aiff-pcm16.aiff": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 16,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "AIFF",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/aiff-pcm16.aiff",
+   "sample_rate": 48000,
+   "size_bytes": 1654,
+   "subtype": "PCM_16"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "AIFF",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_16"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/aiff-pcm24-mono.aiff": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 24,
+   "channels": 1,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "AIFF",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/aiff-pcm24-mono.aiff",
+   "sample_rate": 48000,
+   "size_bytes": 1254,
+   "subtype": "PCM_24"
+  },
+  "sf_info": {
+   "channels": 1,
+   "endian": "FILE",
+   "format": "AIFF",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_24"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/aiff-pcm24.aiff": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 24,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "AIFF",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/aiff-pcm24.aiff",
+   "sample_rate": 48000,
+   "size_bytes": 2454,
+   "subtype": "PCM_24"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "AIFF",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_24"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/aiff-pcm32.aiff": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 32,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "AIFF",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/aiff-pcm32.aiff",
+   "sample_rate": 48000,
+   "size_bytes": 3254,
+   "subtype": "PCM_32"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "AIFF",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_32"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/aiff-pcms8.aiff": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 8,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "AIFF",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/aiff-pcms8.aiff",
+   "sample_rate": 48000,
+   "size_bytes": 854,
+   "subtype": "PCM_S8"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "AIFF",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_S8"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/aiff-pcmu8.aiff": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 8,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "AIFF",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/aiff-pcmu8.aiff",
+   "sample_rate": 48000,
+   "size_bytes": 872,
+   "subtype": "PCM_U8"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "AIFF",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_U8"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/caf-alac16.caf": {
+  "inspect": {
+   "bit_depth": 16,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "CAF",
+   "frames": 400,
+   "lossy": true,
+   "metadata": {},
+   "path": "<ROOT>/inputs/caf-alac16.caf",
+   "sample_rate": 48000,
+   "size_bytes": 1752,
+   "subtype": "ALAC_16"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "CAF",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "ALAC_16"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/caf-alac24.caf": {
+  "inspect": {
+   "bit_depth": 24,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "CAF",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/caf-alac24.caf",
+   "sample_rate": 48000,
+   "size_bytes": 2552,
+   "subtype": "ALAC_24"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "CAF",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "ALAC_24"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/caf-double.caf": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 64,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "CAF",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/caf-double.caf",
+   "sample_rate": 48000,
+   "size_bytes": 10496,
+   "subtype": "DOUBLE"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "CAF",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "DOUBLE"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/caf-float.caf": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 32,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "CAF",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/caf-float.caf",
+   "sample_rate": 48000,
+   "size_bytes": 7296,
+   "subtype": "FLOAT"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "CAF",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "FLOAT"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/caf-pcm16-tagged.caf": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 4750
+   },
+   {
+    "count": 20,
+    "start": 4810
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 16,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.1,
+   "format": "CAF",
+   "frames": 4800,
+   "lossy": false,
+   "metadata": {
+    "album": "Älbum",
+    "artist": "Ärtist",
+    "comment": "A comment, with commas",
+    "copyright": "(c) 2026 Owner",
+    "date": "2026-01-01",
+    "genre": "Ambient",
+    "license": "CC0",
+    "software": "Golden recorder (libsndfile-1.2.2)",
+    "title": "Tíťle – Sonara",
+    "tracknumber": "7"
+   },
+   "path": "<ROOT>/inputs/caf-pcm16-tagged.caf",
+   "sample_rate": 48000,
+   "size_bytes": 23296,
+   "subtype": "PCM_16"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "CAF",
+   "frames": 4800,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_16"
+  },
+  "strings": {
+   "album": "Älbum",
+   "artist": "Ärtist",
+   "comment": "A comment, with commas",
+   "copyright": "(c) 2026 Owner",
+   "date": "2026-01-01",
+   "genre": "Ambient",
+   "license": "CC0",
+   "software": "Golden recorder (libsndfile-1.2.2)",
+   "title": "Tíťle – Sonara",
+   "tracknumber": "7"
+  }
+ },
+ "media/inputs/caf-pcm16.caf": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 16,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "CAF",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/caf-pcm16.caf",
+   "sample_rate": 48000,
+   "size_bytes": 5696,
+   "subtype": "PCM_16"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "CAF",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_16"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/caf-pcm24.caf": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 24,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "CAF",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/caf-pcm24.caf",
+   "sample_rate": 48000,
+   "size_bytes": 6496,
+   "subtype": "PCM_24"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "CAF",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_24"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/caf-pcm32.caf": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 32,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "CAF",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/caf-pcm32.caf",
+   "sample_rate": 48000,
+   "size_bytes": 7296,
+   "subtype": "PCM_32"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "CAF",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_32"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/caf-pcms8.caf": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 8,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "CAF",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/caf-pcms8.caf",
+   "sample_rate": 48000,
+   "size_bytes": 4896,
+   "subtype": "PCM_S8"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "CAF",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_S8"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/flac-pcm16-tagged.flac": {
+  "inspect": {
+   "bit_depth": 16,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.1,
+   "format": "FLAC",
+   "frames": 4800,
+   "lossy": false,
+   "metadata": {
+    "album": "Älbum",
+    "artist": "Ärtist",
+    "comment": "A comment, with commas",
+    "copyright": "(c) 2026 Owner",
+    "date": "2026-01-01",
+    "genre": "Ambient",
+    "license": "CC0",
+    "software": "Golden recorder (libsndfile-1.2.2)",
+    "title": "Tíťle – Sonara",
+    "tracknumber": "7"
+   },
+   "path": "<ROOT>/inputs/flac-pcm16-tagged.flac",
+   "sample_rate": 48000,
+   "size_bytes": 13270,
+   "subtype": "PCM_16"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "FLAC",
+   "frames": 4800,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_16"
+  },
+  "strings": {
+   "album": "Älbum",
+   "artist": "Ärtist",
+   "comment": "A comment, with commas",
+   "copyright": "(c) 2026 Owner",
+   "date": "2026-01-01",
+   "genre": "Ambient",
+   "license": "CC0",
+   "software": "Golden recorder (libsndfile-1.2.2)",
+   "title": "Tíťle – Sonara",
+   "tracknumber": "7"
+  }
+ },
+ "media/inputs/flac-pcm16.flac": {
+  "inspect": {
+   "bit_depth": 16,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "FLAC",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/flac-pcm16.flac",
+   "sample_rate": 48000,
+   "size_bytes": 1153,
+   "subtype": "PCM_16"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "FLAC",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_16"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/flac-pcm24.flac": {
+  "inspect": {
+   "bit_depth": 24,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "FLAC",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/flac-pcm24.flac",
+   "sample_rate": 48000,
+   "size_bytes": 1927,
+   "subtype": "PCM_24"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "FLAC",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_24"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/flac-pcms8.flac": {
+  "inspect": {
+   "bit_depth": 8,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "FLAC",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/flac-pcms8.flac",
+   "sample_rate": 48000,
+   "size_bytes": 622,
+   "subtype": "PCM_S8"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "FLAC",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_S8"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/mp3-mpeglayeriii-tagged.mp3": {
+  "inspect": {
+   "bit_depth": null,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.1,
+   "format": "MP3",
+   "frames": 4800,
+   "lossy": true,
+   "metadata": {
+    "album": "Älbum",
+    "artist": "Ärtist",
+    "comment": "A comment, with commas",
+    "date": "2026",
+    "genre": "Ambient",
+    "title": "Tíťle – Sonara",
+    "tracknumber": "7"
+   },
+   "path": "<ROOT>/inputs/mp3-mpeglayeriii-tagged.mp3",
+   "sample_rate": 48000,
+   "size_bytes": 3440,
+   "subtype": "MPEG_LAYER_III"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "MP3",
+   "frames": 4800,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "MPEG_LAYER_III"
+  },
+  "strings": {
+   "album": "Älbum",
+   "artist": "Ärtist",
+   "comment": "A comment, with commas",
+   "copyright": "",
+   "date": "2026",
+   "genre": "Ambient",
+   "license": "",
+   "software": "",
+   "title": "Tíťle – Sonara",
+   "tracknumber": "7"
+  }
+ },
+ "media/inputs/ogg-opus.ogg": {
+  "inspect": {
+   "bit_depth": null,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "OGG",
+   "frames": 400,
+   "lossy": true,
+   "metadata": {},
+   "path": "<ROOT>/inputs/ogg-opus.ogg",
+   "sample_rate": 48000,
+   "size_bytes": 1387,
+   "subtype": "OPUS"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "OGG",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "OPUS"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/ogg-vorbis-tagged.ogg": {
+  "inspect": {
+   "bit_depth": null,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.1,
+   "format": "OGG",
+   "frames": 4800,
+   "lossy": true,
+   "metadata": {
+    "album": "Älbum",
+    "artist": "Ärtist",
+    "comment": "A comment, with commas",
+    "copyright": "(c) 2026 Owner",
+    "date": "2026-01-01",
+    "genre": "Ambient",
+    "license": "CC0",
+    "software": "Golden recorder (libsndfile-1.2.2)",
+    "title": "Tíťle – Sonara",
+    "tracknumber": "7"
+   },
+   "path": "<ROOT>/inputs/ogg-vorbis-tagged.ogg",
+   "sample_rate": 48000,
+   "size_bytes": 6231,
+   "subtype": "VORBIS"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "OGG",
+   "frames": 4800,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "VORBIS"
+  },
+  "strings": {
+   "album": "Älbum",
+   "artist": "Ärtist",
+   "comment": "A comment, with commas",
+   "copyright": "(c) 2026 Owner",
+   "date": "2026-01-01",
+   "genre": "Ambient",
+   "license": "CC0",
+   "software": "Golden recorder (libsndfile-1.2.2)",
+   "title": "Tíťle – Sonara",
+   "tracknumber": "7"
+  }
+ },
+ "media/inputs/ogg-vorbis.ogg": {
+  "inspect": {
+   "bit_depth": null,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "OGG",
+   "frames": 400,
+   "lossy": true,
+   "metadata": {},
+   "path": "<ROOT>/inputs/ogg-vorbis.ogg",
+   "sample_rate": 48000,
+   "size_bytes": 4723,
+   "subtype": "VORBIS"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "OGG",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "VORBIS"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/rf64-double.rf64": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 64,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "RF64",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/rf64-double.rf64",
+   "sample_rate": 48000,
+   "size_bytes": 6536,
+   "subtype": "DOUBLE"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "RF64",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "DOUBLE"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/rf64-float.rf64": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 32,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "RF64",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/rf64-float.rf64",
+   "sample_rate": 48000,
+   "size_bytes": 3336,
+   "subtype": "FLOAT"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "RF64",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "FLOAT"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/rf64-pcm16-tagged.rf64": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 4750
+   },
+   {
+    "count": 20,
+    "start": 4810
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 16,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.1,
+   "format": "RF64",
+   "frames": 4800,
+   "lossy": false,
+   "metadata": {
+    "album": "Älbum",
+    "artist": "Ärtist",
+    "comment": "A comment, with commas",
+    "copyright": "(c) 2026 Owner",
+    "date": "2026-01-01",
+    "genre": "Ambient",
+    "software": "Golden recorder (libsndfile-1.2.2)",
+    "title": "Tíťle – Sonara",
+    "tracknumber": "7"
+   },
+   "path": "<ROOT>/inputs/rf64-pcm16-tagged.rf64",
+   "sample_rate": 48000,
+   "size_bytes": 19522,
+   "subtype": "PCM_16"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "RF64",
+   "frames": 4800,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_16"
+  },
+  "strings": {
+   "album": "Älbum",
+   "artist": "Ärtist",
+   "comment": "A comment, with commas",
+   "copyright": "(c) 2026 Owner",
+   "date": "2026-01-01",
+   "genre": "Ambient",
+   "license": "",
+   "software": "Golden recorder (libsndfile-1.2.2)",
+   "title": "Tíťle – Sonara",
+   "tracknumber": "7"
+  }
+ },
+ "media/inputs/rf64-pcm16.rf64": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 16,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "RF64",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/rf64-pcm16.rf64",
+   "sample_rate": 48000,
+   "size_bytes": 1704,
+   "subtype": "PCM_16"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "RF64",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_16"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/rf64-pcm24.rf64": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 24,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "RF64",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/rf64-pcm24.rf64",
+   "sample_rate": 48000,
+   "size_bytes": 2504,
+   "subtype": "PCM_24"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "RF64",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_24"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/rf64-pcm32.rf64": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 32,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "RF64",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/rf64-pcm32.rf64",
+   "sample_rate": 48000,
+   "size_bytes": 3304,
+   "subtype": "PCM_32"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "RF64",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_32"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/rf64-pcmu8.rf64": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 8,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "RF64",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/rf64-pcmu8.rf64",
+   "sample_rate": 48000,
+   "size_bytes": 904,
+   "subtype": "PCM_U8"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "RF64",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_U8"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/w64-double.w64": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 64,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "W64",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/w64-double.w64",
+   "sample_rate": 48000,
+   "size_bytes": 6536,
+   "subtype": "DOUBLE"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "W64",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "DOUBLE"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/w64-float.w64": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 32,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "W64",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/w64-float.w64",
+   "sample_rate": 48000,
+   "size_bytes": 3336,
+   "subtype": "FLOAT"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "W64",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "FLOAT"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/w64-pcm16.w64": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 16,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "W64",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/w64-pcm16.w64",
+   "sample_rate": 48000,
+   "size_bytes": 1704,
+   "subtype": "PCM_16"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "W64",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_16"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/w64-pcm24.w64": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 24,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "W64",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/w64-pcm24.w64",
+   "sample_rate": 48000,
+   "size_bytes": 2504,
+   "subtype": "PCM_24"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "W64",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_24"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/w64-pcm32.w64": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 32,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "W64",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/w64-pcm32.w64",
+   "sample_rate": 48000,
+   "size_bytes": 3304,
+   "subtype": "PCM_32"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "W64",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_32"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/w64-pcmu8.w64": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 8,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "W64",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/w64-pcmu8.w64",
+   "sample_rate": 48000,
+   "size_bytes": 904,
+   "subtype": "PCM_U8"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "W64",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_U8"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/wav-alaw.wav": {
+  "inspect": {
+   "bit_depth": null,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "WAV",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/wav-alaw.wav",
+   "sample_rate": 48000,
+   "size_bytes": 858,
+   "subtype": "ALAW"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "WAV",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "ALAW"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/wav-double.wav": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 64,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "WAV",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/wav-double.wav",
+   "sample_rate": 48000,
+   "size_bytes": 6488,
+   "subtype": "DOUBLE"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "WAV",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "DOUBLE"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/wav-float.wav": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 32,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "WAV",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/wav-float.wav",
+   "sample_rate": 48000,
+   "size_bytes": 3288,
+   "subtype": "FLOAT"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "WAV",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "FLOAT"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/wav-pcm16-mono.wav": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 16,
+   "channels": 1,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "WAV",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/wav-pcm16-mono.wav",
+   "sample_rate": 48000,
+   "size_bytes": 844,
+   "subtype": "PCM_16"
+  },
+  "sf_info": {
+   "channels": 1,
+   "endian": "FILE",
+   "format": "WAV",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_16"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/wav-pcm16-tagged.wav": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 4750
+   },
+   {
+    "count": 20,
+    "start": 4810
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 16,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.1,
+   "format": "WAV",
+   "frames": 4800,
+   "lossy": false,
+   "metadata": {
+    "album": "Älbum",
+    "artist": "Ärtist",
+    "comment": "A comment, with commas",
+    "copyright": "(c) 2026 Owner",
+    "date": "2026-01-01",
+    "genre": "Ambient",
+    "software": "Golden recorder (libsndfile-1.2.2)",
+    "title": "Tíťle – Sonara",
+    "tracknumber": "7"
+   },
+   "path": "<ROOT>/inputs/wav-pcm16-tagged.wav",
+   "sample_rate": 48000,
+   "size_bytes": 19462,
+   "subtype": "PCM_16"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "WAV",
+   "frames": 4800,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_16"
+  },
+  "strings": {
+   "album": "Älbum",
+   "artist": "Ärtist",
+   "comment": "A comment, with commas",
+   "copyright": "(c) 2026 Owner",
+   "date": "2026-01-01",
+   "genre": "Ambient",
+   "license": "",
+   "software": "Golden recorder (libsndfile-1.2.2)",
+   "title": "Tíťle – Sonara",
+   "tracknumber": "7"
+  }
+ },
+ "media/inputs/wav-pcm16.wav": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 16,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "WAV",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/wav-pcm16.wav",
+   "sample_rate": 48000,
+   "size_bytes": 1644,
+   "subtype": "PCM_16"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "WAV",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_16"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/wav-pcm24.wav": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 24,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "WAV",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/wav-pcm24.wav",
+   "sample_rate": 48000,
+   "size_bytes": 2444,
+   "subtype": "PCM_24"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "WAV",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_24"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/wav-pcm32.wav": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 32,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "WAV",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/wav-pcm32.wav",
+   "sample_rate": 48000,
+   "size_bytes": 3244,
+   "subtype": "PCM_32"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "WAV",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_32"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/wav-pcmu8.wav": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 8,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "WAV",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/wav-pcmu8.wav",
+   "sample_rate": 48000,
+   "size_bytes": 844,
+   "subtype": "PCM_U8"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "WAV",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_U8"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/wav-ulaw.wav": {
+  "inspect": {
+   "bit_depth": null,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "WAV",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/wav-ulaw.wav",
+   "sample_rate": 48000,
+   "size_bytes": 858,
+   "subtype": "ULAW"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "WAV",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "ULAW"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/wavex-double.wav": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 64,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "WAVEX",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/wavex-double.wav",
+   "sample_rate": 48000,
+   "size_bytes": 6512,
+   "subtype": "DOUBLE"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "WAVEX",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "DOUBLE"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/wavex-float.wav": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 32,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "WAVEX",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/wavex-float.wav",
+   "sample_rate": 48000,
+   "size_bytes": 3312,
+   "subtype": "FLOAT"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "WAVEX",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "FLOAT"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/wavex-pcm16-tagged.wav": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 4750
+   },
+   {
+    "count": 20,
+    "start": 4810
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 16,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.1,
+   "format": "WAVEX",
+   "frames": 4800,
+   "lossy": false,
+   "metadata": {
+    "album": "Älbum",
+    "artist": "Ärtist",
+    "comment": "A comment, with commas",
+    "copyright": "(c) 2026 Owner",
+    "date": "2026-01-01",
+    "genre": "Ambient",
+    "software": "Golden recorder (libsndfile-1.2.2)",
+    "title": "Tíťle – Sonara",
+    "tracknumber": "7"
+   },
+   "path": "<ROOT>/inputs/wavex-pcm16-tagged.wav",
+   "sample_rate": 48000,
+   "size_bytes": 19498,
+   "subtype": "PCM_16"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "WAVEX",
+   "frames": 4800,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_16"
+  },
+  "strings": {
+   "album": "Älbum",
+   "artist": "Ärtist",
+   "comment": "A comment, with commas",
+   "copyright": "(c) 2026 Owner",
+   "date": "2026-01-01",
+   "genre": "Ambient",
+   "license": "",
+   "software": "Golden recorder (libsndfile-1.2.2)",
+   "title": "Tíťle – Sonara",
+   "tracknumber": "7"
+  }
+ },
+ "media/inputs/wavex-pcm16.wav": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 16,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "WAVEX",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/wavex-pcm16.wav",
+   "sample_rate": 48000,
+   "size_bytes": 1680,
+   "subtype": "PCM_16"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "WAVEX",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_16"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/wavex-pcm24.wav": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 24,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "WAVEX",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/wavex-pcm24.wav",
+   "sample_rate": 48000,
+   "size_bytes": 2480,
+   "subtype": "PCM_24"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "WAVEX",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_24"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/wavex-pcm32.wav": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 32,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "WAVEX",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/wavex-pcm32.wav",
+   "sample_rate": 48000,
+   "size_bytes": 3280,
+   "subtype": "PCM_32"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "WAVEX",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_32"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ },
+ "media/inputs/wavex-pcmu8.wav": {
+  "direct_windows": [
+   {
+    "count": 150,
+    "start": -100
+   },
+   {
+    "count": 512,
+    "start": 0
+   },
+   {
+    "count": 77,
+    "start": 123
+   },
+   {
+    "count": 100,
+    "start": 350
+   },
+   {
+    "count": 20,
+    "start": 410
+   },
+   {
+    "count": 100,
+    "start": -300
+   }
+  ],
+  "inspect": {
+   "bit_depth": 8,
+   "channels": 2,
+   "decoder": "libsndfile",
+   "duration_seconds": 0.008333,
+   "format": "WAVEX",
+   "frames": 400,
+   "lossy": false,
+   "metadata": {},
+   "path": "<ROOT>/inputs/wavex-pcmu8.wav",
+   "sample_rate": 48000,
+   "size_bytes": 880,
+   "subtype": "PCM_U8"
+  },
+  "sf_info": {
+   "channels": 2,
+   "endian": "FILE",
+   "format": "WAVEX",
+   "frames": 400,
+   "samplerate": 48000,
+   "sections": 1,
+   "subtype": "PCM_U8"
+  },
+  "strings": {
+   "album": "",
+   "artist": "",
+   "comment": "",
+   "copyright": "",
+   "date": "",
+   "genre": "",
+   "license": "",
+   "software": "",
+   "title": "",
+   "tracknumber": ""
+  }
+ }
+}

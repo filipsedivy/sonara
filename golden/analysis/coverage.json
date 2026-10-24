@@ -1,0 +1,129 @@
+{
+ "analysis": {
+  "balance_db": 1.6919927114199207,
+  "channels": 2,
+  "clip_events": 0,
+  "clipped_samples": 0,
+  "correlation": 0.7954780553633981,
+  "crest_factor_db": 19.491388579374444,
+  "dc_offset": [
+   2.9e-05,
+   2.5e-05
+  ],
+  "duration_seconds": 33.61,
+  "integrated_lufs": -15.516297532906322,
+  "kind": {
+   "estimated": [
+    "true_peak_dbtp",
+    "plr_db"
+   ],
+   "measured": [
+    "sample_peak_dbfs",
+    "rms_dbfs",
+    "integrated_lufs",
+    "momentary_max_lufs",
+    "short_term_max_lufs",
+    "loudness_range_lu",
+    "clipped_samples",
+    "correlation",
+    "octave_bands_db"
+   ]
+  },
+  "leading_silence_seconds": 0.5,
+  "loudness_range_lu": 9.409292569361368,
+  "min_correlation_400ms": -2.125543257184735e-09,
+  "momentary_max_lufs": -10.532339933990588,
+  "nonfinite_samples": 0,
+  "octave_bands_db": {
+   "1000": -13.689929721624381,
+   "125": -17.46040283287544,
+   "16000": -28.421265249543058,
+   "2000": -23.574115744920082,
+   "250": -2.9566401533893667,
+   "31.5": -38.74582554673939,
+   "4000": -26.14823752847731,
+   "500": -3.955998349523162,
+   "63": -17.122780786557342,
+   "8000": -25.388707376825405
+  },
+  "over_full_scale_samples": 0,
+  "plr_db": 12.46450303689395,
+  "rms_dbfs": -22.54344546639225,
+  "sample_peak_dbfs": -3.052056887017806,
+  "sample_rate": 48000,
+  "short_term_lufs": [
+   -19.18,
+   -17.64,
+   -13.95,
+   -12.65,
+   -13.24,
+   -16.24,
+   -22.53,
+   -22.55,
+   -17.77,
+   -19.35,
+   -16.29,
+   -19.16,
+   -19.16,
+   -124.14,
+   -23.15,
+   -19.38,
+   -19.38,
+   -21.74,
+   -46.88,
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0
+  ],
+  "short_term_max_lufs": -12.580026817897647,
+  "side_to_mid_db": -9.093750395991496,
+  "silence_regions": [
+   [
+    0.0,
+    0.5
+   ],
+   [
+    6.5,
+    7.0
+   ],
+   [
+    7.45,
+    8.25
+   ],
+   [
+    9.4,
+    10.0
+   ],
+   [
+    11.0,
+    12.0
+   ],
+   [
+    13.0,
+    16.0
+   ],
+   [
+    18.2,
+    33.6
+   ]
+  ],
+  "spectral_centroid_hz": 458.4699826721084,
+  "trailing_silence_seconds": 15.4,
+  "true_peak_dbtp": -3.051794496012372
+ },
+ "block": 65536,
+ "channels": 2,
+ "frames": 1613280,
+ "issues": [],
+ "sample_rate": 48000,
+ "source": "coverage/render.wav"
+}

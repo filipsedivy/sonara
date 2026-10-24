@@ -1,0 +1,13 @@
+# Build output
+target/
+dist/
+node_modules/
+*.dylib
+
+# Sonara runtime artefacts
+examples/output/
+*.sonara.tmp
+
+# Local machine settings
+.DS_Store
+.claude/settings.local.json

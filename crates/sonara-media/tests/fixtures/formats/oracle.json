@@ -1,0 +1,1469 @@
+{
+ "ffmpeg": {
+  "ffprobe_args": [
+   "-v",
+   "error",
+   "-select_streams",
+   "a:0",
+   "-show_entries",
+   "stream=sample_rate,channels,codec_name,duration_ts,time_base,duration:format_tags",
+   "-of",
+   "json"
+  ],
+  "import": [
+   {
+    "asset": {
+     "channels": 2,
+     "format": "FLAC",
+     "frames": 4410,
+     "id": "med_test0005",
+     "kind": "audio",
+     "location": "embedded",
+     "metadata": {
+      "artist": "Me",
+      "encoder": "Lavf63.1.102",
+      "major_brand": "M4A ",
+      "original_file": "media/audio/originals/med_test0005-Song-Take-1.m4a",
+      "original_format": "AAC",
+      "title": "Again",
+      "transcoded_by": "ffmpeg"
+     },
+     "name": "Song Take 1.M4A",
+     "original_path": "<ROOT>/copy/in/Song Take 1.M4A",
+     "path": "media/audio/med_test0005-Song-Take-1.flac",
+     "relative_hint": null,
+     "sample_rate": 44100,
+     "sha256": "3f895a4a42b1b6b8358203eaa7e30b9a9627fef676c007c67b7cdb1fa464c601",
+     "size_bytes": 18222,
+     "subtype": "PCM_24"
+    },
+    "asset_id": "med_test0005",
+    "ffmpeg_args": [
+     "-nostdin",
+     "-v",
+     "error",
+     "-y",
+     "-i",
+     "<ROOT>/copy/in/Song Take 1.M4A",
+     "-vn",
+     "-c:a",
+     "flac",
+     "-sample_fmt",
+     "s32",
+     "<ROOT>/copy/ws/media/audio/med_test0005-Song-Take-1.tmp.flac"
+    ],
+    "ffmpeg_rc": 0,
+    "ffmpeg_stderr": "",
+    "file": "Song Take 1.M4A",
+    "info": {
+     "bit_depth": null,
+     "channels": 2,
+     "decoder": "ffmpeg",
+     "duration_seconds": 0.1,
+     "format": "AAC",
+     "frames": 4410,
+     "lossy": true,
+     "metadata": {
+      "artist": "Me",
+      "encoder": "Lavf63.1.102",
+      "major_brand": "M4A ",
+      "title": "Again"
+     },
+     "path": "<ROOT>/copy/in/Song Take 1.M4A",
+     "sample_rate": 44100,
+     "size_bytes": 68,
+     "subtype": "FFMPEG"
+    },
+    "kind": "audio",
+    "mode": "copy",
+    "name": "copy",
+    "warnings": [
+     "Song Take 1.M4A is lossy (FFMPEG); it is kept as-is and decoded for playback",
+     "Song Take 1.M4A was decoded with FFmpeg into lossless FLAC; the original is kept in the project"
+    ],
+    "workspace_files": [
+     "media/audio/med_test0005-Song-Take-1.flac",
+     "media/audio/originals/med_test0005-Song-Take-1.m4a"
+    ]
+   },
+   {
+    "asset": {
+     "channels": 2,
+     "format": "FLAC",
+     "frames": 4410,
+     "id": "med_test0005",
+     "kind": "audio",
+     "location": "embedded",
+     "metadata": {
+      "artist": "Me",
+      "encoder": "Lavf63.1.102",
+      "major_brand": "M4A ",
+      "original_file": "media/audio/originals/med_test0005-Song-Take-1.m4a",
+      "original_format": "AAC",
+      "title": "Again",
+      "transcoded_by": "ffmpeg"
+     },
+     "name": "Song Take 1.M4A",
+     "original_path": "<ROOT>/link/in/Song Take 1.M4A",
+     "path": "media/audio/med_test0005-Song-Take-1.flac",
+     "relative_hint": null,
+     "sample_rate": 44100,
+     "sha256": "3f895a4a42b1b6b8358203eaa7e30b9a9627fef676c007c67b7cdb1fa464c601",
+     "size_bytes": 18222,
+     "subtype": "PCM_24"
+    },
+    "asset_id": "med_test0005",
+    "ffmpeg_args": [
+     "-nostdin",
+     "-v",
+     "error",
+     "-y",
+     "-i",
+     "<ROOT>/link/in/Song Take 1.M4A",
+     "-vn",
+     "-c:a",
+     "flac",
+     "-sample_fmt",
+     "s32",
+     "<ROOT>/link/ws/media/audio/med_test0005-Song-Take-1.tmp.flac"
+    ],
+    "ffmpeg_rc": 0,
+    "ffmpeg_stderr": "",
+    "file": "Song Take 1.M4A",
+    "info": {
+     "bit_depth": null,
+     "channels": 2,
+     "decoder": "ffmpeg",
+     "duration_seconds": 0.1,
+     "format": "AAC",
+     "frames": 4410,
+     "lossy": true,
+     "metadata": {
+      "artist": "Me",
+      "encoder": "Lavf63.1.102",
+      "major_brand": "M4A ",
+      "title": "Again"
+     },
+     "path": "<ROOT>/link/in/Song Take 1.M4A",
+     "sample_rate": 44100,
+     "size_bytes": 68,
+     "subtype": "FFMPEG"
+    },
+    "kind": "audio",
+    "mode": "link",
+    "name": "link",
+    "warnings": [
+     "Song Take 1.M4A is lossy (FFMPEG); it is kept as-is and decoded for playback",
+     "Song Take 1.M4A was decoded with FFmpeg into lossless FLAC; the original is kept in the project"
+    ],
+    "workspace_files": [
+     "media/audio/med_test0005-Song-Take-1.flac",
+     "media/audio/originals/med_test0005-Song-Take-1.m4a"
+    ]
+   },
+   {
+    "asset": {
+     "channels": 2,
+     "format": "FLAC",
+     "frames": 4410,
+     "id": "med_test0005",
+     "kind": "impulse",
+     "location": "embedded",
+     "metadata": {
+      "artist": "Me",
+      "encoder": "Lavf63.1.102",
+      "major_brand": "M4A ",
+      "original_file": "media/impulses/originals/med_test0005-Hall-IR.aac",
+      "original_format": "AAC",
+      "title": "Again",
+      "transcoded_by": "ffmpeg"
+     },
+     "name": "Hall IR.aac",
+     "original_path": "<ROOT>/impulse/in/Hall IR.aac",
+     "path": "media/impulses/med_test0005-Hall-IR.flac",
+     "relative_hint": null,
+     "sample_rate": 44100,
+     "sha256": "3f895a4a42b1b6b8358203eaa7e30b9a9627fef676c007c67b7cdb1fa464c601",
+     "size_bytes": 18222,
+     "subtype": "PCM_24"
+    },
+    "asset_id": "med_test0005",
+    "ffmpeg_args": [
+     "-nostdin",
+     "-v",
+     "error",
+     "-y",
+     "-i",
+     "<ROOT>/impulse/in/Hall IR.aac",
+     "-vn",
+     "-c:a",
+     "flac",
+     "-sample_fmt",
+     "s32",
+     "<ROOT>/impulse/ws/media/impulses/med_test0005-Hall-IR.tmp.flac"
+    ],
+    "ffmpeg_rc": 0,
+    "ffmpeg_stderr": "",
+    "file": "Hall IR.aac",
+    "info": {
+     "bit_depth": null,
+     "channels": 2,
+     "decoder": "ffmpeg",
+     "duration_seconds": 0.1,
+     "format": "AAC",
+     "frames": 4410,
+     "lossy": true,
+     "metadata": {
+      "artist": "Me",
+      "encoder": "Lavf63.1.102",
+      "major_brand": "M4A ",
+      "title": "Again"
+     },
+     "path": "<ROOT>/impulse/in/Hall IR.aac",
+     "sample_rate": 44100,
+     "size_bytes": 68,
+     "subtype": "FFMPEG"
+    },
+    "kind": "impulse",
+    "mode": "copy",
+    "name": "impulse",
+    "warnings": [
+     "Hall IR.aac is lossy (FFMPEG); it is kept as-is and decoded for playback",
+     "Hall IR.aac was decoded with FFmpeg into lossless FLAC; the original is kept in the project"
+    ],
+    "workspace_files": [
+     "media/impulses/med_test0005-Hall-IR.flac",
+     "media/impulses/originals/med_test0005-Hall-IR.aac"
+    ]
+   },
+   {
+    "asset_id": "med_test0005",
+    "error": {
+     "code": "IO_ERROR",
+     "message": "FFmpeg could not decode Song Take 1.M4A: ffmpeg: Čtení selhalo – xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    "ffmpeg_args": [
+     "-nostdin",
+     "-v",
+     "error",
+     "-y",
+     "-i",
+     "<ROOT>/transcode_fails/in/Song Take 1.M4A",
+     "-vn",
+     "-c:a",
+     "flac",
+     "-sample_fmt",
+     "s32",
+     "<ROOT>/transcode_fails/ws/media/audio/med_test0005-Song-Take-1.tmp.flac"
+    ],
+    "ffmpeg_rc": 1,
+    "ffmpeg_stderr": "\n  ffmpeg: Čtení selhalo – xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (end)\n\n",
+    "file": "Song Take 1.M4A",
+    "kind": "audio",
+    "mode": "copy",
+    "name": "transcode_fails",
+    "workspace_files": [
+     "media/audio/originals/med_test0005-Song-Take-1.m4a"
+    ]
+   }
+  ],
+  "inspect": [
+   {
+    "ffprobe_args": [
+     "-v",
+     "error",
+     "-select_streams",
+     "a:0",
+     "-show_entries",
+     "stream=sample_rate,channels,codec_name,duration_ts,time_base,duration:format_tags",
+     "-of",
+     "json",
+     "<ROOT>/m4a/in/Song Take 1.M4A"
+    ],
+    "file": "Song Take 1.M4A",
+    "inspect": {
+     "bit_depth": null,
+     "channels": 2,
+     "decoder": "ffmpeg",
+     "duration_seconds": 0.1,
+     "format": "AAC",
+     "frames": 4410,
+     "lossy": true,
+     "metadata": {
+      "artist": "Me",
+      "encoder": "Lavf63.1.102",
+      "major_brand": "M4A ",
+      "title": "Again"
+     },
+     "path": "<ROOT>/m4a/in/Song Take 1.M4A",
+     "sample_rate": 44100,
+     "size_bytes": 68,
+     "subtype": "FFMPEG"
+    },
+    "metadata_order": [
+     "major_brand",
+     "title",
+     "artist",
+     "encoder"
+    ],
+    "name": "m4a",
+    "probe": "{\n    \"programs\": [\n\n    ],\n    \"streams\": [\n        {\n            \"codec_name\": \"aac\",\n            \"sample_rate\": \"44100\",\n            \"channels\": 2,\n            \"time_base\": \"1/44100\",\n            \"duration_ts\": 4410,\n            \"duration\": \"0.100000\"\n        }\n    ],\n    \"format\": {\n        \"tags\": {\n            \"major_brand\": \"M4A \",\n            \"Title\": \"Song\",\n            \"ARTIST\": \"Me\",\n            \"encoder\": \"Lavf63.1.102\",\n            \"title\": \"Again\"\n        }\n    }\n}\n",
+    "probe_rc": 0,
+    "probe_stderr": ""
+   },
+   {
+    "ffprobe_args": [
+     "-v",
+     "error",
+     "-select_streams",
+     "a:0",
+     "-show_entries",
+     "stream=sample_rate,channels,codec_name,duration_ts,time_base,duration:format_tags",
+     "-of",
+     "json",
+     "<ROOT>/six_channels_tie_down/in/surround.wma"
+    ],
+    "file": "surround.wma",
+    "inspect": {
+     "bit_depth": null,
+     "channels": 6,
+     "decoder": "ffmpeg",
+     "duration_seconds": 0.0,
+     "format": "WMAV2",
+     "frames": 0,
+     "lossy": true,
+     "metadata": {},
+     "path": "<ROOT>/six_channels_tie_down/in/surround.wma",
+     "sample_rate": 16000,
+     "size_bytes": 68,
+     "subtype": "FFMPEG"
+    },
+    "metadata_order": [],
+    "name": "six_channels_tie_down",
+    "probe": "{\"streams\": [{\"codec_name\": \"wmav2\", \"sample_rate\": \"16000\", \"channels\": 6, \"duration\": \"0.00003125\"}]}\n",
+    "probe_rc": 0,
+    "probe_stderr": ""
+   },
+   {
+    "ffprobe_args": [
+     "-v",
+     "error",
+     "-select_streams",
+     "a:0",
+     "-show_entries",
+     "stream=sample_rate,channels,codec_name,duration_ts,time_base,duration:format_tags",
+     "-of",
+     "json",
+     "<ROOT>/tie_up/in/tie.amr"
+    ],
+    "file": "tie.amr",
+    "inspect": {
+     "bit_depth": null,
+     "channels": 1,
+     "decoder": "ffmpeg",
+     "duration_seconds": 0.000125,
+     "format": "AMR_NB",
+     "frames": 2,
+     "lossy": true,
+     "metadata": {},
+     "path": "<ROOT>/tie_up/in/tie.amr",
+     "sample_rate": 16000,
+     "size_bytes": 68,
+     "subtype": "FFMPEG"
+    },
+    "metadata_order": [],
+    "name": "tie_up",
+    "probe": "{\"streams\": [{\"codec_name\": \"amr_nb\", \"sample_rate\": \"16000\", \"channels\": 1, \"duration\": \"0.00009375\"}]}\n",
+    "probe_rc": 0,
+    "probe_stderr": ""
+   },
+   {
+    "ffprobe_args": [
+     "-v",
+     "error",
+     "-select_streams",
+     "a:0",
+     "-show_entries",
+     "stream=sample_rate,channels,codec_name,duration_ts,time_base,duration:format_tags",
+     "-of",
+     "json",
+     "<ROOT>/no_fields/in/bare.mka"
+    ],
+    "file": "bare.mka",
+    "inspect": {
+     "bit_depth": null,
+     "channels": 0,
+     "decoder": "ffmpeg",
+     "duration_seconds": 0.0,
+     "format": "UNKNOWN",
+     "frames": 0,
+     "lossy": true,
+     "metadata": {},
+     "path": "<ROOT>/no_fields/in/bare.mka",
+     "sample_rate": 0,
+     "size_bytes": 68,
+     "subtype": "FFMPEG"
+    },
+    "metadata_order": [],
+    "name": "no_fields",
+    "probe": "{\"streams\": [{}]}\n",
+    "probe_rc": 0,
+    "probe_stderr": ""
+   },
+   {
+    "error": {
+     "code": "UNSUPPORTED",
+     "message": "Song.m4a: cannot inspect (ffprobe missing)"
+    },
+    "ffprobe_args": null,
+    "file": "Song.m4a",
+    "name": "no_ffprobe",
+    "probe": null,
+    "probe_rc": 0,
+    "probe_stderr": ""
+   },
+   {
+    "error": {
+     "code": "UNSUPPORTED",
+     "message": "junk.wav: not a decodable audio file"
+    },
+    "ffprobe_args": [
+     "-v",
+     "error",
+     "-select_streams",
+     "a:0",
+     "-show_entries",
+     "stream=sample_rate,channels,codec_name,duration_ts,time_base,duration:format_tags",
+     "-of",
+     "json",
+     "<ROOT>/ffprobe_fails/in/junk.wav"
+    ],
+    "file": "junk.wav",
+    "name": "ffprobe_fails",
+    "probe": "{\n\n}\n",
+    "probe_rc": 1,
+    "probe_stderr": "junk.wav: Invalid data found when processing input\n"
+   },
+   {
+    "error": {
+     "code": "UNSUPPORTED",
+     "message": "empty.m4a: no audio stream"
+    },
+    "ffprobe_args": [
+     "-v",
+     "error",
+     "-select_streams",
+     "a:0",
+     "-show_entries",
+     "stream=sample_rate,channels,codec_name,duration_ts,time_base,duration:format_tags",
+     "-of",
+     "json",
+     "<ROOT>/no_streams/in/empty.m4a"
+    ],
+    "file": "empty.m4a",
+    "name": "no_streams",
+    "probe": "{\"streams\": []}\n",
+    "probe_rc": 0,
+    "probe_stderr": ""
+   },
+   {
+    "error": {
+     "code": "UNSUPPORTED",
+     "message": "silent.m4a: no audio stream"
+    },
+    "ffprobe_args": [
+     "-v",
+     "error",
+     "-select_streams",
+     "a:0",
+     "-show_entries",
+     "stream=sample_rate,channels,codec_name,duration_ts,time_base,duration:format_tags",
+     "-of",
+     "json",
+     "<ROOT>/empty_output/in/silent.m4a"
+    ],
+    "file": "silent.m4a",
+    "name": "empty_output",
+    "probe": "",
+    "probe_rc": 0,
+    "probe_stderr": ""
+   },
+   {
+    "ffprobe_args": [
+     "-v",
+     "error",
+     "-select_streams",
+     "a:0",
+     "-show_entries",
+     "stream=sample_rate,channels,codec_name,duration_ts,time_base,duration:format_tags",
+     "-of",
+     "json",
+     "<ROOT>/numeric_tags/in/numbers.m4a"
+    ],
+    "file": "numbers.m4a",
+    "inspect": {
+     "bit_depth": null,
+     "channels": 2,
+     "decoder": "ffmpeg",
+     "duration_seconds": 1.5,
+     "format": "ALAC",
+     "frames": 72000,
+     "lossy": true,
+     "metadata": {
+      "date": "2026",
+      "track": "3"
+     },
+     "path": "<ROOT>/numeric_tags/in/numbers.m4a",
+     "sample_rate": 48000,
+     "size_bytes": 68,
+     "subtype": "FFMPEG"
+    },
+    "metadata_order": [
+     "track",
+     "date"
+    ],
+    "name": "numeric_tags",
+    "probe": "{\"streams\": [{\"codec_name\": \"alac\", \"sample_rate\": \"48000\", \"channels\": 2, \"duration\": \"1.5\"}], \"format\": {\"tags\": {\"track\": \"3\", \"DATE\": \"2026\"}}}\n",
+    "probe_rc": 0,
+    "probe_stderr": ""
+   }
+  ],
+  "not_audio": "stand-in for an AAC file; libsndfile does not recognise these bytes\n"
+ },
+ "files": {
+  "caf-alac16-6ch.caf": {
+   "inspect": {
+    "bit_depth": 16,
+    "channels": 6,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.008354,
+    "format": "CAF",
+    "frames": 401,
+    "lossy": true,
+    "metadata": {},
+    "path": "<ROOT>/caf-alac16-6ch.caf",
+    "sample_rate": 48000,
+    "size_bytes": 1500,
+    "subtype": "ALAC_16"
+   },
+   "sf_info": {
+    "channels": 6,
+    "format": "CAF",
+    "frames": 401,
+    "samplerate": 48000,
+    "subtype": "ALAC_16"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "caf-alac20.caf": {
+   "inspect": {
+    "bit_depth": 20,
+    "channels": 2,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.008354,
+    "format": "CAF",
+    "frames": 401,
+    "lossy": false,
+    "metadata": {},
+    "path": "<ROOT>/caf-alac20.caf",
+    "sample_rate": 48000,
+    "size_bytes": 1756,
+    "subtype": "ALAC_20"
+   },
+   "sf_info": {
+    "channels": 2,
+    "format": "CAF",
+    "frames": 401,
+    "samplerate": 48000,
+    "subtype": "ALAC_20"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "caf-alac24-long.caf": {
+   "inspect": {
+    "bit_depth": 24,
+    "channels": 2,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.1875,
+    "format": "CAF",
+    "frames": 9000,
+    "lossy": false,
+    "metadata": {},
+    "path": "<ROOT>/caf-alac24-long.caf",
+    "sample_rate": 48000,
+    "size_bytes": 51104,
+    "subtype": "ALAC_24"
+   },
+   "sf_info": {
+    "channels": 2,
+    "format": "CAF",
+    "frames": 9000,
+    "samplerate": 48000,
+    "subtype": "ALAC_24"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "caf-alac24-truncated.caf": {
+   "inspect_error": {
+    "code": "UNSUPPORTED",
+    "message": "caf-alac24-truncated.caf: format not supported by libsndfile and FFmpeg is not installed (Error opening '<ROOT>/caf-alac24-truncated.caf': Supported file format but file is malformed.)"
+   },
+   "sf_error": "Error opening '<ROOT>/caf-alac24-truncated.caf': Supported file format but file is malformed."
+  },
+  "caf-alac32.caf": {
+   "inspect": {
+    "bit_depth": 32,
+    "channels": 2,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.008354,
+    "format": "CAF",
+    "frames": 401,
+    "lossy": false,
+    "metadata": {},
+    "path": "<ROOT>/caf-alac32.caf",
+    "sample_rate": 48000,
+    "size_bytes": 3360,
+    "subtype": "ALAC_32"
+   },
+   "sf_info": {
+    "channels": 2,
+    "format": "CAF",
+    "frames": 401,
+    "samplerate": 48000,
+    "subtype": "ALAC_32"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "caf-alaw.caf": {
+   "inspect": {
+    "bit_depth": null,
+    "channels": 2,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.008354,
+    "format": "CAF",
+    "frames": 401,
+    "lossy": false,
+    "metadata": {},
+    "path": "<ROOT>/caf-alaw.caf",
+    "sample_rate": 48000,
+    "size_bytes": 4898,
+    "subtype": "ALAW"
+   },
+   "sf_info": {
+    "channels": 2,
+    "format": "CAF",
+    "frames": 401,
+    "samplerate": 48000,
+    "subtype": "ALAW"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "caf-float-le.caf": {
+   "inspect": {
+    "bit_depth": 32,
+    "channels": 2,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.008354,
+    "format": "CAF",
+    "frames": 401,
+    "lossy": false,
+    "metadata": {},
+    "path": "<ROOT>/caf-float-le.caf",
+    "sample_rate": 48000,
+    "size_bytes": 7304,
+    "subtype": "FLOAT"
+   },
+   "sf_info": {
+    "channels": 2,
+    "format": "CAF",
+    "frames": 401,
+    "samplerate": 48000,
+    "subtype": "FLOAT"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "caf-pcm16-le.caf": {
+   "inspect": {
+    "bit_depth": 16,
+    "channels": 2,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.008354,
+    "format": "CAF",
+    "frames": 401,
+    "lossy": false,
+    "metadata": {},
+    "path": "<ROOT>/caf-pcm16-le.caf",
+    "sample_rate": 48000,
+    "size_bytes": 5700,
+    "subtype": "PCM_16"
+   },
+   "sf_info": {
+    "channels": 2,
+    "format": "CAF",
+    "frames": 401,
+    "samplerate": 48000,
+    "subtype": "PCM_16"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "caf-pcm16-truncated.caf": {
+   "inspect": {
+    "bit_depth": 16,
+    "channels": 2,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.182229,
+    "format": "CAF",
+    "frames": 8747,
+    "lossy": false,
+    "metadata": {},
+    "path": "<ROOT>/caf-pcm16-truncated.caf",
+    "sample_rate": 48000,
+    "size_bytes": 39095,
+    "subtype": "PCM_16"
+   },
+   "sf_info": {
+    "channels": 2,
+    "format": "CAF",
+    "frames": 8747,
+    "samplerate": 48000,
+    "subtype": "PCM_16"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "caf-pcm24-mono-odd.caf": {
+   "inspect": {
+    "bit_depth": 24,
+    "channels": 1,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.008354,
+    "format": "CAF",
+    "frames": 401,
+    "lossy": false,
+    "metadata": {},
+    "path": "<ROOT>/caf-pcm24-mono-odd.caf",
+    "sample_rate": 48000,
+    "size_bytes": 5300,
+    "subtype": "PCM_24"
+   },
+   "sf_info": {
+    "channels": 1,
+    "format": "CAF",
+    "frames": 401,
+    "samplerate": 48000,
+    "subtype": "PCM_24"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "caf-pcms8-mono.caf": {
+   "inspect": {
+    "bit_depth": 8,
+    "channels": 1,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.008354,
+    "format": "CAF",
+    "frames": 401,
+    "lossy": false,
+    "metadata": {},
+    "path": "<ROOT>/caf-pcms8-mono.caf",
+    "sample_rate": 48000,
+    "size_bytes": 4498,
+    "subtype": "PCM_S8"
+   },
+   "sf_info": {
+    "channels": 1,
+    "format": "CAF",
+    "frames": 401,
+    "samplerate": 48000,
+    "subtype": "PCM_S8"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "caf-rate-44100.5.caf": {
+   "inspect": {
+    "bit_depth": 8,
+    "channels": 1,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.009093,
+    "format": "CAF",
+    "frames": 401,
+    "lossy": false,
+    "metadata": {},
+    "path": "<ROOT>/caf-rate-44100.5.caf",
+    "sample_rate": 44100,
+    "size_bytes": 4498,
+    "subtype": "PCM_S8"
+   },
+   "sf_info": {
+    "channels": 1,
+    "format": "CAF",
+    "frames": 401,
+    "samplerate": 44100,
+    "subtype": "PCM_S8"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "caf-rate-44101.5.caf": {
+   "inspect": {
+    "bit_depth": 8,
+    "channels": 1,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.009093,
+    "format": "CAF",
+    "frames": 401,
+    "lossy": false,
+    "metadata": {},
+    "path": "<ROOT>/caf-rate-44101.5.caf",
+    "sample_rate": 44102,
+    "size_bytes": 4498,
+    "subtype": "PCM_S8"
+   },
+   "sf_info": {
+    "channels": 1,
+    "format": "CAF",
+    "frames": 401,
+    "samplerate": 44102,
+    "subtype": "PCM_S8"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "caf-ulaw.caf": {
+   "inspect": {
+    "bit_depth": null,
+    "channels": 2,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.008354,
+    "format": "CAF",
+    "frames": 401,
+    "lossy": false,
+    "metadata": {},
+    "path": "<ROOT>/caf-ulaw.caf",
+    "sample_rate": 48000,
+    "size_bytes": 4898,
+    "subtype": "ULAW"
+   },
+   "sf_info": {
+    "channels": 2,
+    "format": "CAF",
+    "frames": 401,
+    "samplerate": 48000,
+    "subtype": "ULAW"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "ogg-opus-16k.ogg": {
+   "inspect": {
+    "bit_depth": null,
+    "channels": 2,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.01875,
+    "format": "OGG",
+    "frames": 300,
+    "lossy": true,
+    "metadata": {},
+    "path": "<ROOT>/ogg-opus-16k.ogg",
+    "sample_rate": 16000,
+    "size_bytes": 1186,
+    "subtype": "OPUS"
+   },
+   "sf_info": {
+    "channels": 2,
+    "format": "OGG",
+    "frames": 300,
+    "samplerate": 16000,
+    "subtype": "OPUS"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "ogg-opus-6ch.opus": {
+   "inspect": {
+    "bit_depth": null,
+    "channels": 6,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.05,
+    "format": "OGG",
+    "frames": 2400,
+    "lossy": true,
+    "metadata": {
+     "software": "Lavc libopus"
+    },
+    "path": "<ROOT>/ogg-opus-6ch.opus",
+    "sample_rate": 48000,
+    "size_bytes": 4013,
+    "subtype": "OPUS"
+   },
+   "sf_info": {
+    "channels": 6,
+    "format": "OGG",
+    "frames": 2400,
+    "samplerate": 48000,
+    "subtype": "OPUS"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "Lavc libopus",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "ogg-opus-comments.ogg": {
+   "inspect": {
+    "bit_depth": null,
+    "channels": 1,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.008354,
+    "format": "OGG",
+    "frames": 401,
+    "lossy": true,
+    "metadata": {
+     "album": "Älbum",
+     "artist": "A",
+     "comment": "c",
+     "genre": "G",
+     "software": "E2",
+     "title": "second",
+     "tracknumber": "3"
+    },
+    "path": "<ROOT>/ogg-opus-comments.ogg",
+    "sample_rate": 48000,
+    "size_bytes": 597,
+    "subtype": "OPUS"
+   },
+   "sf_info": {
+    "channels": 1,
+    "format": "OGG",
+    "frames": 401,
+    "samplerate": 48000,
+    "subtype": "OPUS"
+   },
+   "strings": {
+    "album": "Älbum",
+    "artist": "A",
+    "comment": "c",
+    "copyright": "",
+    "date": "",
+    "genre": "G",
+    "license": "",
+    "software": "E2",
+    "title": "second",
+    "tracknumber": "3"
+   }
+  },
+  "ogg-opus-gain.ogg": {
+   "inspect": {
+    "bit_depth": null,
+    "channels": 1,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.008354,
+    "format": "OGG",
+    "frames": 401,
+    "lossy": true,
+    "metadata": {},
+    "path": "<ROOT>/ogg-opus-gain.ogg",
+    "sample_rate": 48000,
+    "size_bytes": 1137,
+    "subtype": "OPUS"
+   },
+   "sf_info": {
+    "channels": 1,
+    "format": "OGG",
+    "frames": 401,
+    "samplerate": 48000,
+    "subtype": "OPUS"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "ogg-opus-input-0.ogg": {
+   "inspect": {
+    "bit_depth": null,
+    "channels": 1,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.00825,
+    "format": "OGG",
+    "frames": 66,
+    "lossy": true,
+    "metadata": {},
+    "path": "<ROOT>/ogg-opus-input-0.ogg",
+    "sample_rate": 8000,
+    "size_bytes": 1137,
+    "subtype": "OPUS"
+   },
+   "sf_info": {
+    "channels": 1,
+    "format": "OGG",
+    "frames": 66,
+    "samplerate": 8000,
+    "subtype": "OPUS"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "ogg-opus-input-22050.ogg": {
+   "inspect": {
+    "bit_depth": null,
+    "channels": 1,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.008333,
+    "format": "OGG",
+    "frames": 200,
+    "lossy": true,
+    "metadata": {},
+    "path": "<ROOT>/ogg-opus-input-22050.ogg",
+    "sample_rate": 24000,
+    "size_bytes": 1137,
+    "subtype": "OPUS"
+   },
+   "sf_info": {
+    "channels": 1,
+    "format": "OGG",
+    "frames": 200,
+    "samplerate": 24000,
+    "subtype": "OPUS"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "ogg-opus-input-44100.ogg": {
+   "inspect": {
+    "bit_depth": null,
+    "channels": 1,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.008354,
+    "format": "OGG",
+    "frames": 401,
+    "lossy": true,
+    "metadata": {},
+    "path": "<ROOT>/ogg-opus-input-44100.ogg",
+    "sample_rate": 48000,
+    "size_bytes": 1137,
+    "subtype": "OPUS"
+   },
+   "sf_info": {
+    "channels": 1,
+    "format": "OGG",
+    "frames": 401,
+    "samplerate": 48000,
+    "subtype": "OPUS"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "ogg-opus-large.ogg": {
+   "decoded_frames": 384000,
+   "inspect": {
+    "bit_depth": null,
+    "channels": 2,
+    "decoder": "libsndfile",
+    "duration_seconds": 8.0,
+    "format": "OGG",
+    "frames": 384000,
+    "lossy": true,
+    "metadata": {},
+    "path": "<ROOT>/ogg-opus-large.ogg",
+    "sample_rate": 48000,
+    "size_bytes": 122631,
+    "subtype": "OPUS"
+   },
+   "sf_info": {
+    "channels": 2,
+    "format": "OGG",
+    "frames": 384000,
+    "samplerate": 48000,
+    "subtype": "OPUS"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "ogg-opus-long.ogg": {
+   "inspect": {
+    "bit_depth": null,
+    "channels": 2,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.416667,
+    "format": "OGG",
+    "frames": 20000,
+    "lossy": true,
+    "metadata": {},
+    "path": "<ROOT>/ogg-opus-long.ogg",
+    "sample_rate": 48000,
+    "size_bytes": 7421,
+    "subtype": "OPUS"
+   },
+   "sf_info": {
+    "channels": 2,
+    "format": "OGG",
+    "frames": 20000,
+    "samplerate": 48000,
+    "subtype": "OPUS"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "ogg-opus-mono.ogg": {
+   "inspect": {
+    "bit_depth": null,
+    "channels": 1,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.008354,
+    "format": "OGG",
+    "frames": 401,
+    "lossy": true,
+    "metadata": {},
+    "path": "<ROOT>/ogg-opus-mono.ogg",
+    "sample_rate": 48000,
+    "size_bytes": 1137,
+    "subtype": "OPUS"
+   },
+   "sf_info": {
+    "channels": 1,
+    "format": "OGG",
+    "frames": 401,
+    "samplerate": 48000,
+    "subtype": "OPUS"
+   },
+   "strings": {
+    "album": "",
+    "artist": "",
+    "comment": "",
+    "copyright": "",
+    "date": "",
+    "genre": "",
+    "license": "",
+    "software": "",
+    "title": "",
+    "tracknumber": ""
+   }
+  },
+  "ogg-opus-tagged.ogg": {
+   "inspect": {
+    "bit_depth": null,
+    "channels": 2,
+    "decoder": "libsndfile",
+    "duration_seconds": 0.008354,
+    "format": "OGG",
+    "frames": 401,
+    "lossy": true,
+    "metadata": {
+     "album": "Älbum",
+     "artist": "Ärtist",
+     "comment": "A comment, with commas",
+     "copyright": "(c) 2026 Owner",
+     "date": "2026-01-01",
+     "genre": "Ambient",
+     "license": "CC0",
+     "software": "Golden recorder (libsndfile-1.2.2)",
+     "title": "Tíťle – Sonara",
+     "tracknumber": "7"
+    },
+    "path": "<ROOT>/ogg-opus-tagged.ogg",
+    "sample_rate": 48000,
+    "size_bytes": 1882,
+    "subtype": "OPUS"
+   },
+   "sf_info": {
+    "channels": 2,
+    "format": "OGG",
+    "frames": 401,
+    "samplerate": 48000,
+    "subtype": "OPUS"
+   },
+   "strings": {
+    "album": "Älbum",
+    "artist": "Ärtist",
+    "comment": "A comment, with commas",
+    "copyright": "(c) 2026 Owner",
+    "date": "2026-01-01",
+    "genre": "Ambient",
+    "license": "CC0",
+    "software": "Golden recorder (libsndfile-1.2.2)",
+    "title": "Tíťle – Sonara",
+    "tracknumber": "7"
+   }
+  },
+  "ogg-opus-truncated.ogg": {
+   "inspect_error": {
+    "code": "UNSUPPORTED",
+    "message": "ogg-opus-truncated.ogg: format not supported by libsndfile and FFmpeg is not installed (Error opening '<ROOT>/ogg-opus-truncated.ogg': Supported file format but file is malformed.)"
+   },
+   "sf_error": "Error opening '<ROOT>/ogg-opus-truncated.ogg': Supported file format but file is malformed."
+  }
+ },
+ "libsndfile": "1.2.2",
+ "which": [
+  {
+   "dirs": [
+    "plain",
+    "folder",
+    "tool"
+   ],
+   "found": "<ROOT>/tool/ffmpeg"
+  },
+  {
+   "dirs": [
+    "empty",
+    "link",
+    "tool"
+   ],
+   "found": "<ROOT>/link/ffmpeg"
+  },
+  {
+   "dirs": [],
+   "found": null
+  },
+  {
+   "dirs": [
+    "plain",
+    "folder"
+   ],
+   "found": null
+  },
+  {
+   "dirs": [
+    "empty"
+   ],
+   "found": null
+  },
+  {
+   "dirs": [
+    "tool",
+    "tool"
+   ],
+   "found": "<ROOT>/tool/ffmpeg"
+  },
+  {
+   "dirs": [
+    "plain",
+    "",
+    "tool"
+   ],
+   "found": "<ROOT>/tool/ffmpeg"
+  },
+  {
+   "dirs": [
+    "missing",
+    "tool"
+   ],
+   "found": "<ROOT>/tool/ffmpeg"
+  }
+ ]
+}

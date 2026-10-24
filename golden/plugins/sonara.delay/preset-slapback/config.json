@@ -1,0 +1,46 @@
+{
+ "config": "preset-slapback",
+ "params": {
+  "feedback": 0.1,
+  "highcut_hz": 5000.0,
+  "lowcut_hz": 120.0,
+  "mix": 0.3,
+  "note": "1/8D",
+  "ping_pong": false,
+  "sync": false,
+  "time_ms": 110.0
+ },
+ "plugin": "sonara.delay",
+ "renders": {
+  "clipped": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.44
+  },
+  "impulse": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.44
+  },
+  "noise": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.44
+  },
+  "silence": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.44
+  },
+  "sine-1k": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.44
+  },
+  "sweep": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.44
+  }
+ }
+}

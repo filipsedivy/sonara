@@ -1,0 +1,46 @@
+{
+ "config": "preset-ambient-wash",
+ "params": {
+  "character": "hall",
+  "damping": 0.3,
+  "decay_s": 12.0,
+  "highcut_hz": 12000.0,
+  "lowcut_hz": 250.0,
+  "mix": 0.5,
+  "predelay_ms": 60.0,
+  "width": 1.0
+ },
+ "plugin": "sonara.reverb",
+ "renders": {
+  "clipped": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 18.3
+  },
+  "impulse": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 18.3
+  },
+  "noise": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 18.3
+  },
+  "silence": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 18.3
+  },
+  "sine-1k": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 18.3
+  },
+  "sweep": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 18.3
+  }
+ }
+}

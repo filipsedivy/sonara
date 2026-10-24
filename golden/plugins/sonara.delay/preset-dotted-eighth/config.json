@@ -1,0 +1,46 @@
+{
+ "config": "preset-dotted-eighth",
+ "params": {
+  "feedback": 0.4,
+  "highcut_hz": 7000.0,
+  "lowcut_hz": 120.0,
+  "mix": 0.25,
+  "note": "1/8D",
+  "ping_pong": false,
+  "sync": true,
+  "time_ms": 375.0
+ },
+ "plugin": "sonara.delay",
+ "renders": {
+  "clipped": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 3.202059294073567
+  },
+  "impulse": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 3.202059294073567
+  },
+  "noise": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 3.202059294073567
+  },
+  "silence": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 3.202059294073567
+  },
+  "sine-1k": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 3.202059294073567
+  },
+  "sweep": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 3.202059294073567
+  }
+ }
+}

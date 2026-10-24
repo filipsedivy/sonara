@@ -1,0 +1,187 @@
+{
+ "analysis": {
+  "balance_db": 1.6919927134819828,
+  "channels": 2,
+  "clip_events": 0,
+  "clipped_samples": 0,
+  "correlation": 0.7954780551849493,
+  "crest_factor_db": 19.523060017076006,
+  "dc_offset": [
+   2.9e-05,
+   2.5e-05
+  ],
+  "duration_seconds": "<VOLATILE>",
+  "integrated_lufs": -15.516297531203977,
+  "kind": {
+   "estimated": [
+    "true_peak_dbtp",
+    "plr_db"
+   ],
+   "measured": [
+    "sample_peak_dbfs",
+    "rms_dbfs",
+    "integrated_lufs",
+    "momentary_max_lufs",
+    "short_term_max_lufs",
+    "loudness_range_lu",
+    "clipped_samples",
+    "correlation",
+    "octave_bands_db"
+   ]
+  },
+  "leading_silence_seconds": 0.5,
+  "loudness_range_lu": 9.409292570412447,
+  "min_correlation_400ms": -2.2574115179163086e-09,
+  "momentary_max_lufs": -10.532339931332576,
+  "nonfinite_samples": 0,
+  "octave_bands_db": {
+   "1000": -13.689929721743946,
+   "125": -17.460402838104585,
+   "16000": -28.421265244926065,
+   "2000": -23.574115742371696,
+   "250": -2.956640154204342,
+   "31.5": -38.74582557966663,
+   "4000": -26.148237522499223,
+   "500": -3.9559983482971353,
+   "63": -17.12278078741255,
+   "8000": -25.388707378613027
+  },
+  "over_full_scale_samples": 0,
+  "plr_db": 12.464503095925576,
+  "rms_dbfs": -22.57511680026123,
+  "sample_peak_dbfs": -3.052056783185224,
+  "sample_rate": 48000,
+  "short_term_lufs": [
+   -19.18,
+   -17.64,
+   -13.95,
+   -12.65,
+   -13.24,
+   -16.24,
+   -22.53,
+   -22.55,
+   -17.77,
+   -19.35,
+   -16.29,
+   -19.16,
+   -19.16,
+   -124.14,
+   -23.15,
+   -19.38,
+   -19.38,
+   -21.74,
+   -46.88,
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0
+  ],
+  "short_term_max_lufs": -12.580026817063178,
+  "side_to_mid_db": -9.093750391304837,
+  "silence_regions": [
+   [
+    0.0,
+    0.5
+   ],
+   [
+    6.5,
+    7.0
+   ],
+   [
+    7.45,
+    8.25
+   ],
+   [
+    9.4,
+    10.0
+   ],
+   [
+    11.0,
+    12.0
+   ],
+   [
+    13.0,
+    16.0
+   ],
+   [
+    18.2,
+    33.85
+   ]
+  ],
+  "spectral_centroid_hz": 458.46998277633446,
+  "trailing_silence_seconds": 15.65,
+  "true_peak_dbtp": -3.051794435278402
+ },
+ "issues": [],
+ "latency_samples": 0,
+ "missing_media": [],
+ "path": "<ROOT>/work/previews/full.wav",
+ "range_beats": [
+  0.0,
+  64.0
+ ],
+ "realtime_factor": "<VOLATILE>",
+ "render_seconds": "<VOLATILE>",
+ "sample_rate": 48000,
+ "seconds": 33.856,
+ "tail_seconds": 0.256,
+ "track_levels": {
+  "trk_000000000003": {
+   "integrated_lufs": -22.24,
+   "name": "Piano",
+   "peak_dbfs": -11.55,
+   "short_term_max_lufs": -22.61
+  },
+  "trk_000000000005": {
+   "integrated_lufs": -28.75,
+   "name": "Lead",
+   "peak_dbfs": -11.91,
+   "short_term_max_lufs": -31.67
+  },
+  "trk_000000000007": {
+   "integrated_lufs": null,
+   "name": "FX Bus",
+   "peak_dbfs": null,
+   "short_term_max_lufs": null
+  },
+  "trk_000000000027": {
+   "integrated_lufs": -18.44,
+   "name": "Tone",
+   "peak_dbfs": -9.36,
+   "short_term_max_lufs": -19.59
+  },
+  "trk_000000000034": {
+   "integrated_lufs": -12.89,
+   "name": "Chord",
+   "peak_dbfs": -4.46,
+   "short_term_max_lufs": -13.36
+  },
+  "trk_000000000039": {
+   "integrated_lufs": -15.81,
+   "name": "saw-44k1-stereo",
+   "peak_dbfs": -9.64,
+   "short_term_max_lufs": -19.44
+  },
+  "trk_000000000078": {
+   "integrated_lufs": -21.72,
+   "name": "Lead",
+   "peak_dbfs": -11.66,
+   "short_term_max_lufs": -22.87
+  },
+  "trk_000000000081": {
+   "integrated_lufs": -20.25,
+   "name": "Beat (Drums)",
+   "peak_dbfs": -10.61,
+   "short_term_max_lufs": -21.99
+  }
+ },
+ "warnings": []
+}

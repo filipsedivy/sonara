@@ -1,0 +1,8 @@
+{
+ "dtype": "f64le",
+ "sample_rate": 48000,
+ "shape": [
+  24000,
+  2
+ ]
+}

@@ -1,0 +1,8 @@
+{
+ "dtype": "f64le",
+ "initial": 1.0,
+ "lookahead": 96,
+ "shape": [
+  4096
+ ]
+}

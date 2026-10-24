@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Sonara mark</title>
+  <defs><linearGradient id="mark" gradientUnits="userSpaceOnUse" x1="100" y1="60" x2="412" y2="452"><stop offset="0" stop-color="#4C9BF0"/><stop offset="1" stop-color="#7D6BD9"/></linearGradient></defs>
+  <path d="M 277.91 100.08 A 157.45 157.45 0 0 1 405.74 207.35" fill="none" stroke="url(#mark)" stroke-width="12.22" stroke-linecap="round" opacity="0.95"/>
+  <path d="M 308.47 73.02 A 190.35 190.35 0 0 1 427.09 172.56" fill="none" stroke="url(#mark)" stroke-width="10.34" stroke-linecap="round" opacity="0.55"/>
+  <path d="M 234.09 411.92 A 157.45 157.45 0 0 1 106.26 304.65" fill="none" stroke="url(#mark)" stroke-width="12.22" stroke-linecap="round" opacity="0.95"/>
+  <path d="M 203.53 438.98 A 190.35 190.35 0 0 1 84.91 339.44" fill="none" stroke="url(#mark)" stroke-width="10.34" stroke-linecap="round" opacity="0.55"/>
+  <path d="M 302.67 160.32 A 59.22 59.22 0 1 0 256.00 256.00 A 64.86 64.86 0 1 1 204.89 360.79" fill="none" stroke="url(#mark)" stroke-width="39.95" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

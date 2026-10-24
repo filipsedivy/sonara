@@ -1,0 +1,41 @@
+[package]
+name = "sonara-engine"
+description = "Sonara render engine: render sources, the render graph, the offline renderer and the real-time player"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[features]
+# RealtimeSanitizer for the `rtsan` CI job (macOS and Linux only; never part of --workspace builds).
+rtsan = ["dep:rtsan-standalone", "sonara-rt/rtsan"]
+
+[dependencies]
+rtsan-standalone = { workspace = true, optional = true }
+# The project model, routing, tempo map and plugin descriptors the graph is built from.
+sonara-core.workspace = true
+# The processors, their parameter sets, smoothers and the compensation delay line.
+sonara-dsp.workspace = true
+# Audio clip readers and impulse responses (`MediaProvider`); read off the real-time path.
+sonara-media.workspace = true
+# The player: the playback ring, the graph hand-off, the queues and MIDI events.
+sonara-rt.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+# RT-02: the golden test runs every block of the processing path inside `assert_no_alloc`.
+assert_no_alloc.workspace = true
+serde_json.workspace = true
+# Loads the golden `final.project.json` files.
+sonara-project.workspace = true
+# The player's tests on miniaudio's null device; no cycle:
+# sonara-io does not depend on the engine.
+sonara-io.workspace = true
+sonara-testkit.workspace = true
+# The decode cache of the coverage render's media.
+tempfile.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,65 @@
+{
+ "analysis": {
+  "balance_db": null,
+  "channels": 2,
+  "clip_events": 0,
+  "clipped_samples": 0,
+  "correlation": null,
+  "crest_factor_db": 0.0,
+  "dc_offset": [
+   0.0,
+   0.0
+  ],
+  "duration_seconds": 0.25,
+  "integrated_lufs": null,
+  "kind": {
+   "estimated": [
+    "true_peak_dbtp",
+    "plr_db"
+   ],
+   "measured": [
+    "sample_peak_dbfs",
+    "rms_dbfs",
+    "integrated_lufs",
+    "momentary_max_lufs",
+    "short_term_max_lufs",
+    "loudness_range_lu",
+    "clipped_samples",
+    "correlation",
+    "octave_bands_db"
+   ]
+  },
+  "leading_silence_seconds": 0.25,
+  "loudness_range_lu": 0.0,
+  "min_correlation_400ms": null,
+  "momentary_max_lufs": null,
+  "nonfinite_samples": 0,
+  "octave_bands_db": {},
+  "over_full_scale_samples": 0,
+  "plr_db": 0.0,
+  "rms_dbfs": null,
+  "sample_peak_dbfs": null,
+  "sample_rate": 48000,
+  "short_term_lufs": [
+   -120.0
+  ],
+  "short_term_max_lufs": null,
+  "side_to_mid_db": -120.0,
+  "silence_regions": [],
+  "spectral_centroid_hz": 0.0,
+  "trailing_silence_seconds": 0.25,
+  "true_peak_dbtp": null
+ },
+ "block": 65536,
+ "channels": 2,
+ "frames": 12000,
+ "issues": [
+  {
+   "code": "SILENT",
+   "message": "the signal is silent (no gated loudness)",
+   "severity": "warning"
+  }
+ ],
+ "sample_rate": 48000,
+ "source": "plugins/signals/silence.f64"
+}

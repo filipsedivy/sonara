@@ -1,0 +1,8 @@
+{
+ "dtype": "f32le",
+ "shape": [
+  400,
+  1
+ ],
+ "source": "media/inputs/aiff-pcm24-mono.aiff"
+}

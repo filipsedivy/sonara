@@ -1,0 +1,148 @@
+[
+ {
+  "case": "flac-float",
+  "code": "UNSUPPORTED",
+  "details": {},
+  "message": "flac does not support floating point",
+  "spec": {
+   "container": "flac",
+   "floating_point": true
+  }
+ },
+ {
+  "case": "wav-pcm8",
+  "code": "UNSUPPORTED",
+  "details": {},
+  "message": "wav supports bit depths [16, 24, 32], not 8",
+  "spec": {
+   "bit_depth": 8,
+   "container": "wav"
+  }
+ },
+ {
+  "case": "flac-pcm32",
+  "code": "UNSUPPORTED",
+  "details": {},
+  "message": "flac supports bit depths [16, 24], not 32",
+  "spec": {
+   "bit_depth": 32,
+   "container": "flac"
+  }
+ },
+ {
+  "case": "aiff-pcm20",
+  "code": "UNSUPPORTED",
+  "details": {},
+  "message": "aiff supports bit depths [16, 24, 32], not 20",
+  "spec": {
+   "bit_depth": 20,
+   "container": "aiff"
+  }
+ },
+ {
+  "case": "three-channels",
+  "code": "UNSUPPORTED",
+  "details": {},
+  "message": "exports support 1 or 2 channels",
+  "spec": {
+   "channels": 3,
+   "container": "wav"
+  }
+ },
+ {
+  "case": "zero-channels",
+  "code": "UNSUPPORTED",
+  "details": {},
+  "message": "exports support 1 or 2 channels",
+  "spec": {
+   "channels": 0,
+   "container": "wav"
+  }
+ },
+ {
+  "case": "bitrate-on-wav",
+  "code": "INVALID_ARGUMENT",
+  "details": {},
+  "message": "bitrate applies to lossy formats only",
+  "spec": {
+   "bitrate_kbps": 128,
+   "container": "wav"
+  }
+ },
+ {
+  "case": "bitrate-on-flac",
+  "code": "INVALID_ARGUMENT",
+  "details": {},
+  "message": "bitrate applies to lossy formats only",
+  "spec": {
+   "bitrate_kbps": 128,
+   "container": "flac"
+  }
+ },
+ {
+  "case": "mp3-bit-depth-ignored",
+  "ok": true,
+  "spec": {
+   "bit_depth": 8,
+   "container": "mp3"
+  }
+ },
+ {
+  "case": "mp3-float-ignored",
+  "ok": true,
+  "spec": {
+   "container": "mp3",
+   "floating_point": true
+  }
+ },
+ {
+  "case": "caf-double",
+  "ok": true,
+  "spec": {
+   "bit_depth": 64,
+   "container": "caf",
+   "floating_point": true
+  }
+ },
+ {
+  "case": "w64-float16",
+  "ok": true,
+  "spec": {
+   "bit_depth": 16,
+   "container": "w64",
+   "floating_point": true
+  }
+ },
+ {
+  "case": "no-outputs",
+  "code": "INVALID_ARGUMENT",
+  "details": {},
+  "message": "no export outputs requested"
+ },
+ {
+  "case": "exists",
+  "code": "CONFLICT",
+  "details": {
+   "path": "<ROOT>/errors/exists.wav"
+  },
+  "message": "<ROOT>/errors/exists.wav already exists"
+ },
+ {
+  "case": "directory",
+  "code": "CONFLICT",
+  "details": {},
+  "message": "<ROOT>/errors/dir.wav is a directory"
+ },
+ {
+  "case": "nothing-rendered",
+  "code": "INVALID_ARGUMENT",
+  "details": {},
+  "message": "nothing was rendered"
+ },
+ {
+  "case": "cancelled",
+  "code": "CANCELLED",
+  "details": {},
+  "message": "export cancelled"
+ }
+]

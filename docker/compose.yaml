@@ -1,0 +1,28 @@
+# Sonara development container. Use it through scripts/dev.sh.
+#
+# The repository is bind-mounted at /work. Everything the container builds lives in named
+# volumes, so no Linux binary ever lands in the source tree.
+name: sonara-dev
+
+services:
+  dev:
+    build:
+      context: ..
+      dockerfile: docker/dev/Dockerfile
+    image: sonara-dev:local
+    init: true
+    working_dir: /work
+    volumes:
+      - ..:/work
+      - cargo-registry:/opt/cargo/registry
+      - cargo-git:/opt/cargo/git
+      - cargo-advisories:/opt/cargo/advisory-dbs
+      - cache:/cache
+    environment:
+      CARGO_TARGET_DIR: /cache/target
+
+volumes:
+  cargo-registry:
+  cargo-git:
+  cargo-advisories:
+  cache:

@@ -1,0 +1,513 @@
+{
+  "note": "Written by crates/sonara-app/tests/gui_menus.rs with SONARA_WRITE_FIXTURES=1 from sonara-app's menus module. The page's tests/unit/menus.test.ts checks its command table and its focus names against it.",
+  "menus": [
+    {
+      "title": "Sonara",
+      "entries": [
+        {
+          "type": "item",
+          "id": "about",
+          "text": "About Sonara",
+          "shortcut": null
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "item",
+          "id": "settings",
+          "text": "Settings…",
+          "shortcut": "⌘,"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "system",
+          "text": "Services"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "system",
+          "text": "Hide"
+        },
+        {
+          "type": "system",
+          "text": "Hide Others"
+        },
+        {
+          "type": "system",
+          "text": "Show All"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "item",
+          "id": "quit",
+          "text": "Quit Sonara",
+          "shortcut": "⌘Q"
+        }
+      ]
+    },
+    {
+      "title": "File",
+      "entries": [
+        {
+          "type": "item",
+          "id": "new-project",
+          "text": "New Project…",
+          "shortcut": "⌘N"
+        },
+        {
+          "type": "item",
+          "id": "open",
+          "text": "Open…",
+          "shortcut": "⌘O"
+        },
+        {
+          "type": "open-recent",
+          "text": "Open Recent"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "item",
+          "id": "save",
+          "text": "Save",
+          "shortcut": "⌘S"
+        },
+        {
+          "type": "item",
+          "id": "save-as",
+          "text": "Save As…",
+          "shortcut": "⇧⌘S"
+        },
+        {
+          "type": "item",
+          "id": "save-packaged",
+          "text": "Save Packaged Copy (.sonara archive)…",
+          "shortcut": null
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "item",
+          "id": "import-audio",
+          "text": "Import Audio…",
+          "shortcut": "⌘I"
+        },
+        {
+          "type": "item",
+          "id": "import-midi",
+          "text": "Import MIDI…",
+          "shortcut": "⇧⌘I"
+        },
+        {
+          "type": "item",
+          "id": "export-audio",
+          "text": "Export Audio…",
+          "shortcut": "⇧⌘E"
+        },
+        {
+          "type": "item",
+          "id": "export-midi",
+          "text": "Export MIDI…",
+          "shortcut": null
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "item",
+          "id": "verify",
+          "text": "Verify Project",
+          "shortcut": null
+        },
+        {
+          "type": "item",
+          "id": "embed-media",
+          "text": "Embed Linked Media",
+          "shortcut": null
+        },
+        {
+          "type": "item",
+          "id": "remove-unused-media",
+          "text": "Remove Unused Media…",
+          "shortcut": null
+        }
+      ]
+    },
+    {
+      "title": "Edit",
+      "entries": [
+        {
+          "type": "item",
+          "id": "undo",
+          "text": "Undo",
+          "shortcut": "⌘Z"
+        },
+        {
+          "type": "item",
+          "id": "redo",
+          "text": "Redo",
+          "shortcut": "⇧⌘Z"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "item",
+          "id": "split-clips",
+          "text": "Split Clips at Playhead",
+          "shortcut": "⌘E"
+        },
+        {
+          "type": "item",
+          "id": "duplicate-clips",
+          "text": "Duplicate Clips",
+          "shortcut": "⌘D"
+        },
+        {
+          "type": "item",
+          "id": "delete-clips",
+          "text": "Delete Clips",
+          "shortcut": null
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "system",
+          "text": "Cut"
+        },
+        {
+          "type": "system",
+          "text": "Copy"
+        },
+        {
+          "type": "system",
+          "text": "Paste"
+        },
+        {
+          "type": "system",
+          "text": "Select All"
+        }
+      ]
+    },
+    {
+      "title": "Track",
+      "entries": [
+        {
+          "type": "item",
+          "id": "new-instrument-track",
+          "text": "New Instrument Track",
+          "shortcut": "⌘T"
+        },
+        {
+          "type": "item",
+          "id": "new-drum-track",
+          "text": "New Drum Track",
+          "shortcut": null
+        },
+        {
+          "type": "item",
+          "id": "new-audio-track",
+          "text": "New Audio Track",
+          "shortcut": "⇧⌘T"
+        },
+        {
+          "type": "item",
+          "id": "new-bus",
+          "text": "New Bus",
+          "shortcut": null
+        },
+        {
+          "type": "item",
+          "id": "new-folder",
+          "text": "New Folder",
+          "shortcut": null
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "item",
+          "id": "delete-track",
+          "text": "Delete Selected Track",
+          "shortcut": null
+        }
+      ]
+    },
+    {
+      "title": "Transport",
+      "entries": [
+        {
+          "type": "item",
+          "id": "play-stop",
+          "text": "Play / Stop",
+          "shortcut": "Space"
+        },
+        {
+          "type": "item",
+          "id": "return-to-start",
+          "text": "Return to Start",
+          "shortcut": "Home"
+        },
+        {
+          "type": "item",
+          "id": "record",
+          "text": "Record",
+          "shortcut": "R"
+        },
+        {
+          "type": "item",
+          "id": "loop",
+          "text": "Loop",
+          "shortcut": "L"
+        },
+        {
+          "type": "item",
+          "id": "metronome",
+          "text": "Metronome",
+          "shortcut": "C"
+        }
+      ]
+    },
+    {
+      "title": "View",
+      "entries": [
+        {
+          "type": "check",
+          "id": "view:toggle-browser",
+          "text": "Browser",
+          "shortcut": null
+        },
+        {
+          "type": "check",
+          "id": "view:toggle-inspector",
+          "text": "Inspector",
+          "shortcut": null
+        },
+        {
+          "type": "check",
+          "id": "view:toggle-editors",
+          "text": "Editors",
+          "shortcut": null
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "item",
+          "id": "view:mixer",
+          "text": "Mixer",
+          "shortcut": "⌘1"
+        },
+        {
+          "type": "item",
+          "id": "view:piano-roll",
+          "text": "Piano Roll",
+          "shortcut": "⌘2"
+        },
+        {
+          "type": "item",
+          "id": "view:devices",
+          "text": "Devices",
+          "shortcut": "⌘3"
+        }
+      ]
+    },
+    {
+      "title": "Window",
+      "entries": [
+        {
+          "type": "system",
+          "text": "Minimize"
+        },
+        {
+          "type": "system",
+          "text": "Zoom"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "system",
+          "text": "Close Window"
+        }
+      ]
+    },
+    {
+      "title": "Help",
+      "entries": [
+        {
+          "type": "item",
+          "id": "agent-connection",
+          "text": "Agent Connection…",
+          "shortcut": null
+        }
+      ]
+    }
+  ],
+  "page_commands": [
+    {
+      "command": "split-clips"
+    },
+    {
+      "command": "duplicate-clips"
+    },
+    {
+      "command": "delete-clips"
+    },
+    {
+      "command": "new-instrument-track",
+      "edit": {
+        "op": "create_track",
+        "name": "Instrument",
+        "kind": "instrument",
+        "instrument": "sonara.synth.poly"
+      }
+    },
+    {
+      "command": "new-drum-track",
+      "edit": {
+        "op": "create_track",
+        "name": "Drums",
+        "kind": "instrument",
+        "instrument": "sonara.drums"
+      }
+    },
+    {
+      "command": "new-audio-track",
+      "edit": {
+        "op": "create_track",
+        "name": "Audio",
+        "kind": "audio",
+        "instrument": null
+      }
+    },
+    {
+      "command": "new-bus",
+      "edit": {
+        "op": "create_track",
+        "name": "Bus",
+        "kind": "bus",
+        "instrument": null
+      }
+    },
+    {
+      "command": "new-folder",
+      "edit": {
+        "op": "create_track",
+        "name": "Folder",
+        "kind": "folder",
+        "instrument": null
+      }
+    },
+    {
+      "command": "delete-track"
+    },
+    {
+      "command": "play-stop"
+    },
+    {
+      "command": "return-to-start"
+    },
+    {
+      "command": "record"
+    },
+    {
+      "command": "loop"
+    },
+    {
+      "command": "metronome"
+    }
+  ],
+  "edit_items": [
+    {
+      "focus": "none",
+      "items": [
+        {
+          "action": "split-clips",
+          "text": "Split Clips at Playhead",
+          "enabled": true
+        },
+        {
+          "action": "duplicate-clips",
+          "text": "Duplicate Clips",
+          "enabled": true
+        },
+        {
+          "action": "delete-clips",
+          "text": "Delete Clips",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "focus": "timeline",
+      "items": [
+        {
+          "action": "split-clips",
+          "text": "Split Clips at Playhead",
+          "enabled": true
+        },
+        {
+          "action": "duplicate-clips",
+          "text": "Duplicate Clips",
+          "enabled": true
+        },
+        {
+          "action": "delete-clips",
+          "text": "Delete Clips",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "focus": "piano-roll",
+      "items": [
+        {
+          "action": "split-clips",
+          "text": "Split Clips at Playhead",
+          "enabled": false
+        },
+        {
+          "action": "duplicate-clips",
+          "text": "Duplicate Notes",
+          "enabled": true
+        },
+        {
+          "action": "delete-clips",
+          "text": "Delete Notes",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "focus": "devices",
+      "items": [
+        {
+          "action": "split-clips",
+          "text": "Split Clips at Playhead",
+          "enabled": false
+        },
+        {
+          "action": "duplicate-clips",
+          "text": "Duplicate Clips",
+          "enabled": false
+        },
+        {
+          "action": "delete-clips",
+          "text": "Delete Clips",
+          "enabled": false
+        }
+      ]
+    }
+  ]
+}

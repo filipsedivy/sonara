@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sonara.dev/schemas/manifest-v1.schema.json",
+  "title": "Sonara project manifest (manifest.json), format version 1",
+  "type": "object",
+  "required": ["format", "format_version", "project_id", "project_file", "assets", "required_features"],
+  "properties": {
+    "format": {"const": "sonara.manifest"},
+    "format_version": {"type": "integer", "minimum": 1},
+    "sonara_version": {"type": "string"},
+    "project_id": {"type": "string"},
+    "saved": {"type": "string"},
+    "required_features": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "optional_features": {"type": "array", "items": {"type": "string"}},
+    "project_file": {
+      "type": "object", "required": ["path", "sha256", "size"],
+      "properties": {"path": {"const": "project.json"}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+                     "size": {"type": "integer", "minimum": 0}}
+    },
+    "assets": {
+      "type": "array",
+      "items": {"type": "object", "required": ["id", "path", "location", "size"],
+                "properties": {"id": {"type": "string"}, "path": {"type": "string"}, "location": {"enum": ["embedded", "linked"]},
+                               "size": {"type": "integer", "minimum": 0}, "sha256": {"type": ["string", "null"]},
+                               "kind": {"type": "string"}}}
+    },
+    "compatibility": {"type": "object", "properties": {"min_reader_version": {"type": "integer"}}}
+  }
+}

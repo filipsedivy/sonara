@@ -1,0 +1,67 @@
+{
+ "block_size": 512,
+ "bpm": 120.0,
+ "configs": [
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.utility"
+  },
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.eq.parametric"
+  },
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.filter"
+  },
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.dynamics.compressor"
+  },
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.dynamics.limiter"
+  },
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.dynamics.gate"
+  },
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.delay"
+  },
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.reverb"
+  },
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.convolver"
+  },
+  {
+   "config": "default",
+   "kind": "effect",
+   "plugin": "sonara.saturation"
+  },
+  {
+   "config": "default",
+   "kind": "instrument",
+   "plugin": "sonara.synth.poly"
+  },
+  {
+   "config": "default",
+   "kind": "instrument",
+   "plugin": "sonara.drums"
+  }
+ ],
+ "sample_rate": 44100
+}

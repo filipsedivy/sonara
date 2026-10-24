@@ -1,0 +1,21 @@
+{
+ "after": {
+  "has_uint32": false,
+  "inc": "0x50c8fb163c7cea4ed0f51ce6006e4325",
+  "state": "0x1a34dff65c92c1c19219fbc645b2c13d",
+  "uinteger": 0
+ },
+ "after_noise": {
+  "has_uint32": false,
+  "inc": "0x50c8fb163c7cea4ed0f51ce6006e4325",
+  "state": "0xf35659ddc95e6a4a9a215bc565a76485",
+  "uinteger": 0
+ },
+ "dtype": "f64le",
+ "noise_sha256": "5e627211f77cb4558d2b7cc35e691e943103552e7ff2ce3fccca6e005ca6bda2",
+ "noise_tails": [],
+ "shape": [
+  0,
+  2
+ ]
+}

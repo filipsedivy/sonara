@@ -1,0 +1,36 @@
+{
+ "cases": [
+  "sosfilt/1",
+  "sosfilt/4",
+  "sosfilt/8",
+  "sos_scenario",
+  "lfilter/rms",
+  "lfilter/dc-blocker",
+  "lfilter/order2",
+  "lfilter/order4",
+  "lfilter/a0",
+  "lfilter/a-short",
+  "upfirdn/true-peak-x4",
+  "upfirdn/true-peak-x2",
+  "upfirdn/odd-length",
+  "rbj",
+  "smoothed",
+  "level",
+  "minimum/la-1",
+  "minimum/la-2",
+  "minimum/la-7",
+  "minimum/la-96",
+  "minimum/la-480",
+  "delay/delay-0",
+  "delay/delay-1",
+  "delay/delay-37",
+  "delay/delay-600"
+ ],
+ "chunks": [
+  512,
+  333,
+  1,
+  1200
+ ],
+ "sample_rate": 48000
+}

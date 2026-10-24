@@ -1,0 +1,7960 @@
+{
+ "batch": "coverage/batch.json",
+ "final_project": "118d5a98db708a12f8ed5018aef96d43d96f6a780371f5c4ac58315ba03f3c4c",
+ "redo": {
+  "hashes": [
+   "118d5a98db708a12f8ed5018aef96d43d96f6a780371f5c4ac58315ba03f3c4c"
+  ],
+  "labels": [
+   "Redo Relink Media"
+  ],
+  "moves": 1
+ },
+ "render": {
+  "frames": 1613280,
+  "latency": 0,
+  "sample_rate": 48000,
+  "start_frame": 0,
+  "tail_frames": 480,
+  "warnings": []
+ },
+ "roundtrip_equal": true,
+ "smf_export": {
+  "max_rounding_error_beats": 0.0,
+  "notes": 22,
+  "tracks": 5
+ },
+ "steps": [
+  {
+   "args": {},
+   "id": "step0",
+   "project": null,
+   "result": {
+    "allowed_paths": [
+     "<ROOT>/projects",
+     "<ROOT>/work",
+     "<ROOT>"
+    ],
+    "api_version": "1.0",
+    "audio_engine": {
+     "available": false,
+     "backend": "null",
+     "reason": "audio backend disabled (null backend)"
+    },
+    "confirmations_enabled": true,
+    "export_formats": [
+     "aiff",
+     "bwf",
+     "caf",
+     "flac",
+     "mp3",
+     "ogg",
+     "opus",
+     "rf64",
+     "w64",
+     "wav"
+    ],
+    "ffmpeg_import": false,
+    "limits": {
+     "max_notes_per_call": 20000,
+     "max_preview_seconds": 900,
+     "max_render_seconds": 10800,
+     "max_tracks": 512
+    },
+    "ok": true,
+    "third_party_plugins": "not supported yet",
+    "tool": "get_capabilities"
+   },
+   "tool": "get_capabilities"
+  },
+  {
+   "args": {},
+   "id": "step1",
+   "project": null,
+   "result": {
+    "error": {
+     "code": "NO_PROJECT",
+     "message": "no project is open; create or open one first"
+    },
+    "ok": false,
+    "tool": "list_tracks"
+   },
+   "tool": "list_tracks"
+  },
+  {
+   "args": {},
+   "id": "step2",
+   "project": null,
+   "result": {
+    "error": {
+     "code": "NO_PROJECT",
+     "message": "no project is open; create or open one first"
+    },
+    "ok": false,
+    "tool": "undo"
+   },
+   "tool": "undo"
+  },
+  {
+   "args": {},
+   "id": "step3",
+   "project": null,
+   "result": {
+    "error": {
+     "code": "NO_PROJECT",
+     "message": "no project is open; create or open one first"
+    },
+    "ok": false,
+    "tool": "redo"
+   },
+   "tool": "redo"
+  },
+  {
+   "args": {
+    "bogus": 1,
+    "bpm": 5000,
+    "name": "x"
+   },
+   "id": "step4",
+   "project": null,
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "details": {
+      "errors": [
+       {
+        "field": "bpm",
+        "message": "Input should be less than or equal to 999"
+       },
+       {
+        "field": "bogus",
+        "message": "Extra inputs are not permitted"
+       }
+      ]
+     },
+     "message": "invalid arguments for create_project"
+    },
+    "ok": false,
+    "tool": "create_project"
+   },
+   "tool": "create_project"
+  },
+  {
+   "args": {
+    "bpm": 120,
+    "length": "16 bars",
+    "name": "Coverage"
+   },
+   "id": "project",
+   "project": "bfb117cd5d4a1865533bcd6ba87cf8e392b34067af5acb6d72d14a97d095e38e",
+   "result": {
+    "committed": true,
+    "ok": true,
+    "project_id": "prj_000000000002",
+    "project_version": 1,
+    "state": {
+     "assets": [],
+     "content_end": {
+      "bar_beat": "1:1",
+      "beat": 0.0,
+      "seconds": 0.0
+     },
+     "length": {
+      "bar_beat": "17:1",
+      "beat": 64.0,
+      "explicit": true,
+      "seconds": 32.0
+     },
+     "loop": {
+      "enabled": false,
+      "end": 16.0,
+      "start": 0.0
+     },
+     "markers": [],
+     "master": {
+      "kind": "master",
+      "mute": false,
+      "name": "Master",
+      "output": null,
+      "pan": 0.0,
+      "solo": false,
+      "track_id": "master",
+      "volume_db": 0.0
+     },
+     "metadata": {
+      "created": "<VOLATILE>",
+      "title": "Coverage"
+     },
+     "name": "Coverage",
+     "project_id": "prj_000000000002",
+     "sample_rate": 48000,
+     "sections": [],
+     "tempo": [
+      {
+       "beat": 0.0,
+       "bpm": 120.0,
+       "ramp": false
+      }
+     ],
+     "time_signatures": [
+      {
+       "bar": 1,
+       "beat": 0.0,
+       "signature": "4/4"
+      }
+     ],
+     "tracks": []
+    },
+    "tool": "create_project"
+   },
+   "tool": "create_project"
+  },
+  {
+   "args": {},
+   "id": "step6",
+   "project": "bfb117cd5d4a1865533bcd6ba87cf8e392b34067af5acb6d72d14a97d095e38e",
+   "result": {
+    "allowed_paths": [
+     "<ROOT>/projects",
+     "<ROOT>/work",
+     "<ROOT>"
+    ],
+    "api_version": "1.0",
+    "audio_engine": {
+     "available": false,
+     "backend": "null",
+     "reason": "audio backend disabled (null backend)"
+    },
+    "confirmations_enabled": true,
+    "export_formats": [
+     "aiff",
+     "bwf",
+     "caf",
+     "flac",
+     "mp3",
+     "ogg",
+     "opus",
+     "rf64",
+     "w64",
+     "wav"
+    ],
+    "ffmpeg_import": false,
+    "limits": {
+     "max_notes_per_call": 20000,
+     "max_preview_seconds": 900,
+     "max_render_seconds": 10800,
+     "max_tracks": 512
+    },
+    "ok": true,
+    "third_party_plugins": "not supported yet",
+    "tool": "get_capabilities"
+   },
+   "tool": "get_capabilities"
+  },
+  {
+   "args": {
+    "dry_run": true,
+    "name": "Other"
+   },
+   "id": "step7",
+   "project": "bfb117cd5d4a1865533bcd6ba87cf8e392b34067af5acb6d72d14a97d095e38e",
+   "result": {
+    "committed": false,
+    "dry_run": true,
+    "ok": true,
+    "tool": "create_project",
+    "would_discard_unsaved": false
+   },
+   "tool": "create_project"
+  },
+  {
+   "args": {},
+   "id": "step8",
+   "project": "bfb117cd5d4a1865533bcd6ba87cf8e392b34067af5acb6d72d14a97d095e38e",
+   "result": {
+    "ok": true,
+    "plugins": [
+     {
+      "category": "utility",
+      "description": "Trim gain, stereo width (mid/side), mono, channel swap, polarity and DC removal.",
+      "format": "builtin",
+      "kind": "effect",
+      "name": "Utility",
+      "plugin_id": "sonara.utility",
+      "presets": [],
+      "sidechain": false,
+      "vendor": "Sonara"
+     },
+     {
+      "category": "eq",
+      "description": "Six-band parametric equalizer: Butterworth high/low-pass (12-48 dB/oct), low and high shelf/peak bands and two fully parametric mid bands (RBJ biquads).",
+      "format": "builtin",
+      "kind": "effect",
+      "name": "Parametric EQ",
+      "plugin_id": "sonara.eq.parametric",
+      "presets": [
+       "Low Cut",
+       "Vocal Presence",
+       "Bass Tight",
+       "Air",
+       "Telephone"
+      ],
+      "sidechain": false,
+      "vendor": "Sonara"
+     },
+     {
+      "category": "filter",
+      "description": "Resonant multimode state-variable filter with cutoff LFO; ideal for automated sweeps.",
+      "format": "builtin",
+      "kind": "effect",
+      "name": "Filter",
+      "plugin_id": "sonara.filter",
+      "presets": [
+       "Slow Sweep",
+       "Wah"
+      ],
+      "sidechain": false,
+      "vendor": "Sonara"
+     },
+     {
+      "category": "dynamics",
+      "description": "Feed-forward soft-knee compressor with stereo-linked detection, parallel mix and external sidechain input (for ducking, e.g. bass keyed by kick).",
+      "format": "builtin",
+      "kind": "effect",
+      "name": "Compressor",
+      "plugin_id": "sonara.dynamics.compressor",
+      "presets": [
+       "Gentle Bus Glue",
+       "Vocal Leveler",
+       "Drum Punch",
+       "Sidechain Pump",
+       "Parallel Smash"
+      ],
+      "sidechain": true,
+      "vendor": "Sonara"
+     },
+     {
+      "category": "dynamics",
+      "description": "Lookahead brickwall limiter with optional 4x oversampled true-peak detection. Introduces latency equal to the lookahead (compensated automatically).",
+      "format": "builtin",
+      "kind": "effect",
+      "name": "Limiter",
+      "plugin_id": "sonara.dynamics.limiter",
+      "presets": [
+       "Master -1 dBTP",
+       "Streaming Loud"
+      ],
+      "sidechain": false,
+      "vendor": "Sonara"
+     },
+     {
+      "category": "dynamics",
+      "description": "Noise gate with hysteresis and hold, or downward expander.",
+      "format": "builtin",
+      "kind": "effect",
+      "name": "Gate / Expander",
+      "plugin_id": "sonara.dynamics.gate",
+      "presets": [],
+      "sidechain": true,
+      "vendor": "Sonara"
+     },
+     {
+      "category": "delay",
+      "description": "Stereo feedback delay with tempo sync, ping-pong and band-limited repeats.",
+      "format": "builtin",
+      "kind": "effect",
+      "name": "Delay",
+      "plugin_id": "sonara.delay",
+      "presets": [
+       "Dotted Eighth",
+       "Ping-Pong Quarter",
+       "Slapback",
+       "Dub Echo"
+      ],
+      "sidechain": false,
+      "vendor": "Sonara"
+     },
+     {
+      "category": "reverb",
+      "description": "Algorithmic reverb via a synthesized, frequency-dependent decaying impulse response and partitioned FFT convolution.",
+      "format": "builtin",
+      "kind": "effect",
+      "name": "Reverb",
+      "plugin_id": "sonara.reverb",
+      "presets": [
+       "Small Room",
+       "Vocal Plate",
+       "Concert Hall",
+       "Cathedral",
+       "Ambient Wash"
+      ],
+      "sidechain": false,
+      "vendor": "Sonara"
+     },
+     {
+      "category": "reverb",
+      "description": "Convolution with an impulse response loaded from the project's media (device state key 'ir_asset_id').",
+      "format": "builtin",
+      "kind": "effect",
+      "name": "Convolution Reverb",
+      "plugin_id": "sonara.convolver",
+      "presets": [],
+      "sidechain": false,
+      "vendor": "Sonara"
+     },
+     {
+      "category": "distortion",
+      "description": "Waveshaping saturation and distortion with IIR oversampling against aliasing.",
+      "format": "builtin",
+      "kind": "effect",
+      "name": "Saturation",
+      "plugin_id": "sonara.saturation",
+      "presets": [
+       "Warm Tape",
+       "Tube Drive",
+       "Hard Crunch"
+      ],
+      "sidechain": false,
+      "vendor": "Sonara"
+     },
+     {
+      "category": "synth",
+      "description": "Polyphonic subtractive synthesizer: 2 band-limited oscillators with unison, noise, resonant state-variable filter with envelope, amp envelope, LFO, mono/legato glide.",
+      "format": "builtin",
+      "kind": "instrument",
+      "name": "Sonara Poly Synth",
+      "plugin_id": "sonara.synth.poly",
+      "presets": [
+       "Init",
+       "Analog Bass",
+       "Sub Bass",
+       "Acid Bass",
+       "Warm Pad",
+       "Strings",
+       "Brass",
+       "Pluck",
+       "Supersaw Lead",
+       "Square Lead",
+       "Electric Keys",
+       "Glass Bells",
+       "Choir Pad"
+      ],
+      "sidechain": false,
+      "vendor": "Sonara"
+     },
+     {
+      "category": "drums",
+      "description": "Synthesized drum machine on the General MIDI percussion map (36 kick, 38 snare, 39 clap, 42/44/46 hats, 41-50 toms, 49 crash, 51 ride, ...).",
+      "format": "builtin",
+      "kind": "instrument",
+      "name": "Sonara Drum Kit",
+      "plugin_id": "sonara.drums",
+      "presets": [
+       "Electronic 808",
+       "Punchy 909",
+       "Tight House",
+       "Cinematic Toms",
+       "Lo-Fi"
+      ],
+      "sidechain": false,
+      "vendor": "Sonara"
+     }
+    ],
+    "third_party_hosting": "not yet supported (see docs/plugin-hosting.md)",
+    "tool": "list_plugins"
+   },
+   "tool": "list_plugins"
+  },
+  {
+   "args": {
+    "kind": "instrument"
+   },
+   "id": "step9",
+   "project": "bfb117cd5d4a1865533bcd6ba87cf8e392b34067af5acb6d72d14a97d095e38e",
+   "result": {
+    "ok": true,
+    "plugins": [
+     {
+      "category": "synth",
+      "description": "Polyphonic subtractive synthesizer: 2 band-limited oscillators with unison, noise, resonant state-variable filter with envelope, amp envelope, LFO, mono/legato glide.",
+      "format": "builtin",
+      "kind": "instrument",
+      "name": "Sonara Poly Synth",
+      "plugin_id": "sonara.synth.poly",
+      "presets": [
+       "Init",
+       "Analog Bass",
+       "Sub Bass",
+       "Acid Bass",
+       "Warm Pad",
+       "Strings",
+       "Brass",
+       "Pluck",
+       "Supersaw Lead",
+       "Square Lead",
+       "Electric Keys",
+       "Glass Bells",
+       "Choir Pad"
+      ],
+      "sidechain": false,
+      "vendor": "Sonara"
+     },
+     {
+      "category": "drums",
+      "description": "Synthesized drum machine on the General MIDI percussion map (36 kick, 38 snare, 39 clap, 42/44/46 hats, 41-50 toms, 49 crash, 51 ride, ...).",
+      "format": "builtin",
+      "kind": "instrument",
+      "name": "Sonara Drum Kit",
+      "plugin_id": "sonara.drums",
+      "presets": [
+       "Electronic 808",
+       "Punchy 909",
+       "Tight House",
+       "Cinematic Toms",
+       "Lo-Fi"
+      ],
+      "sidechain": false,
+      "vendor": "Sonara"
+     }
+    ],
+    "third_party_hosting": "not yet supported (see docs/plugin-hosting.md)",
+    "tool": "list_plugins"
+   },
+   "tool": "list_plugins"
+  },
+  {
+   "args": {
+    "plugin_id": "sonara.convolver"
+   },
+   "id": "step10",
+   "project": "bfb117cd5d4a1865533bcd6ba87cf8e392b34067af5acb6d72d14a97d095e38e",
+   "result": {
+    "ok": true,
+    "plugin": {
+     "category": "reverb",
+     "description": "Convolution with an impulse response loaded from the project's media (device state key 'ir_asset_id').",
+     "format": "builtin",
+     "kind": "effect",
+     "name": "Convolution Reverb",
+     "parameters": [
+      {
+       "automatable": true,
+       "default": 0.3,
+       "id": "mix",
+       "max": 1.0,
+       "min": 0.0,
+       "name": "Mix",
+       "type": "float"
+      },
+      {
+       "automatable": true,
+       "default": 0.0,
+       "id": "gain_db",
+       "max": 24.0,
+       "min": -24.0,
+       "name": "Wet Gain",
+       "type": "float",
+       "unit": "dB"
+      },
+      {
+       "automatable": false,
+       "choices": [
+        "mono_sum",
+        "stereo"
+       ],
+       "default": "mono_sum",
+       "description": "mono_sum: L+R into a stereo IR",
+       "id": "input",
+       "name": "Input",
+       "type": "enum"
+      },
+      {
+       "automatable": false,
+       "default": true,
+       "id": "normalize",
+       "name": "Normalize IR",
+       "type": "bool"
+      }
+     ],
+     "plugin_id": "sonara.convolver",
+     "presets": [],
+     "sidechain": false,
+     "vendor": "Sonara"
+    },
+    "tool": "list_plugins"
+   },
+   "tool": "list_plugins"
+  },
+  {
+   "args": {
+    "plugin_id": "vst3.serum"
+   },
+   "id": "step11",
+   "project": "bfb117cd5d4a1865533bcd6ba87cf8e392b34067af5acb6d72d14a97d095e38e",
+   "result": {
+    "error": {
+     "code": "NOT_FOUND",
+     "details": {
+      "available": [
+       "sonara.convolver",
+       "sonara.delay",
+       "sonara.drums",
+       "sonara.dynamics.compressor",
+       "sonara.dynamics.gate",
+       "sonara.dynamics.limiter",
+       "sonara.eq.parametric",
+       "sonara.filter",
+       "sonara.reverb",
+       "sonara.saturation",
+       "sonara.synth.poly",
+       "sonara.utility"
+      ]
+     },
+     "message": "unknown plugin 'vst3.serum'"
+    },
+    "ok": false,
+    "tool": "list_plugins"
+   },
+   "tool": "list_plugins"
+  },
+  {
+   "args": {
+    "kind": "midi"
+   },
+   "id": "step12",
+   "project": "bfb117cd5d4a1865533bcd6ba87cf8e392b34067af5acb6d72d14a97d095e38e",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "details": {
+      "errors": [
+       {
+        "field": "kind",
+        "message": "Input should be 'effect' or 'instrument'"
+       }
+      ]
+     },
+     "message": "invalid arguments for list_plugins"
+    },
+    "ok": false,
+    "tool": "list_plugins"
+   },
+   "tool": "list_plugins"
+  },
+  {
+   "args": [
+    "not",
+    "an",
+    "object"
+   ],
+   "id": "step13",
+   "project": "bfb117cd5d4a1865533bcd6ba87cf8e392b34067af5acb6d72d14a97d095e38e",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "details": {
+      "errors": [
+       {
+        "field": "(root)",
+        "message": "Input should be a valid dictionary or instance of Empty"
+       }
+      ]
+     },
+     "message": "invalid arguments for get_history"
+    },
+    "ok": false,
+    "tool": "get_history"
+   },
+   "tool": "get_history"
+  },
+  {
+   "args": {},
+   "id": "step14",
+   "project": "bfb117cd5d4a1865533bcd6ba87cf8e392b34067af5acb6d72d14a97d095e38e",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "details": {
+      "errors": [
+       {
+        "field": "clip_id",
+        "message": "Field required"
+       }
+      ]
+     },
+     "message": "invalid arguments for move_clip"
+    },
+    "ok": false,
+    "tool": "move_clip"
+   },
+   "tool": "move_clip"
+  },
+  {
+   "args": {
+    "asset_id": 5,
+    "path": 7
+   },
+   "id": "step15",
+   "project": "bfb117cd5d4a1865533bcd6ba87cf8e392b34067af5acb6d72d14a97d095e38e",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "details": {
+      "errors": [
+       {
+        "field": "asset_id",
+        "message": "Input should be a valid string"
+       },
+       {
+        "field": "path",
+        "message": "Input should be a valid string"
+       }
+      ]
+     },
+     "message": "invalid arguments for relink_media"
+    },
+    "ok": false,
+    "tool": "relink_media"
+   },
+   "tool": "relink_media"
+  },
+  {
+   "args": {
+    "start": true
+   },
+   "id": "step16",
+   "project": "ba9e4d7071f5db117018a6806cc31b8efaecd4b956e28101d6010aad3c08a047",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "transport"
+     ],
+     "updated": [
+      {
+       "id": "project",
+       "kind": "project"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Transport Settings",
+    "project_version": 2,
+    "tool": "set_loop"
+   },
+   "tool": "set_loop"
+  },
+  {
+   "args": {
+    "kind": "instrument",
+    "name": "Keys",
+    "preset": "Electric Keys"
+   },
+   "id": "keys",
+   "project": "5094d4e3e5a514daad51fa422540d2872d55292d743ce3c624d5dcb1e72af3f0",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "routing",
+      "tracks"
+     ],
+     "updated": []
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Create Track",
+    "project_version": 3,
+    "result": {
+     "instrument_device_id": "dev_000000000004",
+     "track_id": "trk_000000000003"
+    },
+    "tool": "create_track"
+   },
+   "tool": "create_track"
+  },
+  {
+   "args": {
+    "kind": "instrument",
+    "name": "Lead",
+    "preset": "Pluck"
+   },
+   "id": "lead",
+   "project": "b4466b24ecc2a35f91b147ad36a9a83e49bfef1a69608816b20e9beb087f5687",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "routing",
+      "tracks"
+     ],
+     "updated": []
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Create Track",
+    "project_version": 4,
+    "result": {
+     "instrument_device_id": "dev_000000000006",
+     "track_id": "trk_000000000005"
+    },
+    "tool": "create_track"
+   },
+   "tool": "create_track"
+  },
+  {
+   "args": {
+    "kind": "bus",
+    "name": "FX Bus"
+   },
+   "id": "bus",
+   "project": "b77d660cabe79207972d3a8d629768eab0882766059d3c756c831de9decfd79d",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "routing",
+      "tracks"
+     ],
+     "updated": []
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Create Track",
+    "project_version": 5,
+    "result": {
+     "track_id": "trk_000000000007"
+    },
+    "tool": "create_track"
+   },
+   "tool": "create_track"
+  },
+  {
+   "args": {
+    "kind": "audio",
+    "name": "Spare"
+   },
+   "id": "spare",
+   "project": "3389676907804e6e77e85a634479920bc5ac3fde21a89df6d573960882c42652",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "routing",
+      "tracks"
+     ],
+     "updated": []
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Create Track",
+    "project_version": 6,
+    "result": {
+     "track_id": "trk_000000000009"
+    },
+    "tool": "create_track"
+   },
+   "tool": "create_track"
+  },
+  {
+   "args": {},
+   "id": "step21",
+   "project": "3389676907804e6e77e85a634479920bc5ac3fde21a89df6d573960882c42652",
+   "result": {
+    "master": {
+     "effects": [],
+     "track_id": "master",
+     "volume_db": 0.0
+    },
+    "ok": true,
+    "tool": "list_tracks",
+    "tracks": [
+     {
+      "clips": 0,
+      "effects": [],
+      "instrument": "sonara.synth.poly",
+      "kind": "instrument",
+      "mute": false,
+      "name": "Keys",
+      "output": "master",
+      "pan": 0.0,
+      "solo": false,
+      "track_id": "trk_000000000003",
+      "volume_db": 0.0
+     },
+     {
+      "clips": 0,
+      "effects": [],
+      "instrument": "sonara.synth.poly",
+      "kind": "instrument",
+      "mute": false,
+      "name": "Lead",
+      "output": "master",
+      "pan": 0.0,
+      "solo": false,
+      "track_id": "trk_000000000005",
+      "volume_db": 0.0
+     },
+     {
+      "clips": 0,
+      "effects": [],
+      "instrument": null,
+      "kind": "bus",
+      "mute": false,
+      "name": "FX Bus",
+      "output": "master",
+      "pan": 0.0,
+      "solo": false,
+      "track_id": "trk_000000000007",
+      "volume_db": 0.0
+     },
+     {
+      "clips": 0,
+      "effects": [],
+      "instrument": null,
+      "kind": "audio",
+      "mute": false,
+      "name": "Spare",
+      "output": "master",
+      "pan": 0.0,
+      "solo": false,
+      "track_id": "trk_000000000009",
+      "volume_db": 0.0
+     }
+    ]
+   },
+   "tool": "list_tracks"
+  },
+  {
+   "args": {
+    "name": "Piano",
+    "track_id": "trk_000000000003"
+   },
+   "id": "step22",
+   "project": "22349c78953c48ec84c17882878c1a6ae57872577ab7689c4b069f77b19c8cba",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "tracks"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000003",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Rename Track",
+    "project_version": 7,
+    "tool": "rename_track"
+   },
+   "tool": "rename_track"
+  },
+  {
+   "args": {
+    "dry_run": true,
+    "name": "Never",
+    "track_id": "trk_000000000003"
+   },
+   "id": "step23",
+   "project": "22349c78953c48ec84c17882878c1a6ae57872577ab7689c4b069f77b19c8cba",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "tracks"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000003",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": false,
+    "dry_run": true,
+    "ok": true,
+    "operation": "Rename Track",
+    "project_version": 7,
+    "tool": "rename_track"
+   },
+   "tool": "rename_track"
+  },
+  {
+   "args": {
+    "name": "x",
+    "track_id": "trk_missing"
+   },
+   "id": "step24",
+   "project": "22349c78953c48ec84c17882878c1a6ae57872577ab7689c4b069f77b19c8cba",
+   "result": {
+    "error": {
+     "code": "NOT_FOUND",
+     "details": {
+      "id": "trk_missing",
+      "kind": "track"
+     },
+     "message": "track 'trk_missing' not found"
+    },
+    "ok": false,
+    "tool": "rename_track"
+   },
+   "tool": "rename_track"
+  },
+  {
+   "args": {
+    "name": "",
+    "track_id": "trk_000000000003"
+   },
+   "id": "step25",
+   "project": "22349c78953c48ec84c17882878c1a6ae57872577ab7689c4b069f77b19c8cba",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "details": {
+      "errors": [
+       {
+        "field": "name",
+        "message": "String should have at least 1 character"
+       }
+      ]
+     },
+     "message": "invalid arguments for rename_track"
+    },
+    "ok": false,
+    "tool": "rename_track"
+   },
+   "tool": "rename_track"
+  },
+  {
+   "args": {
+    "armed": true,
+    "color": "#112233",
+    "mute": true,
+    "solo": true,
+    "track_id": "trk_000000000003"
+   },
+   "id": "step26",
+   "project": "68cda347e816e13f9fd17597a41ec3769d3828c80a5b18a234338ee7619a656d",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "mixer",
+      "tracks"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000003",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Track State",
+    "project_version": 8,
+    "result": {
+     "steps": [
+      {
+       "mute": true,
+       "pan": 0.0,
+       "solo": true,
+       "solo_safe": false,
+       "volume_db": 0.0
+      },
+      {},
+      {}
+     ]
+    },
+    "tool": "set_track_state"
+   },
+   "tool": "set_track_state"
+  },
+  {
+   "args": {
+    "armed": false,
+    "mute": false,
+    "solo": false,
+    "solo_safe": true,
+    "track_id": "trk_000000000003"
+   },
+   "id": "step27",
+   "project": "236ffa7703e2e452879f97a41460022faf4b3d4d981673621b881abb5300a10f",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "mixer",
+      "tracks"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000003",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Track State",
+    "project_version": 9,
+    "result": {
+     "steps": [
+      {
+       "mute": false,
+       "pan": 0.0,
+       "solo": false,
+       "solo_safe": true,
+       "volume_db": 0.0
+      },
+      {}
+     ]
+    },
+    "tool": "set_track_state"
+   },
+   "tool": "set_track_state"
+  },
+  {
+   "args": {
+    "track_id": "trk_000000000003"
+   },
+   "id": "step28",
+   "project": "236ffa7703e2e452879f97a41460022faf4b3d4d981673621b881abb5300a10f",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "message": "nothing to change"
+    },
+    "ok": false,
+    "tool": "set_track_state"
+   },
+   "tool": "set_track_state"
+  },
+  {
+   "args": {
+    "armed": true,
+    "track_id": "trk_000000000007"
+   },
+   "id": "step29",
+   "project": "236ffa7703e2e452879f97a41460022faf4b3d4d981673621b881abb5300a10f",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "message": "only audio and instrument tracks can record"
+    },
+    "ok": false,
+    "tool": "set_track_state"
+   },
+   "tool": "set_track_state"
+  },
+  {
+   "args": {
+    "dry_run": true,
+    "mute": true,
+    "track_id": "trk_000000000005"
+   },
+   "id": "step30",
+   "project": "236ffa7703e2e452879f97a41460022faf4b3d4d981673621b881abb5300a10f",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "mixer"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000005",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": false,
+    "dry_run": true,
+    "ok": true,
+    "operation": "Track State",
+    "project_version": 9,
+    "result": {
+     "steps": [
+      {
+       "mute": true,
+       "pan": 0.0,
+       "solo": false,
+       "solo_safe": false,
+       "volume_db": 0.0
+      }
+     ]
+    },
+    "tool": "set_track_state"
+   },
+   "tool": "set_track_state"
+  },
+  {
+   "args": {
+    "track_id": "trk_000000000009"
+   },
+   "id": "step31",
+   "project": "920585346b2a7c9d2f58069c4654b1bde221ac24ace15cd1bd3b628ff4e3ae9a",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [
+      {
+       "id": "trk_000000000009",
+       "kind": "track"
+      }
+     ],
+     "flags": [
+      "clips",
+      "routing",
+      "tracks"
+     ],
+     "updated": []
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Delete Track",
+    "project_version": 10,
+    "result": {
+     "deleted_clips": 0,
+     "rerouted_tracks": []
+    },
+    "tool": "delete_track"
+   },
+   "tool": "delete_track"
+  },
+  {
+   "args": {
+    "track_id": "trk_000000000009"
+   },
+   "id": "step32",
+   "project": "920585346b2a7c9d2f58069c4654b1bde221ac24ace15cd1bd3b628ff4e3ae9a",
+   "result": {
+    "error": {
+     "code": "NOT_FOUND",
+     "details": {
+      "id": "trk_000000000009",
+      "kind": "track"
+     },
+     "message": "track 'trk_000000000009' not found"
+    },
+    "ok": false,
+    "tool": "delete_track"
+   },
+   "tool": "delete_track"
+  },
+  {
+   "args": {
+    "enabled": true,
+    "end": "4:1",
+    "start": "2:1"
+   },
+   "id": "step33",
+   "project": "c6aa5d9f2641748b364dfecb2d1008d59dfc3831069405a0a8f29910db352f95",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "transport"
+     ],
+     "updated": [
+      {
+       "id": "project",
+       "kind": "project"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Transport Settings",
+    "project_version": 11,
+    "tool": "set_loop"
+   },
+   "tool": "set_loop"
+  },
+  {
+   "args": {
+    "end": 4,
+    "start": 8
+   },
+   "id": "step34",
+   "project": "c6aa5d9f2641748b364dfecb2d1008d59dfc3831069405a0a8f29910db352f95",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "message": "loop start must be >= 0 and before loop end"
+    },
+    "ok": false,
+    "tool": "set_loop"
+   },
+   "tool": "set_loop"
+  },
+  {
+   "args": {
+    "dry_run": true,
+    "enabled": false
+   },
+   "id": "step35",
+   "project": "c6aa5d9f2641748b364dfecb2d1008d59dfc3831069405a0a8f29910db352f95",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "transport"
+     ],
+     "updated": [
+      {
+       "id": "project",
+       "kind": "project"
+      }
+     ]
+    },
+    "committed": false,
+    "dry_run": true,
+    "ok": true,
+    "operation": "Transport Settings",
+    "project_version": 11,
+    "tool": "set_loop"
+   },
+   "tool": "set_loop"
+  },
+  {
+   "args": {
+    "length": 8,
+    "name": "Riff",
+    "notes": [
+     {
+      "length": 1,
+      "pitch": "C4",
+      "start": 0
+     },
+     {
+      "length": 1,
+      "pitch": "E4",
+      "start": 1
+     },
+     {
+      "length": 0.9,
+      "pitch": "G4",
+      "start": 2.03,
+      "velocity": 64
+     }
+    ],
+    "start": 0,
+    "track_id": "trk_000000000003"
+   },
+   "id": "riff",
+   "project": "5a1a0822cc03f57d7cfb1b3ecd38ef11970f5a6726acbf0a1c93a05907aa9213",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips",
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000003",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Create MIDI Clip",
+    "project_version": 12,
+    "result": {
+     "clip_id": "clp_000000000014",
+     "end_seconds": 4.0,
+     "length_beats": 8.0,
+     "note_ids": [
+      "n_000000000011",
+      "n_000000000012",
+      "n_000000000013"
+     ],
+     "start_beat": 0.0,
+     "start_seconds": 0.0
+    },
+    "tool": "create_midi_clip"
+   },
+   "tool": "create_midi_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000014",
+    "notes": [
+     {
+      "length": 1,
+      "pitch": "Bb3",
+      "start": 3
+     }
+    ]
+   },
+   "id": "added",
+   "project": "e3ece44464ccc55684ec7562c4d69fd68e10d160e60d81268350d55198d2d188",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000014",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Add Notes",
+    "project_version": 13,
+    "result": {
+     "note_count": 4,
+     "note_ids": [
+      "n_000000000015"
+     ]
+    },
+    "tool": "add_midi_notes"
+   },
+   "tool": "add_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000014",
+    "notes": [
+     {
+      "length": 1,
+      "pitch": "H9",
+      "start": 0
+     }
+    ]
+   },
+   "id": "step38",
+   "project": "e3ece44464ccc55684ec7562c4d69fd68e10d160e60d81268350d55198d2d188",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "message": "invalid note name 'H9'"
+    },
+    "ok": false,
+    "tool": "add_midi_notes"
+   },
+   "tool": "add_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000014",
+    "notes": [
+     {
+      "length": 1,
+      "pitch": 200,
+      "start": 0
+     }
+    ]
+   },
+   "id": "step39",
+   "project": "e3ece44464ccc55684ec7562c4d69fd68e10d160e60d81268350d55198d2d188",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "message": "pitch 200 is outside 0-127"
+    },
+    "ok": false,
+    "tool": "add_midi_notes"
+   },
+   "tool": "add_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000014",
+    "dry_run": true,
+    "notes": [
+     {
+      "length": 1,
+      "pitch": 72,
+      "start": 4
+     }
+    ]
+   },
+   "id": "step40",
+   "project": "e3ece44464ccc55684ec7562c4d69fd68e10d160e60d81268350d55198d2d188",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000014",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": false,
+    "dry_run": true,
+    "ok": true,
+    "operation": "Add Notes",
+    "project_version": 13,
+    "result": {
+     "note_count": 5,
+     "note_ids": [
+      "n_000000000016"
+     ]
+    },
+    "tool": "add_midi_notes"
+   },
+   "tool": "add_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000014",
+    "edits": [
+     {
+      "length": 0.5,
+      "note_id": "n_000000000011",
+      "pitch": "D4",
+      "velocity": 33
+     }
+    ]
+   },
+   "id": "step41",
+   "project": "35a0538f847fe54677abbd77c160adc9256719a24221a2f0d32053d3572d19f7",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000014",
+       "kind": "clip"
+      },
+      {
+       "id": "n_000000000011",
+       "kind": "note"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Notes",
+    "project_version": 14,
+    "result": {
+     "steps": [
+      {}
+     ]
+    },
+    "tool": "edit_midi_notes"
+   },
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000014",
+    "delete_note_ids": [
+     "n_000000000015"
+    ]
+   },
+   "id": "step42",
+   "project": "637f3939837baf94a3d380afaa5cc585580520c5063401ef84cb43bef350c605",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [
+      {
+       "id": "n_000000000015",
+       "kind": "note"
+      }
+     ],
+     "flags": [
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000014",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Notes",
+    "project_version": 15,
+    "result": {
+     "steps": [
+      {}
+     ]
+    },
+    "tool": "edit_midi_notes"
+   },
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000014",
+    "note_ids": [
+     "n_000000000012"
+    ],
+    "transpose": 12
+   },
+   "id": "step43",
+   "project": "19161c29d3b012ce7089160945b1135f0ea55ac5455e63557e24606139b579d0",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000014",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Notes",
+    "project_version": 16,
+    "result": {
+     "steps": [
+      {
+       "note_count": 3
+      }
+     ]
+    },
+    "tool": "edit_midi_notes"
+   },
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000014",
+    "quantize": {
+     "grid": 0.25,
+     "strength": 1.0
+    }
+   },
+   "id": "step44",
+   "project": "c4c1da944ebd1649589b87ccf1dadf624fcd8a1e575e07a449caf102acf8c219",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000014",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Notes",
+    "project_version": 17,
+    "result": {
+     "steps": [
+      {
+       "note_count": 3
+      }
+     ]
+    },
+    "tool": "edit_midi_notes"
+   },
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000014",
+    "edits": [
+     {
+      "note_id": "n_000000000013",
+      "start": 2.5
+     }
+    ],
+    "note_ids": [
+     "n_000000000013"
+    ],
+    "transpose": -2
+   },
+   "id": "step45",
+   "project": "915cc599a0a9aa2ee6d2194c2127dc3aa1146ab9fb728e443231b52cdc948d12",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000014",
+       "kind": "clip"
+      },
+      {
+       "id": "n_000000000013",
+       "kind": "note"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Notes",
+    "project_version": 18,
+    "result": {
+     "steps": [
+      {},
+      {
+       "note_count": 3
+      }
+     ]
+    },
+    "tool": "edit_midi_notes"
+   },
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000014",
+    "dry_run": true,
+    "transpose": 5
+   },
+   "id": "step46",
+   "project": "915cc599a0a9aa2ee6d2194c2127dc3aa1146ab9fb728e443231b52cdc948d12",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000014",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": false,
+    "dry_run": true,
+    "ok": true,
+    "operation": "Edit Notes",
+    "project_version": 18,
+    "result": {
+     "steps": [
+      {
+       "note_count": 3
+      }
+     ]
+    },
+    "tool": "edit_midi_notes"
+   },
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000014"
+   },
+   "id": "step47",
+   "project": "915cc599a0a9aa2ee6d2194c2127dc3aa1146ab9fb728e443231b52cdc948d12",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "message": "nothing to change"
+    },
+    "ok": false,
+    "tool": "edit_midi_notes"
+   },
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000014",
+    "edits": [
+     {
+      "note_id": "n_missing",
+      "pitch": 60
+     }
+    ]
+   },
+   "id": "step48",
+   "project": "915cc599a0a9aa2ee6d2194c2127dc3aa1146ab9fb728e443231b52cdc948d12",
+   "result": {
+    "error": {
+     "code": "NOT_FOUND",
+     "message": "note 'n_missing' not found in clip 'clp_000000000014'"
+    },
+    "ok": false,
+    "tool": "edit_midi_notes"
+   },
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000014",
+    "quantize": {
+     "grid": 0
+    }
+   },
+   "id": "step49",
+   "project": "915cc599a0a9aa2ee6d2194c2127dc3aa1146ab9fb728e443231b52cdc948d12",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "details": {
+      "errors": [
+       {
+        "field": "quantize.grid",
+        "message": "Input should be greater than 0"
+       }
+      ]
+     },
+     "message": "invalid arguments for edit_midi_notes"
+    },
+    "ok": false,
+    "tool": "edit_midi_notes"
+   },
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "length": 4,
+    "notes": [
+     {
+      "length": 1,
+      "pitch": 67,
+      "start": 0
+     }
+    ],
+    "start": 8,
+    "track_id": "trk_000000000005"
+   },
+   "id": "lead_clip",
+   "project": "4384d004071182a71b5a9cdda26976a70be5fd0395461dd18227b760372d6d31",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips",
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000005",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Create MIDI Clip",
+    "project_version": 19,
+    "result": {
+     "clip_id": "clp_000000000018",
+     "end_seconds": 6.0,
+     "length_beats": 4.0,
+     "note_ids": [
+      "n_000000000017"
+     ],
+     "start_beat": 8.0,
+     "start_seconds": 4.0
+    },
+    "tool": "create_midi_clip"
+   },
+   "tool": "create_midi_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000018",
+    "replace_all": [
+     {
+      "length": 2,
+      "pitch": 48,
+      "start": 0
+     },
+     {
+      "length": 2,
+      "pitch": 55,
+      "start": 2,
+      "velocity": 80
+     }
+    ]
+   },
+   "id": "step51",
+   "project": "09e1bd660aaf8fda6f8144c64648b107683b1c19988cd07db6662a9099f4f831",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "notes"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000018",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Notes",
+    "project_version": 20,
+    "result": {
+     "steps": [
+      {
+       "note_count": 2
+      }
+     ]
+    },
+    "tool": "edit_midi_notes"
+   },
+   "tool": "edit_midi_notes"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000018",
+    "start": "4:1"
+   },
+   "id": "step52",
+   "project": "d61cb3a4cc4eff3f729b3129298da018a14fcee7de69d414a900e4e909ca0e29",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000018",
+       "kind": "clip"
+      },
+      {
+       "id": "trk_000000000005",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Move Clip",
+    "project_version": 21,
+    "result": {
+     "clip_id": "clp_000000000018",
+     "end_seconds": 8.0,
+     "length_beats": 4.0,
+     "start_beat": 12.0,
+     "start_seconds": 6.0
+    },
+    "tool": "move_clip"
+   },
+   "tool": "move_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000018",
+    "track_id": "trk_000000000003"
+   },
+   "id": "step53",
+   "project": "9280f66addad62a12939e3d4639c253ff3f508bc1137b91616c36555d93fb0ce",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000018",
+       "kind": "clip"
+      },
+      {
+       "id": "trk_000000000005",
+       "kind": "track"
+      },
+      {
+       "id": "trk_000000000003",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Move Clip",
+    "project_version": 22,
+    "result": {
+     "clip_id": "clp_000000000018",
+     "end_seconds": 8.0,
+     "length_beats": 4.0,
+     "start_beat": 12.0,
+     "start_seconds": 6.0
+    },
+    "tool": "move_clip"
+   },
+   "tool": "move_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000018",
+    "start": 8,
+    "track_id": "trk_000000000005"
+   },
+   "id": "step54",
+   "project": "09e1bd660aaf8fda6f8144c64648b107683b1c19988cd07db6662a9099f4f831",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000018",
+       "kind": "clip"
+      },
+      {
+       "id": "trk_000000000003",
+       "kind": "track"
+      },
+      {
+       "id": "trk_000000000005",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Move Clip",
+    "project_version": 23,
+    "result": {
+     "clip_id": "clp_000000000018",
+     "end_seconds": 6.0,
+     "length_beats": 4.0,
+     "start_beat": 8.0,
+     "start_seconds": 4.0
+    },
+    "tool": "move_clip"
+   },
+   "tool": "move_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000018",
+    "track_id": "trk_000000000007"
+   },
+   "id": "step55",
+   "project": "09e1bd660aaf8fda6f8144c64648b107683b1c19988cd07db6662a9099f4f831",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "message": "track 'FX Bus' (bus) cannot hold MIDI clips"
+    },
+    "ok": false,
+    "tool": "move_clip"
+   },
+   "tool": "move_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_missing",
+    "start": 0
+   },
+   "id": "step56",
+   "project": "09e1bd660aaf8fda6f8144c64648b107683b1c19988cd07db6662a9099f4f831",
+   "result": {
+    "error": {
+     "code": "NOT_FOUND",
+     "details": {
+      "id": "clp_missing",
+      "kind": "clip"
+     },
+     "message": "clip 'clp_missing' not found"
+    },
+    "ok": false,
+    "tool": "move_clip"
+   },
+   "tool": "move_clip"
+  },
+  {
+   "args": {
+    "at": 4,
+    "clip_id": "clp_000000000014"
+   },
+   "id": "split",
+   "project": "8ad85f077df3dee166e2c1659e03c4f2c7e5061ca3c262072957c2d40300c5a5",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000014",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Split Clip",
+    "project_version": 24,
+    "result": {
+     "left_clip_id": "clp_000000000014",
+     "right_clip_id": "clp_000000000021"
+    },
+    "tool": "split_clip"
+   },
+   "tool": "split_clip"
+  },
+  {
+   "args": {
+    "at": 100,
+    "clip_id": "clp_000000000014"
+   },
+   "id": "step58",
+   "project": "8ad85f077df3dee166e2c1659e03c4f2c7e5061ca3c262072957c2d40300c5a5",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "message": "split position must be inside the clip"
+    },
+    "ok": false,
+    "tool": "split_clip"
+   },
+   "tool": "split_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000018",
+    "times": 2
+   },
+   "id": "dup",
+   "project": "daa824bce3cc1bef215e5f7f28481a2acf9e8810425f9b6813c6b4a9471172df",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000005",
+       "kind": "track"
+      }
+     ]
+    },
+    "clip_ids": [
+     "clp_000000000023",
+     "clp_000000000024"
+    ],
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Duplicate Clip",
+    "project_version": 25,
+    "result": {
+     "steps": [
+      {
+       "clip_id": "clp_000000000023",
+       "end_seconds": 8.0,
+       "length_beats": 4.0,
+       "start_beat": 12.0,
+       "start_seconds": 6.0
+      },
+      {
+       "clip_id": "clp_000000000024",
+       "end_seconds": 10.0,
+       "length_beats": 4.0,
+       "start_beat": 16.0,
+       "start_seconds": 8.0
+      }
+     ]
+    },
+    "tool": "duplicate_clip"
+   },
+   "tool": "duplicate_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000014",
+    "dry_run": true
+   },
+   "id": "step60",
+   "project": "daa824bce3cc1bef215e5f7f28481a2acf9e8810425f9b6813c6b4a9471172df",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000003",
+       "kind": "track"
+      }
+     ]
+    },
+    "clip_ids": [
+     "clp_000000000025"
+    ],
+    "committed": false,
+    "dry_run": true,
+    "ok": true,
+    "operation": "Duplicate Clip",
+    "project_version": 25,
+    "result": {
+     "steps": [
+      {
+       "clip_id": "clp_000000000025",
+       "end_seconds": 4.0,
+       "length_beats": 4.0,
+       "start_beat": 4.0,
+       "start_seconds": 2.0
+      }
+     ]
+    },
+    "tool": "duplicate_clip"
+   },
+   "tool": "duplicate_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000021",
+    "loop_length": 2,
+    "muted": true,
+    "name": "Riff B"
+   },
+   "id": "step61",
+   "project": "edb266cf58da50c7f557526c2542da65eca9a470f0c9480ef248569089664dfc",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000021",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Clip",
+    "project_version": 26,
+    "result": {
+     "steps": [
+      {}
+     ]
+    },
+    "tool": "edit_clip"
+   },
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000021",
+    "muted": false
+   },
+   "id": "step62",
+   "project": "b106242f0be50f2265730373386cc9794687b5f224c0234c3c603eb8a3eb46ac",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000021",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Clip",
+    "project_version": 27,
+    "result": {
+     "steps": [
+      {}
+     ]
+    },
+    "tool": "edit_clip"
+   },
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000014",
+    "trim_end": 3.5,
+    "trim_start": 1
+   },
+   "id": "step63",
+   "project": "bd3d007408cc2873c03130afbcb797928f7b37d5199b65279c49d875edf60c37",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000014",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Clip",
+    "project_version": 28,
+    "result": {
+     "steps": [
+      {
+       "clip_id": "clp_000000000014",
+       "end_seconds": 1.75,
+       "length_beats": 2.5,
+       "start_beat": 1.0,
+       "start_seconds": 0.5
+      }
+     ]
+    },
+    "tool": "edit_clip"
+   },
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000014",
+    "gain_db": 3
+   },
+   "id": "step64",
+   "project": "bd3d007408cc2873c03130afbcb797928f7b37d5199b65279c49d875edf60c37",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "message": "gain and fades apply to audio clips only"
+    },
+    "ok": false,
+    "tool": "edit_clip"
+   },
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000014"
+   },
+   "id": "step65",
+   "project": "bd3d007408cc2873c03130afbcb797928f7b37d5199b65279c49d875edf60c37",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "message": "nothing to change"
+    },
+    "ok": false,
+    "tool": "edit_clip"
+   },
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_ids": [
+     "clp_000000000024"
+    ]
+   },
+   "id": "step66",
+   "project": "2e5c7b3c934bfed34a2f1e73090b023df4e5b4000d0632212aa3c8ef8214ed72",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [
+      {
+       "id": "clp_000000000024",
+       "kind": "clip"
+      }
+     ],
+     "flags": [
+      "clips"
+     ],
+     "updated": []
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Delete Clips",
+    "project_version": 29,
+    "tool": "delete_clips"
+   },
+   "tool": "delete_clips"
+  },
+  {
+   "args": {
+    "clip_ids": [
+     "clp_missing"
+    ]
+   },
+   "id": "step67",
+   "project": "2e5c7b3c934bfed34a2f1e73090b023df4e5b4000d0632212aa3c8ef8214ed72",
+   "result": {
+    "error": {
+     "code": "NOT_FOUND",
+     "details": {
+      "id": "clp_missing",
+      "kind": "clip"
+     },
+     "message": "clip 'clp_missing' not found"
+    },
+    "ok": false,
+    "tool": "delete_clips"
+   },
+   "tool": "delete_clips"
+  },
+  {
+   "args": {
+    "clip_ids": []
+   },
+   "id": "step68",
+   "project": "2e5c7b3c934bfed34a2f1e73090b023df4e5b4000d0632212aa3c8ef8214ed72",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "details": {
+      "errors": [
+       {
+        "field": "clip_ids",
+        "message": "List should have at least 1 item after validation, not 0"
+       }
+      ]
+     },
+     "message": "invalid arguments for delete_clips"
+    },
+    "ok": false,
+    "tool": "delete_clips"
+   },
+   "tool": "delete_clips"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000014",
+    "notes": [
+     {
+      "length": 0,
+      "pitch": [
+       60
+      ],
+      "start": -1
+     }
+    ]
+   },
+   "id": "step69",
+   "project": "2e5c7b3c934bfed34a2f1e73090b023df4e5b4000d0632212aa3c8ef8214ed72",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "details": {
+      "errors": [
+       {
+        "field": "notes.0.pitch.int",
+        "message": "Input should be a valid integer"
+       },
+       {
+        "field": "notes.0.pitch.str",
+        "message": "Input should be a valid string"
+       },
+       {
+        "field": "notes.0.start",
+        "message": "Input should be greater than or equal to 0"
+       },
+       {
+        "field": "notes.0.length",
+        "message": "Input should be greater than 0"
+       }
+      ]
+     },
+     "message": "invalid arguments for add_midi_notes"
+    },
+    "ok": false,
+    "tool": "add_midi_notes"
+   },
+   "tool": "add_midi_notes"
+  },
+  {
+   "args": {
+    "dry_run": true,
+    "path": "<ROOT>/inputs/tone-48k-stereo-24bit.wav"
+   },
+   "id": "step70",
+   "project": "2e5c7b3c934bfed34a2f1e73090b023df4e5b4000d0632212aa3c8ef8214ed72",
+   "result": {
+    "committed": false,
+    "dry_run": true,
+    "file": {
+     "bit_depth": 24,
+     "channels": 2,
+     "decoder": "libsndfile",
+     "duration_seconds": "<VOLATILE>",
+     "format": "WAV",
+     "frames": 96000,
+     "lossy": false,
+     "metadata": {},
+     "path": "<ROOT>/inputs/tone-48k-stereo-24bit.wav",
+     "sample_rate": 48000,
+     "size_bytes": 576044,
+     "subtype": "PCM_24"
+    },
+    "ok": true,
+    "tool": "import_audio",
+    "would_create_track": true
+   },
+   "tool": "import_audio"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/tone-48k-stereo-24bit.wav",
+    "start": "2:1",
+    "track_name": "Tone"
+   },
+   "id": "tone",
+   "project": "7693d0c9585c092deb6efe7479ed061460ba006672fc2c15cb4439e9eb12f554",
+   "result": {
+    "asset_id": "med_000000000026",
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips",
+      "media",
+      "routing",
+      "tracks"
+     ],
+     "updated": []
+    },
+    "clip_id": "clp_000000000029",
+    "committed": true,
+    "created_track": true,
+    "decode_operation_id": null,
+    "file": {
+     "bit_depth": 24,
+     "channels": 2,
+     "decoder": "libsndfile",
+     "duration_seconds": "<VOLATILE>",
+     "format": "WAV",
+     "frames": 96000,
+     "lossy": false,
+     "metadata": {},
+     "path": "<ROOT>/inputs/tone-48k-stereo-24bit.wav",
+     "sample_rate": 48000,
+     "size_bytes": 576044,
+     "subtype": "PCM_24"
+    },
+    "ok": true,
+    "project_version": 30,
+    "tool": "import_audio",
+    "track_id": "trk_000000000027",
+    "warnings": []
+   },
+   "tool": "import_audio"
+  },
+  {
+   "args": {
+    "mode": "link",
+    "path": "<ROOT>/inputs/tone-44k1-mono-16bit.wav",
+    "start": 16,
+    "track_id": "trk_000000000027"
+   },
+   "id": "mono",
+   "project": "b536c4b387576907c9037d450e601d1aebf9c124f88769cfdd70e769199dcddc",
+   "result": {
+    "asset_id": "med_000000000030",
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips",
+      "media"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000027",
+       "kind": "track"
+      }
+     ]
+    },
+    "clip_id": "clp_000000000031",
+    "committed": true,
+    "created_track": false,
+    "decode_operation_id": "op_000000000032",
+    "file": {
+     "bit_depth": 16,
+     "channels": 1,
+     "decoder": "libsndfile",
+     "duration_seconds": "<VOLATILE>",
+     "format": "WAV",
+     "frames": 66150,
+     "lossy": false,
+     "metadata": {},
+     "path": "<ROOT>/inputs/tone-44k1-mono-16bit.wav",
+     "sample_rate": 44100,
+     "size_bytes": 132344,
+     "subtype": "PCM_16"
+    },
+    "ok": true,
+    "project_version": 31,
+    "tool": "import_audio",
+    "track_id": "trk_000000000027",
+    "warnings": []
+   },
+   "tool": "import_audio"
+  },
+  {
+   "args": {
+    "operation_id": "op_000000000032",
+    "wait_seconds": 60
+   },
+   "id": "step73",
+   "project": "b536c4b387576907c9037d450e601d1aebf9c124f88769cfdd70e769199dcddc",
+   "result": {
+    "created": "<VOLATILE>",
+    "elapsed_seconds": "<VOLATILE>",
+    "finished": "<VOLATILE>",
+    "kind": "decode",
+    "label": "Decode tone-44k1-mono-16bit.wav",
+    "message": "",
+    "ok": true,
+    "operation_id": "op_000000000032",
+    "progress": 1.0,
+    "result": {
+     "asset_id": "med_000000000030",
+     "decoded": true
+    },
+    "started": "<VOLATILE>",
+    "status": "succeeded",
+    "tool": "get_operation_status"
+   },
+   "tool": "get_operation_status"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/chord-48k-stereo.flac",
+    "start": 8,
+    "track_name": "Chord"
+   },
+   "id": "chord",
+   "project": "6fb17058aaf1f63875500f3f8567ead00fb3cc7b600913aa08a965de8ec47c7b",
+   "result": {
+    "asset_id": "med_000000000033",
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips",
+      "media",
+      "routing",
+      "tracks"
+     ],
+     "updated": []
+    },
+    "clip_id": "clp_000000000036",
+    "committed": true,
+    "created_track": true,
+    "decode_operation_id": "op_000000000037",
+    "file": {
+     "bit_depth": 16,
+     "channels": 2,
+     "decoder": "libsndfile",
+     "duration_seconds": "<VOLATILE>",
+     "format": "FLAC",
+     "frames": 48000,
+     "lossy": false,
+     "metadata": {},
+     "path": "<ROOT>/inputs/chord-48k-stereo.flac",
+     "sample_rate": 48000,
+     "size_bytes": 33667,
+     "subtype": "PCM_16"
+    },
+    "ok": true,
+    "project_version": 32,
+    "tool": "import_audio",
+    "track_id": "trk_000000000034",
+    "warnings": []
+   },
+   "tool": "import_audio"
+  },
+  {
+   "args": {
+    "operation_id": "op_000000000037",
+    "wait_seconds": 60
+   },
+   "id": "step75",
+   "project": "6fb17058aaf1f63875500f3f8567ead00fb3cc7b600913aa08a965de8ec47c7b",
+   "result": {
+    "created": "<VOLATILE>",
+    "elapsed_seconds": "<VOLATILE>",
+    "finished": "<VOLATILE>",
+    "kind": "decode",
+    "label": "Decode chord-48k-stereo.flac",
+    "message": "",
+    "ok": true,
+    "operation_id": "op_000000000037",
+    "progress": 1.0,
+    "result": {
+     "asset_id": "med_000000000033",
+     "decoded": true
+    },
+    "started": "<VOLATILE>",
+    "status": "succeeded",
+    "tool": "get_operation_status"
+   },
+   "tool": "get_operation_status"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/saw-44k1-stereo.mp3",
+    "start": 12
+   },
+   "id": "saw",
+   "project": "03b0309fd824bcf49e57bfb8c04165b83ec91553744635c27f063b0c3a3675d7",
+   "result": {
+    "asset_id": "med_000000000038",
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips",
+      "media",
+      "routing",
+      "tracks"
+     ],
+     "updated": []
+    },
+    "clip_id": "clp_000000000041",
+    "committed": true,
+    "created_track": true,
+    "decode_operation_id": "op_000000000042",
+    "file": {
+     "bit_depth": null,
+     "channels": 2,
+     "decoder": "libsndfile",
+     "duration_seconds": "<VOLATILE>",
+     "format": "MP3",
+     "frames": 44100,
+     "lossy": true,
+     "metadata": {},
+     "path": "<ROOT>/inputs/saw-44k1-stereo.mp3",
+     "sample_rate": 44100,
+     "size_bytes": 9839,
+     "subtype": "MPEG_LAYER_III"
+    },
+    "ok": true,
+    "project_version": 33,
+    "tool": "import_audio",
+    "track_id": "trk_000000000039",
+    "warnings": [
+     "saw-44k1-stereo.mp3 is lossy (MPEG_LAYER_III); it is kept as-is and decoded for playback"
+    ]
+   },
+   "tool": "import_audio"
+  },
+  {
+   "args": {
+    "operation_id": "op_000000000042",
+    "wait_seconds": 60
+   },
+   "id": "step77",
+   "project": "03b0309fd824bcf49e57bfb8c04165b83ec91553744635c27f063b0c3a3675d7",
+   "result": {
+    "created": "<VOLATILE>",
+    "elapsed_seconds": "<VOLATILE>",
+    "finished": "<VOLATILE>",
+    "kind": "decode",
+    "label": "Decode saw-44k1-stereo.mp3",
+    "message": "",
+    "ok": true,
+    "operation_id": "op_000000000042",
+    "progress": 1.0,
+    "result": {
+     "asset_id": "med_000000000038",
+     "decoded": true
+    },
+    "started": "<VOLATILE>",
+    "status": "succeeded",
+    "tool": "get_operation_status"
+   },
+   "tool": "get_operation_status"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/tone-48k-stereo-24bit.wav",
+    "track_id": "trk_000000000003"
+   },
+   "id": "step78",
+   "project": "03b0309fd824bcf49e57bfb8c04165b83ec91553744635c27f063b0c3a3675d7",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "message": "track 'Piano' is not an audio track"
+    },
+    "ok": false,
+    "tool": "import_audio"
+   },
+   "tool": "import_audio"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/missing.wav"
+   },
+   "id": "step79",
+   "project": "03b0309fd824bcf49e57bfb8c04165b83ec91553744635c27f063b0c3a3675d7",
+   "result": {
+    "error": {
+     "code": "NOT_FOUND",
+     "message": "audio file <ROOT>/inputs/missing.wav does not exist"
+    },
+    "ok": false,
+    "tool": "import_audio"
+   },
+   "tool": "import_audio"
+  },
+  {
+   "args": {
+    "path": "/sonara-golden-outside/x.wav"
+   },
+   "id": "step80",
+   "project": "03b0309fd824bcf49e57bfb8c04165b83ec91553744635c27f063b0c3a3675d7",
+   "result": {
+    "error": {
+     "code": "PERMISSION_DENIED",
+     "details": {
+      "allowed_roots": [
+       "<ROOT>/projects",
+       "<ROOT>/work",
+       "<ROOT>",
+       "<ROOT>/workspaces/new-prj_000000000002"
+      ],
+      "hint": "ask the user to allow it (Sonara settings 'agent_allowed_paths' or $SONARA_AGENT_ALLOWED_PATHS)"
+     },
+     "message": "read access to /sonara-golden-outside/x.wav is outside the allowed locations"
+    },
+    "ok": false,
+    "tool": "import_audio"
+   },
+   "tool": "import_audio"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/not-media.wav"
+   },
+   "id": "step81",
+   "project": "03b0309fd824bcf49e57bfb8c04165b83ec91553744635c27f063b0c3a3675d7",
+   "result": {
+    "error": {
+     "code": "UNSUPPORTED",
+     "message": "not-media.wav: format not supported by libsndfile and FFmpeg is not installed (Error opening '<ROOT>/inputs/not-media.wav': Format not recognised.)"
+    },
+    "ok": false,
+    "tool": "import_audio"
+   },
+   "tool": "import_audio"
+  },
+  {
+   "args": {
+    "asset_id": "med_000000000038"
+   },
+   "id": "step82",
+   "project": "03b0309fd824bcf49e57bfb8c04165b83ec91553744635c27f063b0c3a3675d7",
+   "result": {
+    "analysis": {
+     "balance_db": 3.0922634596506224,
+     "channels": 2,
+     "clip_events": 0,
+     "clipped_samples": 0,
+     "correlation": 0.9998733896582445,
+     "crest_factor_db": 7.19424130691513,
+     "dc_offset": [
+      5e-06,
+      -1e-06
+     ],
+     "duration_seconds": "<VOLATILE>",
+     "integrated_lufs": -14.485156917981207,
+     "kind": {
+      "estimated": [
+       "true_peak_dbtp",
+       "plr_db"
+      ],
+      "measured": [
+       "sample_peak_dbfs",
+       "rms_dbfs",
+       "integrated_lufs",
+       "momentary_max_lufs",
+       "short_term_max_lufs",
+       "loudness_range_lu",
+       "clipped_samples",
+       "correlation",
+       "octave_bands_db"
+      ]
+     },
+     "leading_silence_seconds": 0.0,
+     "loudness_range_lu": 0.0,
+     "min_correlation_400ms": 0.9998541842415982,
+     "momentary_max_lufs": -14.474748205134906,
+     "nonfinite_samples": 0,
+     "octave_bands_db": {
+      "1000": -10.671721305728557,
+      "125": -48.899112146524786,
+      "16000": -100.16661685670883,
+      "2000": -16.282007612889227,
+      "250": -1.8385422686947095,
+      "31.5": -67.89805633329016,
+      "4000": -106.26821460737682,
+      "500": -6.272342899102668,
+      "63": -61.21365428100923,
+      "8000": -105.00917559130835
+     },
+     "over_full_scale_samples": 0,
+     "plr_db": 4.846744696171465,
+     "rms_dbfs": -16.838938726332366,
+     "sample_peak_dbfs": -9.644697419417236,
+     "sample_rate": 44100,
+     "short_term_max_lufs": -14.486851944331017,
+     "side_to_mid_db": -15.073580067707532,
+     "silence_regions": [],
+     "spectral_centroid_hz": 391.58151807501497,
+     "trailing_silence_seconds": 0.0,
+     "true_peak_dbtp": -9.638412221809743
+    },
+    "asset_id": "med_000000000038",
+    "issues": [],
+    "ok": true,
+    "path": "<ROOT>/workspaces/new-prj_000000000002/media/audio/med_000000000038-saw-44k1-stereo.mp3",
+    "tool": "analyze_audio"
+   },
+   "tool": "analyze_audio"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/tone-44k1-mono-16bit.wav"
+   },
+   "id": "step83",
+   "project": "03b0309fd824bcf49e57bfb8c04165b83ec91553744635c27f063b0c3a3675d7",
+   "result": {
+    "analysis": {
+     "balance_db": null,
+     "channels": 1,
+     "clip_events": 0,
+     "clipped_samples": 0,
+     "correlation": null,
+     "crest_factor_db": 10.016630991973823,
+     "dc_offset": [
+      0.000162
+     ],
+     "duration_seconds": "<VOLATILE>",
+     "integrated_lufs": -15.825007035835617,
+     "kind": {
+      "estimated": [
+       "true_peak_dbtp",
+       "plr_db"
+      ],
+      "measured": [
+       "sample_peak_dbfs",
+       "rms_dbfs",
+       "integrated_lufs",
+       "momentary_max_lufs",
+       "short_term_max_lufs",
+       "loudness_range_lu",
+       "clipped_samples",
+       "correlation",
+       "octave_bands_db"
+      ]
+     },
+     "leading_silence_seconds": 0.0,
+     "loudness_range_lu": 0.0,
+     "min_correlation_400ms": null,
+     "momentary_max_lufs": -10.77760210284554,
+     "nonfinite_samples": 0,
+     "octave_bands_db": {
+      "1000": -100.77450780809619,
+      "125": -93.65651136427635,
+      "16000": -89.41393228704973,
+      "2000": -98.15783514813164,
+      "250": -3.082016740337841e-05,
+      "31.5": -108.97846465033629,
+      "4000": -95.26811353266375,
+      "500": -51.49264030772783,
+      "63": -104.23240010746093,
+      "8000": -92.14352676130808
+     },
+     "over_full_scale_samples": 0,
+     "plr_db": 11.37677475828278,
+     "rms_dbfs": -14.4663387835096,
+     "sample_peak_dbfs": -4.449707791535778,
+     "sample_rate": 44100,
+     "short_term_max_lufs": -15.216962227512065,
+     "side_to_mid_db": null,
+     "silence_regions": [],
+     "spectral_centroid_hz": 330.0000213012063,
+     "trailing_silence_seconds": 0.0,
+     "true_peak_dbtp": -4.448232277552837
+    },
+    "issues": [],
+    "ok": true,
+    "path": "<ROOT>/inputs/tone-44k1-mono-16bit.wav",
+    "tool": "analyze_audio"
+   },
+   "tool": "analyze_audio"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000029",
+    "fade_curve": "equal_power",
+    "fade_in_seconds": 0.1,
+    "fade_out_seconds": 0.2,
+    "gain_db": -3
+   },
+   "id": "step84",
+   "project": "8dbe696ce05c0c79f5ec73f2d4e391cc4ba9c9c4fb560bb6621bf7d963ccfd52",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000029",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Clip",
+    "project_version": 34,
+    "result": {
+     "steps": [
+      {}
+     ]
+    },
+    "tool": "edit_clip"
+   },
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000029",
+    "gain_db": -4.5
+   },
+   "id": "step85",
+   "project": "11c4822f3fde1eb222048b9eebeb9a3596eaac4785a74017b745283d1925cb2a",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000029",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Clip",
+    "project_version": 35,
+    "result": {
+     "steps": [
+      {}
+     ]
+    },
+    "tool": "edit_clip"
+   },
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000029",
+    "gain_db": -6
+   },
+   "id": "step86",
+   "project": "6d8811483f58a20e835e7bbc7047ab50e40ddf43d6aee9482904e9caee141ee8",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000029",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Clip",
+    "project_version": 36,
+    "result": {
+     "steps": [
+      {}
+     ]
+    },
+    "tool": "edit_clip"
+   },
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000029",
+    "fade_in_seconds": 5
+   },
+   "id": "step87",
+   "project": "6d8811483f58a20e835e7bbc7047ab50e40ddf43d6aee9482904e9caee141ee8",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "message": "fades are longer than the clip"
+    },
+    "ok": false,
+    "tool": "edit_clip"
+   },
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000029",
+    "loop_length": 1
+   },
+   "id": "step88",
+   "project": "6d8811483f58a20e835e7bbc7047ab50e40ddf43d6aee9482904e9caee141ee8",
+   "result": {
+    "error": {
+     "code": "UNSUPPORTED",
+     "message": "audio clip looping is not supported yet"
+    },
+    "ok": false,
+    "tool": "edit_clip"
+   },
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000029",
+    "gain_db": 30
+   },
+   "id": "step89",
+   "project": "6d8811483f58a20e835e7bbc7047ab50e40ddf43d6aee9482904e9caee141ee8",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "details": {
+      "errors": [
+       {
+        "field": "gain_db",
+        "message": "Input should be less than or equal to 24"
+       }
+      ]
+     },
+     "message": "invalid arguments for edit_clip"
+    },
+    "ok": false,
+    "tool": "edit_clip"
+   },
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000036",
+    "fade_curve": "s_curve",
+    "fade_out_seconds": 0.25
+   },
+   "id": "step90",
+   "project": "4253bbf98bde344fd7be1cea3bb5e27b95c187edd58c9d66880e7e2f14766b96",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000036",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Clip",
+    "project_version": 37,
+    "result": {
+     "steps": [
+      {}
+     ]
+    },
+    "tool": "edit_clip"
+   },
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000041",
+    "fade_curve": "exponential",
+    "fade_in_seconds": 0.05
+   },
+   "id": "step91",
+   "project": "8cc1c1f791836dd14041295d3573e6d9a7804f91fec86581c2d692a4f07e443c",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000041",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Clip",
+    "project_version": 38,
+    "result": {
+     "steps": [
+      {}
+     ]
+    },
+    "tool": "edit_clip"
+   },
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000031",
+    "trim_end": 18.5,
+    "trim_start": 16.5
+   },
+   "id": "step92",
+   "project": "29d8a555fc40e96a64110f1e1a02ac0c267bd0ac15823f2c43591c64f315a751",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000031",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Edit Clip",
+    "project_version": 39,
+    "result": {
+     "steps": [
+      {
+       "clip_id": "clp_000000000031",
+       "end_seconds": 9.25,
+       "length_beats": 2.0,
+       "start_beat": 16.5,
+       "start_seconds": 8.25
+      }
+     ]
+    },
+    "tool": "edit_clip"
+   },
+   "tool": "edit_clip"
+  },
+  {
+   "args": {
+    "at": 6,
+    "clip_id": "clp_000000000029"
+   },
+   "id": "tone_split",
+   "project": "a8c0b9a55f65f31671e8fd8c99860a4bbf6ca32b9f4431ca58719b9fb9b5622c",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000029",
+       "kind": "clip"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Split Clip",
+    "project_version": 40,
+    "result": {
+     "left_clip_id": "clp_000000000029",
+     "right_clip_id": "clp_000000000045"
+    },
+    "tool": "split_clip"
+   },
+   "tool": "split_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000036",
+    "times": 2
+   },
+   "id": "chord_dup",
+   "project": "c5721a590ba609d5b751c54c4b6bb66baf8e712546183b7378cd065797bb94f5",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000034",
+       "kind": "track"
+      }
+     ]
+    },
+    "clip_ids": [
+     "clp_000000000046",
+     "clp_000000000047"
+    ],
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Duplicate Clip",
+    "project_version": 41,
+    "result": {
+     "steps": [
+      {
+       "clip_id": "clp_000000000046",
+       "end_seconds": 6.0,
+       "length_beats": 2.0,
+       "start_beat": 10.0,
+       "start_seconds": 5.0
+      },
+      {
+       "clip_id": "clp_000000000047",
+       "end_seconds": 7.0,
+       "length_beats": 2.0,
+       "start_beat": 12.0,
+       "start_seconds": 6.0
+      }
+     ]
+    },
+    "tool": "duplicate_clip"
+   },
+   "tool": "duplicate_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000045",
+    "start": 24,
+    "track_id": "trk_000000000034"
+   },
+   "id": "step95",
+   "project": "c99a1d72767e3bbc3f6fe0d184a7126db403d80bf39aaa37580c8d9982fcefbc",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000034",
+       "kind": "track"
+      }
+     ]
+    },
+    "clip_ids": [
+     "clp_000000000048"
+    ],
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Duplicate Clip",
+    "project_version": 42,
+    "result": {
+     "steps": [
+      {
+       "clip_id": "clp_000000000048",
+       "end_seconds": 13.0,
+       "length_beats": 2.0,
+       "start_beat": 24.0,
+       "start_seconds": 12.0
+      }
+     ]
+    },
+    "tool": "duplicate_clip"
+   },
+   "tool": "duplicate_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000041",
+    "start": "6:1"
+   },
+   "id": "step96",
+   "project": "927213b23dbedba8bca3ddbb73c1817f03f8d45eaec3fed45b92193e1af458f9",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips"
+     ],
+     "updated": [
+      {
+       "id": "clp_000000000041",
+       "kind": "clip"
+      },
+      {
+       "id": "trk_000000000039",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Move Clip",
+    "project_version": 43,
+    "result": {
+     "clip_id": "clp_000000000041",
+     "end_seconds": 11.0,
+     "length_beats": 2.0,
+     "start_beat": 20.0,
+     "start_seconds": 10.0
+    },
+    "tool": "move_clip"
+   },
+   "tool": "move_clip"
+  },
+  {
+   "args": {
+    "clip_id": "clp_000000000041",
+    "track_id": "trk_000000000003"
+   },
+   "id": "step97",
+   "project": "927213b23dbedba8bca3ddbb73c1817f03f8d45eaec3fed45b92193e1af458f9",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "message": "track 'Piano' (instrument) cannot hold audio clips"
+    },
+    "ok": false,
+    "tool": "move_clip"
+   },
+   "tool": "move_clip"
+  },
+  {
+   "args": {
+    "clip_ids": [
+     "clp_000000000047"
+    ]
+   },
+   "id": "step98",
+   "project": "1644d6d127bcc5a01dba9f6be9a7bd6ca0f3ec17e8c9e2516dbfc89fd8a5dc65",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [
+      {
+       "id": "clp_000000000047",
+       "kind": "clip"
+      }
+     ],
+     "flags": [
+      "clips"
+     ],
+     "updated": []
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Delete Clips",
+    "project_version": 44,
+    "tool": "delete_clips"
+   },
+   "tool": "delete_clips"
+  },
+  {
+   "args": {
+    "params": {
+     "mix": 0.4,
+     "normalize": false
+    },
+    "plugin_id": "sonara.convolver",
+    "track_id": "trk_000000000027"
+   },
+   "id": "conv",
+   "project": "96e5efbf90ec5747fb3aeb6ba5db2389c4a52fea01685670ea8523977e92a1e5",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "devices"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000027",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Add Effect",
+    "project_version": 45,
+    "result": {
+     "device_id": "dev_000000000049",
+     "index": 0,
+     "params": {
+      "gain_db": 0.0,
+      "input": "mono_sum",
+      "mix": 0.4,
+      "normalize": false
+     }
+    },
+    "tool": "add_effect"
+   },
+   "tool": "add_effect"
+  },
+  {
+   "args": {
+    "device_id": "dev_000000000049",
+    "dry_run": true,
+    "path": "<ROOT>/inputs/ir-48k-stereo-float.wav"
+   },
+   "id": "step100",
+   "project": "96e5efbf90ec5747fb3aeb6ba5db2389c4a52fea01685670ea8523977e92a1e5",
+   "result": {
+    "committed": false,
+    "dry_run": true,
+    "file": {
+     "bit_depth": 32,
+     "channels": 2,
+     "decoder": "libsndfile",
+     "duration_seconds": "<VOLATILE>",
+     "format": "WAV",
+     "frames": 24000,
+     "lossy": false,
+     "metadata": {},
+     "path": "<ROOT>/inputs/ir-48k-stereo-float.wav",
+     "sample_rate": 48000,
+     "size_bytes": 192056,
+     "subtype": "FLOAT"
+    },
+    "ok": true,
+    "tool": "load_impulse_response"
+   },
+   "tool": "load_impulse_response"
+  },
+  {
+   "args": {
+    "device_id": "dev_000000000049",
+    "path": "<ROOT>/inputs/ir-48k-stereo-float.wav"
+   },
+   "id": "step101",
+   "project": "0be89c5c4112a265db2d42ecda349cb827998b2aac4fbe0210deece601944f68",
+   "result": {
+    "asset_id": "med_000000000050",
+    "committed": true,
+    "device_id": "dev_000000000049",
+    "file": {
+     "bit_depth": 32,
+     "channels": 2,
+     "decoder": "libsndfile",
+     "duration_seconds": "<VOLATILE>",
+     "format": "WAV",
+     "frames": 24000,
+     "lossy": false,
+     "metadata": {},
+     "path": "<ROOT>/inputs/ir-48k-stereo-float.wav",
+     "sample_rate": 48000,
+     "size_bytes": 192056,
+     "subtype": "FLOAT"
+    },
+    "ok": true,
+    "project_version": 46,
+    "tool": "load_impulse_response",
+    "warnings": []
+   },
+   "tool": "load_impulse_response"
+  },
+  {
+   "args": {
+    "plugin_id": "sonara.eq.parametric",
+    "track_id": "trk_000000000027"
+   },
+   "id": "eq",
+   "project": "421117652a3c0be8ba112a9ecbf0dac7fb6fc94de3a70ee31ebcdadb11e0e982",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "devices"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000027",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Add Effect",
+    "project_version": 47,
+    "result": {
+     "device_id": "dev_000000000051",
+     "index": 1,
+     "params": {
+      "high_freq": 8000.0,
+      "high_gain": 0.0,
+      "high_on": true,
+      "high_q": 0.71,
+      "high_type": "shelf",
+      "hp_freq": 80.0,
+      "hp_on": false,
+      "hp_slope": "12",
+      "low_freq": 100.0,
+      "low_gain": 0.0,
+      "low_on": true,
+      "low_q": 0.71,
+      "low_type": "shelf",
+      "lp_freq": 18000.0,
+      "lp_on": false,
+      "lp_slope": "12",
+      "mid1_freq": 500.0,
+      "mid1_gain": 0.0,
+      "mid1_on": true,
+      "mid1_q": 1.0,
+      "mid2_freq": 2500.0,
+      "mid2_gain": 0.0,
+      "mid2_on": true,
+      "mid2_q": 1.0,
+      "output_db": 0.0
+     }
+    },
+    "tool": "add_effect"
+   },
+   "tool": "add_effect"
+  },
+  {
+   "args": {
+    "device_id": "dev_000000000051",
+    "path": "<ROOT>/inputs/ir-48k-stereo-float.wav"
+   },
+   "id": "step103",
+   "project": "421117652a3c0be8ba112a9ecbf0dac7fb6fc94de3a70ee31ebcdadb11e0e982",
+   "result": {
+    "error": {
+     "code": "INVALID_ARGUMENT",
+     "message": "impulse responses load into the Convolution Reverb"
+    },
+    "ok": false,
+    "tool": "load_impulse_response"
+   },
+   "tool": "load_impulse_response"
+  },
+  {
+   "args": {
+    "device_id": "dev_000000000049",
+    "path": "<ROOT>/inputs/missing.wav"
+   },
+   "id": "step104",
+   "project": "421117652a3c0be8ba112a9ecbf0dac7fb6fc94de3a70ee31ebcdadb11e0e982",
+   "result": {
+    "error": {
+     "code": "NOT_FOUND",
+     "message": "audio file <ROOT>/inputs/missing.wav does not exist"
+    },
+    "ok": false,
+    "tool": "load_impulse_response"
+   },
+   "tool": "load_impulse_response"
+  },
+  {
+   "args": {
+    "device_id": "dev_000000000051"
+   },
+   "id": "step105",
+   "project": "0be89c5c4112a265db2d42ecda349cb827998b2aac4fbe0210deece601944f68",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [
+      {
+       "id": "dev_000000000051",
+       "kind": "device"
+      }
+     ],
+     "flags": [
+      "devices"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000027",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Remove Effect",
+    "project_version": 48,
+    "tool": "remove_effect"
+   },
+   "tool": "remove_effect"
+  },
+  {
+   "args": {
+    "device_id": "dev_000000000051"
+   },
+   "id": "step106",
+   "project": "0be89c5c4112a265db2d42ecda349cb827998b2aac4fbe0210deece601944f68",
+   "result": {
+    "error": {
+     "code": "NOT_FOUND",
+     "details": {
+      "id": "dev_000000000051",
+      "kind": "device"
+     },
+     "message": "device 'dev_000000000051' not found"
+    },
+    "ok": false,
+    "tool": "remove_effect"
+   },
+   "tool": "remove_effect"
+  },
+  {
+   "args": {
+    "device_id": "dev_000000000049",
+    "dry_run": true
+   },
+   "id": "step107",
+   "project": "0be89c5c4112a265db2d42ecda349cb827998b2aac4fbe0210deece601944f68",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [
+      {
+       "id": "dev_000000000049",
+       "kind": "device"
+      }
+     ],
+     "flags": [
+      "devices"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000027",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": false,
+    "dry_run": true,
+    "ok": true,
+    "operation": "Remove Effect",
+    "project_version": 48,
+    "tool": "remove_effect"
+   },
+   "tool": "remove_effect"
+  },
+  {
+   "args": {
+    "dry_run": true,
+    "path": "<ROOT>/inputs/song.mid"
+   },
+   "id": "step108",
+   "project": "0be89c5c4112a265db2d42ecda349cb827998b2aac4fbe0210deece601944f68",
+   "result": {
+    "committed": false,
+    "dry_run": true,
+    "ok": true,
+    "tool": "import_midi",
+    "tracks": [
+     {
+      "drums": false,
+      "name": "Lead",
+      "notes": 4
+     },
+     {
+      "drums": true,
+      "name": "Beat (Drums)",
+      "notes": 8
+     }
+    ]
+   },
+   "tool": "import_midi"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/song.mid",
+    "start": "9:1"
+   },
+   "id": "song",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "committed": true,
+    "ok": true,
+    "project_version": 49,
+    "tempo_bpm": 120.0,
+    "tool": "import_midi",
+    "tracks": [
+     {
+      "clip_id": "clp_000000000080",
+      "drums": false,
+      "name": "Lead",
+      "notes": 4,
+      "track_id": "trk_000000000078"
+     },
+     {
+      "clip_id": "clp_000000000083",
+      "drums": true,
+      "name": "Beat (Drums)",
+      "notes": 8,
+      "track_id": "trk_000000000081"
+     }
+    ],
+    "warnings": []
+   },
+   "tool": "import_midi"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/not-media.wav"
+   },
+   "id": "step110",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "error": {
+     "code": "FORMAT_ERROR",
+     "message": "not-media.wav is not a valid Standard MIDI File: MThd not found. Probably not a MIDI file"
+    },
+    "ok": false,
+    "tool": "import_midi"
+   },
+   "tool": "import_midi"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/inputs/missing.mid"
+   },
+   "id": "step111",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "error": {
+     "code": "NOT_FOUND",
+     "message": "MIDI file <ROOT>/inputs/missing.mid does not exist"
+    },
+    "ok": false,
+    "tool": "import_midi"
+   },
+   "tool": "import_midi"
+  },
+  {
+   "args": {},
+   "id": "step112",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "ok": true,
+    "stopped": true,
+    "tool": "stop_playback",
+    "was_playing": false
+   },
+   "tool": "stop_playback"
+  },
+  {
+   "args": {
+    "end": 4,
+    "loop": true,
+    "start": 0
+   },
+   "id": "step113",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "error": {
+     "code": "ENGINE_UNAVAILABLE",
+     "message": "audio backend disabled (null backend)"
+    },
+    "ok": false,
+    "tool": "play_preview"
+   },
+   "tool": "play_preview"
+  },
+  {
+   "args": {},
+   "id": "step114",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "ok": true,
+    "stopped": true,
+    "tool": "stop_playback",
+    "was_playing": false
+   },
+   "tool": "stop_playback"
+  },
+  {
+   "args": {
+    "start": 0
+   },
+   "id": "step115",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "error": {
+     "code": "ENGINE_UNAVAILABLE",
+     "message": "audio backend disabled (null backend)"
+    },
+    "ok": false,
+    "tool": "start_recording"
+   },
+   "tool": "start_recording"
+  },
+  {
+   "args": {},
+   "id": "step116",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "devices": {
+     "api": "core",
+     "available": true,
+     "inputs": [],
+     "outputs": []
+    },
+    "ok": true,
+    "status": {
+     "enabled": false,
+     "ports": []
+    },
+    "tool": "list_midi_devices"
+   },
+   "tool": "list_midi_devices"
+  },
+  {
+   "args": {
+    "enabled": true
+   },
+   "id": "step117",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "error": {
+     "code": "ENGINE_UNAVAILABLE",
+     "message": "audio backend disabled (null backend)"
+    },
+    "ok": false,
+    "tool": "set_midi_input"
+   },
+   "tool": "set_midi_input"
+  },
+  {
+   "args": {
+    "enabled": false
+   },
+   "id": "step118",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "enabled": false,
+    "ok": true,
+    "tool": "set_midi_input"
+   },
+   "tool": "set_midi_input"
+  },
+  {
+   "args": {},
+   "id": "step119",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "allowed_paths": [
+     "<ROOT>/projects",
+     "<ROOT>/work",
+     "<ROOT>",
+     "<ROOT>/workspaces/new-prj_000000000002"
+    ],
+    "api_version": "1.0",
+    "audio_engine": {
+     "available": false,
+     "backend": "null",
+     "reason": "audio backend disabled (null backend)"
+    },
+    "confirmations_enabled": true,
+    "export_formats": [
+     "aiff",
+     "bwf",
+     "caf",
+     "flac",
+     "mp3",
+     "ogg",
+     "opus",
+     "rf64",
+     "w64",
+     "wav"
+    ],
+    "ffmpeg_import": false,
+    "limits": {
+     "max_notes_per_call": 20000,
+     "max_preview_seconds": 900,
+     "max_render_seconds": 10800,
+     "max_tracks": 512
+    },
+    "ok": true,
+    "third_party_plugins": "not supported yet",
+    "tool": "get_capabilities"
+   },
+   "tool": "get_capabilities"
+  },
+  {
+   "args": {},
+   "id": "step120",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "ok": true,
+    "recent_agent_actions": [],
+    "redo": [],
+    "tool": "get_history",
+    "undo": [
+     "Transport Settings",
+     "Create Track",
+     "Create Track",
+     "Create Track",
+     "Create Track",
+     "Rename Track",
+     "Track State",
+     "Track State",
+     "Delete Track",
+     "Transport Settings",
+     "Create MIDI Clip",
+     "Add Notes",
+     "Edit Notes",
+     "Edit Notes",
+     "Edit Notes",
+     "Edit Notes",
+     "Edit Notes",
+     "Create MIDI Clip",
+     "Edit Notes",
+     "Move Clip",
+     "Split Clip",
+     "Duplicate Clip",
+     "Edit Clip",
+     "Edit Clip",
+     "Edit Clip",
+     "Delete Clips",
+     "Import Audio",
+     "Import Audio",
+     "Import Audio",
+     "Import Audio",
+     "Edit Clip",
+     "Edit Clip",
+     "Edit Clip",
+     "Edit Clip",
+     "Edit Clip",
+     "Edit Clip",
+     "Split Clip",
+     "Duplicate Clip",
+     "Duplicate Clip",
+     "Move Clip",
+     "Delete Clips",
+     "Add Effect",
+     "Load Impulse Response",
+     "Add Effect",
+     "Remove Effect",
+     "Import MIDI"
+    ]
+   },
+   "tool": "get_history"
+  },
+  {
+   "args": {},
+   "id": "step121",
+   "project": "0be89c5c4112a265db2d42ecda349cb827998b2aac4fbe0210deece601944f68",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [
+      {
+       "id": "mrk_000000000077",
+       "kind": "marker"
+      },
+      {
+       "id": "trk_000000000078",
+       "kind": "track"
+      },
+      {
+       "id": "dev_000000000079",
+       "kind": "device"
+      },
+      {
+       "id": "clp_000000000080",
+       "kind": "clip"
+      },
+      {
+       "id": "trk_000000000081",
+       "kind": "track"
+      },
+      {
+       "id": "dev_000000000082",
+       "kind": "device"
+      },
+      {
+       "id": "clp_000000000083",
+       "kind": "clip"
+      }
+     ],
+     "flags": [
+      "clips",
+      "markers",
+      "notes",
+      "routing",
+      "tempo",
+      "tracks"
+     ],
+     "updated": [
+      {
+       "id": "project",
+       "kind": "project"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Undo Import MIDI",
+    "project_version": 50,
+    "tool": "undo"
+   },
+   "tool": "undo"
+  },
+  {
+   "args": {},
+   "id": "step122",
+   "project": "421117652a3c0be8ba112a9ecbf0dac7fb6fc94de3a70ee31ebcdadb11e0e982",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "devices"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000027",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Undo Remove Effect",
+    "project_version": 51,
+    "tool": "undo"
+   },
+   "tool": "undo"
+  },
+  {
+   "args": {},
+   "id": "step123",
+   "project": "0be89c5c4112a265db2d42ecda349cb827998b2aac4fbe0210deece601944f68",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [
+      {
+       "id": "dev_000000000051",
+       "kind": "device"
+      }
+     ],
+     "flags": [
+      "devices"
+     ],
+     "updated": [
+      {
+       "id": "trk_000000000027",
+       "kind": "track"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Redo Remove Effect",
+    "project_version": 52,
+    "tool": "redo"
+   },
+   "tool": "redo"
+  },
+  {
+   "args": {},
+   "id": "step124",
+   "project": "0be89c5c4112a265db2d42ecda349cb827998b2aac4fbe0210deece601944f68",
+   "result": {
+    "ok": true,
+    "recent_agent_actions": [],
+    "redo": [
+     "Import MIDI"
+    ],
+    "tool": "get_history",
+    "undo": [
+     "Transport Settings",
+     "Create Track",
+     "Create Track",
+     "Create Track",
+     "Create Track",
+     "Rename Track",
+     "Track State",
+     "Track State",
+     "Delete Track",
+     "Transport Settings",
+     "Create MIDI Clip",
+     "Add Notes",
+     "Edit Notes",
+     "Edit Notes",
+     "Edit Notes",
+     "Edit Notes",
+     "Edit Notes",
+     "Create MIDI Clip",
+     "Edit Notes",
+     "Move Clip",
+     "Split Clip",
+     "Duplicate Clip",
+     "Edit Clip",
+     "Edit Clip",
+     "Edit Clip",
+     "Delete Clips",
+     "Import Audio",
+     "Import Audio",
+     "Import Audio",
+     "Import Audio",
+     "Edit Clip",
+     "Edit Clip",
+     "Edit Clip",
+     "Edit Clip",
+     "Edit Clip",
+     "Edit Clip",
+     "Split Clip",
+     "Duplicate Clip",
+     "Duplicate Clip",
+     "Move Clip",
+     "Delete Clips",
+     "Add Effect",
+     "Load Impulse Response",
+     "Add Effect",
+     "Remove Effect"
+    ]
+   },
+   "tool": "get_history"
+  },
+  {
+   "args": {},
+   "id": "step125",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "changes": {
+     "created": "<VOLATILE>",
+     "deleted": [],
+     "flags": [
+      "clips",
+      "markers",
+      "notes",
+      "routing",
+      "tempo",
+      "tracks"
+     ],
+     "updated": [
+      {
+       "id": "project",
+       "kind": "project"
+      }
+     ]
+    },
+    "committed": true,
+    "dry_run": false,
+    "ok": true,
+    "operation": "Redo Import MIDI",
+    "project_version": 53,
+    "tool": "redo"
+   },
+   "tool": "redo"
+  },
+  {
+   "args": {},
+   "id": "step126",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "error": {
+     "code": "NOTHING_TO_REDO",
+     "message": "nothing to redo"
+    },
+    "ok": false,
+    "tool": "redo"
+   },
+   "tool": "redo"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/work/previews/full.wav",
+    "per_track_levels": true
+   },
+   "id": "full",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "created": "<VOLATILE>",
+    "elapsed_seconds": "<VOLATILE>",
+    "finished": "<VOLATILE>",
+    "kind": "render_preview",
+    "label": "Render preview",
+    "message": "measuring Beat (Drums)",
+    "ok": true,
+    "operation_id": "op_000000000084",
+    "progress": 1.0,
+    "result": {
+     "analysis": {
+      "balance_db": 1.6919927134819828,
+      "channels": 2,
+      "clip_events": 0,
+      "clipped_samples": 0,
+      "correlation": 0.7954780551849493,
+      "crest_factor_db": 19.523060017076006,
+      "dc_offset": [
+       2.9e-05,
+       2.5e-05
+      ],
+      "duration_seconds": "<VOLATILE>",
+      "integrated_lufs": -15.516297531203977,
+      "kind": {
+       "estimated": [
+        "true_peak_dbtp",
+        "plr_db"
+       ],
+       "measured": [
+        "sample_peak_dbfs",
+        "rms_dbfs",
+        "integrated_lufs",
+        "momentary_max_lufs",
+        "short_term_max_lufs",
+        "loudness_range_lu",
+        "clipped_samples",
+        "correlation",
+        "octave_bands_db"
+       ]
+      },
+      "leading_silence_seconds": 0.5,
+      "loudness_range_lu": 9.409292570412447,
+      "min_correlation_400ms": -2.2574115179163086e-09,
+      "momentary_max_lufs": -10.532339931332576,
+      "nonfinite_samples": 0,
+      "octave_bands_db": {
+       "1000": -13.689929721743946,
+       "125": -17.460402838104585,
+       "16000": -28.421265244926065,
+       "2000": -23.574115742371696,
+       "250": -2.956640154204342,
+       "31.5": -38.74582557966663,
+       "4000": -26.148237522499223,
+       "500": -3.9559983482971353,
+       "63": -17.12278078741255,
+       "8000": -25.388707378613027
+      },
+      "over_full_scale_samples": 0,
+      "plr_db": 12.464503095925576,
+      "rms_dbfs": -22.57511680026123,
+      "sample_peak_dbfs": -3.052056783185224,
+      "sample_rate": 48000,
+      "short_term_max_lufs": -12.580026817063178,
+      "side_to_mid_db": -9.093750391304837,
+      "silence_regions": [
+       [
+        0.0,
+        0.5
+       ],
+       [
+        6.5,
+        7.0
+       ],
+       [
+        7.45,
+        8.25
+       ],
+       [
+        9.4,
+        10.0
+       ],
+       [
+        11.0,
+        12.0
+       ],
+       [
+        13.0,
+        16.0
+       ],
+       [
+        18.2,
+        33.85
+       ]
+      ],
+      "spectral_centroid_hz": 458.46998277633446,
+      "trailing_silence_seconds": 15.65,
+      "true_peak_dbtp": -3.051794435278402
+     },
+     "issues": [],
+     "latency_samples": 0,
+     "missing_media": [],
+     "path": "<ROOT>/work/previews/full.wav",
+     "range_beats": [
+      0.0,
+      64.0
+     ],
+     "realtime_factor": "<VOLATILE>",
+     "render_seconds": "<VOLATILE>",
+     "sample_rate": 48000,
+     "seconds": 33.856,
+     "tail_seconds": 0.256,
+     "track_levels": {
+      "trk_000000000003": {
+       "integrated_lufs": -22.24,
+       "name": "Piano",
+       "peak_dbfs": -11.55,
+       "short_term_max_lufs": -22.61
+      },
+      "trk_000000000005": {
+       "integrated_lufs": -28.75,
+       "name": "Lead",
+       "peak_dbfs": -11.91,
+       "short_term_max_lufs": -31.67
+      },
+      "trk_000000000007": {
+       "integrated_lufs": null,
+       "name": "FX Bus",
+       "peak_dbfs": null,
+       "short_term_max_lufs": null
+      },
+      "trk_000000000027": {
+       "integrated_lufs": -18.44,
+       "name": "Tone",
+       "peak_dbfs": -9.36,
+       "short_term_max_lufs": -19.59
+      },
+      "trk_000000000034": {
+       "integrated_lufs": -12.89,
+       "name": "Chord",
+       "peak_dbfs": -4.46,
+       "short_term_max_lufs": -13.36
+      },
+      "trk_000000000039": {
+       "integrated_lufs": -15.81,
+       "name": "saw-44k1-stereo",
+       "peak_dbfs": -9.64,
+       "short_term_max_lufs": -19.44
+      },
+      "trk_000000000078": {
+       "integrated_lufs": -21.72,
+       "name": "Lead",
+       "peak_dbfs": -11.66,
+       "short_term_max_lufs": -22.87
+      },
+      "trk_000000000081": {
+       "integrated_lufs": -20.25,
+       "name": "Beat (Drums)",
+       "peak_dbfs": -10.61,
+       "short_term_max_lufs": -21.99
+      }
+     },
+     "warnings": []
+    },
+    "started": "<VOLATILE>",
+    "status": "succeeded",
+    "tool": "render_preview"
+   },
+   "tool": "render_preview"
+  },
+  {
+   "args": {
+    "operation_id": "op_000000000084"
+   },
+   "id": "step128",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "created": "<VOLATILE>",
+    "elapsed_seconds": "<VOLATILE>",
+    "finished": "<VOLATILE>",
+    "kind": "render_preview",
+    "label": "Render preview",
+    "message": "measuring Beat (Drums)",
+    "ok": true,
+    "operation_id": "op_000000000084",
+    "progress": 1.0,
+    "result": {
+     "analysis": {
+      "balance_db": 1.6919927134819828,
+      "channels": 2,
+      "clip_events": 0,
+      "clipped_samples": 0,
+      "correlation": 0.7954780551849493,
+      "crest_factor_db": 19.523060017076006,
+      "dc_offset": [
+       2.9e-05,
+       2.5e-05
+      ],
+      "duration_seconds": "<VOLATILE>",
+      "integrated_lufs": -15.516297531203977,
+      "kind": {
+       "estimated": [
+        "true_peak_dbtp",
+        "plr_db"
+       ],
+       "measured": [
+        "sample_peak_dbfs",
+        "rms_dbfs",
+        "integrated_lufs",
+        "momentary_max_lufs",
+        "short_term_max_lufs",
+        "loudness_range_lu",
+        "clipped_samples",
+        "correlation",
+        "octave_bands_db"
+       ]
+      },
+      "leading_silence_seconds": 0.5,
+      "loudness_range_lu": 9.409292570412447,
+      "min_correlation_400ms": -2.2574115179163086e-09,
+      "momentary_max_lufs": -10.532339931332576,
+      "nonfinite_samples": 0,
+      "octave_bands_db": {
+       "1000": -13.689929721743946,
+       "125": -17.460402838104585,
+       "16000": -28.421265244926065,
+       "2000": -23.574115742371696,
+       "250": -2.956640154204342,
+       "31.5": -38.74582557966663,
+       "4000": -26.148237522499223,
+       "500": -3.9559983482971353,
+       "63": -17.12278078741255,
+       "8000": -25.388707378613027
+      },
+      "over_full_scale_samples": 0,
+      "plr_db": 12.464503095925576,
+      "rms_dbfs": -22.57511680026123,
+      "sample_peak_dbfs": -3.052056783185224,
+      "sample_rate": 48000,
+      "short_term_max_lufs": -12.580026817063178,
+      "side_to_mid_db": -9.093750391304837,
+      "silence_regions": [
+       [
+        0.0,
+        0.5
+       ],
+       [
+        6.5,
+        7.0
+       ],
+       [
+        7.45,
+        8.25
+       ],
+       [
+        9.4,
+        10.0
+       ],
+       [
+        11.0,
+        12.0
+       ],
+       [
+        13.0,
+        16.0
+       ],
+       [
+        18.2,
+        33.85
+       ]
+      ],
+      "spectral_centroid_hz": 458.46998277633446,
+      "trailing_silence_seconds": 15.65,
+      "true_peak_dbtp": -3.051794435278402
+     },
+     "issues": [],
+     "latency_samples": 0,
+     "missing_media": [],
+     "path": "<ROOT>/work/previews/full.wav",
+     "range_beats": [
+      0.0,
+      64.0
+     ],
+     "realtime_factor": "<VOLATILE>",
+     "render_seconds": "<VOLATILE>",
+     "sample_rate": 48000,
+     "seconds": 33.856,
+     "tail_seconds": 0.256,
+     "track_levels": {
+      "trk_000000000003": {
+       "integrated_lufs": -22.24,
+       "name": "Piano",
+       "peak_dbfs": -11.55,
+       "short_term_max_lufs": -22.61
+      },
+      "trk_000000000005": {
+       "integrated_lufs": -28.75,
+       "name": "Lead",
+       "peak_dbfs": -11.91,
+       "short_term_max_lufs": -31.67
+      },
+      "trk_000000000007": {
+       "integrated_lufs": null,
+       "name": "FX Bus",
+       "peak_dbfs": null,
+       "short_term_max_lufs": null
+      },
+      "trk_000000000027": {
+       "integrated_lufs": -18.44,
+       "name": "Tone",
+       "peak_dbfs": -9.36,
+       "short_term_max_lufs": -19.59
+      },
+      "trk_000000000034": {
+       "integrated_lufs": -12.89,
+       "name": "Chord",
+       "peak_dbfs": -4.46,
+       "short_term_max_lufs": -13.36
+      },
+      "trk_000000000039": {
+       "integrated_lufs": -15.81,
+       "name": "saw-44k1-stereo",
+       "peak_dbfs": -9.64,
+       "short_term_max_lufs": -19.44
+      },
+      "trk_000000000078": {
+       "integrated_lufs": -21.72,
+       "name": "Lead",
+       "peak_dbfs": -11.66,
+       "short_term_max_lufs": -22.87
+      },
+      "trk_000000000081": {
+       "integrated_lufs": -20.25,
+       "name": "Beat (Drums)",
+       "peak_dbfs": -10.61,
+       "short_term_max_lufs": -21.99
+      }
+     },
+     "warnings": []
+    },
+    "started": "<VOLATILE>",
+    "status": "succeeded",
+    "tool": "get_operation_status"
+   },
+   "tool": "get_operation_status"
+  },
+  {
+   "args": {
+    "operation_id": "op_000000000084"
+   },
+   "id": "step129",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "analysis": {
+     "balance_db": 1.6919927134819828,
+     "channels": 2,
+     "clip_events": 0,
+     "clipped_samples": 0,
+     "correlation": 0.7954780551849493,
+     "crest_factor_db": 19.523060017076006,
+     "dc_offset": [
+      2.9e-05,
+      2.5e-05
+     ],
+     "duration_seconds": "<VOLATILE>",
+     "integrated_lufs": -15.516297531203977,
+     "kind": {
+      "estimated": [
+       "true_peak_dbtp",
+       "plr_db"
+      ],
+      "measured": [
+       "sample_peak_dbfs",
+       "rms_dbfs",
+       "integrated_lufs",
+       "momentary_max_lufs",
+       "short_term_max_lufs",
+       "loudness_range_lu",
+       "clipped_samples",
+       "correlation",
+       "octave_bands_db"
+      ]
+     },
+     "leading_silence_seconds": 0.5,
+     "loudness_range_lu": 9.409292570412447,
+     "min_correlation_400ms": -2.2574115179163086e-09,
+     "momentary_max_lufs": -10.532339931332576,
+     "nonfinite_samples": 0,
+     "octave_bands_db": {
+      "1000": -13.689929721743946,
+      "125": -17.460402838104585,
+      "16000": -28.421265244926065,
+      "2000": -23.574115742371696,
+      "250": -2.956640154204342,
+      "31.5": -38.74582557966663,
+      "4000": -26.148237522499223,
+      "500": -3.9559983482971353,
+      "63": -17.12278078741255,
+      "8000": -25.388707378613027
+     },
+     "over_full_scale_samples": 0,
+     "plr_db": 12.464503095925576,
+     "rms_dbfs": -22.57511680026123,
+     "sample_peak_dbfs": -3.052056783185224,
+     "sample_rate": 48000,
+     "short_term_max_lufs": -12.580026817063178,
+     "side_to_mid_db": -9.093750391304837,
+     "silence_regions": [
+      [
+       0.0,
+       0.5
+      ],
+      [
+       6.5,
+       7.0
+      ],
+      [
+       7.45,
+       8.25
+      ],
+      [
+       9.4,
+       10.0
+      ],
+      [
+       11.0,
+       12.0
+      ],
+      [
+       13.0,
+       16.0
+      ],
+      [
+       18.2,
+       33.85
+      ]
+     ],
+     "spectral_centroid_hz": 458.46998277633446,
+     "trailing_silence_seconds": 15.65,
+     "true_peak_dbtp": -3.051794435278402
+    },
+    "issues": [],
+    "ok": true,
+    "path": "<ROOT>/work/previews/full.wav",
+    "ready": true,
+    "tool": "get_audio_analysis"
+   },
+   "tool": "get_audio_analysis"
+  },
+  {
+   "args": {
+    "include_series": true,
+    "path": "<ROOT>/work/previews/full.wav"
+   },
+   "id": "step130",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "analysis": {
+     "balance_db": 1.6919927134819828,
+     "channels": 2,
+     "clip_events": 0,
+     "clipped_samples": 0,
+     "correlation": 0.7954780551849493,
+     "crest_factor_db": 19.523060017076006,
+     "dc_offset": [
+      2.9e-05,
+      2.5e-05
+     ],
+     "duration_seconds": "<VOLATILE>",
+     "integrated_lufs": -15.516297531203977,
+     "kind": {
+      "estimated": [
+       "true_peak_dbtp",
+       "plr_db"
+      ],
+      "measured": [
+       "sample_peak_dbfs",
+       "rms_dbfs",
+       "integrated_lufs",
+       "momentary_max_lufs",
+       "short_term_max_lufs",
+       "loudness_range_lu",
+       "clipped_samples",
+       "correlation",
+       "octave_bands_db"
+      ]
+     },
+     "leading_silence_seconds": 0.5,
+     "loudness_range_lu": 9.409292570412447,
+     "min_correlation_400ms": -2.2574115179163086e-09,
+     "momentary_max_lufs": -10.532339931332576,
+     "nonfinite_samples": 0,
+     "octave_bands_db": {
+      "1000": -13.689929721743946,
+      "125": -17.460402838104585,
+      "16000": -28.421265244926065,
+      "2000": -23.574115742371696,
+      "250": -2.956640154204342,
+      "31.5": -38.74582557966663,
+      "4000": -26.148237522499223,
+      "500": -3.9559983482971353,
+      "63": -17.12278078741255,
+      "8000": -25.388707378613027
+     },
+     "over_full_scale_samples": 0,
+     "plr_db": 12.464503095925576,
+     "rms_dbfs": -22.57511680026123,
+     "sample_peak_dbfs": -3.052056783185224,
+     "sample_rate": 48000,
+     "short_term_lufs": [
+      -19.18,
+      -17.64,
+      -13.95,
+      -12.65,
+      -13.24,
+      -16.24,
+      -22.53,
+      -22.55,
+      -17.77,
+      -19.35,
+      -16.29,
+      -19.16,
+      -19.16,
+      -124.14,
+      -23.15,
+      -19.38,
+      -19.38,
+      -21.74,
+      -46.88,
+      -120.0,
+      -120.0,
+      -120.0,
+      -120.0,
+      -120.0,
+      -120.0,
+      -120.0,
+      -120.0,
+      -120.0,
+      -120.0,
+      -120.0,
+      -120.0
+     ],
+     "short_term_max_lufs": -12.580026817063178,
+     "side_to_mid_db": -9.093750391304837,
+     "silence_regions": [
+      [
+       0.0,
+       0.5
+      ],
+      [
+       6.5,
+       7.0
+      ],
+      [
+       7.45,
+       8.25
+      ],
+      [
+       9.4,
+       10.0
+      ],
+      [
+       11.0,
+       12.0
+      ],
+      [
+       13.0,
+       16.0
+      ],
+      [
+       18.2,
+       33.85
+      ]
+     ],
+     "spectral_centroid_hz": 458.46998277633446,
+     "trailing_silence_seconds": 15.65,
+     "true_peak_dbtp": -3.051794435278402
+    },
+    "issues": [],
+    "latency_samples": 0,
+    "missing_media": [],
+    "ok": true,
+    "path": "<ROOT>/work/previews/full.wav",
+    "range_beats": [
+     0.0,
+     64.0
+    ],
+    "ready": true,
+    "realtime_factor": "<VOLATILE>",
+    "render_seconds": "<VOLATILE>",
+    "sample_rate": 48000,
+    "seconds": 33.856,
+    "tail_seconds": 0.256,
+    "tool": "get_audio_analysis",
+    "track_levels": {
+     "trk_000000000003": {
+      "integrated_lufs": -22.24,
+      "name": "Piano",
+      "peak_dbfs": -11.55,
+      "short_term_max_lufs": -22.61
+     },
+     "trk_000000000005": {
+      "integrated_lufs": -28.75,
+      "name": "Lead",
+      "peak_dbfs": -11.91,
+      "short_term_max_lufs": -31.67
+     },
+     "trk_000000000007": {
+      "integrated_lufs": null,
+      "name": "FX Bus",
+      "peak_dbfs": null,
+      "short_term_max_lufs": null
+     },
+     "trk_000000000027": {
+      "integrated_lufs": -18.44,
+      "name": "Tone",
+      "peak_dbfs": -9.36,
+      "short_term_max_lufs": -19.59
+     },
+     "trk_000000000034": {
+      "integrated_lufs": -12.89,
+      "name": "Chord",
+      "peak_dbfs": -4.46,
+      "short_term_max_lufs": -13.36
+     },
+     "trk_000000000039": {
+      "integrated_lufs": -15.81,
+      "name": "saw-44k1-stereo",
+      "peak_dbfs": -9.64,
+      "short_term_max_lufs": -19.44
+     },
+     "trk_000000000078": {
+      "integrated_lufs": -21.72,
+      "name": "Lead",
+      "peak_dbfs": -11.66,
+      "short_term_max_lufs": -22.87
+     },
+     "trk_000000000081": {
+      "integrated_lufs": -20.25,
+      "name": "Beat (Drums)",
+      "peak_dbfs": -10.61,
+      "short_term_max_lufs": -21.99
+     }
+    },
+    "warnings": []
+   },
+   "tool": "get_audio_analysis"
+  },
+  {
+   "args": {
+    "operation_id": "op_missing"
+   },
+   "id": "step131",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "error": {
+     "code": "NOT_FOUND",
+     "message": "operation 'op_missing' not found"
+    },
+    "ok": false,
+    "tool": "get_operation_status"
+   },
+   "tool": "get_operation_status"
+  },
+  {
+   "args": {},
+   "harness": "hold_jobs",
+   "id": "step132",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/work/previews/cancelled.wav",
+    "wait": false
+   },
+   "id": "pending",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "created": "<VOLATILE>",
+    "finished": "<VOLATILE>",
+    "kind": "render_preview",
+    "label": "Render preview",
+    "message": "",
+    "ok": true,
+    "operation_id": "op_000000000085",
+    "progress": 0.0,
+    "started": "<VOLATILE>",
+    "status": "queued",
+    "tool": "render_preview"
+   },
+   "tool": "render_preview"
+  },
+  {
+   "args": {
+    "operation_id": "op_000000000085"
+   },
+   "id": "step134",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "created": "<VOLATILE>",
+    "finished": "<VOLATILE>",
+    "kind": "render_preview",
+    "label": "Render preview",
+    "message": "",
+    "ok": true,
+    "operation_id": "op_000000000085",
+    "progress": 0.0,
+    "started": "<VOLATILE>",
+    "status": "queued",
+    "tool": "get_operation_status"
+   },
+   "tool": "get_operation_status"
+  },
+  {
+   "args": {
+    "operation_id": "op_000000000085"
+   },
+   "id": "step135",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "created": "<VOLATILE>",
+    "finished": "<VOLATILE>",
+    "kind": "render_preview",
+    "label": "Render preview",
+    "message": "cancelling",
+    "ok": true,
+    "operation_id": "op_000000000085",
+    "progress": 0.0,
+    "started": "<VOLATILE>",
+    "status": "queued",
+    "tool": "cancel_operation"
+   },
+   "tool": "cancel_operation"
+  },
+  {
+   "args": {},
+   "id": "step136",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "ok": true,
+    "operations": [
+     {
+      "created": "<VOLATILE>",
+      "elapsed_seconds": "<VOLATILE>",
+      "finished": "<VOLATILE>",
+      "kind": "decode",
+      "label": "Decode tone-44k1-mono-16bit.wav",
+      "message": "",
+      "operation_id": "op_000000000032",
+      "progress": 1.0,
+      "result": null,
+      "started": "<VOLATILE>",
+      "status": "succeeded"
+     },
+     {
+      "created": "<VOLATILE>",
+      "elapsed_seconds": "<VOLATILE>",
+      "finished": "<VOLATILE>",
+      "kind": "decode",
+      "label": "Decode chord-48k-stereo.flac",
+      "message": "",
+      "operation_id": "op_000000000037",
+      "progress": 1.0,
+      "result": null,
+      "started": "<VOLATILE>",
+      "status": "succeeded"
+     },
+     {
+      "created": "<VOLATILE>",
+      "elapsed_seconds": "<VOLATILE>",
+      "finished": "<VOLATILE>",
+      "kind": "decode",
+      "label": "Decode saw-44k1-stereo.mp3",
+      "message": "",
+      "operation_id": "op_000000000042",
+      "progress": 1.0,
+      "result": null,
+      "started": "<VOLATILE>",
+      "status": "succeeded"
+     },
+     {
+      "created": "<VOLATILE>",
+      "elapsed_seconds": "<VOLATILE>",
+      "finished": "<VOLATILE>",
+      "kind": "render_preview",
+      "label": "Render preview",
+      "message": "measuring Beat (Drums)",
+      "operation_id": "op_000000000084",
+      "progress": 1.0,
+      "result": null,
+      "started": "<VOLATILE>",
+      "status": "succeeded"
+     },
+     {
+      "created": "<VOLATILE>",
+      "finished": "<VOLATILE>",
+      "kind": "render_preview",
+      "label": "Render preview",
+      "message": "cancelling",
+      "operation_id": "op_000000000085",
+      "progress": 0.0,
+      "result": null,
+      "started": "<VOLATILE>",
+      "status": "queued"
+     }
+    ],
+    "tool": "list_operations"
+   },
+   "tool": "list_operations"
+  },
+  {
+   "args": {},
+   "harness": "release_jobs",
+   "id": "step137",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0"
+  },
+  {
+   "args": {
+    "operation_id": "op_000000000085",
+    "wait_seconds": 60
+   },
+   "id": "step138",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "created": "<VOLATILE>",
+    "finished": "<VOLATILE>",
+    "kind": "render_preview",
+    "label": "Render preview",
+    "message": "cancelling",
+    "ok": true,
+    "operation_id": "op_000000000085",
+    "progress": 0.0,
+    "started": "<VOLATILE>",
+    "status": "cancelled",
+    "tool": "get_operation_status"
+   },
+   "tool": "get_operation_status"
+  },
+  {
+   "args": {
+    "operation_id": "op_000000000085"
+   },
+   "id": "step139",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "error": {
+     "code": "NOT_FOUND",
+     "details": {
+      "error": null,
+      "status": "cancelled"
+     },
+     "message": "operation has no analysis"
+    },
+    "ok": false,
+    "tool": "get_audio_analysis"
+   },
+   "tool": "get_audio_analysis"
+  },
+  {
+   "args": {
+    "operation_id": "op_000000000084"
+   },
+   "id": "step140",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "created": "<VOLATILE>",
+    "elapsed_seconds": "<VOLATILE>",
+    "finished": "<VOLATILE>",
+    "kind": "render_preview",
+    "label": "Render preview",
+    "message": "measuring Beat (Drums)",
+    "ok": true,
+    "operation_id": "op_000000000084",
+    "progress": 1.0,
+    "result": {
+     "analysis": {
+      "balance_db": 1.6919927134819828,
+      "channels": 2,
+      "clip_events": 0,
+      "clipped_samples": 0,
+      "correlation": 0.7954780551849493,
+      "crest_factor_db": 19.523060017076006,
+      "dc_offset": [
+       2.9e-05,
+       2.5e-05
+      ],
+      "duration_seconds": "<VOLATILE>",
+      "integrated_lufs": -15.516297531203977,
+      "kind": {
+       "estimated": [
+        "true_peak_dbtp",
+        "plr_db"
+       ],
+       "measured": [
+        "sample_peak_dbfs",
+        "rms_dbfs",
+        "integrated_lufs",
+        "momentary_max_lufs",
+        "short_term_max_lufs",
+        "loudness_range_lu",
+        "clipped_samples",
+        "correlation",
+        "octave_bands_db"
+       ]
+      },
+      "leading_silence_seconds": 0.5,
+      "loudness_range_lu": 9.409292570412447,
+      "min_correlation_400ms": -2.2574115179163086e-09,
+      "momentary_max_lufs": -10.532339931332576,
+      "nonfinite_samples": 0,
+      "octave_bands_db": {
+       "1000": -13.689929721743946,
+       "125": -17.460402838104585,
+       "16000": -28.421265244926065,
+       "2000": -23.574115742371696,
+       "250": -2.956640154204342,
+       "31.5": -38.74582557966663,
+       "4000": -26.148237522499223,
+       "500": -3.9559983482971353,
+       "63": -17.12278078741255,
+       "8000": -25.388707378613027
+      },
+      "over_full_scale_samples": 0,
+      "plr_db": 12.464503095925576,
+      "rms_dbfs": -22.57511680026123,
+      "sample_peak_dbfs": -3.052056783185224,
+      "sample_rate": 48000,
+      "short_term_max_lufs": -12.580026817063178,
+      "side_to_mid_db": -9.093750391304837,
+      "silence_regions": [
+       [
+        0.0,
+        0.5
+       ],
+       [
+        6.5,
+        7.0
+       ],
+       [
+        7.45,
+        8.25
+       ],
+       [
+        9.4,
+        10.0
+       ],
+       [
+        11.0,
+        12.0
+       ],
+       [
+        13.0,
+        16.0
+       ],
+       [
+        18.2,
+        33.85
+       ]
+      ],
+      "spectral_centroid_hz": 458.46998277633446,
+      "trailing_silence_seconds": 15.65,
+      "true_peak_dbtp": -3.051794435278402
+     },
+     "issues": [],
+     "latency_samples": 0,
+     "missing_media": [],
+     "path": "<ROOT>/work/previews/full.wav",
+     "range_beats": [
+      0.0,
+      64.0
+     ],
+     "realtime_factor": "<VOLATILE>",
+     "render_seconds": "<VOLATILE>",
+     "sample_rate": 48000,
+     "seconds": 33.856,
+     "tail_seconds": 0.256,
+     "track_levels": {
+      "trk_000000000003": {
+       "integrated_lufs": -22.24,
+       "name": "Piano",
+       "peak_dbfs": -11.55,
+       "short_term_max_lufs": -22.61
+      },
+      "trk_000000000005": {
+       "integrated_lufs": -28.75,
+       "name": "Lead",
+       "peak_dbfs": -11.91,
+       "short_term_max_lufs": -31.67
+      },
+      "trk_000000000007": {
+       "integrated_lufs": null,
+       "name": "FX Bus",
+       "peak_dbfs": null,
+       "short_term_max_lufs": null
+      },
+      "trk_000000000027": {
+       "integrated_lufs": -18.44,
+       "name": "Tone",
+       "peak_dbfs": -9.36,
+       "short_term_max_lufs": -19.59
+      },
+      "trk_000000000034": {
+       "integrated_lufs": -12.89,
+       "name": "Chord",
+       "peak_dbfs": -4.46,
+       "short_term_max_lufs": -13.36
+      },
+      "trk_000000000039": {
+       "integrated_lufs": -15.81,
+       "name": "saw-44k1-stereo",
+       "peak_dbfs": -9.64,
+       "short_term_max_lufs": -19.44
+      },
+      "trk_000000000078": {
+       "integrated_lufs": -21.72,
+       "name": "Lead",
+       "peak_dbfs": -11.66,
+       "short_term_max_lufs": -22.87
+      },
+      "trk_000000000081": {
+       "integrated_lufs": -20.25,
+       "name": "Beat (Drums)",
+       "peak_dbfs": -10.61,
+       "short_term_max_lufs": -21.99
+      }
+     },
+     "warnings": []
+    },
+    "started": "<VOLATILE>",
+    "status": "succeeded",
+    "tool": "cancel_operation"
+   },
+   "tool": "cancel_operation"
+  },
+  {
+   "args": {
+    "operation_id": "op_missing"
+   },
+   "id": "step141",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "error": {
+     "code": "NOT_FOUND",
+     "message": "operation 'op_missing' not found"
+    },
+    "ok": false,
+    "tool": "cancel_operation"
+   },
+   "tool": "cancel_operation"
+  },
+  {
+   "args": {
+    "directory": "<ROOT>/work/stems",
+    "format": {
+     "bit_depth": 24,
+     "format": "flac"
+    }
+   },
+   "id": "step142",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "created": "<VOLATILE>",
+    "elapsed_seconds": "<VOLATILE>",
+    "finished": "<VOLATILE>",
+    "kind": "export_stems",
+    "label": "Export stems",
+    "message": "stem Beat (Drums)",
+    "ok": true,
+    "operation_id": "op_000000000086",
+    "progress": 1.0,
+    "result": {
+     "directory": "<ROOT>/work/stems",
+     "stems": [
+      {
+       "bit_depth": 24,
+       "bitrate_kbps": null,
+       "channels": 2,
+       "clipped_samples": 0,
+       "container": "flac",
+       "decoded_true_peak_dbtp": null,
+       "dithered": true,
+       "floating_point": false,
+       "frames": 1625088,
+       "integrated_lufs": -22.24,
+       "metadata_written": [
+        "title",
+        "software"
+       ],
+       "name": "Piano",
+       "path": "<ROOT>/work/stems/Coverage---01-Piano.flac",
+       "peak_dbtp": -11.55,
+       "resampled_from": null,
+       "sample_rate": 48000,
+       "seconds": 33.856,
+       "size_bytes": 766830,
+       "track_id": "trk_000000000003",
+       "verified": true
+      },
+      {
+       "bit_depth": 24,
+       "bitrate_kbps": null,
+       "channels": 2,
+       "clipped_samples": 0,
+       "container": "flac",
+       "decoded_true_peak_dbtp": null,
+       "dithered": true,
+       "floating_point": false,
+       "frames": 1625088,
+       "integrated_lufs": -28.75,
+       "metadata_written": [
+        "title",
+        "software"
+       ],
+       "name": "Lead",
+       "path": "<ROOT>/work/stems/Coverage---02-Lead.flac",
+       "peak_dbtp": -11.88,
+       "resampled_from": null,
+       "sample_rate": 48000,
+       "seconds": 33.856,
+       "size_bytes": 650966,
+       "track_id": "trk_000000000005",
+       "verified": true
+      },
+      {
+       "bit_depth": 24,
+       "bitrate_kbps": null,
+       "channels": 2,
+       "clipped_samples": 0,
+       "container": "flac",
+       "decoded_true_peak_dbtp": null,
+       "dithered": true,
+       "floating_point": false,
+       "frames": 1625088,
+       "integrated_lufs": null,
+       "metadata_written": [
+        "title",
+        "software"
+       ],
+       "name": "FX Bus",
+       "path": "<ROOT>/work/stems/Coverage---03-FX-Bus.flac",
+       "peak_dbtp": null,
+       "resampled_from": null,
+       "sample_rate": 48000,
+       "seconds": 33.856,
+       "size_bytes": 564415,
+       "track_id": "trk_000000000007",
+       "verified": true
+      },
+      {
+       "bit_depth": 24,
+       "bitrate_kbps": null,
+       "channels": 2,
+       "clipped_samples": 0,
+       "container": "flac",
+       "decoded_true_peak_dbtp": null,
+       "dithered": true,
+       "floating_point": false,
+       "frames": 1625088,
+       "integrated_lufs": -18.44,
+       "metadata_written": [
+        "title",
+        "software"
+       ],
+       "name": "Tone",
+       "path": "<ROOT>/work/stems/Coverage---04-Tone.flac",
+       "peak_dbtp": -9.36,
+       "resampled_from": null,
+       "sample_rate": 48000,
+       "seconds": 33.856,
+       "size_bytes": 817450,
+       "track_id": "trk_000000000027",
+       "verified": true
+      },
+      {
+       "bit_depth": 24,
+       "bitrate_kbps": null,
+       "channels": 2,
+       "clipped_samples": 0,
+       "container": "flac",
+       "decoded_true_peak_dbtp": null,
+       "dithered": true,
+       "floating_point": false,
+       "frames": 1625088,
+       "integrated_lufs": -12.89,
+       "metadata_written": [
+        "title",
+        "software"
+       ],
+       "name": "Chord",
+       "path": "<ROOT>/work/stems/Coverage---05-Chord.flac",
+       "peak_dbtp": -4.46,
+       "resampled_from": null,
+       "sample_rate": 48000,
+       "seconds": 33.856,
+       "size_bytes": 816977,
+       "track_id": "trk_000000000034",
+       "verified": true
+      },
+      {
+       "bit_depth": 24,
+       "bitrate_kbps": null,
+       "channels": 2,
+       "clipped_samples": 0,
+       "container": "flac",
+       "decoded_true_peak_dbtp": null,
+       "dithered": true,
+       "floating_point": false,
+       "frames": 1625088,
+       "integrated_lufs": -15.81,
+       "metadata_written": [
+        "title",
+        "software"
+       ],
+       "name": "saw-44k1-stereo",
+       "path": "<ROOT>/work/stems/Coverage---06-saw-44k1-stereo.flac",
+       "peak_dbtp": -9.64,
+       "resampled_from": null,
+       "sample_rate": 48000,
+       "seconds": 33.856,
+       "size_bytes": 646342,
+       "track_id": "trk_000000000039",
+       "verified": true
+      },
+      {
+       "bit_depth": 24,
+       "bitrate_kbps": null,
+       "channels": 2,
+       "clipped_samples": 0,
+       "container": "flac",
+       "decoded_true_peak_dbtp": null,
+       "dithered": true,
+       "floating_point": false,
+       "frames": 1625088,
+       "integrated_lufs": -21.72,
+       "metadata_written": [
+        "title",
+        "software"
+       ],
+       "name": "Lead",
+       "path": "<ROOT>/work/stems/Coverage---07-Lead.flac",
+       "peak_dbtp": -11.66,
+       "resampled_from": null,
+       "sample_rate": 48000,
+       "seconds": 33.856,
+       "size_bytes": 688647,
+       "track_id": "trk_000000000078",
+       "verified": true
+      },
+      {
+       "bit_depth": 24,
+       "bitrate_kbps": null,
+       "channels": 2,
+       "clipped_samples": 0,
+       "container": "flac",
+       "decoded_true_peak_dbtp": null,
+       "dithered": true,
+       "floating_point": false,
+       "frames": 1625088,
+       "integrated_lufs": -20.25,
+       "metadata_written": [
+        "title",
+        "software"
+       ],
+       "name": "Beat (Drums)",
+       "path": "<ROOT>/work/stems/Coverage---08-Beat-Drums.flac",
+       "peak_dbtp": -10.06,
+       "resampled_from": null,
+       "sample_rate": 48000,
+       "seconds": 33.856,
+       "size_bytes": 750970,
+       "track_id": "trk_000000000081",
+       "verified": true
+      }
+     ],
+     "through_master": false
+    },
+    "started": "<VOLATILE>",
+    "status": "succeeded",
+    "tool": "export_stems"
+   },
+   "tool": "export_stems"
+  },
+  {
+   "args": {
+    "directory": "<ROOT>/work/stems-master",
+    "through_master": true,
+    "track_ids": [
+     "trk_000000000027"
+    ]
+   },
+   "id": "step143",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "created": "<VOLATILE>",
+    "elapsed_seconds": "<VOLATILE>",
+    "finished": "<VOLATILE>",
+    "kind": "export_stems",
+    "label": "Export stems",
+    "message": "stem Tone",
+    "ok": true,
+    "operation_id": "op_000000000087",
+    "progress": 1.0,
+    "result": {
+     "directory": "<ROOT>/work/stems-master",
+     "stems": [
+      {
+       "bit_depth": 24,
+       "bitrate_kbps": null,
+       "channels": 2,
+       "clipped_samples": 0,
+       "container": "wav",
+       "decoded_true_peak_dbtp": null,
+       "dithered": true,
+       "floating_point": false,
+       "frames": 1625088,
+       "integrated_lufs": -18.44,
+       "metadata_written": [
+        "title",
+        "software"
+       ],
+       "name": "Tone",
+       "path": "<ROOT>/work/stems-master/Coverage---01-Tone.wav",
+       "peak_dbtp": -9.36,
+       "resampled_from": null,
+       "sample_rate": 48000,
+       "seconds": 33.856,
+       "size_bytes": 9750636,
+       "track_id": "trk_000000000027",
+       "verified": true
+      }
+     ],
+     "through_master": true
+    },
+    "started": "<VOLATILE>",
+    "status": "succeeded",
+    "tool": "export_stems"
+   },
+   "tool": "export_stems"
+  },
+  {
+   "args": {
+    "directory": "<ROOT>/work/stems",
+    "dry_run": true,
+    "overwrite": true
+   },
+   "id": "step144",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "committed": false,
+    "directory": "<ROOT>/work/stems",
+    "dry_run": true,
+    "ok": true,
+    "requires_confirmation": true,
+    "tool": "export_stems"
+   },
+   "tool": "export_stems"
+  },
+  {
+   "args": {
+    "directory": "<ROOT>/work/stems",
+    "format": {
+     "bit_depth": 24,
+     "format": "flac"
+    },
+    "overwrite": true,
+    "track_ids": [
+     "trk_000000000034"
+    ]
+   },
+   "id": "stems_confirm",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "error": {
+     "code": "CONFIRMATION_REQUIRED",
+     "details": {
+      "action": "export_stems",
+      "confirmation_token": "golden-token-0001",
+      "expires_in_seconds": 600
+     },
+     "message": "existing files in <ROOT>/work/stems may be overwritten. Ask the user; if they agree, repeat the identical call with this confirmation_token."
+    },
+    "ok": false,
+    "tool": "export_stems"
+   },
+   "tool": "export_stems"
+  },
+  {
+   "args": {
+    "confirmation_token": "golden-token-0001",
+    "directory": "<ROOT>/work/stems",
+    "format": {
+     "bit_depth": 24,
+     "format": "flac"
+    },
+    "overwrite": true,
+    "track_ids": [
+     "trk_000000000034"
+    ]
+   },
+   "id": "step146",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "created": "<VOLATILE>",
+    "elapsed_seconds": "<VOLATILE>",
+    "finished": "<VOLATILE>",
+    "kind": "export_stems",
+    "label": "Export stems",
+    "message": "stem Chord",
+    "ok": true,
+    "operation_id": "op_000000000088",
+    "progress": 1.0,
+    "result": {
+     "directory": "<ROOT>/work/stems",
+     "stems": [
+      {
+       "bit_depth": 24,
+       "bitrate_kbps": null,
+       "channels": 2,
+       "clipped_samples": 0,
+       "container": "flac",
+       "decoded_true_peak_dbtp": null,
+       "dithered": true,
+       "floating_point": false,
+       "frames": 1625088,
+       "integrated_lufs": -12.89,
+       "metadata_written": [
+        "title",
+        "software"
+       ],
+       "name": "Chord",
+       "path": "<ROOT>/work/stems/Coverage---01-Chord.flac",
+       "peak_dbtp": -4.46,
+       "resampled_from": null,
+       "sample_rate": 48000,
+       "seconds": 33.856,
+       "size_bytes": 816977,
+       "track_id": "trk_000000000034",
+       "verified": true
+      }
+     ],
+     "through_master": false
+    },
+    "started": "<VOLATILE>",
+    "status": "succeeded",
+    "tool": "export_stems"
+   },
+   "tool": "export_stems"
+  },
+  {
+   "args": {
+    "directory": "/sonara-golden-outside/stems"
+   },
+   "id": "step147",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "error": {
+     "code": "PERMISSION_DENIED",
+     "details": {
+      "allowed_roots": [
+       "<ROOT>/projects",
+       "<ROOT>/work",
+       "<ROOT>",
+       "<ROOT>/workspaces/new-prj_000000000002"
+      ],
+      "hint": "ask the user to allow it (Sonara settings 'agent_allowed_paths' or $SONARA_AGENT_ALLOWED_PATHS)"
+     },
+     "message": "write access to /sonara-golden-outside/stems is outside the allowed locations"
+    },
+    "ok": false,
+    "tool": "export_stems"
+   },
+   "tool": "export_stems"
+  },
+  {
+   "args": {},
+   "id": "step148",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "ok": true,
+    "operations": [
+     {
+      "created": "<VOLATILE>",
+      "elapsed_seconds": "<VOLATILE>",
+      "finished": "<VOLATILE>",
+      "kind": "decode",
+      "label": "Decode tone-44k1-mono-16bit.wav",
+      "message": "",
+      "operation_id": "op_000000000032",
+      "progress": 1.0,
+      "result": null,
+      "started": "<VOLATILE>",
+      "status": "succeeded"
+     },
+     {
+      "created": "<VOLATILE>",
+      "elapsed_seconds": "<VOLATILE>",
+      "finished": "<VOLATILE>",
+      "kind": "decode",
+      "label": "Decode chord-48k-stereo.flac",
+      "message": "",
+      "operation_id": "op_000000000037",
+      "progress": 1.0,
+      "result": null,
+      "started": "<VOLATILE>",
+      "status": "succeeded"
+     },
+     {
+      "created": "<VOLATILE>",
+      "elapsed_seconds": "<VOLATILE>",
+      "finished": "<VOLATILE>",
+      "kind": "decode",
+      "label": "Decode saw-44k1-stereo.mp3",
+      "message": "",
+      "operation_id": "op_000000000042",
+      "progress": 1.0,
+      "result": null,
+      "started": "<VOLATILE>",
+      "status": "succeeded"
+     },
+     {
+      "created": "<VOLATILE>",
+      "elapsed_seconds": "<VOLATILE>",
+      "finished": "<VOLATILE>",
+      "kind": "render_preview",
+      "label": "Render preview",
+      "message": "measuring Beat (Drums)",
+      "operation_id": "op_000000000084",
+      "progress": 1.0,
+      "result": null,
+      "started": "<VOLATILE>",
+      "status": "succeeded"
+     },
+     {
+      "created": "<VOLATILE>",
+      "finished": "<VOLATILE>",
+      "kind": "render_preview",
+      "label": "Render preview",
+      "message": "cancelling",
+      "operation_id": "op_000000000085",
+      "progress": 0.0,
+      "result": null,
+      "started": "<VOLATILE>",
+      "status": "cancelled"
+     },
+     {
+      "created": "<VOLATILE>",
+      "elapsed_seconds": "<VOLATILE>",
+      "finished": "<VOLATILE>",
+      "kind": "export_stems",
+      "label": "Export stems",
+      "message": "stem Beat (Drums)",
+      "operation_id": "op_000000000086",
+      "progress": 1.0,
+      "result": null,
+      "started": "<VOLATILE>",
+      "status": "succeeded"
+     },
+     {
+      "created": "<VOLATILE>",
+      "elapsed_seconds": "<VOLATILE>",
+      "finished": "<VOLATILE>",
+      "kind": "export_stems",
+      "label": "Export stems",
+      "message": "stem Tone",
+      "operation_id": "op_000000000087",
+      "progress": 1.0,
+      "result": null,
+      "started": "<VOLATILE>",
+      "status": "succeeded"
+     },
+     {
+      "created": "<VOLATILE>",
+      "elapsed_seconds": "<VOLATILE>",
+      "finished": "<VOLATILE>",
+      "kind": "export_stems",
+      "label": "Export stems",
+      "message": "stem Chord",
+      "operation_id": "op_000000000088",
+      "progress": 1.0,
+      "result": null,
+      "started": "<VOLATILE>",
+      "status": "succeeded"
+     }
+    ],
+    "tool": "list_operations"
+   },
+   "tool": "list_operations"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/work/Coverage"
+   },
+   "id": "saved",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "assets": 5,
+    "backup": null,
+    "committed": true,
+    "dirty": false,
+    "layout": "bundle",
+    "ok": true,
+    "path": "<ROOT>/work/Coverage.sonara",
+    "project_sha256": "<VOLATILE>",
+    "tool": "save_project"
+   },
+   "tool": "save_project"
+  },
+  {
+   "args": {},
+   "id": "step150",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "hash_mismatch": [],
+    "intact": true,
+    "missing": [],
+    "ok": true,
+    "routing_issues": [],
+    "size_mismatch": [],
+    "tool": "verify_project",
+    "unreferenced_files": []
+   },
+   "tool": "verify_project"
+  },
+  {
+   "args": {
+    "from": "<ROOT>/inputs/tone-44k1-mono-16bit.wav",
+    "to": "<ROOT>/moved/tone-44k1-mono-16bit.wav"
+   },
+   "harness": "move_file",
+   "id": "step151",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0"
+  },
+  {
+   "args": {},
+   "id": "step152",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "hash_mismatch": [],
+    "intact": false,
+    "missing": [
+     "med_000000000030"
+    ],
+    "ok": true,
+    "routing_issues": [],
+    "size_mismatch": [],
+    "tool": "verify_project",
+    "unreferenced_files": []
+   },
+   "tool": "verify_project"
+  },
+  {
+   "args": {
+    "asset_id": "med_000000000030",
+    "dry_run": true,
+    "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav"
+   },
+   "id": "step153",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "committed": false,
+    "dry_run": true,
+    "file": {
+     "bit_depth": 16,
+     "channels": 1,
+     "decoder": "libsndfile",
+     "duration_seconds": "<VOLATILE>",
+     "format": "WAV",
+     "frames": 66150,
+     "lossy": false,
+     "metadata": {},
+     "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav",
+     "sample_rate": 44100,
+     "size_bytes": 132344,
+     "subtype": "PCM_16"
+    },
+    "ok": true,
+    "tool": "relink_media"
+   },
+   "tool": "relink_media"
+  },
+  {
+   "args": {
+    "asset_id": "med_000000000030",
+    "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav"
+   },
+   "id": "step154",
+   "project": "118d5a98db708a12f8ed5018aef96d43d96f6a780371f5c4ac58315ba03f3c4c",
+   "result": {
+    "asset_id": "med_000000000030",
+    "committed": true,
+    "location": "linked",
+    "ok": true,
+    "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav",
+    "tool": "relink_media",
+    "warnings": []
+   },
+   "tool": "relink_media"
+  },
+  {
+   "args": {},
+   "id": "step155",
+   "project": "118d5a98db708a12f8ed5018aef96d43d96f6a780371f5c4ac58315ba03f3c4c",
+   "result": {
+    "hash_mismatch": [],
+    "intact": true,
+    "missing": [],
+    "ok": true,
+    "routing_issues": [],
+    "size_mismatch": [],
+    "tool": "verify_project",
+    "unreferenced_files": []
+   },
+   "tool": "verify_project"
+  },
+  {
+   "args": {
+    "asset_id": "med_000000000030",
+    "path": "<ROOT>/inputs/tone-48k-stereo-24bit.wav"
+   },
+   "id": "step156",
+   "project": "11f56f500f3790b18d66b203c98e6b987f2822ceb0956a76c1630363be23e2dc",
+   "result": {
+    "asset_id": "med_000000000030",
+    "committed": true,
+    "location": "linked",
+    "ok": true,
+    "path": "<ROOT>/inputs/tone-48k-stereo-24bit.wav",
+    "tool": "relink_media",
+    "warnings": [
+     "the new file's content differs from the original (hash mismatch)",
+     "the new file differs in length or sample rate; clips may shift or be cut"
+    ]
+   },
+   "tool": "relink_media"
+  },
+  {
+   "args": {
+    "asset_id": "med_000000000030",
+    "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav"
+   },
+   "id": "step157",
+   "project": "118d5a98db708a12f8ed5018aef96d43d96f6a780371f5c4ac58315ba03f3c4c",
+   "result": {
+    "asset_id": "med_000000000030",
+    "committed": true,
+    "location": "linked",
+    "ok": true,
+    "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav",
+    "tool": "relink_media",
+    "warnings": [
+     "the new file's content differs from the original (hash mismatch)",
+     "the new file differs in length or sample rate; clips may shift or be cut"
+    ]
+   },
+   "tool": "relink_media"
+  },
+  {
+   "args": {
+    "asset_id": "med_000000000030",
+    "embed": true,
+    "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav"
+   },
+   "id": "step158",
+   "project": "52263b426af2e584a8fd2b801b0525f7939f5346663049806cdf44b4bd11964c",
+   "result": {
+    "asset_id": "med_000000000030",
+    "committed": true,
+    "location": "embedded",
+    "ok": true,
+    "path": "media/audio/med_000000000030-tone-44k1-mono-16bit.wav",
+    "tool": "relink_media",
+    "warnings": []
+   },
+   "tool": "relink_media"
+  },
+  {
+   "args": {
+    "asset_id": "med_missing",
+    "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav"
+   },
+   "id": "step159",
+   "project": "52263b426af2e584a8fd2b801b0525f7939f5346663049806cdf44b4bd11964c",
+   "result": {
+    "error": {
+     "code": "NOT_FOUND",
+     "details": {
+      "id": "med_missing",
+      "kind": "asset"
+     },
+     "message": "asset 'med_missing' not found"
+    },
+    "ok": false,
+    "tool": "relink_media"
+   },
+   "tool": "relink_media"
+  },
+  {
+   "args": {
+    "asset_id": "med_000000000030",
+    "path": "<ROOT>/inputs/missing.wav"
+   },
+   "id": "step160",
+   "project": "52263b426af2e584a8fd2b801b0525f7939f5346663049806cdf44b4bd11964c",
+   "result": {
+    "error": {
+     "code": "NOT_FOUND",
+     "message": "<ROOT>/inputs/missing.wav does not exist"
+    },
+    "ok": false,
+    "tool": "relink_media"
+   },
+   "tool": "relink_media"
+  },
+  {
+   "args": {},
+   "id": "step161",
+   "project": "52263b426af2e584a8fd2b801b0525f7939f5346663049806cdf44b4bd11964c",
+   "result": {
+    "hash_mismatch": [],
+    "intact": true,
+    "missing": [],
+    "ok": true,
+    "routing_issues": [],
+    "size_mismatch": [],
+    "tool": "verify_project",
+    "unreferenced_files": []
+   },
+   "tool": "verify_project"
+  },
+  {
+   "args": {
+    "dry_run": true,
+    "path": "<ROOT>/work/Coverage.sonara"
+   },
+   "id": "step162",
+   "project": "52263b426af2e584a8fd2b801b0525f7939f5346663049806cdf44b4bd11964c",
+   "result": {
+    "committed": false,
+    "dry_run": true,
+    "exists": true,
+    "ok": true,
+    "path": "<ROOT>/work/Coverage.sonara",
+    "tool": "open_project"
+   },
+   "tool": "open_project"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/work/Coverage.sonara"
+   },
+   "id": "open_confirm",
+   "project": "52263b426af2e584a8fd2b801b0525f7939f5346663049806cdf44b4bd11964c",
+   "result": {
+    "error": {
+     "code": "CONFIRMATION_REQUIRED",
+     "details": {
+      "action": "open_project",
+      "confirmation_token": "golden-token-0002",
+      "expires_in_seconds": 600
+     },
+     "message": "the open project 'Coverage' has unsaved changes that will be discarded. Ask the user; if they agree, repeat the identical call with this confirmation_token."
+    },
+    "ok": false,
+    "tool": "open_project"
+   },
+   "tool": "open_project"
+  },
+  {
+   "args": {
+    "confirmation_token": "golden-token-0002",
+    "path": "<ROOT>/work/Coverage.sonara"
+   },
+   "id": "step164",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "autosave_available": false,
+    "committed": true,
+    "layout": "bundle",
+    "migrated_from_schema": null,
+    "missing_assets": [
+     "med_000000000030"
+    ],
+    "ok": true,
+    "path": "<ROOT>/work/Coverage.sonara",
+    "project_version": 58,
+    "recovered_from": null,
+    "state": {
+     "assets": [
+      {
+       "asset_id": "med_000000000026",
+       "channels": 2,
+       "location": "embedded",
+       "name": "tone-48k-stereo-24bit.wav",
+       "sample_rate": 48000,
+       "seconds": 2.0
+      },
+      {
+       "asset_id": "med_000000000030",
+       "channels": 1,
+       "location": "linked",
+       "name": "tone-44k1-mono-16bit.wav",
+       "sample_rate": 44100,
+       "seconds": 1.5
+      },
+      {
+       "asset_id": "med_000000000033",
+       "channels": 2,
+       "location": "embedded",
+       "name": "chord-48k-stereo.flac",
+       "sample_rate": 48000,
+       "seconds": 1.0
+      },
+      {
+       "asset_id": "med_000000000038",
+       "channels": 2,
+       "location": "embedded",
+       "name": "saw-44k1-stereo.mp3",
+       "sample_rate": 44100,
+       "seconds": 1.0
+      },
+      {
+       "asset_id": "med_000000000050",
+       "channels": 2,
+       "location": "embedded",
+       "name": "ir-48k-stereo-float.wav",
+       "sample_rate": 48000,
+       "seconds": 0.5
+      }
+     ],
+     "content_end": {
+      "bar_beat": "10:1",
+      "beat": 36.0,
+      "seconds": 18.0
+     },
+     "length": {
+      "bar_beat": "17:1",
+      "beat": 64.0,
+      "explicit": true,
+      "seconds": 33.6
+     },
+     "loop": {
+      "enabled": true,
+      "end": 12.0,
+      "start": 4.0
+     },
+     "markers": [
+      {
+       "bar_beat": "17:1",
+       "beat": 64.0,
+       "marker_id": "mrk_000000000077",
+       "name": "Bridge",
+       "seconds": 33.6
+      }
+     ],
+     "master": {
+      "kind": "master",
+      "mute": false,
+      "name": "Master",
+      "output": null,
+      "pan": 0.0,
+      "solo": false,
+      "track_id": "master",
+      "volume_db": 0.0
+     },
+     "metadata": {
+      "created": "<VOLATILE>",
+      "title": "Coverage"
+     },
+     "name": "Coverage",
+     "project_id": "prj_000000000002",
+     "sample_rate": 48000,
+     "sections": [],
+     "tempo": [
+      {
+       "beat": 0.0,
+       "bpm": 120.0,
+       "ramp": false
+      },
+      {
+       "beat": 48.0,
+       "bpm": 100.0,
+       "ramp": false
+      }
+     ],
+     "time_signatures": [
+      {
+       "bar": 1,
+       "beat": 0.0,
+       "signature": "4/4"
+      }
+     ],
+     "tracks": [
+      {
+       "clips": [
+        {
+         "audible_note_count": 2,
+         "clip_id": "clp_000000000014",
+         "end": {
+          "bar_beat": "1:4",
+          "beat": 3.5,
+          "seconds": 1.75
+         },
+         "length_beats": 2.5,
+         "muted": false,
+         "name": "Riff",
+         "note_count": 3,
+         "pitch_range": [
+          "D4",
+          "E5"
+         ],
+         "start": {
+          "bar_beat": "1:2",
+          "beat": 1.0,
+          "seconds": 0.5
+         },
+         "type": "midi"
+        },
+        {
+         "audible_note_count": 4,
+         "clip_id": "clp_000000000021",
+         "end": {
+          "bar_beat": "3:1",
+          "beat": 8.0,
+          "seconds": 4.0
+         },
+         "length_beats": 4.0,
+         "loop_length_beats": 2.0,
+         "muted": false,
+         "name": "Riff B",
+         "note_count": 3,
+         "pitch_range": [
+          "D4",
+          "E5"
+         ],
+         "start": {
+          "bar_beat": "2:1",
+          "beat": 4.0,
+          "seconds": 2.0
+         },
+         "type": "midi"
+        }
+       ],
+       "color": "#112233",
+       "instrument": {
+        "device_id": "dev_000000000004",
+        "enabled": true,
+        "name": "Sonara Poly Synth",
+        "plugin_id": "sonara.synth.poly",
+        "preset": "Electric Keys"
+       },
+       "kind": "instrument",
+       "mute": false,
+       "name": "Piano",
+       "output": "master",
+       "pan": 0.0,
+       "solo": false,
+       "track_id": "trk_000000000003",
+       "volume_db": 0.0
+      },
+      {
+       "clips": [
+        {
+         "audible_note_count": 2,
+         "clip_id": "clp_000000000018",
+         "end": {
+          "bar_beat": "4:1",
+          "beat": 12.0,
+          "seconds": 6.0
+         },
+         "length_beats": 4.0,
+         "muted": false,
+         "name": "MIDI",
+         "note_count": 2,
+         "pitch_range": [
+          "C3",
+          "G3"
+         ],
+         "start": {
+          "bar_beat": "3:1",
+          "beat": 8.0,
+          "seconds": 4.0
+         },
+         "type": "midi"
+        },
+        {
+         "audible_note_count": 2,
+         "clip_id": "clp_000000000023",
+         "end": {
+          "bar_beat": "5:1",
+          "beat": 16.0,
+          "seconds": 8.0
+         },
+         "length_beats": 4.0,
+         "muted": false,
+         "name": "MIDI",
+         "note_count": 2,
+         "pitch_range": [
+          "C3",
+          "G3"
+         ],
+         "start": {
+          "bar_beat": "4:1",
+          "beat": 12.0,
+          "seconds": 6.0
+         },
+         "type": "midi"
+        }
+       ],
+       "instrument": {
+        "device_id": "dev_000000000006",
+        "enabled": true,
+        "name": "Sonara Poly Synth",
+        "plugin_id": "sonara.synth.poly",
+        "preset": "Pluck"
+       },
+       "kind": "instrument",
+       "mute": false,
+       "name": "Lead",
+       "output": "master",
+       "pan": 0.0,
+       "solo": false,
+       "track_id": "trk_000000000005",
+       "volume_db": 0.0
+      },
+      {
+       "clips": [],
+       "kind": "bus",
+       "mute": false,
+       "name": "FX Bus",
+       "output": "master",
+       "pan": 0.0,
+       "solo": false,
+       "track_id": "trk_000000000007",
+       "volume_db": 0.0
+      },
+      {
+       "clips": [
+        {
+         "asset_id": "med_000000000026",
+         "clip_id": "clp_000000000029",
+         "end": {
+          "bar_beat": "2:3",
+          "beat": 6.0,
+          "seconds": 3.0
+         },
+         "fade_in_seconds": 0.1,
+         "fade_out_seconds": 0.0,
+         "gain_db": -6.0,
+         "length_beats": 2.0,
+         "muted": false,
+         "name": "tone-48k-stereo-24bit",
+         "source_offset_frames": 0,
+         "start": {
+          "bar_beat": "2:1",
+          "beat": 4.0,
+          "seconds": 2.0
+         },
+         "type": "audio"
+        },
+        {
+         "asset_id": "med_000000000026",
+         "clip_id": "clp_000000000045",
+         "end": {
+          "bar_beat": "3:1",
+          "beat": 8.0,
+          "seconds": 4.0
+         },
+         "fade_in_seconds": 0.0,
+         "fade_out_seconds": 0.2,
+         "gain_db": -6.0,
+         "length_beats": 2.0,
+         "muted": false,
+         "name": "tone-48k-stereo-24bit",
+         "source_offset_frames": 48000,
+         "start": {
+          "bar_beat": "2:3",
+          "beat": 6.0,
+          "seconds": 3.0
+         },
+         "type": "audio"
+        },
+        {
+         "asset_id": "med_000000000030",
+         "clip_id": "clp_000000000031",
+         "end": {
+          "bar_beat": "5:3",
+          "beat": 18.5,
+          "seconds": 9.25
+         },
+         "fade_in_seconds": 0.0,
+         "fade_out_seconds": 0.0,
+         "gain_db": 0.0,
+         "length_beats": 2.0,
+         "muted": false,
+         "name": "tone-44k1-mono-16bit",
+         "source_offset_frames": 11025,
+         "start": {
+          "bar_beat": "5:1",
+          "beat": 16.5,
+          "seconds": 8.25
+         },
+         "type": "audio"
+        }
+       ],
+       "effects": [
+        {
+         "device_id": "dev_000000000049",
+         "enabled": true,
+         "name": "Convolution Reverb",
+         "plugin_id": "sonara.convolver",
+         "preset": null
+        }
+       ],
+       "kind": "audio",
+       "mute": false,
+       "name": "Tone",
+       "output": "master",
+       "pan": 0.0,
+       "solo": false,
+       "track_id": "trk_000000000027",
+       "volume_db": 0.0
+      },
+      {
+       "clips": [
+        {
+         "asset_id": "med_000000000033",
+         "clip_id": "clp_000000000036",
+         "end": {
+          "bar_beat": "3:3",
+          "beat": 10.0,
+          "seconds": 5.0
+         },
+         "fade_in_seconds": 0.0,
+         "fade_out_seconds": 0.25,
+         "gain_db": 0.0,
+         "length_beats": 2.0,
+         "muted": false,
+         "name": "chord-48k-stereo",
+         "source_offset_frames": 0,
+         "start": {
+          "bar_beat": "3:1",
+          "beat": 8.0,
+          "seconds": 4.0
+         },
+         "type": "audio"
+        },
+        {
+         "asset_id": "med_000000000033",
+         "clip_id": "clp_000000000046",
+         "end": {
+          "bar_beat": "4:1",
+          "beat": 12.0,
+          "seconds": 6.0
+         },
+         "fade_in_seconds": 0.0,
+         "fade_out_seconds": 0.25,
+         "gain_db": 0.0,
+         "length_beats": 2.0,
+         "muted": false,
+         "name": "chord-48k-stereo",
+         "source_offset_frames": 0,
+         "start": {
+          "bar_beat": "3:3",
+          "beat": 10.0,
+          "seconds": 5.0
+         },
+         "type": "audio"
+        },
+        {
+         "asset_id": "med_000000000026",
+         "clip_id": "clp_000000000048",
+         "end": {
+          "bar_beat": "7:3",
+          "beat": 26.0,
+          "seconds": 13.0
+         },
+         "fade_in_seconds": 0.0,
+         "fade_out_seconds": 0.2,
+         "gain_db": -6.0,
+         "length_beats": 2.0,
+         "muted": false,
+         "name": "tone-48k-stereo-24bit",
+         "source_offset_frames": 48000,
+         "start": {
+          "bar_beat": "7:1",
+          "beat": 24.0,
+          "seconds": 12.0
+         },
+         "type": "audio"
+        }
+       ],
+       "kind": "audio",
+       "mute": false,
+       "name": "Chord",
+       "output": "master",
+       "pan": 0.0,
+       "solo": false,
+       "track_id": "trk_000000000034",
+       "volume_db": 0.0
+      },
+      {
+       "clips": [
+        {
+         "asset_id": "med_000000000038",
+         "clip_id": "clp_000000000041",
+         "end": {
+          "bar_beat": "6:3",
+          "beat": 22.0,
+          "seconds": 11.0
+         },
+         "fade_in_seconds": 0.05,
+         "fade_out_seconds": 0.0,
+         "gain_db": 0.0,
+         "length_beats": 2.0,
+         "muted": false,
+         "name": "saw-44k1-stereo",
+         "source_offset_frames": 0,
+         "start": {
+          "bar_beat": "6:1",
+          "beat": 20.0,
+          "seconds": 10.0
+         },
+         "type": "audio"
+        }
+       ],
+       "kind": "audio",
+       "mute": false,
+       "name": "saw-44k1-stereo",
+       "output": "master",
+       "pan": 0.0,
+       "solo": false,
+       "track_id": "trk_000000000039",
+       "volume_db": 0.0
+      },
+      {
+       "clips": [
+        {
+         "audible_note_count": 4,
+         "clip_id": "clp_000000000080",
+         "end": {
+          "bar_beat": "10:1",
+          "beat": 36.0,
+          "seconds": 18.0
+         },
+         "length_beats": 4.0,
+         "muted": false,
+         "name": "Lead",
+         "note_count": 4,
+         "pitch_range": [
+          "C4",
+          "C5"
+         ],
+         "start": {
+          "bar_beat": "9:1",
+          "beat": 32.0,
+          "seconds": 16.0
+         },
+         "type": "midi"
+        }
+       ],
+       "instrument": {
+        "device_id": "dev_000000000079",
+        "enabled": true,
+        "name": "Sonara Poly Synth",
+        "plugin_id": "sonara.synth.poly",
+        "preset": "Electric Keys"
+       },
+       "kind": "instrument",
+       "mute": false,
+       "name": "Lead",
+       "output": "master",
+       "pan": 0.0,
+       "solo": false,
+       "track_id": "trk_000000000078",
+       "volume_db": 0.0
+      },
+      {
+       "clips": [
+        {
+         "audible_note_count": 8,
+         "clip_id": "clp_000000000083",
+         "end": {
+          "bar_beat": "10:1",
+          "beat": 36.0,
+          "seconds": 18.0
+         },
+         "length_beats": 4.0,
+         "muted": false,
+         "name": "Beat (Drums)",
+         "note_count": 8,
+         "pitch_range": [
+          "C2",
+          "A#2"
+         ],
+         "start": {
+          "bar_beat": "9:1",
+          "beat": 32.0,
+          "seconds": 16.0
+         },
+         "type": "midi"
+        }
+       ],
+       "instrument": {
+        "device_id": "dev_000000000082",
+        "enabled": true,
+        "name": "Sonara Drum Kit",
+        "plugin_id": "sonara.drums",
+        "preset": "Punchy 909"
+       },
+       "kind": "instrument",
+       "mute": false,
+       "name": "Beat (Drums)",
+       "output": "master",
+       "pan": 0.0,
+       "solo": false,
+       "track_id": "trk_000000000081",
+       "volume_db": 0.0
+      }
+     ]
+    },
+    "tool": "open_project",
+    "warnings": [
+     "1 media file(s) are missing; relink them to restore audio"
+    ]
+   },
+   "tool": "open_project"
+  },
+  {
+   "args": {
+    "path": "<ROOT>/work/missing.sonara"
+   },
+   "id": "step165",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "error": {
+     "code": "NOT_FOUND",
+     "message": "project <ROOT>/work/missing.sonara does not exist"
+    },
+    "ok": false,
+    "tool": "open_project"
+   },
+   "tool": "open_project"
+  },
+  {
+   "args": {
+    "path": "/sonara-golden-outside/x.sonara"
+   },
+   "id": "step166",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "error": {
+     "code": "PERMISSION_DENIED",
+     "details": {
+      "allowed_roots": [
+       "<ROOT>/projects",
+       "<ROOT>/work",
+       "<ROOT>",
+       "<ROOT>/workspaces/new-prj_000000000002",
+       "<ROOT>/work/Coverage.sonara"
+      ],
+      "hint": "ask the user to allow it (Sonara settings 'agent_allowed_paths' or $SONARA_AGENT_ALLOWED_PATHS)"
+     },
+     "message": "read access to /sonara-golden-outside/x.sonara is outside the allowed locations"
+    },
+    "ok": false,
+    "tool": "open_project"
+   },
+   "tool": "open_project"
+  },
+  {
+   "args": {},
+   "id": "step167",
+   "project": "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0",
+   "result": {
+    "hash_mismatch": [],
+    "intact": false,
+    "missing": [
+     "med_000000000030"
+    ],
+    "ok": true,
+    "routing_issues": [],
+    "size_mismatch": [],
+    "tool": "verify_project",
+    "unreferenced_files": [
+     "media/audio/med_000000000030-tone-44k1-mono-16bit.wav"
+    ]
+   },
+   "tool": "verify_project"
+  },
+  {
+   "args": {
+    "asset_id": "med_000000000030",
+    "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav"
+   },
+   "id": "step168",
+   "project": "118d5a98db708a12f8ed5018aef96d43d96f6a780371f5c4ac58315ba03f3c4c",
+   "result": {
+    "asset_id": "med_000000000030",
+    "committed": true,
+    "location": "linked",
+    "ok": true,
+    "path": "<ROOT>/moved/tone-44k1-mono-16bit.wav",
+    "tool": "relink_media",
+    "warnings": []
+   },
+   "tool": "relink_media"
+  },
+  {
+   "args": {},
+   "id": "step169",
+   "project": "118d5a98db708a12f8ed5018aef96d43d96f6a780371f5c4ac58315ba03f3c4c",
+   "result": {
+    "hash_mismatch": [],
+    "intact": true,
+    "missing": [],
+    "ok": true,
+    "routing_issues": [],
+    "size_mismatch": [],
+    "tool": "verify_project",
+    "unreferenced_files": [
+     "media/audio/med_000000000030-tone-44k1-mono-16bit.wav"
+    ]
+   },
+   "tool": "verify_project"
+  },
+  {
+   "args": {
+    "name": "Second"
+   },
+   "id": "step170",
+   "project": "118d5a98db708a12f8ed5018aef96d43d96f6a780371f5c4ac58315ba03f3c4c",
+   "result": {
+    "error": {
+     "code": "CONFIRMATION_REQUIRED",
+     "details": {
+      "action": "create_project",
+      "confirmation_token": "golden-token-0003",
+      "expires_in_seconds": 600
+     },
+     "message": "the open project 'Coverage' has unsaved changes that will be discarded. Ask the user; if they agree, repeat the identical call with this confirmation_token."
+    },
+    "ok": false,
+    "tool": "create_project"
+   },
+   "tool": "create_project"
+  },
+  {
+   "args": {
+    "confirmation_token": "not-a-token",
+    "name": "Second"
+   },
+   "id": "step171",
+   "project": "118d5a98db708a12f8ed5018aef96d43d96f6a780371f5c4ac58315ba03f3c4c",
+   "result": {
+    "error": {
+     "code": "CONFIRMATION_REQUIRED",
+     "details": {
+      "action": "create_project",
+      "confirmation_token": "golden-token-0004",
+      "expires_in_seconds": 600
+     },
+     "message": "the open project 'Coverage' has unsaved changes that will be discarded. Ask the user; if they agree, repeat the identical call with this confirmation_token."
+    },
+    "ok": false,
+    "tool": "create_project"
+   },
+   "tool": "create_project"
+  },
+  {
+   "args": {},
+   "id": "step172",
+   "project": "118d5a98db708a12f8ed5018aef96d43d96f6a780371f5c4ac58315ba03f3c4c",
+   "result": {
+    "assets": 5,
+    "backup": "<ROOT>/work/Coverage.sonara/backups/project-20260101T120000000000Z.json",
+    "committed": true,
+    "dirty": false,
+    "layout": "bundle",
+    "ok": true,
+    "path": "<ROOT>/work/Coverage.sonara",
+    "project_sha256": "<VOLATILE>",
+    "tool": "save_project"
+   },
+   "tool": "save_project"
+  },
+  {
+   "args": {
+    "detail": "full",
+    "include_notes": true
+   },
+   "id": "step173",
+   "project": "118d5a98db708a12f8ed5018aef96d43d96f6a780371f5c4ac58315ba03f3c4c",
+   "result": {
+    "dirty": false,
+    "ok": true,
+    "path": "<ROOT>/work/Coverage.sonara",
+    "project_version": 59,
+    "redo": null,
+    "state": {
+     "assets": [
+      {
+       "asset_id": "med_000000000026",
+       "channels": 2,
+       "location": "embedded",
+       "name": "tone-48k-stereo-24bit.wav",
+       "sample_rate": 48000,
+       "seconds": 2.0
+      },
+      {
+       "asset_id": "med_000000000033",
+       "channels": 2,
+       "location": "embedded",
+       "name": "chord-48k-stereo.flac",
+       "sample_rate": 48000,
+       "seconds": 1.0
+      },
+      {
+       "asset_id": "med_000000000038",
+       "channels": 2,
+       "location": "embedded",
+       "name": "saw-44k1-stereo.mp3",
+       "sample_rate": 44100,
+       "seconds": 1.0
+      },
+      {
+       "asset_id": "med_000000000050",
+       "channels": 2,
+       "location": "embedded",
+       "name": "ir-48k-stereo-float.wav",
+       "sample_rate": 48000,
+       "seconds": 0.5
+      },
+      {
+       "asset_id": "med_000000000030",
+       "channels": 1,
+       "location": "linked",
+       "name": "tone-44k1-mono-16bit.wav",
+       "sample_rate": 44100,
+       "seconds": 1.5
+      }
+     ],
+     "content_end": {
+      "bar_beat": "10:1",
+      "beat": 36.0,
+      "seconds": 18.0
+     },
+     "length": {
+      "bar_beat": "17:1",
+      "beat": 64.0,
+      "explicit": true,
+      "seconds": 33.6
+     },
+     "loop": {
+      "enabled": true,
+      "end": 12.0,
+      "start": 4.0
+     },
+     "markers": [
+      {
+       "bar_beat": "17:1",
+       "beat": 64.0,
+       "marker_id": "mrk_000000000077",
+       "name": "Bridge",
+       "seconds": 33.6
+      }
+     ],
+     "master": {
+      "kind": "master",
+      "mute": false,
+      "name": "Master",
+      "output": null,
+      "pan": 0.0,
+      "solo": false,
+      "track_id": "master",
+      "volume_db": 0.0
+     },
+     "metadata": {
+      "created": "<VOLATILE>",
+      "title": "Coverage"
+     },
+     "name": "Coverage",
+     "project_id": "prj_000000000002",
+     "sample_rate": 48000,
+     "sections": [],
+     "tempo": [
+      {
+       "beat": 0.0,
+       "bpm": 120.0,
+       "ramp": false
+      },
+      {
+       "beat": 48.0,
+       "bpm": 100.0,
+       "ramp": false
+      }
+     ],
+     "time_signatures": [
+      {
+       "bar": 1,
+       "beat": 0.0,
+       "signature": "4/4"
+      }
+     ],
+     "tracks": [
+      {
+       "clips": [
+        {
+         "audible_note_count": 2,
+         "clip_id": "clp_000000000014",
+         "end": {
+          "bar_beat": "1:4",
+          "beat": 3.5,
+          "seconds": 1.75
+         },
+         "length_beats": 2.5,
+         "muted": false,
+         "name": "Riff",
+         "note_count": 3,
+         "notes": [
+          {
+           "length": 0.5,
+           "name": "D4",
+           "note_id": "n_000000000011",
+           "pitch": 62,
+           "start": 0.0,
+           "velocity": 33
+          },
+          {
+           "length": 1.0,
+           "name": "E5",
+           "note_id": "n_000000000012",
+           "pitch": 76,
+           "start": 1.0,
+           "velocity": 100
+          },
+          {
+           "length": 0.9,
+           "name": "F4",
+           "note_id": "n_000000000013",
+           "pitch": 65,
+           "start": 2.5,
+           "velocity": 64
+          }
+         ],
+         "pitch_range": [
+          "D4",
+          "E5"
+         ],
+         "start": {
+          "bar_beat": "1:2",
+          "beat": 1.0,
+          "seconds": 0.5
+         },
+         "type": "midi"
+        },
+        {
+         "audible_note_count": 4,
+         "clip_id": "clp_000000000021",
+         "end": {
+          "bar_beat": "3:1",
+          "beat": 8.0,
+          "seconds": 4.0
+         },
+         "length_beats": 4.0,
+         "loop_length_beats": 2.0,
+         "muted": false,
+         "name": "Riff B",
+         "note_count": 3,
+         "notes": [
+          {
+           "length": 0.5,
+           "name": "D4",
+           "note_id": "n_000000000011",
+           "pitch": 62,
+           "start": 0.0,
+           "velocity": 33
+          },
+          {
+           "length": 1.0,
+           "name": "E5",
+           "note_id": "n_000000000012",
+           "pitch": 76,
+           "start": 1.0,
+           "velocity": 100
+          },
+          {
+           "length": 0.9,
+           "name": "F4",
+           "note_id": "n_000000000013",
+           "pitch": 65,
+           "start": 2.5,
+           "velocity": 64
+          }
+         ],
+         "pitch_range": [
+          "D4",
+          "E5"
+         ],
+         "start": {
+          "bar_beat": "2:1",
+          "beat": 4.0,
+          "seconds": 2.0
+         },
+         "type": "midi"
+        }
+       ],
+       "color": "#112233",
+       "instrument": {
+        "device_id": "dev_000000000004",
+        "enabled": true,
+        "name": "Sonara Poly Synth",
+        "params": {
+         "amp_attack": 0.002,
+         "amp_decay": 1.4,
+         "amp_release": 0.4,
+         "amp_sustain": 0.25,
+         "bend_range": 2,
+         "filter_attack": 0.005,
+         "filter_cutoff": 2600.0,
+         "filter_decay": 0.6,
+         "filter_env_amount": 1.5,
+         "filter_keytrack": 0.5,
+         "filter_release": 0.3,
+         "filter_resonance": 0.15,
+         "filter_sustain": 0.3,
+         "filter_type": "lowpass",
+         "gain_db": -8.0,
+         "glide": 0.0,
+         "lfo_cutoff_oct": 0.0,
+         "lfo_pitch_cents": 0.0,
+         "lfo_rate": 5.0,
+         "noise_level": 0.0,
+         "osc1_detune": 0.0,
+         "osc1_level": 0.8,
+         "osc1_octave": 0,
+         "osc1_wave": "triangle",
+         "osc2_detune": 0.0,
+         "osc2_level": 0.5,
+         "osc2_octave": 1,
+         "osc2_semitone": 0,
+         "osc2_wave": "sine",
+         "polyphony": 16,
+         "pulse_width": 0.5,
+         "unison": 1,
+         "unison_detune": 15.0,
+         "unison_spread": 0.7,
+         "velocity_sensitivity": 0.7,
+         "velocity_to_filter": 0.8,
+         "voice_mode": "poly"
+        },
+        "plugin_id": "sonara.synth.poly",
+        "preset": "Electric Keys",
+        "units": {
+         "amp_attack": "s",
+         "amp_decay": "s",
+         "amp_release": "s",
+         "bend_range": "semitones",
+         "filter_attack": "s",
+         "filter_cutoff": "Hz",
+         "filter_decay": "s",
+         "filter_env_amount": "oct",
+         "filter_release": "s",
+         "gain_db": "dB",
+         "glide": "s",
+         "lfo_cutoff_oct": "oct",
+         "lfo_pitch_cents": "cents",
+         "lfo_rate": "Hz",
+         "osc1_detune": "cents",
+         "osc2_detune": "cents",
+         "polyphony": "voices",
+         "unison_detune": "cents"
+        }
+       },
+       "kind": "instrument",
+       "mute": false,
+       "name": "Piano",
+       "output": "master",
+       "pan": 0.0,
+       "solo": false,
+       "track_id": "trk_000000000003",
+       "volume_db": 0.0
+      },
+      {
+       "clips": [
+        {
+         "audible_note_count": 2,
+         "clip_id": "clp_000000000018",
+         "end": {
+          "bar_beat": "4:1",
+          "beat": 12.0,
+          "seconds": 6.0
+         },
+         "length_beats": 4.0,
+         "muted": false,
+         "name": "MIDI",
+         "note_count": 2,
+         "notes": [
+          {
+           "length": 2.0,
+           "name": "C3",
+           "note_id": "n_000000000019",
+           "pitch": 48,
+           "start": 0.0,
+           "velocity": 100
+          },
+          {
+           "length": 2.0,
+           "name": "G3",
+           "note_id": "n_000000000020",
+           "pitch": 55,
+           "start": 2.0,
+           "velocity": 80
+          }
+         ],
+         "pitch_range": [
+          "C3",
+          "G3"
+         ],
+         "start": {
+          "bar_beat": "3:1",
+          "beat": 8.0,
+          "seconds": 4.0
+         },
+         "type": "midi"
+        },
+        {
+         "audible_note_count": 2,
+         "clip_id": "clp_000000000023",
+         "end": {
+          "bar_beat": "5:1",
+          "beat": 16.0,
+          "seconds": 8.0
+         },
+         "length_beats": 4.0,
+         "muted": false,
+         "name": "MIDI",
+         "note_count": 2,
+         "notes": [
+          {
+           "length": 2.0,
+           "name": "C3",
+           "note_id": "n_000000000019",
+           "pitch": 48,
+           "start": 0.0,
+           "velocity": 100
+          },
+          {
+           "length": 2.0,
+           "name": "G3",
+           "note_id": "n_000000000020",
+           "pitch": 55,
+           "start": 2.0,
+           "velocity": 80
+          }
+         ],
+         "pitch_range": [
+          "C3",
+          "G3"
+         ],
+         "start": {
+          "bar_beat": "4:1",
+          "beat": 12.0,
+          "seconds": 6.0
+         },
+         "type": "midi"
+        }
+       ],
+       "instrument": {
+        "device_id": "dev_000000000006",
+        "enabled": true,
+        "name": "Sonara Poly Synth",
+        "params": {
+         "amp_attack": 0.001,
+         "amp_decay": 0.45,
+         "amp_release": 0.25,
+         "amp_sustain": 0.0,
+         "bend_range": 2,
+         "filter_attack": 0.005,
+         "filter_cutoff": 600.0,
+         "filter_decay": 0.18,
+         "filter_env_amount": 4.0,
+         "filter_keytrack": 0.5,
+         "filter_release": 0.3,
+         "filter_resonance": 0.15,
+         "filter_sustain": 0.0,
+         "filter_type": "lowpass",
+         "gain_db": -8.0,
+         "glide": 0.0,
+         "lfo_cutoff_oct": 0.0,
+         "lfo_pitch_cents": 0.0,
+         "lfo_rate": 5.0,
+         "noise_level": 0.0,
+         "osc1_detune": 0.0,
+         "osc1_level": 0.8,
+         "osc1_octave": 0,
+         "osc1_wave": "saw",
+         "osc2_detune": 7.0,
+         "osc2_level": 0.3,
+         "osc2_octave": 1,
+         "osc2_semitone": 0,
+         "osc2_wave": "square",
+         "polyphony": 16,
+         "pulse_width": 0.5,
+         "unison": 1,
+         "unison_detune": 15.0,
+         "unison_spread": 0.7,
+         "velocity_sensitivity": 0.7,
+         "velocity_to_filter": 0.3,
+         "voice_mode": "poly"
+        },
+        "plugin_id": "sonara.synth.poly",
+        "preset": "Pluck",
+        "units": {
+         "amp_attack": "s",
+         "amp_decay": "s",
+         "amp_release": "s",
+         "bend_range": "semitones",
+         "filter_attack": "s",
+         "filter_cutoff": "Hz",
+         "filter_decay": "s",
+         "filter_env_amount": "oct",
+         "filter_release": "s",
+         "gain_db": "dB",
+         "glide": "s",
+         "lfo_cutoff_oct": "oct",
+         "lfo_pitch_cents": "cents",
+         "lfo_rate": "Hz",
+         "osc1_detune": "cents",
+         "osc2_detune": "cents",
+         "polyphony": "voices",
+         "unison_detune": "cents"
+        }
+       },
+       "kind": "instrument",
+       "mute": false,
+       "name": "Lead",
+       "output": "master",
+       "pan": 0.0,
+       "solo": false,
+       "track_id": "trk_000000000005",
+       "volume_db": 0.0
+      },
+      {
+       "clips": [],
+       "kind": "bus",
+       "mute": false,
+       "name": "FX Bus",
+       "output": "master",
+       "pan": 0.0,
+       "solo": false,
+       "track_id": "trk_000000000007",
+       "volume_db": 0.0
+      },
+      {
+       "clips": [
+        {
+         "asset_id": "med_000000000026",
+         "clip_id": "clp_000000000029",
+         "end": {
+          "bar_beat": "2:3",
+          "beat": 6.0,
+          "seconds": 3.0
+         },
+         "fade_in_seconds": 0.1,
+         "fade_out_seconds": 0.0,
+         "gain_db": -6.0,
+         "length_beats": 2.0,
+         "muted": false,
+         "name": "tone-48k-stereo-24bit",
+         "source_offset_frames": 0,
+         "start": {
+          "bar_beat": "2:1",
+          "beat": 4.0,
+          "seconds": 2.0
+         },
+         "type": "audio"
+        },
+        {
+         "asset_id": "med_000000000026",
+         "clip_id": "clp_000000000045",
+         "end": {
+          "bar_beat": "3:1",
+          "beat": 8.0,
+          "seconds": 4.0
+         },
+         "fade_in_seconds": 0.0,
+         "fade_out_seconds": 0.2,
+         "gain_db": -6.0,
+         "length_beats": 2.0,
+         "muted": false,
+         "name": "tone-48k-stereo-24bit",
+         "source_offset_frames": 48000,
+         "start": {
+          "bar_beat": "2:3",
+          "beat": 6.0,
+          "seconds": 3.0
+         },
+         "type": "audio"
+        },
+        {
+         "asset_id": "med_000000000030",
+         "clip_id": "clp_000000000031",
+         "end": {
+          "bar_beat": "5:3",
+          "beat": 18.5,
+          "seconds": 9.25
+         },
+         "fade_in_seconds": 0.0,
+         "fade_out_seconds": 0.0,
+         "gain_db": 0.0,
+         "length_beats": 2.0,
+         "muted": false,
+         "name": "tone-44k1-mono-16bit",
+         "source_offset_frames": 11025,
+         "start": {
+          "bar_beat": "5:1",
+          "beat": 16.5,
+          "seconds": 8.25
+         },
+         "type": "audio"
+        }
+       ],
+       "effects": [
+        {
+         "device_id": "dev_000000000049",
+         "enabled": true,
+         "name": "Convolution Reverb",
+         "params": {
+          "gain_db": 0.0,
+          "input": "mono_sum",
+          "mix": 0.4,
+          "normalize": false
+         },
+         "plugin_id": "sonara.convolver",
+         "preset": null,
+         "state": {
+          "ir_asset_id": "med_000000000050"
+         },
+         "units": {
+          "gain_db": "dB"
+         }
+        }
+       ],
+       "kind": "audio",
+       "mute": false,
+       "name": "Tone",
+       "output": "master",
+       "pan": 0.0,
+       "solo": false,
+       "track_id": "trk_000000000027",
+       "volume_db": 0.0
+      },
+      {
+       "clips": [
+        {
+         "asset_id": "med_000000000033",
+         "clip_id": "clp_000000000036",
+         "end": {
+          "bar_beat": "3:3",
+          "beat": 10.0,
+          "seconds": 5.0
+         },
+         "fade_in_seconds": 0.0,
+         "fade_out_seconds": 0.25,
+         "gain_db": 0.0,
+         "length_beats": 2.0,
+         "muted": false,
+         "name": "chord-48k-stereo",
+         "source_offset_frames": 0,
+         "start": {
+          "bar_beat": "3:1",
+          "beat": 8.0,
+          "seconds": 4.0
+         },
+         "type": "audio"
+        },
+        {
+         "asset_id": "med_000000000033",
+         "clip_id": "clp_000000000046",
+         "end": {
+          "bar_beat": "4:1",
+          "beat": 12.0,
+          "seconds": 6.0
+         },
+         "fade_in_seconds": 0.0,
+         "fade_out_seconds": 0.25,
+         "gain_db": 0.0,
+         "length_beats": 2.0,
+         "muted": false,
+         "name": "chord-48k-stereo",
+         "source_offset_frames": 0,
+         "start": {
+          "bar_beat": "3:3",
+          "beat": 10.0,
+          "seconds": 5.0
+         },
+         "type": "audio"
+        },
+        {
+         "asset_id": "med_000000000026",
+         "clip_id": "clp_000000000048",
+         "end": {
+          "bar_beat": "7:3",
+          "beat": 26.0,
+          "seconds": 13.0
+         },
+         "fade_in_seconds": 0.0,
+         "fade_out_seconds": 0.2,
+         "gain_db": -6.0,
+         "length_beats": 2.0,
+         "muted": false,
+         "name": "tone-48k-stereo-24bit",
+         "source_offset_frames": 48000,
+         "start": {
+          "bar_beat": "7:1",
+          "beat": 24.0,
+          "seconds": 12.0
+         },
+         "type": "audio"
+        }
+       ],
+       "kind": "audio",
+       "mute": false,
+       "name": "Chord",
+       "output": "master",
+       "pan": 0.0,
+       "solo": false,
+       "track_id": "trk_000000000034",
+       "volume_db": 0.0
+      },
+      {
+       "clips": [
+        {
+         "asset_id": "med_000000000038",
+         "clip_id": "clp_000000000041",
+         "end": {
+          "bar_beat": "6:3",
+          "beat": 22.0,
+          "seconds": 11.0
+         },
+         "fade_in_seconds": 0.05,
+         "fade_out_seconds": 0.0,
+         "gain_db": 0.0,
+         "length_beats": 2.0,
+         "muted": false,
+         "name": "saw-44k1-stereo",
+         "source_offset_frames": 0,
+         "start": {
+          "bar_beat": "6:1",
+          "beat": 20.0,
+          "seconds": 10.0
+         },
+         "type": "audio"
+        }
+       ],
+       "kind": "audio",
+       "mute": false,
+       "name": "saw-44k1-stereo",
+       "output": "master",
+       "pan": 0.0,
+       "solo": false,
+       "track_id": "trk_000000000039",
+       "volume_db": 0.0
+      },
+      {
+       "clips": [
+        {
+         "audible_note_count": 4,
+         "clip_id": "clp_000000000080",
+         "end": {
+          "bar_beat": "10:1",
+          "beat": 36.0,
+          "seconds": 18.0
+         },
+         "length_beats": 4.0,
+         "muted": false,
+         "name": "Lead",
+         "note_count": 4,
+         "notes": [
+          {
+           "length": 1.0,
+           "name": "C4",
+           "note_id": "n_000000000065",
+           "pitch": 60,
+           "start": 0.0,
+           "velocity": 90
+          },
+          {
+           "length": 1.0,
+           "name": "E4",
+           "note_id": "n_000000000066",
+           "pitch": 64,
+           "start": 1.0,
+           "velocity": 80
+          },
+          {
+           "length": 1.0,
+           "name": "G4",
+           "note_id": "n_000000000067",
+           "pitch": 67,
+           "start": 2.0,
+           "velocity": 100
+          },
+          {
+           "length": 1.0,
+           "name": "C5",
+           "note_id": "n_000000000068",
+           "pitch": 72,
+           "start": 3.0,
+           "velocity": 70
+          }
+         ],
+         "pitch_range": [
+          "C4",
+          "C5"
+         ],
+         "start": {
+          "bar_beat": "9:1",
+          "beat": 32.0,
+          "seconds": 16.0
+         },
+         "type": "midi"
+        }
+       ],
+       "instrument": {
+        "device_id": "dev_000000000079",
+        "enabled": true,
+        "name": "Sonara Poly Synth",
+        "params": {
+         "amp_attack": 0.002,
+         "amp_decay": 1.4,
+         "amp_release": 0.4,
+         "amp_sustain": 0.25,
+         "bend_range": 2,
+         "filter_attack": 0.005,
+         "filter_cutoff": 2600.0,
+         "filter_decay": 0.6,
+         "filter_env_amount": 1.5,
+         "filter_keytrack": 0.5,
+         "filter_release": 0.3,
+         "filter_resonance": 0.15,
+         "filter_sustain": 0.3,
+         "filter_type": "lowpass",
+         "gain_db": -8.0,
+         "glide": 0.0,
+         "lfo_cutoff_oct": 0.0,
+         "lfo_pitch_cents": 0.0,
+         "lfo_rate": 5.0,
+         "noise_level": 0.0,
+         "osc1_detune": 0.0,
+         "osc1_level": 0.8,
+         "osc1_octave": 0,
+         "osc1_wave": "triangle",
+         "osc2_detune": 0.0,
+         "osc2_level": 0.5,
+         "osc2_octave": 1,
+         "osc2_semitone": 0,
+         "osc2_wave": "sine",
+         "polyphony": 16,
+         "pulse_width": 0.5,
+         "unison": 1,
+         "unison_detune": 15.0,
+         "unison_spread": 0.7,
+         "velocity_sensitivity": 0.7,
+         "velocity_to_filter": 0.8,
+         "voice_mode": "poly"
+        },
+        "plugin_id": "sonara.synth.poly",
+        "preset": "Electric Keys",
+        "units": {
+         "amp_attack": "s",
+         "amp_decay": "s",
+         "amp_release": "s",
+         "bend_range": "semitones",
+         "filter_attack": "s",
+         "filter_cutoff": "Hz",
+         "filter_decay": "s",
+         "filter_env_amount": "oct",
+         "filter_release": "s",
+         "gain_db": "dB",
+         "glide": "s",
+         "lfo_cutoff_oct": "oct",
+         "lfo_pitch_cents": "cents",
+         "lfo_rate": "Hz",
+         "osc1_detune": "cents",
+         "osc2_detune": "cents",
+         "polyphony": "voices",
+         "unison_detune": "cents"
+        }
+       },
+       "kind": "instrument",
+       "mute": false,
+       "name": "Lead",
+       "output": "master",
+       "pan": 0.0,
+       "solo": false,
+       "track_id": "trk_000000000078",
+       "volume_db": 0.0
+      },
+      {
+       "clips": [
+        {
+         "audible_note_count": 8,
+         "clip_id": "clp_000000000083",
+         "end": {
+          "bar_beat": "10:1",
+          "beat": 36.0,
+          "seconds": 18.0
+         },
+         "length_beats": 4.0,
+         "muted": false,
+         "name": "Beat (Drums)",
+         "note_count": 8,
+         "notes": [
+          {
+           "length": 0.5,
+           "name": "C2",
+           "note_id": "n_000000000069",
+           "pitch": 36,
+           "start": 0.0,
+           "velocity": 110
+          },
+          {
+           "length": 0.5,
+           "name": "F#2",
+           "note_id": "n_000000000070",
+           "pitch": 42,
+           "start": 0.5,
+           "velocity": 110
+          },
+          {
+           "length": 0.5,
+           "name": "D2",
+           "note_id": "n_000000000071",
+           "pitch": 38,
+           "start": 1.0,
+           "velocity": 110
+          },
+          {
+           "length": 0.5,
+           "name": "F#2",
+           "note_id": "n_000000000072",
+           "pitch": 42,
+           "start": 1.5,
+           "velocity": 110
+          },
+          {
+           "length": 0.5,
+           "name": "C2",
+           "note_id": "n_000000000073",
+           "pitch": 36,
+           "start": 2.0,
+           "velocity": 110
+          },
+          {
+           "length": 0.5,
+           "name": "C2",
+           "note_id": "n_000000000074",
+           "pitch": 36,
+           "start": 2.5,
+           "velocity": 110
+          },
+          {
+           "length": 0.5,
+           "name": "D2",
+           "note_id": "n_000000000075",
+           "pitch": 38,
+           "start": 3.0,
+           "velocity": 110
+          },
+          {
+           "length": 0.5,
+           "name": "A#2",
+           "note_id": "n_000000000076",
+           "pitch": 46,
+           "start": 3.5,
+           "velocity": 110
+          }
+         ],
+         "pitch_range": [
+          "C2",
+          "A#2"
+         ],
+         "start": {
+          "bar_beat": "9:1",
+          "beat": 32.0,
+          "seconds": 16.0
+         },
+         "type": "midi"
+        }
+       ],
+       "instrument": {
+        "device_id": "dev_000000000082",
+        "enabled": true,
+        "name": "Sonara Drum Kit",
+        "params": {
+         "clap_decay": 0.25,
+         "cymbal_decay": 1.6,
+         "cymbal_level_db": -10.0,
+         "drive": 0.25,
+         "gain_db": -9.0,
+         "hat_decay": 1.0,
+         "hat_level_db": -9.0,
+         "hat_tune": 1.15,
+         "kick_decay": 0.35,
+         "kick_level_db": 0.0,
+         "kick_punch": 0.8,
+         "kick_tune": 55.0,
+         "perc_level_db": -6.0,
+         "snare_decay": 0.2,
+         "snare_level_db": -2.0,
+         "snare_tone": 0.55,
+         "snare_tune": 1.1,
+         "stereo_width": 1.0,
+         "tom_tune": 1.0
+        },
+        "plugin_id": "sonara.drums",
+        "preset": "Punchy 909",
+        "units": {
+         "clap_decay": "s",
+         "cymbal_decay": "s",
+         "cymbal_level_db": "dB",
+         "gain_db": "dB",
+         "hat_decay": "x",
+         "hat_level_db": "dB",
+         "hat_tune": "x",
+         "kick_decay": "s",
+         "kick_level_db": "dB",
+         "kick_tune": "Hz",
+         "perc_level_db": "dB",
+         "snare_decay": "s",
+         "snare_level_db": "dB",
+         "snare_tune": "x",
+         "tom_tune": "x"
+        }
+       },
+       "kind": "instrument",
+       "mute": false,
+       "name": "Beat (Drums)",
+       "output": "master",
+       "pan": 0.0,
+       "solo": false,
+       "track_id": "trk_000000000081",
+       "volume_db": 0.0
+      }
+     ]
+    },
+    "tool": "get_project_state",
+    "undo": "Relink Media"
+   },
+   "tool": "get_project_state"
+  }
+ ],
+ "undo": {
+  "hashes": [
+   "0cf8c89e8146031570bcef776397f21ea19e43ab9cf9310ed702c41e01532ef0"
+  ],
+  "labels": [
+   "Undo Relink Media"
+  ],
+  "moves": 1
+ }
+}

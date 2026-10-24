@@ -1,0 +1,83 @@
+{
+ "analysis": {
+  "balance_db": 0.00011983243800656284,
+  "channels": 2,
+  "clip_events": 0,
+  "clipped_samples": 0,
+  "correlation": 0.9996528652415194,
+  "crest_factor_db": 15.647024139734675,
+  "dc_offset": [
+   0.000243,
+   0.000234
+  ],
+  "duration_seconds": 16.453645833333333,
+  "integrated_lufs": -15.32082249440717,
+  "kind": {
+   "estimated": [
+    "true_peak_dbtp",
+    "plr_db"
+   ],
+   "measured": [
+    "sample_peak_dbfs",
+    "rms_dbfs",
+    "integrated_lufs",
+    "momentary_max_lufs",
+    "short_term_max_lufs",
+    "loudness_range_lu",
+    "clipped_samples",
+    "correlation",
+    "octave_bands_db"
+   ]
+  },
+  "leading_silence_seconds": 0.0,
+  "loudness_range_lu": 1.1576613025183722,
+  "min_correlation_400ms": 0.9884728816052044,
+  "momentary_max_lufs": -12.855145204480705,
+  "nonfinite_samples": 0,
+  "octave_bands_db": {
+   "1000": -18.758673365757094,
+   "125": -8.146879680806512,
+   "16000": -28.215991111243678,
+   "2000": -24.779924987217427,
+   "250": -5.383023811191836,
+   "31.5": -11.422314227561731,
+   "4000": -22.547958747204838,
+   "500": -7.36246802270307,
+   "63": -5.661341422556561,
+   "8000": -22.154353876168816
+  },
+  "over_full_scale_samples": 0,
+  "plr_db": 14.22082234808345,
+  "rms_dbfs": -16.747024286058394,
+  "sample_peak_dbfs": -1.1000001463237186,
+  "sample_rate": 48000,
+  "short_term_lufs": [
+   -14.85,
+   -15.39,
+   -15.52,
+   -16.0,
+   -15.9,
+   -15.92,
+   -15.47,
+   -15.51,
+   -15.22,
+   -15.41,
+   -15.2,
+   -15.25,
+   -14.77,
+   -14.73
+  ],
+  "short_term_max_lufs": -14.546894019704919,
+  "side_to_mid_db": -37.604563891310534,
+  "silence_regions": [],
+  "spectral_centroid_hz": 324.3792422353179,
+  "trailing_silence_seconds": 0.30000000000000004,
+  "true_peak_dbtp": -1.1000001463237186
+ },
+ "block": 65536,
+ "channels": 2,
+ "frames": 789775,
+ "issues": [],
+ "sample_rate": 48000,
+ "source": "workflows/mix_analysis/render.wav"
+}

@@ -1,0 +1,31 @@
+{
+ "config": "default",
+ "params": {
+  "character": "hall",
+  "damping": 0.5,
+  "decay_s": 2.0,
+  "highcut_hz": 12000.0,
+  "lowcut_hz": 120.0,
+  "mix": 0.25,
+  "predelay_ms": 15.0,
+  "width": 1.0
+ },
+ "plugin": "sonara.reverb",
+ "renders": {
+  "impulse": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 3.3
+  },
+  "noise": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 3.3
+  },
+  "sine-1k": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 3.3
+  }
+ }
+}

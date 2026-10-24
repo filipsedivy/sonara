@@ -1,0 +1,2585 @@
+{
+ "ops": [
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 3283826168
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 1,
+   "uinteger": 2869301056
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 2815239915
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 2815239915
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 474773653,
+   "uinteger": 1054833102
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": -2,
+   "uinteger": 1054833102
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 2800275268
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3688449520
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 3624023779128796366,
+   "uinteger": 3688449520
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3688449520
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 880770227
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": -2,
+   "uinteger": 880770227
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.7966203558305252,
+   "uinteger": 880770227
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    -1.0,
+    1.0
+   ],
+   "uinteger": 2633458791
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    -1.0,
+    1.0
+   ],
+   "uinteger": 3590448214
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": 0.8355119643476291,
+   "uinteger": 3590448214
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": 0.23721714427674462,
+   "uinteger": 3590448214
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": -3,
+   "uinteger": 184758855
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 2398138867468570104,
+   "uinteger": 184758855
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 1328337454232335881,
+   "uinteger": 184758855
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 14627871669599633410,
+   "uinteger": 184758855
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": -3,
+   "uinteger": 184758855
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 3694330864
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 9120852011535910301,
+   "uinteger": 3694330864
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": 3,
+   "uinteger": 3694330864
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 2,
+   "uinteger": 2428779606
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": 0.9438687548226741,
+   "uinteger": 2428779606
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 2632301530
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 2632301530
+  },
+  {
+   "has_uint32": false,
+   "op": "raw",
+   "out": 10390221411555880480,
+   "uinteger": 2632301530
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.9065066475452845,
+   "uinteger": 2632301530
+  },
+  {
+   "has_uint32": false,
+   "op": "raw",
+   "out": 17160217381547960602,
+   "uinteger": 2632301530
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.6799819027943346,
+   "uinteger": 2632301530
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": 1.7904920214322189,
+   "uinteger": 2632301530
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 0,
+   "uinteger": 216014356
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": -3,
+   "uinteger": 216014356
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 2537687611
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 2537687611,
+   "uinteger": 2537687611
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    -1.0,
+    -1.0
+   ],
+   "uinteger": 339606323
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 336332214,
+   "uinteger": 2122293475
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 2122293475
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 1289655157
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 1289655157,
+   "uinteger": 1289655157
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.27602600726856275,
+   "uinteger": 1289655157
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3603094676
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.4045235330848369,
+   "uinteger": 3603094676
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 924433464237624916,
+   "uinteger": 3603094676
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": 0.575458256587117,
+   "uinteger": 3603094676
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": 2,
+   "uinteger": 3603094676
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.8884429354993396,
+   "uinteger": 3603094676
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.025083907791691118,
+   "uinteger": 3603094676
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 1,
+   "uinteger": 1054557462
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 1054557462
+  },
+  {
+   "has_uint32": false,
+   "op": "raw",
+   "out": 11729421159601303809,
+   "uinteger": 1054557462
+  },
+  {
+   "has_uint32": false,
+   "op": "raw",
+   "out": 1302192501516736319,
+   "uinteger": 1054557462
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 641141496,
+   "uinteger": 366847401
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 366847401,
+   "uinteger": 366847401
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 2371945064
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.6955046791815864,
+   "uinteger": 2371945064
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 5027772796574676074,
+   "uinteger": 2371945064
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": 0,
+   "uinteger": 2371945064
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 1702926035,
+   "uinteger": 1809683445
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    -1.0,
+    -1.0
+   ],
+   "uinteger": 52148308
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": 0.5895992114809863,
+   "uinteger": 52148308
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 12350503539817765241,
+   "uinteger": 52148308
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 52148308,
+   "uinteger": 52148308
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 386618673,
+   "uinteger": 3442664712
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.26652587610812617,
+   "uinteger": 3442664712
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3442664712
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.11661019125306427,
+   "uinteger": 3442664712
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 0,
+   "uinteger": 2748387902
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 2748387902,
+   "uinteger": 2748387902
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": 0.48451168364749353,
+   "uinteger": 2748387902
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3470305682
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": -1.6168686445403957,
+   "uinteger": 3470305682
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": 2,
+   "uinteger": 3470305682
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 316286683,
+   "uinteger": 2929734669
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": 1.6092761681985641,
+   "uinteger": 2929734669
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 947993543
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": 0.7512304020318443,
+   "uinteger": 947993543
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    -1.0,
+    -1.0
+   ],
+   "uinteger": 3625344660
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3625344660
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 499586766
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": -3,
+   "uinteger": 499586766
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.4053318585832457,
+   "uinteger": 499586766
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.4470110925571823,
+   "uinteger": 499586766
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": -1.424600335544437,
+   "uinteger": 499586766
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 3267402617
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3267402617
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 24983172
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 13353874633714805103,
+   "uinteger": 24983172
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    -1.0,
+    1.0
+   ],
+   "uinteger": 787088848
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.7478251087548543,
+   "uinteger": 787088848
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 787088848,
+   "uinteger": 787088848
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.31736853842591695,
+   "uinteger": 787088848
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    -1.0,
+    -1.0
+   ],
+   "uinteger": 753924669
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 2753487657
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 935190239
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    -1.0,
+    1.0
+   ],
+   "uinteger": 4091446974
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 4091446974
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 3484770010,
+   "uinteger": 3211984825
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    1.0,
+    -1.0
+   ],
+   "uinteger": 2172061869
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 2172061869,
+   "uinteger": 2172061869
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 1069801563,
+   "uinteger": 506031110
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 6663584764925470108,
+   "uinteger": 506031110
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    -1.0,
+    1.0
+   ],
+   "uinteger": 3368249711
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3368249711
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": -3,
+   "uinteger": 4016730444
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 4016730444
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": -1,
+   "uinteger": 2831588042
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 16723663145321337667,
+   "uinteger": 2831588042
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": 1,
+   "uinteger": 2831588042
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 1305916690,
+   "uinteger": 657211902
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 657211902,
+   "uinteger": 657211902
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 713884877,
+   "uinteger": 1036352126
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 1036352126,
+   "uinteger": 1036352126
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    1.0,
+    -1.0
+   ],
+   "uinteger": 1079954744
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.7045787698501753,
+   "uinteger": 1079954744
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 2904256995
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.48727221598069836,
+   "uinteger": 2904256995
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": 0.9048731318229923,
+   "uinteger": 2904256995
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    1.0,
+    -1.0
+   ],
+   "uinteger": 852472434
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    -1.0,
+    1.0
+   ],
+   "uinteger": 4097298685
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.2311317417081672,
+   "uinteger": 4097298685
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3346952527
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 2982096554
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 2982096554,
+   "uinteger": 2982096554
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.0008876541490023815,
+   "uinteger": 2982096554
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": -0.20443446231243634,
+   "uinteger": 2982096554
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 3588977806,
+   "uinteger": 775495945
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.8767238595303067,
+   "uinteger": 775495945
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    -1.0,
+    -1.0
+   ],
+   "uinteger": 2063025658
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    -1.0,
+    -1.0
+   ],
+   "uinteger": 3924238263
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3924238263
+  },
+  {
+   "has_uint32": false,
+   "op": "raw",
+   "out": 12419526288244574202,
+   "uinteger": 3924238263
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 0,
+   "uinteger": 1719562213
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 1719562213,
+   "uinteger": 1719562213
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 2047129360,
+   "uinteger": 2990606825
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 2990606825
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 0,
+   "uinteger": 498490395
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 17182137819894494733,
+   "uinteger": 498490395
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": -3,
+   "uinteger": 498490395
+  },
+  {
+   "has_uint32": false,
+   "op": "raw",
+   "out": 16675284221186290652,
+   "uinteger": 498490395
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 1,
+   "uinteger": 2470324099
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 2470324099
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 3558492023,
+   "uinteger": 2189694546
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 2536161308447499512,
+   "uinteger": 2189694546
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 2189694546,
+   "uinteger": 2189694546
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 4208687047
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 147507909,
+   "uinteger": 3328543863
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 10319648291716179436,
+   "uinteger": 3328543863
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3328543863
+  },
+  {
+   "has_uint32": false,
+   "op": "raw",
+   "out": 16642982157306001344,
+   "uinteger": 3328543863
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": -0.7755941650459035,
+   "uinteger": 3328543863
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 2898674630,
+   "uinteger": 661893622
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 5294297512425505161,
+   "uinteger": 661893622
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 8728905762894857938,
+   "uinteger": 661893622
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.44613058456038457,
+   "uinteger": 661893622
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.23048506613001551,
+   "uinteger": 661893622
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": 1.6007354438903099,
+   "uinteger": 661893622
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 11983806539704637032,
+   "uinteger": 661893622
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 661893622
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 3925085690
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": 0.5024028801280126,
+   "uinteger": 3925085690
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 3917753844
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": 1.4098161612358622,
+   "uinteger": 3917753844
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": -0.9376425361925079,
+   "uinteger": 3917753844
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 1428992456406950387,
+   "uinteger": 3917753844
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 6685063447312294219,
+   "uinteger": 3917753844
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3917753844
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": 1.1303456106941647,
+   "uinteger": 3917753844
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 1,
+   "uinteger": 3768704807
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 314344583099795396,
+   "uinteger": 3768704807
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": -0.13945674686283022,
+   "uinteger": 3768704807
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.6236510931894278,
+   "uinteger": 3768704807
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 3768704807,
+   "uinteger": 3768704807
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": -1.7946648972132626,
+   "uinteger": 3768704807
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 2686480197,
+   "uinteger": 747163386
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": 0.9737212113875745,
+   "uinteger": 747163386
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 747163386,
+   "uinteger": 747163386
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": -0.9437971208025175,
+   "uinteger": 747163386
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": 1.6471668820937515,
+   "uinteger": 747163386
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 1,
+   "uinteger": 3095062127
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 3095062127,
+   "uinteger": 3095062127
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": -0.12652784296550756,
+   "uinteger": 3095062127
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.16745568477793116,
+   "uinteger": 3095062127
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 1920288644,
+   "uinteger": 3720918463
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 2965927475
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 2965927475
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.41753584448262493,
+   "uinteger": 2965927475
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.5740468034595259,
+   "uinteger": 2965927475
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": 1.4727993927474086,
+   "uinteger": 2965927475
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 0,
+   "uinteger": 698864370
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 698864370
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 1,
+   "uinteger": 3529889168
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 5591594931417715295,
+   "uinteger": 3529889168
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": -0.3007851649753891,
+   "uinteger": 3529889168
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": 2,
+   "uinteger": 3529889168
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 2133158161,
+   "uinteger": 4030432432
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 4030432432,
+   "uinteger": 4030432432
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    1.0,
+    -1.0
+   ],
+   "uinteger": 423385426
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.5023034605275483,
+   "uinteger": 423385426
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 1,
+   "uinteger": 1954433261
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": 0,
+   "uinteger": 1954433261
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 2565291153,
+   "uinteger": 3906882188
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3906882188
+  },
+  {
+   "has_uint32": false,
+   "op": "raw",
+   "out": 2349524176127087138,
+   "uinteger": 3906882188
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 3641181162
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": 2,
+   "uinteger": 3641181162
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": -1.6289699588570896,
+   "uinteger": 3641181162
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 1260828871
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 1260828871
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 0,
+   "uinteger": 4013118745
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 3072604386
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 1109592509
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    -1.0,
+    -1.0
+   ],
+   "uinteger": 2085451634
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 2085451634,
+   "uinteger": 2085451634
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    -1.0,
+    -1.0
+   ],
+   "uinteger": 1321130664
+  },
+  {
+   "has_uint32": false,
+   "op": "raw",
+   "out": 8886309803664188622,
+   "uinteger": 1321130664
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    1.0,
+    -1.0
+   ],
+   "uinteger": 257430514
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 2165345306
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 2165345306,
+   "uinteger": 2165345306
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 0,
+   "uinteger": 1263695738
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 1263695738
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 2220066248
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 2220066248,
+   "uinteger": 2220066248
+  },
+  {
+   "has_uint32": false,
+   "op": "raw",
+   "out": 9453238863243682025,
+   "uinteger": 2220066248
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 1917897023
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 8115181282600709782,
+   "uinteger": 1917897023
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 1917897023,
+   "uinteger": 1917897023
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.14023510713434595,
+   "uinteger": 1917897023
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 3430116434
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 1072282120,
+   "uinteger": 3349867774
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.13118028303839235,
+   "uinteger": 3349867774
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": -0.11360624966683557,
+   "uinteger": 3349867774
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 3349867774,
+   "uinteger": 3349867774
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 3823173416
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": -3,
+   "uinteger": 3030799894
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.37542490724536637,
+   "uinteger": 3030799894
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 3030799894,
+   "uinteger": 3030799894
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.3590382530249159,
+   "uinteger": 3030799894
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 3,
+   "uinteger": 1582029492
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.40529277736618374,
+   "uinteger": 1582029492
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    -1.0,
+    1.0
+   ],
+   "uinteger": 422191496
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.8148325252404006,
+   "uinteger": 422191496
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 422191496,
+   "uinteger": 422191496
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.08796606900538406,
+   "uinteger": 422191496
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 2600174808
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 1874910221
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 6300935311662503133,
+   "uinteger": 1874910221
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": 0,
+   "uinteger": 1874910221
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": 1.0108935954407168,
+   "uinteger": 1874910221
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 1568153369,
+   "uinteger": 2140051916
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    -1.0,
+    1.0
+   ],
+   "uinteger": 1711744494
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 1711744494,
+   "uinteger": 1711744494
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": -0.44846500767971254,
+   "uinteger": 1711744494
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 2583306642
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 13402159532795184006,
+   "uinteger": 2583306642
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 2583306642
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": -1,
+   "uinteger": 2133616653
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": -0.8769270143710731,
+   "uinteger": 2133616653
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": -0.06841566032788415,
+   "uinteger": 2133616653
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.15566356373577417,
+   "uinteger": 2133616653
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": 0,
+   "uinteger": 2133616653
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 2557763262,
+   "uinteger": 3075164763
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 11677934102883276923,
+   "uinteger": 3075164763
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": 2,
+   "uinteger": 3075164763
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 3532552875
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 3532552875,
+   "uinteger": 3532552875
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 663313878
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": -0.18931400307311697,
+   "uinteger": 663313878
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": -2,
+   "uinteger": 663313878
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 2628130351,
+   "uinteger": 3432643997
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": -1.6249266894026673,
+   "uinteger": 3432643997
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 9158167205049843688,
+   "uinteger": 3432643997
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3432643997
+  },
+  {
+   "has_uint32": false,
+   "op": "raw",
+   "out": 11114966833545058603,
+   "uinteger": 3432643997
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 199490517,
+   "uinteger": 830970596
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": 0.6630936620683335,
+   "uinteger": 830970596
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 830970596,
+   "uinteger": 830970596
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    1.0,
+    -1.0
+   ],
+   "uinteger": 317079468
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3935891510
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 6014523026595563795,
+   "uinteger": 3935891510
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 4105530492
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 11629538549319013996,
+   "uinteger": 4105530492
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 6951763902877008929,
+   "uinteger": 4105530492
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 12547177510608013687,
+   "uinteger": 4105530492
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 1787894168
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 1787894168
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 847231691
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 847231691
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 2,
+   "uinteger": 3922539367
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.28488065728435297,
+   "uinteger": 3922539367
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 3928267108
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3928267108
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 3117222687,
+   "uinteger": 4283318025
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 3841825867623895906,
+   "uinteger": 4283318025
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    1.0,
+    -1.0
+   ],
+   "uinteger": 2882712617
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    1.0,
+    -1.0
+   ],
+   "uinteger": 2202627531
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 2202627531,
+   "uinteger": 2202627531
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3617593520
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 3617593520,
+   "uinteger": 3617593520
+  },
+  {
+   "has_uint32": false,
+   "op": "raw",
+   "out": 13679462690794198545,
+   "uinteger": 3617593520
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 3367937079
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 638315781,
+   "uinteger": 1551084337
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 12815821991378710019,
+   "uinteger": 1551084337
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.19663730650249023,
+   "uinteger": 1551084337
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 14673650158777284282,
+   "uinteger": 1551084337
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    -1.0,
+    -1.0
+   ],
+   "uinteger": 3530803169
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3530803169
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 2700232848,
+   "uinteger": 4150044128
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": 3,
+   "uinteger": 4150044128
+  },
+  {
+   "has_uint32": false,
+   "op": "raw",
+   "out": 8403406708944574152,
+   "uinteger": 4150044128
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 2340614043,
+   "uinteger": 245780385
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 245780385
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": -0.6061407967515612,
+   "uinteger": 245780385
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    1.0,
+    -1.0
+   ],
+   "uinteger": 121401362
+  },
+  {
+   "has_uint32": false,
+   "op": "raw",
+   "out": 17782916257435101772,
+   "uinteger": 121401362
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.9691812509677021,
+   "uinteger": 121401362
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 1680257341
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.4004052514922003,
+   "uinteger": 1680257341
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": -1,
+   "uinteger": 1680257341
+  },
+  {
+   "has_uint32": false,
+   "op": "raw",
+   "out": 10173699736134946496,
+   "uinteger": 1680257341
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 1988301797
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": 0,
+   "uinteger": 1988301797
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 2175557441
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 2175557441,
+   "uinteger": 2175557441
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    -1.0,
+    -1.0
+   ],
+   "uinteger": 80270315
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": -1,
+   "uinteger": 2810861554
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.4162681955805524,
+   "uinteger": 2810861554
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.8114663674368252,
+   "uinteger": 2810861554
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": -0.9724537137991431,
+   "uinteger": 2810861554
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.14877512710726182,
+   "uinteger": 2810861554
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    1.0,
+    -1.0
+   ],
+   "uinteger": 533020612
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 533020612
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 1131967480,
+   "uinteger": 290354970
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": -3,
+   "uinteger": 290354970
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.7986256288158884,
+   "uinteger": 290354970
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 765667918,
+   "uinteger": 2868186010
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 2868186010,
+   "uinteger": 2868186010
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    1.0,
+    -1.0
+   ],
+   "uinteger": 524701269
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": -2,
+   "uinteger": 2119516400
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    -1.0,
+    -1.0
+   ],
+   "uinteger": 4036752715
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": 3,
+   "uinteger": 4036752715
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    -1.0,
+    1.0
+   ],
+   "uinteger": 4057796727
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": -0.3223694636102204,
+   "uinteger": 4057796727
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.3138012973279818,
+   "uinteger": 4057796727
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.8665858500860496,
+   "uinteger": 4057796727
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    -1.0,
+    -1.0
+   ],
+   "uinteger": 562464009
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    -1.0,
+    -1.0
+   ],
+   "uinteger": 929179284
+  },
+  {
+   "has_uint32": false,
+   "op": "raw",
+   "out": 6800809777309541021,
+   "uinteger": 929179284
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.3657895073527878,
+   "uinteger": 929179284
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    -1.0,
+    1.0
+   ],
+   "uinteger": 2429159320
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 1239779914,
+   "uinteger": 1598806500
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": -1,
+   "uinteger": 1598806500
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": 0.802857963091805,
+   "uinteger": 1598806500
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 0,
+   "uinteger": 1992989728
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    -1.0,
+    -1.0
+   ],
+   "uinteger": 4176854671
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": 0.5420354566579547,
+   "uinteger": 4176854671
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": -0.3347305378953273,
+   "uinteger": 4176854671
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": 3,
+   "uinteger": 4176854671
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 2,
+   "uinteger": 646145163
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 646145163
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 2226244107
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 2226244107
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": -2,
+   "uinteger": 3544089104
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 2878407118
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.6778213191220641,
+   "uinteger": 2878407118
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 2878407118,
+   "uinteger": 2878407118
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    -1.0,
+    -1.0
+   ],
+   "uinteger": 1097655132
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": -1,
+   "uinteger": 2897574107
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.05965626396248713,
+   "uinteger": 2897574107
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": -0.5747813015339924,
+   "uinteger": 2897574107
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 7060046391651202309,
+   "uinteger": 2897574107
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": 1,
+   "uinteger": 2897574107
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": 0.3978552774477584,
+   "uinteger": 2897574107
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3422289228
+  },
+  {
+   "has_uint32": true,
+   "op": "random",
+   "out": 0.6202526112719342,
+   "uinteger": 3422289228
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3422289228
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 1076404752
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    -1.0,
+    -1.0
+   ],
+   "uinteger": 2683278253
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 2683278253
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": 0.6738269807050413,
+   "uinteger": 2683278253
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": 1,
+   "uinteger": 3925666596
+  },
+  {
+   "has_uint32": true,
+   "op": "normal",
+   "out": -1.0741065773443483,
+   "uinteger": 3925666596
+  },
+  {
+   "has_uint32": true,
+   "op": "raw",
+   "out": 3212940440456069593,
+   "uinteger": 3925666596
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 3925666596
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 2826411028
+  },
+  {
+   "has_uint32": true,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 2780918092
+  },
+  {
+   "has_uint32": false,
+   "op": "integers7",
+   "out": 1,
+   "uinteger": 2780918092
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.06145876809695572,
+   "uinteger": 2780918092
+  },
+  {
+   "has_uint32": false,
+   "op": "normal",
+   "out": 0.9687414891574646,
+   "uinteger": 2780918092
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.3756551988063723,
+   "uinteger": 2780918092
+  },
+  {
+   "has_uint32": false,
+   "op": "choice",
+   "out": [
+    1.0,
+    1.0
+   ],
+   "uinteger": 2158577484
+  },
+  {
+   "has_uint32": true,
+   "op": "integers7",
+   "out": -2,
+   "uinteger": 1227944420
+  },
+  {
+   "has_uint32": false,
+   "op": "integers32",
+   "out": 1227944420,
+   "uinteger": 1227944420
+  },
+  {
+   "has_uint32": true,
+   "op": "integers2",
+   "out": 1,
+   "uinteger": 1304471271
+  },
+  {
+   "has_uint32": false,
+   "op": "integers2",
+   "out": 0,
+   "uinteger": 1304471271
+  },
+  {
+   "has_uint32": false,
+   "op": "random",
+   "out": 0.6160959912675724,
+   "uinteger": 1304471271
+  },
+  {
+   "has_uint32": true,
+   "op": "integers32",
+   "out": 1539672222,
+   "uinteger": 2046758042
+  }
+ ],
+ "seed": 23050
+}

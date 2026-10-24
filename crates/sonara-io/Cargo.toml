@@ -1,0 +1,32 @@
+[package]
+name = "sonara-io"
+description = "Sonara device and MIDI I/O: miniaudio FFI and engine, MIDI via midir"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+build = "build.rs"
+
+[features]
+# RealtimeSanitizer for the `rtsan` CI job (macOS and Linux only; never part of --workspace builds).
+rtsan = ["dep:rtsan-standalone", "sonara-rt/rtsan"]
+
+[dependencies]
+# MIDI device I/O: CoreMIDI on macOS, ALSA on Linux.
+midir.workspace = true
+rtsan-standalone = { workspace = true, optional = true }
+sonara-rt.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+assert_no_alloc.workspace = true
+# The hardware test compares the device list with the prototype's JSON (tests/hardware.rs).
+serde_json.workspace = true
+
+[build-dependencies]
+cc.workspace = true
+
+[lints]
+workspace = true

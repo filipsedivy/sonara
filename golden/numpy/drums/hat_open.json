@@ -1,0 +1,8 @@
+{
+ "dtype": "f64le",
+ "name": "hat_open",
+ "seed": 3827918915,
+ "shape": [
+  2048
+ ]
+}

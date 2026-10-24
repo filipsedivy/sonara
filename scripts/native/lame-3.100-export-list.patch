@@ -1,0 +1,19 @@
+LAME 3.100: remove lame_init_old from the export list of libmp3lame.
+
+include/libmp3lame.sym exports lame_init_old, which LAME 3.100 no longer defines, and the macOS
+linker rejects an exported symbol that is not defined in a shared library. Homebrew and MacPorts
+drop the line the same way. No source code changes.
+
+Sonara's scripts/native/build-codecs.sh applies this patch to the official lame-3.100.tar.gz
+before it configures LAME. To apply it by hand, in the extracted lame-3.100 folder:
+
+    patch -p1 < lame-3.100-export-list.patch
+
+--- a/include/libmp3lame.sym
++++ b/include/libmp3lame.sym
+@@ -1,5 +1,4 @@
+ lame_init
+-lame_init_old
+ lame_set_num_samples
+ lame_get_num_samples
+ lame_set_in_samplerate

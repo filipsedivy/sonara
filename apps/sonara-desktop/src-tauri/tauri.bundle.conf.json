@@ -1,0 +1,21 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "build": {
+    "beforeBuildCommand": "pnpm build && node scripts/stage-cli.mjs"
+  },
+  "bundle": {
+    "externalBin": [
+      "binaries/sonara"
+    ],
+    "resources": {
+      "../../../target/licenses/": "licenses/"
+    },
+    "macOS": {
+      "frameworks": [
+        "../../../target/native/lib/libsoxr.0.dylib",
+        "../../../target/native/lib/libmp3lame.0.dylib",
+        "../../../target/native/lib/libFLAC.12.dylib"
+      ]
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+ "dtype": "f64le",
+ "shape": [
+  401,
+  2
+ ],
+ "source": "inputs/caf-alaw.caf"
+}

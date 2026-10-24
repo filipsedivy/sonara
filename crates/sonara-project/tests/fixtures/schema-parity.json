@@ -1,0 +1,1410 @@
+[
+ {
+  "case": "pop-master",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "remove",
+    "path": [
+     "master"
+    ]
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: (root): 'master' is a required property",
+  "error_count": 1
+ },
+ {
+  "case": "format-other",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "format"
+    ],
+    "value": "other"
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: format: 'sonara.project' was expected",
+  "error_count": 1
+ },
+ {
+  "case": "sample-rate-12345",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "settings",
+     "sample_rate"
+    ],
+    "value": 12345
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: settings/sample_rate: 12345 is not one of [22050, 32000, 44100, 48000, 88200, 96000, 176400, 192000]",
+  "error_count": 1
+ },
+ {
+  "case": "tempo-map-empty",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tempo_map"
+    ],
+    "value": []
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tempo_map: [] should be non-empty",
+  "error_count": 1
+ },
+ {
+  "case": "pitch-200",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     2,
+     "clips",
+     0,
+     "notes",
+     0,
+     "pitch"
+    ],
+    "value": 200
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/2/clips/0/notes/0/pitch: 200 is greater than the maximum of 127",
+  "error_count": 1
+ },
+ {
+  "case": "kind-banjo",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     2,
+     "kind"
+    ],
+    "value": "banjo"
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/2/kind: 'banjo' is not one of ['audio', 'instrument', 'bus', 'folder', 'master']",
+  "error_count": 1
+ },
+ {
+  "case": "no-asset-id",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "remove",
+    "path": [
+     "tracks",
+     3,
+     "clips",
+     0,
+     "asset_id"
+    ]
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/3/clips/0: 'asset_id' is a required property",
+  "error_count": 1
+ },
+ {
+  "case": "id-with-space",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     2,
+     "id"
+    ],
+    "value": "has space"
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/2/id: 'has space' does not match '^(master|[a-z0-9]+_[A-Za-z0-9-]{1,64})$'",
+  "error_count": 1
+ },
+ {
+  "case": "sha256-xyz",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "assets",
+     0,
+     "sha256"
+    ],
+    "value": "xyz"
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: assets/0/sha256: 'xyz' does not match '^[0-9a-f]{64}$'",
+  "error_count": 1
+ },
+ {
+  "case": "pan-3",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     2,
+     "mixer",
+     "pan"
+    ],
+    "value": 3
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/2/mixer/pan: 3 is greater than the maximum of 1",
+  "error_count": 1
+ },
+ {
+  "case": "pan-3.5",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     2,
+     "mixer",
+     "pan"
+    ],
+    "value": 3.5
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/2/mixer/pan: 3.5 is greater than the maximum of 1",
+  "error_count": 1
+ },
+ {
+  "case": "clip-empty",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     3,
+     "clips"
+    ],
+    "value": [
+     {}
+    ]
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/3/clips/0: 'type' is a required property",
+  "error_count": 5
+ },
+ {
+  "case": "track-empty",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks"
+    ],
+    "value": [
+     {}
+    ]
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/0: 'id' is a required property",
+  "error_count": 3
+ },
+ {
+  "case": "param-list",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     2,
+     "instrument",
+     "params",
+     "x"
+    ],
+    "value": [
+     1,
+     "a",
+     null,
+     true,
+     1.5,
+     {
+      "k": "v"
+     }
+    ]
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/2/instrument: {'id': 'dev_syn', 'plugin_id': 'sonara.synth.poly', 'name': 'Synth', 'enabled': True, 'params': {'filter_cutoff': 1234.5, 'unison': 3, 'voice_mode': 'mono', 'glide': 0.0, 'x': [1, 'a', None, True, 1.5, {'k': 'v'}]}, 'sidechain_id': None, 'preset': 'Analog Bass', 'state': {}} is not valid under any of the given schemas",
+  "error_count": 1
+ },
+ {
+  "case": "output-5",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     2,
+     "output_id"
+    ],
+    "value": 5
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/2/output_id: 5 is not valid under any of the given schemas",
+  "error_count": 1
+ },
+ {
+  "case": "color-short",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     0,
+     "color"
+    ],
+    "value": "#12345"
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/0/color: '#12345' does not match '^#[0-9a-fA-F]{6}$'",
+  "error_count": 1
+ },
+ {
+  "case": "metadata-types",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "metadata",
+     "x"
+    ],
+    "value": 1
+   },
+   {
+    "op": "set",
+    "path": [
+     "metadata",
+     "y"
+    ],
+    "value": "ok"
+   },
+   {
+    "op": "set",
+    "path": [
+     "metadata",
+     "z"
+    ],
+    "value": null
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: metadata/x: 1 is not of type 'string'",
+  "error_count": 2
+ },
+ {
+  "case": "length-0",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "settings",
+     "length_beats"
+    ],
+    "value": 0
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: settings/length_beats: 0 is less than or equal to the minimum of 0",
+  "error_count": 1
+ },
+ {
+  "case": "bpm-5",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tempo_map",
+     0,
+     "bpm"
+    ],
+    "value": 5
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tempo_map/0/bpm: 5 is less than the minimum of 10",
+  "error_count": 1
+ },
+ {
+  "case": "bpm-1000.5",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tempo_map",
+     0,
+     "bpm"
+    ],
+    "value": 1000.5
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tempo_map/0/bpm: 1000.5 is greater than the maximum of 999",
+  "error_count": 1
+ },
+ {
+  "case": "name-empty",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "name"
+    ],
+    "value": ""
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: name: '' should be non-empty",
+  "error_count": 1
+ },
+ {
+  "case": "schema-version-true",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "schema_version"
+    ],
+    "value": true
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: schema_version: 1 was expected",
+  "error_count": 1
+ },
+ {
+  "case": "schema-version-1.0",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "schema_version"
+    ],
+    "value": 1.0
+   }
+  ],
+  "valid": true
+ },
+ {
+  "case": "sample-rate-float",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "settings",
+     "sample_rate"
+    ],
+    "value": 48000.0
+   }
+  ],
+  "valid": true
+ },
+ {
+  "case": "sample-rate-true",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "settings",
+     "sample_rate"
+    ],
+    "value": true
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: settings/sample_rate: True is not one of [22050, 32000, 44100, 48000, 88200, 96000, 176400, 192000]",
+  "error_count": 1
+ },
+ {
+  "case": "bar-float",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "time_signatures",
+     1,
+     "bar"
+    ],
+    "value": 4.0
+   }
+  ],
+  "valid": true
+ },
+ {
+  "case": "bar-1.5",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "time_signatures",
+     1,
+     "bar"
+    ],
+    "value": 1.5
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: time_signatures/1/bar: 1.5 is not of type 'integer'",
+  "error_count": 1
+ },
+ {
+  "case": "root-list",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [],
+    "value": []
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: (root): [] is not of type 'object'",
+  "error_count": 1
+ },
+ {
+  "case": "root-string",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [],
+    "value": "x"
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: (root): 'x' is not of type 'object'",
+  "error_count": 1
+ },
+ {
+  "case": "root-null",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [],
+    "value": null
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: (root): None is not of type 'object'",
+  "error_count": 1
+ },
+ {
+  "case": "root-float",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [],
+    "value": 1.5
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: (root): 1.5 is not of type 'object'",
+  "error_count": 1
+ },
+ {
+  "case": "root-false",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [],
+    "value": false
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: (root): False is not of type 'object'",
+  "error_count": 1
+ },
+ {
+  "case": "tempo-multi",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tempo_map"
+    ],
+    "value": [
+     {
+      "beat": -1.5,
+      "bpm": "x"
+     },
+     {
+      "beat": 0,
+      "bpm": 5,
+      "ramp": 1
+     }
+    ]
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tempo_map/0/beat: -1.5 is less than the minimum of 0",
+  "error_count": 4
+ },
+ {
+  "case": "denominator-3",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "time_signatures",
+     0,
+     "denominator"
+    ],
+    "value": 3
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: time_signatures/0/denominator: 3 is not one of [1, 2, 4, 8, 16, 32]",
+  "error_count": 1
+ },
+ {
+  "case": "fade-bad",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     3,
+     "clips",
+     0,
+     "fade_in",
+     "curve"
+    ],
+    "value": "bad"
+   },
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     3,
+     "clips",
+     0,
+     "fade_in",
+     "seconds"
+    ],
+    "value": -1
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/3/clips/0/fade_in/curve: 'bad' is not one of ['linear', 'equal_power', 'exponential', 's_curve']",
+  "error_count": 2
+ },
+ {
+  "case": "source-offset-1.5",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     3,
+     "clips",
+     0,
+     "source_offset"
+    ],
+    "value": 1.5
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/3/clips/0/source_offset: 1.5 is not of type 'integer'",
+  "error_count": 1
+ },
+ {
+  "case": "many",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "remove",
+    "path": [
+     "id"
+    ]
+   },
+   {
+    "op": "set",
+    "path": [
+     "name"
+    ],
+    "value": 5
+   },
+   {
+    "op": "set",
+    "path": [
+     "tracks"
+    ],
+    "value": [
+     {},
+     {
+      "id": "x"
+     }
+    ]
+   },
+   {
+    "op": "set",
+    "path": [
+     "master",
+     "kind"
+    ],
+    "value": "bus"
+   },
+   {
+    "op": "set",
+    "path": [
+     "master",
+     "mixer"
+    ],
+    "value": {
+     "pan": "c"
+    }
+   },
+   {
+    "op": "remove",
+    "path": [
+     "settings",
+     "sample_rate"
+    ]
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: (root): 'id' is a required property",
+  "error_count": 10
+ },
+ {
+  "case": "clip-video",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     2,
+     "clips",
+     0,
+     "type"
+    ],
+    "value": "video"
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/2/clips/0/type: 'video' is not one of ['audio', 'midi']",
+  "error_count": 1
+ },
+ {
+  "case": "string-repr",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     0,
+     "color"
+    ],
+    "value": "it's \"q\" \\ é\n\u0001"
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/0/color: 'it\\'s \"q\" \\\\ é\\n\\x01' does not match '^#[0-9a-fA-F]{6}$'",
+  "error_count": 1
+ },
+ {
+  "case": "negative-zero",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tempo_map",
+     0,
+     "beat"
+    ],
+    "value": -0.0
+   }
+  ],
+  "valid": true
+ },
+ {
+  "case": "small-float",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tempo_map",
+     0,
+     "beat"
+    ],
+    "value": -1e-07
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tempo_map/0/beat: -1e-07 is less than the minimum of 0",
+  "error_count": 1
+ },
+ {
+  "case": "send-missing-target",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "remove",
+    "path": [
+     "tracks",
+     2,
+     "sends",
+     0,
+     "target_id"
+    ]
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/2/sends/0: 'target_id' is a required property",
+  "error_count": 1
+ },
+ {
+  "case": "lane-target",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     2,
+     "automation",
+     0,
+     "target"
+    ],
+    "value": {}
+   },
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     2,
+     "automation",
+     0,
+     "points"
+    ],
+    "value": [
+     {
+      "beat": 0
+     }
+    ]
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/2/automation/0/points/0: 'value' is a required property",
+  "error_count": 2
+ },
+ {
+  "case": "note-limits",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     2,
+     "clips",
+     0,
+     "notes",
+     0,
+     "pitch"
+    ],
+    "value": 60.0
+   },
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     2,
+     "clips",
+     0,
+     "notes",
+     0,
+     "velocity"
+    ],
+    "value": 0
+   },
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     2,
+     "clips",
+     0,
+     "notes",
+     0,
+     "channel"
+    ],
+    "value": 16
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/2/clips/0/notes/0/channel: 16 is greater than the maximum of 15",
+  "error_count": 2
+ },
+ {
+  "case": "sidechain-bad",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     2,
+     "inserts",
+     0,
+     "sidechain_id"
+    ],
+    "value": "bad id"
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/2/inserts/0/sidechain_id: 'bad id' is not valid under any of the given schemas",
+  "error_count": 1
+ },
+ {
+  "case": "instrument-string",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     2,
+     "instrument"
+    ],
+    "value": "x"
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/2/instrument: 'x' is not valid under any of the given schemas",
+  "error_count": 1
+ },
+ {
+  "case": "unicode-key",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "metadata",
+     "ž"
+    ],
+    "value": 1
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: metadata/ž: 1 is not of type 'string'",
+  "error_count": 1
+ },
+ {
+  "case": "numeric-key",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "metadata",
+     "10"
+    ],
+    "value": 1
+   },
+   {
+    "op": "set",
+    "path": [
+     "metadata",
+     "9"
+    ],
+    "value": 2
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: metadata/10: 1 is not of type 'string'",
+  "error_count": 2
+ },
+ {
+  "case": "marker-color",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "markers",
+     0,
+     "color"
+    ],
+    "value": 1
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: markers/0/color: 1 is not of type 'string', 'null'",
+  "error_count": 1
+ },
+ {
+  "case": "midi-loop",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     2,
+     "clips",
+     0,
+     "loop_length"
+    ],
+    "value": 0
+   },
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     2,
+     "clips",
+     0,
+     "controls"
+    ],
+    "value": {}
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/2/clips/0/controls: {} is not of type 'array'",
+  "error_count": 2
+ },
+ {
+  "case": "device-params-types",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     2,
+     "inserts",
+     0,
+     "params",
+     "a"
+    ],
+    "value": null
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/2/inserts/0/params/a: None is not of type 'number', 'boolean', 'string'",
+  "error_count": 1
+ },
+ {
+  "case": "gain-range",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     3,
+     "clips",
+     0,
+     "gain_db"
+    ],
+    "value": -100
+   },
+   {
+    "op": "set",
+    "path": [
+     "tracks",
+     4,
+     "mixer",
+     "volume_db"
+    ],
+    "value": 13.0
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: tracks/3/clips/0/gain_db: -100 is less than the minimum of -96",
+  "error_count": 2
+ },
+ {
+  "case": "asset-kind-and-size",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "assets",
+     0,
+     "kind"
+    ],
+    "value": "video"
+   },
+   {
+    "op": "set",
+    "path": [
+     "assets",
+     0,
+     "size_bytes"
+    ],
+    "value": -1
+   },
+   {
+    "op": "set",
+    "path": [
+     "assets",
+     0,
+     "path"
+    ],
+    "value": ""
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: assets/0/kind: 'video' is not one of ['audio', 'midi', 'impulse']",
+  "error_count": 3
+ },
+ {
+  "case": "section-length",
+  "base": "rich",
+  "schema": "project-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "sections",
+     0,
+     "length"
+    ],
+    "value": 0
+   },
+   {
+    "op": "set",
+    "path": [
+     "sections",
+     1,
+     "start"
+    ],
+    "value": -2
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "project-v1.schema.json: sections/0/length: 0 is less than or equal to the minimum of 0",
+  "error_count": 2
+ },
+ {
+  "case": "manifest-unique",
+  "base": "manifest",
+  "schema": "manifest-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "required_features"
+    ],
+    "value": [
+     "core",
+     "core"
+    ]
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "manifest-v1.schema.json: required_features: ['core', 'core'] has non-unique elements",
+  "error_count": 1
+ },
+ {
+  "case": "manifest-format",
+  "base": "manifest",
+  "schema": "manifest-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "format"
+    ],
+    "value": "x"
+   },
+   {
+    "op": "set",
+    "path": [
+     "format_version"
+    ],
+    "value": 0
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "manifest-v1.schema.json: format: 'sonara.manifest' was expected",
+  "error_count": 2
+ },
+ {
+  "case": "manifest-project-file",
+  "base": "manifest",
+  "schema": "manifest-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "project_file",
+     "sha256"
+    ],
+    "value": "X"
+   },
+   {
+    "op": "set",
+    "path": [
+     "project_file",
+     "size"
+    ],
+    "value": -1
+   },
+   {
+    "op": "set",
+    "path": [
+     "project_file",
+     "path"
+    ],
+    "value": "p"
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "manifest-v1.schema.json: project_file/path: 'project.json' was expected",
+  "error_count": 3
+ },
+ {
+  "case": "manifest-empty",
+  "base": "manifest",
+  "schema": "manifest-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [],
+    "value": {}
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "manifest-v1.schema.json: (root): 'format' is a required property",
+  "error_count": 6
+ },
+ {
+  "case": "manifest-asset",
+  "base": "manifest",
+  "schema": "manifest-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "assets"
+    ],
+    "value": [
+     {
+      "id": 1,
+      "location": "x",
+      "size": 1.5,
+      "sha256": 3
+     }
+    ]
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "manifest-v1.schema.json: assets/0: 'path' is a required property",
+  "error_count": 5
+ },
+ {
+  "case": "manifest-null",
+  "base": "manifest",
+  "schema": "manifest-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [],
+    "value": null
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "manifest-v1.schema.json: (root): None is not of type 'object'",
+  "error_count": 1
+ },
+ {
+  "case": "manifest-features",
+  "base": "manifest",
+  "schema": "manifest-v1.schema.json",
+  "ops": [
+   {
+    "op": "set",
+    "path": [
+     "required_features"
+    ],
+    "value": "core"
+   },
+   {
+    "op": "set",
+    "path": [
+     "compatibility"
+    ],
+    "value": []
+   }
+  ],
+  "valid": false,
+  "code": "FORMAT_ERROR",
+  "message": "manifest-v1.schema.json: compatibility: [] is not of type 'object'",
+  "error_count": 2
+ }
+]

@@ -1,0 +1,65 @@
+[package]
+name = "sonara-media"
+description = "Sonara media: decoding, resampling, media cache, export encoders"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+# UTC date and time of the BWF `bext` chunk.
+jiff.workspace = true
+libloading.workspace = true
+# Warnings of the FFmpeg fallback that do not fail an import (a partial file that stays).
+log.workspace = true
+# Ogg muxing of the Opus export, and demuxing for its verification.
+ogg.workspace = true
+# Opus export through libopus (BSD-3-Clause, statically linked), and the packet durations of
+# the Ogg Opus reader.
+opus.workspace = true
+# libopus's multistream decoder for Ogg Opus import (the codec FFI module); the same library.
+opusic-sys.workspace = true
+serde_json.workspace = true
+sonara-core.workspace = true
+# The export's analysis (normalization, BWF loudness, verification) and dither generator.
+sonara-dsp.workspace = true
+# The containers and codecs libsndfile read for the prototype and that have a golden oracle
+#: WAV, AIFF, FLAC, MP3, Ogg Vorbis, PCM (with A-law and
+# µ-law), ALAC (for CAF files, which this crate demuxes itself),
+# and the ID3 tags MP3 files carry. Not enabled: symphonia's CAF demuxer (it cannot read
+# libsndfile's files, see `caf.rs`), ADPCM, MP1/MP2 and the MP4 and Matroska demuxers (no
+# golden oracle).
+symphonia = { workspace = true, features = [
+    "aiff",
+    "alac",
+    "flac",
+    "id3v1",
+    "id3v2",
+    "mp3",
+    "ogg",
+    "pcm",
+    "vorbis",
+    "wav",
+] }
+# The export's intermediate render file.
+tempfile.workspace = true
+thiserror.workspace = true
+unicode-normalization.workspace = true
+# The time limits of the FFmpeg fallback's processes (`timeout=60` and `timeout=3600`).
+wait-timeout.workspace = true
+# Ogg Vorbis export (BSD-3-Clause; builds libvorbis and libogg with cc).
+vorbis_rs.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+# `access(X_OK)` for finding `ffmpeg` on PATH as `shutil.which` does.
+rustix = { workspace = true, features = ["fs"] }
+
+[dev-dependencies]
+serde_json.workspace = true
+sonara-testkit.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,2842 @@
+[
+ {
+  "category": "utility",
+  "description": "Trim gain, stereo width (mid/side), mono, channel swap, polarity and DC removal.",
+  "format": "builtin",
+  "id": "sonara.utility",
+  "kind": "effect",
+  "name": "Utility",
+  "params": [
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.0,
+    "description": "",
+    "id": "gain_db",
+    "kind": "float",
+    "maximum": 24.0,
+    "minimum": -60.0,
+    "name": "Gain",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 1.0,
+    "description": "0 = mono, 1 = unchanged, 2 = doubled side",
+    "id": "width",
+    "kind": "float",
+    "maximum": 2.0,
+    "minimum": 0.0,
+    "name": "Stereo Width",
+    "scale": "linear",
+    "unit": "x"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": false,
+    "description": "",
+    "id": "mono",
+    "kind": "bool",
+    "maximum": null,
+    "minimum": null,
+    "name": "Mono",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": false,
+    "description": "",
+    "id": "swap",
+    "kind": "bool",
+    "maximum": null,
+    "minimum": null,
+    "name": "Swap L/R",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": false,
+    "description": "",
+    "id": "invert_left",
+    "kind": "bool",
+    "maximum": null,
+    "minimum": null,
+    "name": "Invert Left Polarity",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": false,
+    "description": "",
+    "id": "invert_right",
+    "kind": "bool",
+    "maximum": null,
+    "minimum": null,
+    "name": "Invert Right Polarity",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": false,
+    "description": "",
+    "id": "dc_block",
+    "kind": "bool",
+    "maximum": null,
+    "minimum": null,
+    "name": "DC Block",
+    "scale": "linear",
+    "unit": ""
+   }
+  ],
+  "presets": [],
+  "sidechain": false,
+  "tags": [
+   "gain",
+   "trim",
+   "width",
+   "polarity",
+   "mono"
+  ],
+  "vendor": "Sonara",
+  "version": 1
+ },
+ {
+  "category": "eq",
+  "description": "Six-band parametric equalizer: Butterworth high/low-pass (12-48 dB/oct), low and high shelf/peak bands and two fully parametric mid bands (RBJ biquads).",
+  "format": "builtin",
+  "id": "sonara.eq.parametric",
+  "kind": "effect",
+  "name": "Parametric EQ",
+  "params": [
+   {
+    "automatable": true,
+    "choices": [],
+    "default": false,
+    "description": "",
+    "id": "hp_on",
+    "kind": "bool",
+    "maximum": null,
+    "minimum": null,
+    "name": "High-Pass On",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 80.0,
+    "description": "",
+    "id": "hp_freq",
+    "kind": "float",
+    "maximum": 2000.0,
+    "minimum": 20.0,
+    "name": "High-Pass Frequency",
+    "scale": "log",
+    "unit": "Hz"
+   },
+   {
+    "automatable": false,
+    "choices": [
+     "12",
+     "24",
+     "36",
+     "48"
+    ],
+    "default": "12",
+    "description": "dB/octave",
+    "id": "hp_slope",
+    "kind": "enum",
+    "maximum": null,
+    "minimum": null,
+    "name": "High-Pass Slope",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": true,
+    "description": "",
+    "id": "low_on",
+    "kind": "bool",
+    "maximum": null,
+    "minimum": null,
+    "name": "Low Band On",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": false,
+    "choices": [
+     "shelf",
+     "peak"
+    ],
+    "default": "shelf",
+    "description": "",
+    "id": "low_type",
+    "kind": "enum",
+    "maximum": null,
+    "minimum": null,
+    "name": "Low Band Type",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 100.0,
+    "description": "",
+    "id": "low_freq",
+    "kind": "float",
+    "maximum": 1000.0,
+    "minimum": 20.0,
+    "name": "Low Frequency",
+    "scale": "log",
+    "unit": "Hz"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.0,
+    "description": "",
+    "id": "low_gain",
+    "kind": "float",
+    "maximum": 24.0,
+    "minimum": -24.0,
+    "name": "Low Gain",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.71,
+    "description": "",
+    "id": "low_q",
+    "kind": "float",
+    "maximum": 10.0,
+    "minimum": 0.1,
+    "name": "Low Q",
+    "scale": "log",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": true,
+    "description": "",
+    "id": "mid1_on",
+    "kind": "bool",
+    "maximum": null,
+    "minimum": null,
+    "name": "Mid 1 On",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 500.0,
+    "description": "",
+    "id": "mid1_freq",
+    "kind": "float",
+    "maximum": 20000.0,
+    "minimum": 20.0,
+    "name": "Mid 1 Frequency",
+    "scale": "log",
+    "unit": "Hz"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.0,
+    "description": "",
+    "id": "mid1_gain",
+    "kind": "float",
+    "maximum": 24.0,
+    "minimum": -24.0,
+    "name": "Mid 1 Gain",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 1.0,
+    "description": "",
+    "id": "mid1_q",
+    "kind": "float",
+    "maximum": 18.0,
+    "minimum": 0.1,
+    "name": "Mid 1 Q",
+    "scale": "log",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": true,
+    "description": "",
+    "id": "mid2_on",
+    "kind": "bool",
+    "maximum": null,
+    "minimum": null,
+    "name": "Mid 2 On",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 2500.0,
+    "description": "",
+    "id": "mid2_freq",
+    "kind": "float",
+    "maximum": 20000.0,
+    "minimum": 20.0,
+    "name": "Mid 2 Frequency",
+    "scale": "log",
+    "unit": "Hz"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.0,
+    "description": "",
+    "id": "mid2_gain",
+    "kind": "float",
+    "maximum": 24.0,
+    "minimum": -24.0,
+    "name": "Mid 2 Gain",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 1.0,
+    "description": "",
+    "id": "mid2_q",
+    "kind": "float",
+    "maximum": 18.0,
+    "minimum": 0.1,
+    "name": "Mid 2 Q",
+    "scale": "log",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": true,
+    "description": "",
+    "id": "high_on",
+    "kind": "bool",
+    "maximum": null,
+    "minimum": null,
+    "name": "High Band On",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": false,
+    "choices": [
+     "shelf",
+     "peak"
+    ],
+    "default": "shelf",
+    "description": "",
+    "id": "high_type",
+    "kind": "enum",
+    "maximum": null,
+    "minimum": null,
+    "name": "High Band Type",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 8000.0,
+    "description": "",
+    "id": "high_freq",
+    "kind": "float",
+    "maximum": 20000.0,
+    "minimum": 1000.0,
+    "name": "High Frequency",
+    "scale": "log",
+    "unit": "Hz"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.0,
+    "description": "",
+    "id": "high_gain",
+    "kind": "float",
+    "maximum": 24.0,
+    "minimum": -24.0,
+    "name": "High Gain",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.71,
+    "description": "",
+    "id": "high_q",
+    "kind": "float",
+    "maximum": 10.0,
+    "minimum": 0.1,
+    "name": "High Q",
+    "scale": "log",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": false,
+    "description": "",
+    "id": "lp_on",
+    "kind": "bool",
+    "maximum": null,
+    "minimum": null,
+    "name": "Low-Pass On",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 18000.0,
+    "description": "",
+    "id": "lp_freq",
+    "kind": "float",
+    "maximum": 20000.0,
+    "minimum": 1000.0,
+    "name": "Low-Pass Frequency",
+    "scale": "log",
+    "unit": "Hz"
+   },
+   {
+    "automatable": false,
+    "choices": [
+     "12",
+     "24",
+     "36",
+     "48"
+    ],
+    "default": "12",
+    "description": "dB/octave",
+    "id": "lp_slope",
+    "kind": "enum",
+    "maximum": null,
+    "minimum": null,
+    "name": "Low-Pass Slope",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.0,
+    "description": "",
+    "id": "output_db",
+    "kind": "float",
+    "maximum": 24.0,
+    "minimum": -24.0,
+    "name": "Output",
+    "scale": "linear",
+    "unit": "dB"
+   }
+  ],
+  "presets": [
+   {
+    "description": "Remove rumble below 100 Hz",
+    "name": "Low Cut",
+    "params": {
+     "hp_freq": 100.0,
+     "hp_on": true,
+     "hp_slope": "24"
+    }
+   },
+   {
+    "description": "",
+    "name": "Vocal Presence",
+    "params": {
+     "high_gain": 2.0,
+     "hp_freq": 90.0,
+     "hp_on": true,
+     "mid1_freq": 300.0,
+     "mid1_gain": -2.5,
+     "mid2_freq": 4000.0,
+     "mid2_gain": 3.0
+    }
+   },
+   {
+    "description": "",
+    "name": "Bass Tight",
+    "params": {
+     "hp_freq": 35.0,
+     "hp_on": true,
+     "low_freq": 80.0,
+     "low_gain": 2.0,
+     "mid1_freq": 250.0,
+     "mid1_gain": -3.0,
+     "mid1_q": 1.4
+    }
+   },
+   {
+    "description": "",
+    "name": "Air",
+    "params": {
+     "high_freq": 12000.0,
+     "high_gain": 3.0
+    }
+   },
+   {
+    "description": "",
+    "name": "Telephone",
+    "params": {
+     "hp_freq": 400.0,
+     "hp_on": true,
+     "hp_slope": "24",
+     "lp_freq": 3400.0,
+     "lp_on": true,
+     "lp_slope": "24",
+     "mid1_freq": 1500.0,
+     "mid1_gain": 4.0
+    }
+   }
+  ],
+  "sidechain": false,
+  "tags": [
+   "equalizer",
+   "tone",
+   "filter"
+  ],
+  "vendor": "Sonara",
+  "version": 1
+ },
+ {
+  "category": "filter",
+  "description": "Resonant multimode state-variable filter with cutoff LFO; ideal for automated sweeps.",
+  "format": "builtin",
+  "id": "sonara.filter",
+  "kind": "effect",
+  "name": "Filter",
+  "params": [
+   {
+    "automatable": false,
+    "choices": [
+     "lowpass",
+     "highpass",
+     "bandpass",
+     "notch"
+    ],
+    "default": "lowpass",
+    "description": "",
+    "id": "mode",
+    "kind": "enum",
+    "maximum": null,
+    "minimum": null,
+    "name": "Mode",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 1000.0,
+    "description": "",
+    "id": "cutoff_hz",
+    "kind": "float",
+    "maximum": 20000.0,
+    "minimum": 20.0,
+    "name": "Cutoff",
+    "scale": "log",
+    "unit": "Hz"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.2,
+    "description": "",
+    "id": "resonance",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Resonance",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.5,
+    "description": "",
+    "id": "lfo_rate_hz",
+    "kind": "float",
+    "maximum": 20.0,
+    "minimum": 0.01,
+    "name": "LFO Rate",
+    "scale": "log",
+    "unit": "Hz"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.0,
+    "description": "",
+    "id": "lfo_depth_oct",
+    "kind": "float",
+    "maximum": 4.0,
+    "minimum": 0.0,
+    "name": "LFO Depth",
+    "scale": "linear",
+    "unit": "oct"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 1.0,
+    "description": "",
+    "id": "mix",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Mix",
+    "scale": "linear",
+    "unit": ""
+   }
+  ],
+  "presets": [
+   {
+    "description": "",
+    "name": "Slow Sweep",
+    "params": {
+     "cutoff_hz": 1200.0,
+     "lfo_depth_oct": 2.5,
+     "lfo_rate_hz": 0.1,
+     "resonance": 0.35
+    }
+   },
+   {
+    "description": "",
+    "name": "Wah",
+    "params": {
+     "cutoff_hz": 900.0,
+     "lfo_depth_oct": 1.5,
+     "lfo_rate_hz": 2.0,
+     "mode": "bandpass",
+     "resonance": 0.6
+    }
+   }
+  ],
+  "sidechain": false,
+  "tags": [
+   "filter",
+   "sweep",
+   "lfo"
+  ],
+  "vendor": "Sonara",
+  "version": 1
+ },
+ {
+  "category": "dynamics",
+  "description": "Feed-forward soft-knee compressor with stereo-linked detection, parallel mix and external sidechain input (for ducking, e.g. bass keyed by kick).",
+  "format": "builtin",
+  "id": "sonara.dynamics.compressor",
+  "kind": "effect",
+  "name": "Compressor",
+  "params": [
+   {
+    "automatable": true,
+    "choices": [],
+    "default": -18.0,
+    "description": "",
+    "id": "threshold_db",
+    "kind": "float",
+    "maximum": 0.0,
+    "minimum": -60.0,
+    "name": "Threshold",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 4.0,
+    "description": "",
+    "id": "ratio",
+    "kind": "float",
+    "maximum": 20.0,
+    "minimum": 1.0,
+    "name": "Ratio",
+    "scale": "log",
+    "unit": ":1"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 10.0,
+    "description": "",
+    "id": "attack_ms",
+    "kind": "float",
+    "maximum": 200.0,
+    "minimum": 0.05,
+    "name": "Attack",
+    "scale": "log",
+    "unit": "ms"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 120.0,
+    "description": "",
+    "id": "release_ms",
+    "kind": "float",
+    "maximum": 2000.0,
+    "minimum": 5.0,
+    "name": "Release",
+    "scale": "log",
+    "unit": "ms"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 6.0,
+    "description": "",
+    "id": "knee_db",
+    "kind": "float",
+    "maximum": 24.0,
+    "minimum": 0.0,
+    "name": "Knee",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.0,
+    "description": "",
+    "id": "makeup_db",
+    "kind": "float",
+    "maximum": 24.0,
+    "minimum": -12.0,
+    "name": "Makeup Gain",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": false,
+    "description": "",
+    "id": "auto_makeup",
+    "kind": "bool",
+    "maximum": null,
+    "minimum": null,
+    "name": "Auto Makeup",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 1.0,
+    "description": "Parallel compression: 0 = dry, 1 = fully compressed",
+    "id": "mix",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Mix",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": false,
+    "choices": [
+     "peak",
+     "rms"
+    ],
+    "default": "peak",
+    "description": "",
+    "id": "detector",
+    "kind": "enum",
+    "maximum": null,
+    "minimum": null,
+    "name": "Detector",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": false,
+    "description": "Use the sidechain source track as the key signal",
+    "id": "sidechain",
+    "kind": "bool",
+    "maximum": null,
+    "minimum": null,
+    "name": "External Sidechain",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 20.0,
+    "description": "",
+    "id": "sidechain_hpf_hz",
+    "kind": "float",
+    "maximum": 500.0,
+    "minimum": 20.0,
+    "name": "Sidechain High-Pass",
+    "scale": "log",
+    "unit": "Hz"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 20000.0,
+    "description": "Key on the kick of a full drum bus (e.g. 120 Hz)",
+    "id": "sidechain_lpf_hz",
+    "kind": "float",
+    "maximum": 20000.0,
+    "minimum": 40.0,
+    "name": "Sidechain Low-Pass",
+    "scale": "log",
+    "unit": "Hz"
+   }
+  ],
+  "presets": [
+   {
+    "description": "",
+    "name": "Gentle Bus Glue",
+    "params": {
+     "attack_ms": 30.0,
+     "knee_db": 10.0,
+     "ratio": 2.0,
+     "release_ms": 200.0,
+     "threshold_db": -12.0
+    }
+   },
+   {
+    "description": "",
+    "name": "Vocal Leveler",
+    "params": {
+     "attack_ms": 5.0,
+     "ratio": 3.5,
+     "release_ms": 100.0,
+     "threshold_db": -20.0
+    }
+   },
+   {
+    "description": "",
+    "name": "Drum Punch",
+    "params": {
+     "attack_ms": 25.0,
+     "makeup_db": 3.0,
+     "ratio": 4.0,
+     "release_ms": 80.0,
+     "threshold_db": -16.0
+    }
+   },
+   {
+    "description": "Duck against the kick of the sidechain source (low-passed key)",
+    "name": "Sidechain Pump",
+    "params": {
+     "attack_ms": 0.5,
+     "knee_db": 3.0,
+     "ratio": 8.0,
+     "release_ms": 160.0,
+     "sidechain": true,
+     "sidechain_lpf_hz": 150.0,
+     "threshold_db": -30.0
+    }
+   },
+   {
+    "description": "",
+    "name": "Parallel Smash",
+    "params": {
+     "attack_ms": 1.0,
+     "makeup_db": 10.0,
+     "mix": 0.35,
+     "ratio": 12.0,
+     "release_ms": 60.0,
+     "threshold_db": -35.0
+    }
+   }
+  ],
+  "sidechain": true,
+  "tags": [
+   "compression",
+   "dynamics",
+   "sidechain",
+   "ducking"
+  ],
+  "vendor": "Sonara",
+  "version": 1
+ },
+ {
+  "category": "dynamics",
+  "description": "Lookahead brickwall limiter with optional 4x oversampled true-peak detection. Introduces latency equal to the lookahead (compensated automatically).",
+  "format": "builtin",
+  "id": "sonara.dynamics.limiter",
+  "kind": "effect",
+  "name": "Limiter",
+  "params": [
+   {
+    "automatable": true,
+    "choices": [],
+    "default": -1.0,
+    "description": "",
+    "id": "ceiling_db",
+    "kind": "float",
+    "maximum": 0.0,
+    "minimum": -24.0,
+    "name": "Ceiling",
+    "scale": "linear",
+    "unit": "dBFS"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.0,
+    "description": "",
+    "id": "input_gain_db",
+    "kind": "float",
+    "maximum": 24.0,
+    "minimum": 0.0,
+    "name": "Input Gain",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 60.0,
+    "description": "",
+    "id": "release_ms",
+    "kind": "float",
+    "maximum": 1000.0,
+    "minimum": 1.0,
+    "name": "Release",
+    "scale": "log",
+    "unit": "ms"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 2.0,
+    "description": "",
+    "id": "lookahead_ms",
+    "kind": "float",
+    "maximum": 10.0,
+    "minimum": 0.1,
+    "name": "Lookahead",
+    "scale": "linear",
+    "unit": "ms"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": true,
+    "description": "Detect inter-sample peaks with 4x oversampling",
+    "id": "true_peak",
+    "kind": "bool",
+    "maximum": null,
+    "minimum": null,
+    "name": "True-Peak Detection",
+    "scale": "linear",
+    "unit": ""
+   }
+  ],
+  "presets": [
+   {
+    "description": "",
+    "name": "Master -1 dBTP",
+    "params": {
+     "ceiling_db": -1.0,
+     "true_peak": true
+    }
+   },
+   {
+    "description": "",
+    "name": "Streaming Loud",
+    "params": {
+     "ceiling_db": -1.0,
+     "input_gain_db": 4.0,
+     "release_ms": 80.0
+    }
+   }
+  ],
+  "sidechain": false,
+  "tags": [
+   "limiting",
+   "mastering",
+   "true peak"
+  ],
+  "vendor": "Sonara",
+  "version": 1
+ },
+ {
+  "category": "dynamics",
+  "description": "Noise gate with hysteresis and hold, or downward expander.",
+  "format": "builtin",
+  "id": "sonara.dynamics.gate",
+  "kind": "effect",
+  "name": "Gate / Expander",
+  "params": [
+   {
+    "automatable": false,
+    "choices": [
+     "gate",
+     "expander"
+    ],
+    "default": "gate",
+    "description": "",
+    "id": "mode",
+    "kind": "enum",
+    "maximum": null,
+    "minimum": null,
+    "name": "Mode",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": -40.0,
+    "description": "",
+    "id": "threshold_db",
+    "kind": "float",
+    "maximum": 0.0,
+    "minimum": -80.0,
+    "name": "Threshold",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": -80.0,
+    "description": "Maximum attenuation",
+    "id": "range_db",
+    "kind": "float",
+    "maximum": 0.0,
+    "minimum": -80.0,
+    "name": "Range",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 2.0,
+    "description": "",
+    "id": "ratio",
+    "kind": "float",
+    "maximum": 10.0,
+    "minimum": 1.0,
+    "name": "Expander Ratio",
+    "scale": "linear",
+    "unit": ":1"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 3.0,
+    "description": "",
+    "id": "hysteresis_db",
+    "kind": "float",
+    "maximum": 12.0,
+    "minimum": 0.0,
+    "name": "Hysteresis",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.5,
+    "description": "",
+    "id": "attack_ms",
+    "kind": "float",
+    "maximum": 50.0,
+    "minimum": 0.05,
+    "name": "Attack",
+    "scale": "log",
+    "unit": "ms"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 20.0,
+    "description": "",
+    "id": "hold_ms",
+    "kind": "float",
+    "maximum": 500.0,
+    "minimum": 0.0,
+    "name": "Hold",
+    "scale": "linear",
+    "unit": "ms"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 150.0,
+    "description": "",
+    "id": "release_ms",
+    "kind": "float",
+    "maximum": 2000.0,
+    "minimum": 5.0,
+    "name": "Release",
+    "scale": "log",
+    "unit": "ms"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": false,
+    "description": "",
+    "id": "sidechain",
+    "kind": "bool",
+    "maximum": null,
+    "minimum": null,
+    "name": "External Sidechain",
+    "scale": "linear",
+    "unit": ""
+   }
+  ],
+  "presets": [],
+  "sidechain": true,
+  "tags": [
+   "gate",
+   "expander",
+   "noise"
+  ],
+  "vendor": "Sonara",
+  "version": 1
+ },
+ {
+  "category": "delay",
+  "description": "Stereo feedback delay with tempo sync, ping-pong and band-limited repeats.",
+  "format": "builtin",
+  "id": "sonara.delay",
+  "kind": "effect",
+  "name": "Delay",
+  "params": [
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 375.0,
+    "description": "",
+    "id": "time_ms",
+    "kind": "float",
+    "maximum": 4000.0,
+    "minimum": 1.0,
+    "name": "Time",
+    "scale": "log",
+    "unit": "ms"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": true,
+    "description": "",
+    "id": "sync",
+    "kind": "bool",
+    "maximum": null,
+    "minimum": null,
+    "name": "Tempo Sync",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": false,
+    "choices": [
+     "1/32",
+     "1/16T",
+     "1/16",
+     "1/16D",
+     "1/8T",
+     "1/8",
+     "1/8D",
+     "1/4T",
+     "1/4",
+     "1/4D",
+     "1/2",
+     "1/2D",
+     "1/1"
+    ],
+    "default": "1/8D",
+    "description": "",
+    "id": "note",
+    "kind": "enum",
+    "maximum": null,
+    "minimum": null,
+    "name": "Note Value",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.35,
+    "description": "",
+    "id": "feedback",
+    "kind": "float",
+    "maximum": 0.98,
+    "minimum": 0.0,
+    "name": "Feedback",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.25,
+    "description": "",
+    "id": "mix",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Mix",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": false,
+    "description": "",
+    "id": "ping_pong",
+    "kind": "bool",
+    "maximum": null,
+    "minimum": null,
+    "name": "Ping-Pong",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 120.0,
+    "description": "",
+    "id": "lowcut_hz",
+    "kind": "float",
+    "maximum": 2000.0,
+    "minimum": 20.0,
+    "name": "Feedback Low Cut",
+    "scale": "log",
+    "unit": "Hz"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 7000.0,
+    "description": "",
+    "id": "highcut_hz",
+    "kind": "float",
+    "maximum": 20000.0,
+    "minimum": 1000.0,
+    "name": "Feedback High Cut",
+    "scale": "log",
+    "unit": "Hz"
+   }
+  ],
+  "presets": [
+   {
+    "description": "",
+    "name": "Dotted Eighth",
+    "params": {
+     "feedback": 0.4,
+     "mix": 0.25,
+     "note": "1/8D",
+     "sync": true
+    }
+   },
+   {
+    "description": "",
+    "name": "Ping-Pong Quarter",
+    "params": {
+     "feedback": 0.45,
+     "mix": 0.3,
+     "note": "1/4",
+     "ping_pong": true,
+     "sync": true
+    }
+   },
+   {
+    "description": "",
+    "name": "Slapback",
+    "params": {
+     "feedback": 0.1,
+     "highcut_hz": 5000.0,
+     "mix": 0.3,
+     "sync": false,
+     "time_ms": 110.0
+    }
+   },
+   {
+    "description": "",
+    "name": "Dub Echo",
+    "params": {
+     "feedback": 0.7,
+     "highcut_hz": 2500.0,
+     "lowcut_hz": 300.0,
+     "mix": 0.35,
+     "note": "1/4D",
+     "sync": true
+    }
+   }
+  ],
+  "sidechain": false,
+  "tags": [
+   "echo",
+   "delay",
+   "tempo"
+  ],
+  "vendor": "Sonara",
+  "version": 1
+ },
+ {
+  "category": "reverb",
+  "description": "Algorithmic reverb via a synthesized, frequency-dependent decaying impulse response and partitioned FFT convolution.",
+  "format": "builtin",
+  "id": "sonara.reverb",
+  "kind": "effect",
+  "name": "Reverb",
+  "params": [
+   {
+    "automatable": false,
+    "choices": [
+     "room",
+     "chamber",
+     "hall",
+     "plate"
+    ],
+    "default": "hall",
+    "description": "",
+    "id": "character",
+    "kind": "enum",
+    "maximum": null,
+    "minimum": null,
+    "name": "Character",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 2.0,
+    "description": "",
+    "id": "decay_s",
+    "kind": "float",
+    "maximum": 20.0,
+    "minimum": 0.1,
+    "name": "Decay (RT60)",
+    "scale": "log",
+    "unit": "s"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 15.0,
+    "description": "",
+    "id": "predelay_ms",
+    "kind": "float",
+    "maximum": 250.0,
+    "minimum": 0.0,
+    "name": "Pre-Delay",
+    "scale": "linear",
+    "unit": "ms"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.5,
+    "description": "High-frequency decay relative to the RT60",
+    "id": "damping",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Damping",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 120.0,
+    "description": "",
+    "id": "lowcut_hz",
+    "kind": "float",
+    "maximum": 1000.0,
+    "minimum": 20.0,
+    "name": "Low Cut",
+    "scale": "log",
+    "unit": "Hz"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 12000.0,
+    "description": "",
+    "id": "highcut_hz",
+    "kind": "float",
+    "maximum": 20000.0,
+    "minimum": 1000.0,
+    "name": "High Cut",
+    "scale": "log",
+    "unit": "Hz"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 1.0,
+    "description": "",
+    "id": "width",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Width",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.25,
+    "description": "",
+    "id": "mix",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Mix",
+    "scale": "linear",
+    "unit": ""
+   }
+  ],
+  "presets": [
+   {
+    "description": "",
+    "name": "Small Room",
+    "params": {
+     "character": "room",
+     "decay_s": 0.6,
+     "mix": 0.2,
+     "predelay_ms": 5.0
+    }
+   },
+   {
+    "description": "",
+    "name": "Vocal Plate",
+    "params": {
+     "character": "plate",
+     "damping": 0.4,
+     "decay_s": 1.8,
+     "mix": 0.22,
+     "predelay_ms": 25.0
+    }
+   },
+   {
+    "description": "",
+    "name": "Concert Hall",
+    "params": {
+     "character": "hall",
+     "damping": 0.55,
+     "decay_s": 2.8,
+     "mix": 0.3,
+     "predelay_ms": 30.0
+    }
+   },
+   {
+    "description": "",
+    "name": "Cathedral",
+    "params": {
+     "character": "hall",
+     "damping": 0.6,
+     "decay_s": 7.0,
+     "mix": 0.35,
+     "predelay_ms": 45.0
+    }
+   },
+   {
+    "description": "",
+    "name": "Ambient Wash",
+    "params": {
+     "character": "hall",
+     "damping": 0.3,
+     "decay_s": 12.0,
+     "lowcut_hz": 250.0,
+     "mix": 0.5,
+     "predelay_ms": 60.0
+    }
+   }
+  ],
+  "sidechain": false,
+  "tags": [
+   "reverb",
+   "space",
+   "ambience"
+  ],
+  "vendor": "Sonara",
+  "version": 1
+ },
+ {
+  "category": "reverb",
+  "description": "Convolution with an impulse response loaded from the project's media (device state key 'ir_asset_id').",
+  "format": "builtin",
+  "id": "sonara.convolver",
+  "kind": "effect",
+  "name": "Convolution Reverb",
+  "params": [
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.3,
+    "description": "",
+    "id": "mix",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Mix",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.0,
+    "description": "",
+    "id": "gain_db",
+    "kind": "float",
+    "maximum": 24.0,
+    "minimum": -24.0,
+    "name": "Wet Gain",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": false,
+    "choices": [
+     "mono_sum",
+     "stereo"
+    ],
+    "default": "mono_sum",
+    "description": "mono_sum: L+R into a stereo IR",
+    "id": "input",
+    "kind": "enum",
+    "maximum": null,
+    "minimum": null,
+    "name": "Input",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": false,
+    "choices": [],
+    "default": true,
+    "description": "",
+    "id": "normalize",
+    "kind": "bool",
+    "maximum": null,
+    "minimum": null,
+    "name": "Normalize IR",
+    "scale": "linear",
+    "unit": ""
+   }
+  ],
+  "presets": [],
+  "sidechain": false,
+  "tags": [
+   "reverb",
+   "convolution",
+   "impulse response"
+  ],
+  "vendor": "Sonara",
+  "version": 1
+ },
+ {
+  "category": "distortion",
+  "description": "Waveshaping saturation and distortion with IIR oversampling against aliasing.",
+  "format": "builtin",
+  "id": "sonara.saturation",
+  "kind": "effect",
+  "name": "Saturation",
+  "params": [
+   {
+    "automatable": false,
+    "choices": [
+     "tanh",
+     "soft_clip",
+     "hard_clip",
+     "tube",
+     "foldback"
+    ],
+    "default": "tanh",
+    "description": "",
+    "id": "mode",
+    "kind": "enum",
+    "maximum": null,
+    "minimum": null,
+    "name": "Mode",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 6.0,
+    "description": "",
+    "id": "drive_db",
+    "kind": "float",
+    "maximum": 36.0,
+    "minimum": 0.0,
+    "name": "Drive",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.0,
+    "description": "Asymmetry (tube mode)",
+    "id": "bias",
+    "kind": "float",
+    "maximum": 0.5,
+    "minimum": -0.5,
+    "name": "Bias",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 20000.0,
+    "description": "",
+    "id": "tone_hz",
+    "kind": "float",
+    "maximum": 20000.0,
+    "minimum": 1000.0,
+    "name": "Tone",
+    "scale": "log",
+    "unit": "Hz"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 1.0,
+    "description": "",
+    "id": "mix",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Mix",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": -3.0,
+    "description": "",
+    "id": "output_db",
+    "kind": "float",
+    "maximum": 12.0,
+    "minimum": -24.0,
+    "name": "Output",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": false,
+    "choices": [
+     "1x",
+     "2x",
+     "4x"
+    ],
+    "default": "2x",
+    "description": "",
+    "id": "oversampling",
+    "kind": "enum",
+    "maximum": null,
+    "minimum": null,
+    "name": "Oversampling",
+    "scale": "linear",
+    "unit": ""
+   }
+  ],
+  "presets": [
+   {
+    "description": "",
+    "name": "Warm Tape",
+    "params": {
+     "drive_db": 4.0,
+     "mode": "tanh",
+     "output_db": -2.0,
+     "tone_hz": 12000.0
+    }
+   },
+   {
+    "description": "",
+    "name": "Tube Drive",
+    "params": {
+     "bias": 0.15,
+     "drive_db": 10.0,
+     "mode": "tube",
+     "output_db": -6.0
+    }
+   },
+   {
+    "description": "",
+    "name": "Hard Crunch",
+    "params": {
+     "drive_db": 18.0,
+     "mode": "hard_clip",
+     "output_db": -10.0,
+     "oversampling": "4x",
+     "tone_hz": 6000.0
+    }
+   }
+  ],
+  "sidechain": false,
+  "tags": [
+   "saturation",
+   "distortion",
+   "drive",
+   "clipping"
+  ],
+  "vendor": "Sonara",
+  "version": 1
+ },
+ {
+  "category": "synth",
+  "description": "Polyphonic subtractive synthesizer: 2 band-limited oscillators with unison, noise, resonant state-variable filter with envelope, amp envelope, LFO, mono/legato glide.",
+  "format": "builtin",
+  "id": "sonara.synth.poly",
+  "kind": "instrument",
+  "name": "Sonara Poly Synth",
+  "params": [
+   {
+    "automatable": false,
+    "choices": [
+     "poly",
+     "mono",
+     "legato"
+    ],
+    "default": "poly",
+    "description": "",
+    "id": "voice_mode",
+    "kind": "enum",
+    "maximum": null,
+    "minimum": null,
+    "name": "Voice Mode",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 16,
+    "description": "",
+    "id": "polyphony",
+    "kind": "int",
+    "maximum": 32.0,
+    "minimum": 1.0,
+    "name": "Polyphony",
+    "scale": "linear",
+    "unit": "voices"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.0,
+    "description": "",
+    "id": "glide",
+    "kind": "float",
+    "maximum": 2.0,
+    "minimum": 0.0,
+    "name": "Glide",
+    "scale": "linear",
+    "unit": "s"
+   },
+   {
+    "automatable": false,
+    "choices": [
+     "saw",
+     "square",
+     "pulse",
+     "triangle",
+     "sine"
+    ],
+    "default": "saw",
+    "description": "",
+    "id": "osc1_wave",
+    "kind": "enum",
+    "maximum": null,
+    "minimum": null,
+    "name": "Osc 1 Wave",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.8,
+    "description": "",
+    "id": "osc1_level",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Osc 1 Level",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0,
+    "description": "",
+    "id": "osc1_octave",
+    "kind": "int",
+    "maximum": 3.0,
+    "minimum": -3.0,
+    "name": "Osc 1 Octave",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.0,
+    "description": "",
+    "id": "osc1_detune",
+    "kind": "float",
+    "maximum": 100.0,
+    "minimum": -100.0,
+    "name": "Osc 1 Detune",
+    "scale": "linear",
+    "unit": "cents"
+   },
+   {
+    "automatable": false,
+    "choices": [
+     "saw",
+     "square",
+     "pulse",
+     "triangle",
+     "sine"
+    ],
+    "default": "square",
+    "description": "",
+    "id": "osc2_wave",
+    "kind": "enum",
+    "maximum": null,
+    "minimum": null,
+    "name": "Osc 2 Wave",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.0,
+    "description": "",
+    "id": "osc2_level",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Osc 2 Level",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0,
+    "description": "",
+    "id": "osc2_octave",
+    "kind": "int",
+    "maximum": 3.0,
+    "minimum": -3.0,
+    "name": "Osc 2 Octave",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0,
+    "description": "",
+    "id": "osc2_semitone",
+    "kind": "int",
+    "maximum": 12.0,
+    "minimum": -12.0,
+    "name": "Osc 2 Semitone",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 7.0,
+    "description": "",
+    "id": "osc2_detune",
+    "kind": "float",
+    "maximum": 100.0,
+    "minimum": -100.0,
+    "name": "Osc 2 Detune",
+    "scale": "linear",
+    "unit": "cents"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.5,
+    "description": "",
+    "id": "pulse_width",
+    "kind": "float",
+    "maximum": 0.95,
+    "minimum": 0.05,
+    "name": "Pulse Width",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.0,
+    "description": "",
+    "id": "noise_level",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Noise",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 1,
+    "description": "",
+    "id": "unison",
+    "kind": "int",
+    "maximum": 7.0,
+    "minimum": 1.0,
+    "name": "Unison Voices",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 15.0,
+    "description": "",
+    "id": "unison_detune",
+    "kind": "float",
+    "maximum": 100.0,
+    "minimum": 0.0,
+    "name": "Unison Detune",
+    "scale": "linear",
+    "unit": "cents"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.7,
+    "description": "",
+    "id": "unison_spread",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Unison Spread",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": false,
+    "choices": [
+     "lowpass",
+     "highpass",
+     "bandpass"
+    ],
+    "default": "lowpass",
+    "description": "",
+    "id": "filter_type",
+    "kind": "enum",
+    "maximum": null,
+    "minimum": null,
+    "name": "Filter Type",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 2500.0,
+    "description": "",
+    "id": "filter_cutoff",
+    "kind": "float",
+    "maximum": 20000.0,
+    "minimum": 20.0,
+    "name": "Cutoff",
+    "scale": "log",
+    "unit": "Hz"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.15,
+    "description": "",
+    "id": "filter_resonance",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Resonance",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 2.0,
+    "description": "",
+    "id": "filter_env_amount",
+    "kind": "float",
+    "maximum": 8.0,
+    "minimum": -8.0,
+    "name": "Filter Env Amount",
+    "scale": "linear",
+    "unit": "oct"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.5,
+    "description": "",
+    "id": "filter_keytrack",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Key Tracking",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.005,
+    "description": "",
+    "id": "filter_attack",
+    "kind": "float",
+    "maximum": 10.0,
+    "minimum": 0.0005,
+    "name": "Filter Attack",
+    "scale": "log",
+    "unit": "s"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.4,
+    "description": "",
+    "id": "filter_decay",
+    "kind": "float",
+    "maximum": 10.0,
+    "minimum": 0.001,
+    "name": "Filter Decay",
+    "scale": "log",
+    "unit": "s"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.3,
+    "description": "",
+    "id": "filter_sustain",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Filter Sustain",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.3,
+    "description": "",
+    "id": "filter_release",
+    "kind": "float",
+    "maximum": 10.0,
+    "minimum": 0.001,
+    "name": "Filter Release",
+    "scale": "log",
+    "unit": "s"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.005,
+    "description": "",
+    "id": "amp_attack",
+    "kind": "float",
+    "maximum": 10.0,
+    "minimum": 0.0005,
+    "name": "Amp Attack",
+    "scale": "log",
+    "unit": "s"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.3,
+    "description": "",
+    "id": "amp_decay",
+    "kind": "float",
+    "maximum": 10.0,
+    "minimum": 0.001,
+    "name": "Amp Decay",
+    "scale": "log",
+    "unit": "s"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.8,
+    "description": "",
+    "id": "amp_sustain",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Amp Sustain",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.25,
+    "description": "",
+    "id": "amp_release",
+    "kind": "float",
+    "maximum": 10.0,
+    "minimum": 0.001,
+    "name": "Amp Release",
+    "scale": "log",
+    "unit": "s"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 5.0,
+    "description": "",
+    "id": "lfo_rate",
+    "kind": "float",
+    "maximum": 20.0,
+    "minimum": 0.01,
+    "name": "LFO Rate",
+    "scale": "log",
+    "unit": "Hz"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.0,
+    "description": "",
+    "id": "lfo_pitch_cents",
+    "kind": "float",
+    "maximum": 100.0,
+    "minimum": 0.0,
+    "name": "Vibrato",
+    "scale": "linear",
+    "unit": "cents"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.0,
+    "description": "",
+    "id": "lfo_cutoff_oct",
+    "kind": "float",
+    "maximum": 4.0,
+    "minimum": 0.0,
+    "name": "LFO to Cutoff",
+    "scale": "linear",
+    "unit": "oct"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.7,
+    "description": "",
+    "id": "velocity_sensitivity",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Velocity Sensitivity",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.3,
+    "description": "",
+    "id": "velocity_to_filter",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Velocity to Filter",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 2,
+    "description": "",
+    "id": "bend_range",
+    "kind": "int",
+    "maximum": 24.0,
+    "minimum": 0.0,
+    "name": "Pitch-Bend Range",
+    "scale": "linear",
+    "unit": "semitones"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": -9.0,
+    "description": "",
+    "id": "gain_db",
+    "kind": "float",
+    "maximum": 12.0,
+    "minimum": -48.0,
+    "name": "Output",
+    "scale": "linear",
+    "unit": "dB"
+   }
+  ],
+  "presets": [
+   {
+    "description": "",
+    "name": "Init",
+    "params": {}
+   },
+   {
+    "description": "Saw plus sub square, mono with slight glide",
+    "name": "Analog Bass",
+    "params": {
+     "amp_attack": 0.002,
+     "amp_decay": 0.3,
+     "amp_release": 0.08,
+     "amp_sustain": 0.85,
+     "filter_cutoff": 420.0,
+     "filter_decay": 0.22,
+     "filter_env_amount": 2.8,
+     "filter_keytrack": 0.3,
+     "filter_resonance": 0.3,
+     "filter_sustain": 0.15,
+     "gain_db": -6.0,
+     "glide": 0.03,
+     "osc1_wave": "saw",
+     "osc2_detune": 0.0,
+     "osc2_level": 0.6,
+     "osc2_octave": -1,
+     "osc2_wave": "square",
+     "voice_mode": "mono"
+    }
+   },
+   {
+    "description": "",
+    "name": "Sub Bass",
+    "params": {
+     "amp_attack": 0.003,
+     "amp_release": 0.1,
+     "filter_cutoff": 600.0,
+     "filter_env_amount": 0.0,
+     "gain_db": -4.0,
+     "osc1_level": 1.0,
+     "osc1_wave": "sine",
+     "osc2_detune": 0.0,
+     "osc2_level": 0.25,
+     "osc2_wave": "triangle",
+     "voice_mode": "mono"
+    }
+   },
+   {
+    "description": "",
+    "name": "Acid Bass",
+    "params": {
+     "amp_release": 0.05,
+     "amp_sustain": 0.9,
+     "filter_cutoff": 300.0,
+     "filter_decay": 0.18,
+     "filter_env_amount": 3.5,
+     "filter_resonance": 0.78,
+     "filter_sustain": 0.05,
+     "gain_db": -8.0,
+     "glide": 0.06,
+     "osc1_wave": "saw",
+     "voice_mode": "legato"
+    }
+   },
+   {
+    "description": "",
+    "name": "Warm Pad",
+    "params": {
+     "amp_attack": 0.6,
+     "amp_decay": 1.0,
+     "amp_release": 1.6,
+     "amp_sustain": 0.85,
+     "filter_attack": 0.8,
+     "filter_cutoff": 1400.0,
+     "filter_decay": 1.5,
+     "filter_env_amount": 1.2,
+     "filter_resonance": 0.12,
+     "filter_sustain": 0.5,
+     "gain_db": -14.0,
+     "lfo_cutoff_oct": 0.3,
+     "lfo_rate": 0.3,
+     "osc1_wave": "saw",
+     "osc2_detune": 9.0,
+     "osc2_level": 0.7,
+     "osc2_wave": "saw",
+     "unison": 3,
+     "unison_detune": 12.0,
+     "velocity_sensitivity": 0.3
+    }
+   },
+   {
+    "description": "Bowed ensemble approximation",
+    "name": "Strings",
+    "params": {
+     "amp_attack": 0.35,
+     "amp_decay": 0.5,
+     "amp_release": 0.8,
+     "amp_sustain": 0.9,
+     "filter_attack": 0.3,
+     "filter_cutoff": 3200.0,
+     "filter_decay": 1.0,
+     "filter_env_amount": 0.6,
+     "filter_sustain": 0.7,
+     "gain_db": -15.0,
+     "lfo_pitch_cents": 6.0,
+     "lfo_rate": 5.2,
+     "osc1_wave": "saw",
+     "osc2_detune": -6.0,
+     "osc2_level": 0.6,
+     "osc2_wave": "saw",
+     "unison": 5,
+     "unison_detune": 10.0,
+     "unison_spread": 0.9,
+     "velocity_sensitivity": 0.5
+    }
+   },
+   {
+    "description": "Brass section approximation",
+    "name": "Brass",
+    "params": {
+     "amp_attack": 0.04,
+     "amp_decay": 0.3,
+     "amp_release": 0.25,
+     "amp_sustain": 0.85,
+     "filter_attack": 0.07,
+     "filter_cutoff": 700.0,
+     "filter_decay": 0.45,
+     "filter_env_amount": 2.6,
+     "filter_resonance": 0.1,
+     "filter_sustain": 0.55,
+     "gain_db": -12.0,
+     "lfo_pitch_cents": 4.0,
+     "lfo_rate": 5.5,
+     "osc1_wave": "saw",
+     "osc2_detune": 5.0,
+     "osc2_level": 0.8,
+     "osc2_wave": "saw",
+     "unison": 2,
+     "unison_detune": 6.0,
+     "velocity_to_filter": 0.7
+    }
+   },
+   {
+    "description": "",
+    "name": "Pluck",
+    "params": {
+     "amp_attack": 0.001,
+     "amp_decay": 0.45,
+     "amp_release": 0.25,
+     "amp_sustain": 0.0,
+     "filter_cutoff": 600.0,
+     "filter_decay": 0.18,
+     "filter_env_amount": 4.0,
+     "filter_sustain": 0.0,
+     "gain_db": -8.0,
+     "osc1_wave": "saw",
+     "osc2_level": 0.3,
+     "osc2_octave": 1,
+     "osc2_wave": "square"
+    }
+   },
+   {
+    "description": "",
+    "name": "Supersaw Lead",
+    "params": {
+     "amp_attack": 0.01,
+     "amp_release": 0.3,
+     "amp_sustain": 0.9,
+     "filter_cutoff": 5000.0,
+     "filter_env_amount": 1.0,
+     "gain_db": -16.0,
+     "osc1_wave": "saw",
+     "osc2_level": 0.5,
+     "osc2_octave": 1,
+     "osc2_wave": "saw",
+     "unison": 7,
+     "unison_detune": 28.0,
+     "unison_spread": 0.9
+    }
+   },
+   {
+    "description": "",
+    "name": "Square Lead",
+    "params": {
+     "amp_sustain": 0.9,
+     "filter_cutoff": 3000.0,
+     "filter_env_amount": 1.5,
+     "gain_db": -10.0,
+     "glide": 0.04,
+     "lfo_pitch_cents": 10.0,
+     "lfo_rate": 5.5,
+     "osc1_wave": "square",
+     "osc2_level": 0.4,
+     "osc2_octave": 1,
+     "osc2_wave": "saw",
+     "voice_mode": "legato"
+    }
+   },
+   {
+    "description": "",
+    "name": "Electric Keys",
+    "params": {
+     "amp_attack": 0.002,
+     "amp_decay": 1.4,
+     "amp_release": 0.4,
+     "amp_sustain": 0.25,
+     "filter_cutoff": 2600.0,
+     "filter_decay": 0.6,
+     "filter_env_amount": 1.5,
+     "gain_db": -8.0,
+     "osc1_wave": "triangle",
+     "osc2_detune": 0.0,
+     "osc2_level": 0.5,
+     "osc2_octave": 1,
+     "osc2_wave": "sine",
+     "velocity_to_filter": 0.8
+    }
+   },
+   {
+    "description": "",
+    "name": "Glass Bells",
+    "params": {
+     "amp_attack": 0.002,
+     "amp_decay": 1.8,
+     "amp_release": 1.2,
+     "amp_sustain": 0.0,
+     "filter_cutoff": 9000.0,
+     "filter_env_amount": 0.0,
+     "gain_db": -8.0,
+     "osc1_wave": "sine",
+     "osc2_detune": 0.0,
+     "osc2_level": 0.45,
+     "osc2_octave": 2,
+     "osc2_semitone": 7,
+     "osc2_wave": "triangle"
+    }
+   },
+   {
+    "description": "",
+    "name": "Choir Pad",
+    "params": {
+     "amp_attack": 0.5,
+     "amp_release": 1.4,
+     "filter_cutoff": 1100.0,
+     "filter_env_amount": 0.0,
+     "filter_resonance": 0.25,
+     "filter_type": "bandpass",
+     "gain_db": -10.0,
+     "lfo_pitch_cents": 5.0,
+     "lfo_rate": 4.8,
+     "osc1_wave": "pulse",
+     "osc2_level": 0.4,
+     "osc2_wave": "saw",
+     "pulse_width": 0.3,
+     "unison": 4,
+     "unison_detune": 9.0
+    }
+   }
+  ],
+  "sidechain": false,
+  "tags": [
+   "synth",
+   "bass",
+   "pad",
+   "lead",
+   "keys",
+   "strings",
+   "brass"
+  ],
+  "vendor": "Sonara",
+  "version": 1
+ },
+ {
+  "category": "drums",
+  "description": "Synthesized drum machine on the General MIDI percussion map (36 kick, 38 snare, 39 clap, 42/44/46 hats, 41-50 toms, 49 crash, 51 ride, ...).",
+  "format": "builtin",
+  "id": "sonara.drums",
+  "kind": "instrument",
+  "name": "Sonara Drum Kit",
+  "params": [
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 52.0,
+    "description": "",
+    "id": "kick_tune",
+    "kind": "float",
+    "maximum": 120.0,
+    "minimum": 30.0,
+    "name": "Kick Tune",
+    "scale": "linear",
+    "unit": "Hz"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.45,
+    "description": "",
+    "id": "kick_decay",
+    "kind": "float",
+    "maximum": 2.0,
+    "minimum": 0.08,
+    "name": "Kick Decay",
+    "scale": "linear",
+    "unit": "s"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.5,
+    "description": "",
+    "id": "kick_punch",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Kick Punch",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 1.0,
+    "description": "",
+    "id": "snare_tune",
+    "kind": "float",
+    "maximum": 2.0,
+    "minimum": 0.5,
+    "name": "Snare Tune",
+    "scale": "linear",
+    "unit": "x"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.6,
+    "description": "",
+    "id": "snare_tone",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Snare Snappiness",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.18,
+    "description": "",
+    "id": "snare_decay",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.05,
+    "name": "Snare Decay",
+    "scale": "linear",
+    "unit": "s"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 1.0,
+    "description": "",
+    "id": "hat_tune",
+    "kind": "float",
+    "maximum": 2.0,
+    "minimum": 0.5,
+    "name": "Hi-Hat Tune",
+    "scale": "linear",
+    "unit": "x"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 1.0,
+    "description": "",
+    "id": "hat_decay",
+    "kind": "float",
+    "maximum": 3.0,
+    "minimum": 0.3,
+    "name": "Hi-Hat Decay",
+    "scale": "linear",
+    "unit": "x"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.25,
+    "description": "",
+    "id": "clap_decay",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.05,
+    "name": "Clap Decay",
+    "scale": "linear",
+    "unit": "s"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 1.0,
+    "description": "",
+    "id": "tom_tune",
+    "kind": "float",
+    "maximum": 2.0,
+    "minimum": 0.5,
+    "name": "Tom Tune",
+    "scale": "linear",
+    "unit": "x"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 1.6,
+    "description": "",
+    "id": "cymbal_decay",
+    "kind": "float",
+    "maximum": 5.0,
+    "minimum": 0.3,
+    "name": "Cymbal Decay",
+    "scale": "linear",
+    "unit": "s"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.1,
+    "description": "",
+    "id": "drive",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Drive",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 0.0,
+    "description": "",
+    "id": "kick_level_db",
+    "kind": "float",
+    "maximum": 12.0,
+    "minimum": -48.0,
+    "name": "Kick Level",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": -2.0,
+    "description": "",
+    "id": "snare_level_db",
+    "kind": "float",
+    "maximum": 12.0,
+    "minimum": -48.0,
+    "name": "Snare Level",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": -9.0,
+    "description": "",
+    "id": "hat_level_db",
+    "kind": "float",
+    "maximum": 12.0,
+    "minimum": -48.0,
+    "name": "Hi-Hat Level",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": -10.0,
+    "description": "",
+    "id": "cymbal_level_db",
+    "kind": "float",
+    "maximum": 12.0,
+    "minimum": -48.0,
+    "name": "Cymbal Level",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": -6.0,
+    "description": "",
+    "id": "perc_level_db",
+    "kind": "float",
+    "maximum": 12.0,
+    "minimum": -48.0,
+    "name": "Percussion Level",
+    "scale": "linear",
+    "unit": "dB"
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": 1.0,
+    "description": "",
+    "id": "stereo_width",
+    "kind": "float",
+    "maximum": 1.0,
+    "minimum": 0.0,
+    "name": "Stereo Width",
+    "scale": "linear",
+    "unit": ""
+   },
+   {
+    "automatable": true,
+    "choices": [],
+    "default": -9.0,
+    "description": "",
+    "id": "gain_db",
+    "kind": "float",
+    "maximum": 12.0,
+    "minimum": -48.0,
+    "name": "Output",
+    "scale": "linear",
+    "unit": "dB"
+   }
+  ],
+  "presets": [
+   {
+    "description": "",
+    "name": "Electronic 808",
+    "params": {
+     "drive": 0.05,
+     "hat_decay": 1.0,
+     "hat_tune": 1.0,
+     "kick_decay": 0.9,
+     "kick_punch": 0.3,
+     "kick_tune": 45.0,
+     "snare_tone": 0.7
+    }
+   },
+   {
+    "description": "",
+    "name": "Punchy 909",
+    "params": {
+     "drive": 0.25,
+     "hat_tune": 1.15,
+     "kick_decay": 0.35,
+     "kick_punch": 0.8,
+     "kick_tune": 55.0,
+     "snare_decay": 0.2,
+     "snare_tone": 0.55,
+     "snare_tune": 1.1
+    }
+   },
+   {
+    "description": "",
+    "name": "Tight House",
+    "params": {
+     "clap_decay": 0.2,
+     "hat_decay": 0.7,
+     "hat_level_db": -11.0,
+     "kick_decay": 0.4,
+     "kick_punch": 0.65,
+     "kick_tune": 50.0
+    }
+   },
+   {
+    "description": "Big low toms and long cymbals for orchestral percussion",
+    "name": "Cinematic Toms",
+    "params": {
+     "cymbal_decay": 3.5,
+     "drive": 0.0,
+     "kick_decay": 1.2,
+     "kick_punch": 0.4,
+     "kick_tune": 40.0,
+     "perc_level_db": 0.0,
+     "tom_tune": 0.7
+    }
+   },
+   {
+    "description": "",
+    "name": "Lo-Fi",
+    "params": {
+     "drive": 0.6,
+     "hat_decay": 0.8,
+     "hat_tune": 0.8,
+     "kick_decay": 0.5,
+     "kick_tune": 48.0,
+     "snare_tone": 0.4
+    }
+   }
+  ],
+  "sidechain": false,
+  "tags": [
+   "drums",
+   "percussion",
+   "808",
+   "909",
+   "beats"
+  ],
+  "vendor": "Sonara",
+  "version": 1
+ }
+]

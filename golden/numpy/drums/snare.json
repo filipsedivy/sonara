@@ -1,0 +1,8 @@
+{
+ "dtype": "f64le",
+ "name": "snare",
+ "seed": 3396190854,
+ "shape": [
+  2048
+ ]
+}

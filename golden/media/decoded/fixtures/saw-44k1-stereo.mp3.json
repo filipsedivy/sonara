@@ -1,0 +1,8 @@
+{
+ "dtype": "f64le",
+ "shape": [
+  44100,
+  2
+ ],
+ "source": "fixtures/saw-44k1-stereo.mp3"
+}

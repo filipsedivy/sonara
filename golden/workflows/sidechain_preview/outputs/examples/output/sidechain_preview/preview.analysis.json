@@ -1,0 +1,110 @@
+{
+ "analysis": {
+  "balance_db": 0.0,
+  "channels": 2,
+  "clip_events": 0,
+  "clipped_samples": 0,
+  "correlation": 1.0,
+  "crest_factor_db": 12.52810314654668,
+  "dc_offset": [
+   0.000228,
+   0.000228
+  ],
+  "duration_seconds": "<VOLATILE>",
+  "integrated_lufs": -15.381098675072968,
+  "kind": {
+   "estimated": [
+    "true_peak_dbtp",
+    "plr_db"
+   ],
+   "measured": [
+    "sample_peak_dbfs",
+    "rms_dbfs",
+    "integrated_lufs",
+    "momentary_max_lufs",
+    "short_term_max_lufs",
+    "loudness_range_lu",
+    "clipped_samples",
+    "correlation",
+    "octave_bands_db"
+   ]
+  },
+  "leading_silence_seconds": 0.0,
+  "loudness_range_lu": 0.8418887292839425,
+  "min_correlation_400ms": 0.9999999999999998,
+  "momentary_max_lufs": -13.571683225602316,
+  "nonfinite_samples": 0,
+  "octave_bands_db": {
+   "1000": -31.165975582624657,
+   "125": -8.400439548455891,
+   "16000": -34.32048666498405,
+   "2000": -44.0465628698764,
+   "250": -10.665902996025496,
+   "31.5": -27.302142523619352,
+   "4000": -45.00921627605628,
+   "500": -22.291881934477185,
+   "63": -1.1936111173845074,
+   "8000": -39.53661806471825
+  },
+  "over_full_scale_samples": 0,
+  "plr_db": 11.6503330664087,
+  "rms_dbfs": -16.258868755210948,
+  "sample_peak_dbfs": -3.7307656086642673,
+  "sample_rate": 48000,
+  "short_term_lufs": [
+   -14.9,
+   -14.94,
+   -15.63,
+   -15.56,
+   -15.77,
+   -15.6,
+   -15.55,
+   -15.3,
+   -15.23,
+   -15.55,
+   -15.89,
+   -15.73,
+   -15.4
+  ],
+  "short_term_max_lufs": -14.656604792472054,
+  "side_to_mid_db": -200.0,
+  "silence_regions": [],
+  "spectral_centroid_hz": 111.99326701775777,
+  "trailing_silence_seconds": 0.30000000000000004,
+  "true_peak_dbtp": -3.7307656086642673
+ },
+ "issues": [
+  {
+   "code": "LOW_END_HEAVY",
+   "message": "the 63 Hz octave dominates the spectrum",
+   "severity": "info"
+  }
+ ],
+ "latency_samples": 102,
+ "missing_media": [],
+ "path": "<ROOT>/work/examples/output/sidechain_preview/preview.wav",
+ "range_beats": [
+  0.0,
+  32.0
+ ],
+ "realtime_factor": "<VOLATILE>",
+ "render_seconds": "<VOLATILE>",
+ "sample_rate": 48000,
+ "seconds": 15.646,
+ "tail_seconds": 0.408,
+ "track_levels": {
+  "trk_000000000003": {
+   "integrated_lufs": -21.07,
+   "name": "Kick",
+   "peak_dbfs": -9.64,
+   "short_term_max_lufs": -20.69
+  },
+  "trk_000000000005": {
+   "integrated_lufs": -16.68,
+   "name": "Bass",
+   "peak_dbfs": -8.76,
+   "short_term_max_lufs": -15.66
+  }
+ },
+ "warnings": []
+}

@@ -1,0 +1,8 @@
+{
+ "dtype": "f64le",
+ "shape": [
+  401,
+  6
+ ],
+ "source": "inputs/caf-alac16-6ch.caf"
+}

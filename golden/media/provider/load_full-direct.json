@@ -1,0 +1,10 @@
+{
+ "dtype": "f64le",
+ "max_seconds": 30.0,
+ "present": true,
+ "sample_rate": 48000,
+ "shape": [
+  24000,
+  2
+ ]
+}

@@ -1,0 +1,254 @@
+{
+ "backend": "native/Null",
+ "graph_latency": 0,
+ "project": "transport/record-count-in/project.json",
+ "scenario": "record-count-in",
+ "settings": {
+  "backend": "native-null",
+  "buffer_frames": 256,
+  "input_channels": 2,
+  "input_device": null,
+  "live_lookahead_ms": 25.0,
+  "lookahead_ms": 80.0,
+  "midi_inputs": null,
+  "output_channels": 2,
+  "output_device": null,
+  "sample_rate": 48000
+ },
+ "steps": [
+  {
+   "args": {
+    "start": 3
+   },
+   "backend": [
+    [
+     "start",
+     {
+      "obtained": {
+       "buffer_frames": 256,
+       "input_channels": 2,
+       "input_device": null,
+       "output_channels": 2,
+       "output_device": null,
+       "ring_frames": 7680,
+       "sample_rate": 48000
+      },
+      "requested": {
+       "buffer_frames": 256,
+       "input_channels": 2,
+       "input_device": null,
+       "output_channels": 2,
+       "output_device": null,
+       "ring_frames": 7680,
+       "sample_rate": 48000
+      }
+     }
+    ],
+    [
+     "flush",
+     2
+    ],
+    [
+     "set_capture",
+     true
+    ]
+   ],
+   "call": "start_recording",
+   "result": {
+    "bar_beat": "<VOLATILE>",
+    "ok": true,
+    "position_beat": "<VOLATILE>",
+    "position_seconds": "<VOLATILE>",
+    "recording": true,
+    "tool": "start_recording",
+    "tracks": [
+     "trk_000000000002"
+    ]
+   },
+   "via": "tool",
+   "volatile": [
+    "bar_beat",
+    "position_beat",
+    "position_seconds"
+   ]
+  },
+  {
+   "backend": [
+    [
+     "write",
+     0,
+     0
+    ],
+    [
+     "set_playing",
+     true
+    ],
+    [
+     "write",
+     1,
+     169
+    ]
+   ],
+   "blocks": [
+    0,
+    170
+   ],
+   "until": "blocks",
+   "via": "render"
+  },
+  {
+   "args": [],
+   "backend": [],
+   "call": "status",
+   "result": {
+    "available": true,
+    "backend": "native/Null",
+    "bar_beat": "<VOLATILE>",
+    "buffer_frames": 256,
+    "callback_load": "<VOLATILE>",
+    "device_errors": 0,
+    "device_sample_rate": 48000,
+    "lookahead_ms": 80.0,
+    "loop": null,
+    "output_latency_estimate_ms": 16.0,
+    "position_beat": "<VOLATILE>",
+    "position_seconds": "<VOLATILE>",
+    "queued_ms": "<VOLATILE>",
+    "render_load": "<VOLATILE>",
+    "state": "recording",
+    "underruns": "<VOLATILE>"
+   },
+   "via": "service",
+   "volatile": [
+    "bar_beat",
+    "callback_load",
+    "position_beat",
+    "position_seconds",
+    "queued_ms",
+    "render_load",
+    "underruns"
+   ]
+  },
+  {
+   "args": {},
+   "backend": [
+    [
+     "flush",
+     3
+    ],
+    [
+     "set_playing",
+     false
+    ],
+    [
+     "set_capture",
+     false
+    ]
+   ],
+   "call": "stop_playback",
+   "result": {
+    "bar_beat": "<VOLATILE>",
+    "ok": true,
+    "position_beat": "<VOLATILE>",
+    "position_seconds": "<VOLATILE>",
+    "recording": {
+     "capture_overruns": 0,
+     "latency_compensation_frames": 1536,
+     "takes": [
+      {
+       "asset_id": "med_000000000016",
+       "clip_id": "clp_000000000017",
+       "seconds": "<VOLATILE>",
+       "track_id": "trk_000000000002"
+      }
+     ]
+    },
+    "stopped": true,
+    "tool": "stop_playback",
+    "was_playing": true
+   },
+   "via": "tool",
+   "volatile": [
+    "bar_beat",
+    "position_beat",
+    "position_seconds",
+    "seconds"
+   ]
+  },
+  {
+   "args": [],
+   "backend": [],
+   "call": "status",
+   "result": {
+    "available": true,
+    "backend": "native/Null",
+    "bar_beat": "<VOLATILE>",
+    "buffer_frames": 256,
+    "callback_load": "<VOLATILE>",
+    "device_errors": 0,
+    "device_sample_rate": 48000,
+    "lookahead_ms": 80.0,
+    "loop": null,
+    "output_latency_estimate_ms": 16.0,
+    "position_beat": "<VOLATILE>",
+    "position_seconds": "<VOLATILE>",
+    "queued_ms": "<VOLATILE>",
+    "render_load": "<VOLATILE>",
+    "state": "stopped",
+    "underruns": "<VOLATILE>"
+   },
+   "via": "service",
+   "volatile": [
+    "bar_beat",
+    "callback_load",
+    "position_beat",
+    "position_seconds",
+    "queued_ms",
+    "render_load",
+    "underruns"
+   ]
+  }
+ ],
+ "take": {
+  "asset": {
+   "channels": 1,
+   "extra": {},
+   "format": "WAV",
+   "frames": "<VOLATILE>",
+   "id": "med_000000000016",
+   "kind": "audio",
+   "location": "embedded",
+   "metadata": {},
+   "name": "Vocal take",
+   "original_path": null,
+   "path": "media/audio/med_000000000016-Vocal-take.wav",
+   "relative_hint": null,
+   "sample_rate": 48000,
+   "sha256": "<VOLATILE>",
+   "size_bytes": "<VOLATILE>",
+   "subtype": "PCM_24"
+  },
+  "clip": {
+   "asset_id": "med_000000000016",
+   "color": null,
+   "extra": {},
+   "fade_in": {
+    "curve": "linear",
+    "seconds": 0.0
+   },
+   "fade_out": {
+    "curve": "linear",
+    "seconds": 0.0
+   },
+   "gain_db": 0.0,
+   "id": "clp_000000000017",
+   "length": "<VOLATILE>",
+   "muted": false,
+   "name": "Vocal take",
+   "source_offset": 58880,
+   "start": 3.0
+  },
+  "prototype_defect": "D4",
+  "track_id": "trk_000000000002"
+ }
+}

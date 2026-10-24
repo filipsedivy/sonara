@@ -1,0 +1,25 @@
+[package]
+name = "sonara-testkit"
+description = "Golden-data loaders and comparisons for Sonara tests"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+flate2.workspace = true
+hound.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+# The array readers' tests write a small golden directory.
+tempfile.workspace = true
+
+[lints]
+workspace = true

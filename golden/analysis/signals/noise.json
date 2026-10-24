@@ -1,0 +1,91 @@
+{
+ "analysis": {
+  "balance_db": 0.06297720845031535,
+  "channels": 2,
+  "clip_events": 15,
+  "clipped_samples": 2108,
+  "correlation": 0.007704913729252458,
+  "crest_factor_db": 13.099990529706664,
+  "dc_offset": [
+   -0.003694,
+   -0.002053
+  ],
+  "duration_seconds": 0.5,
+  "integrated_lufs": 0.09661348202160847,
+  "kind": {
+   "estimated": [
+    "true_peak_dbtp",
+    "plr_db"
+   ],
+   "measured": [
+    "sample_peak_dbfs",
+    "rms_dbfs",
+    "integrated_lufs",
+    "momentary_max_lufs",
+    "short_term_max_lufs",
+    "loudness_range_lu",
+    "clipped_samples",
+    "correlation",
+    "octave_bands_db"
+   ]
+  },
+  "leading_silence_seconds": 0.0,
+  "loudness_range_lu": 0.0,
+  "min_correlation_400ms": 0.00856447279899502,
+  "momentary_max_lufs": 0.1028947767333045,
+  "nonfinite_samples": 0,
+  "octave_bands_db": {
+   "1000": -15.117990675083973,
+   "125": -24.395360398379445,
+   "16000": -3.3483700527684572,
+   "2000": -12.231651774043637,
+   "250": -22.573022938727195,
+   "31.5": -29.954037557136534,
+   "4000": -9.325400587847207,
+   "500": -18.13820189849666,
+   "63": -25.441490417032387,
+   "8000": -6.247942516722
+  },
+  "over_full_scale_samples": 2147,
+  "plr_db": 6.951325186095332,
+  "rms_dbfs": -6.052051861589724,
+  "sample_peak_dbfs": 7.047938668116941,
+  "sample_rate": 48000,
+  "short_term_lufs": [
+   0.09
+  ],
+  "short_term_max_lufs": 0.08873460753251827,
+  "side_to_mid_db": -0.06692359553587668,
+  "silence_regions": [],
+  "spectral_centroid_hz": 11982.995036153612,
+  "trailing_silence_seconds": 0.0,
+  "true_peak_dbtp": 7.047938668116941
+ },
+ "block": 65536,
+ "channels": 2,
+ "frames": 24000,
+ "issues": [
+  {
+   "code": "OVER_FULL_SCALE",
+   "message": "2147 samples exceed 0 dBFS (will clip in fixed-point exports)",
+   "severity": "error"
+  },
+  {
+   "code": "CLIPPING",
+   "message": "15 probable clipping events (2108 samples at full scale)",
+   "severity": "warning"
+  },
+  {
+   "code": "TRUE_PEAK",
+   "message": "true peak 7.05 dBTP is above -1 dBTP (risk of codec clipping)",
+   "severity": "warning"
+  },
+  {
+   "code": "VERY_LOUD",
+   "message": "integrated loudness 0.1 LUFS is very loud (heavily limited?)",
+   "severity": "warning"
+  }
+ ],
+ "sample_rate": 48000,
+ "source": "plugins/signals/noise.f64"
+}

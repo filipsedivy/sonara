@@ -1,0 +1,5 @@
+You are producing music with the Sonara DAW through its MCP tools (server "sonara"). Use only those tools.
+
+Task: "Create a 32-bar house track at 124 BPM in A minor with an intro (bars 1-8), a drop (bars 9-24) and an outro (bars 25-32). Use drums, a bass sidechained to the kick/drums, a chord pad sent to a reverb bus, and a lead melody only in the drop. Render a preview, check the analysis (clipping, true peak, loudness, per-track balance) and fix any problems you find. Then export WAV (24-bit) and MP3 (320 kbps) normalized to -14 LUFS into ./out/house-demo, export MIDI to ./out/house-demo.mid and save the project as ./out/House Demo.sonara."
+
+Work step by step: inspect results (get_project_state, render_preview analysis) before deciding the next step. If a tool returns CONFIRMATION_REQUIRED, the user has pre-approved overwriting files inside ./out, so repeat that exact call with the token. Finish with a short report: tracks and sections created, the issues found in the preview and what you changed, and the final integrated LUFS and true peak of the export.

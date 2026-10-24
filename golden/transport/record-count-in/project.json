@@ -1,0 +1,266 @@
+{
+ "format": "sonara.project",
+ "schema_version": 1,
+ "id": "prj_000000000001",
+ "name": "Transport Record",
+ "settings": {
+  "sample_rate": 48000,
+  "length_beats": null,
+  "record_subtype": "PCM_24"
+ },
+ "tempo_map": [
+  {
+   "beat": 0.0,
+   "bpm": 150.0,
+   "ramp": false
+  }
+ ],
+ "time_signatures": [
+  {
+   "bar": 0,
+   "numerator": 3,
+   "denominator": 4
+  }
+ ],
+ "tracks": [
+  {
+   "id": "trk_000000000002",
+   "name": "Vocal",
+   "kind": "audio",
+   "color": null,
+   "output_id": "master",
+   "parent_id": null,
+   "mixer": {
+    "volume_db": 0.0,
+    "pan": 0.0,
+    "mute": false,
+    "solo": false,
+    "solo_safe": false
+   },
+   "input": {
+    "channels": [
+     0
+    ],
+    "armed": true,
+    "monitor": "auto"
+   },
+   "instrument": null,
+   "inserts": [],
+   "sends": [],
+   "automation": [],
+   "clips": []
+  },
+  {
+   "id": "trk_000000000004",
+   "name": "Keys",
+   "kind": "instrument",
+   "color": null,
+   "output_id": "master",
+   "parent_id": null,
+   "mixer": {
+    "volume_db": 0.0,
+    "pan": 0.0,
+    "mute": false,
+    "solo": false,
+    "solo_safe": false
+   },
+   "input": {
+    "channels": [
+     0
+    ],
+    "armed": false,
+    "monitor": "auto"
+   },
+   "instrument": {
+    "id": "dev_000000000005",
+    "plugin_id": "sonara.synth.poly",
+    "name": "Sonara Poly Synth",
+    "enabled": true,
+    "params": {
+     "voice_mode": "poly",
+     "polyphony": 16,
+     "glide": 0.0,
+     "osc1_wave": "triangle",
+     "osc1_level": 0.8,
+     "osc1_octave": 0,
+     "osc1_detune": 0.0,
+     "osc2_wave": "sine",
+     "osc2_level": 0.5,
+     "osc2_octave": 1,
+     "osc2_semitone": 0,
+     "osc2_detune": 0.0,
+     "pulse_width": 0.5,
+     "noise_level": 0.0,
+     "unison": 1,
+     "unison_detune": 15.0,
+     "unison_spread": 0.7,
+     "filter_type": "lowpass",
+     "filter_cutoff": 2600.0,
+     "filter_resonance": 0.15,
+     "filter_env_amount": 1.5,
+     "filter_keytrack": 0.5,
+     "filter_attack": 0.005,
+     "filter_decay": 0.6,
+     "filter_sustain": 0.3,
+     "filter_release": 0.3,
+     "amp_attack": 0.002,
+     "amp_decay": 1.4,
+     "amp_sustain": 0.25,
+     "amp_release": 0.4,
+     "lfo_rate": 5.0,
+     "lfo_pitch_cents": 0.0,
+     "lfo_cutoff_oct": 0.0,
+     "velocity_sensitivity": 0.7,
+     "velocity_to_filter": 0.8,
+     "bend_range": 2,
+     "gain_db": -8.0
+    },
+    "sidechain_id": null,
+    "preset": "Electric Keys",
+    "state": {}
+   },
+   "inserts": [],
+   "sends": [],
+   "automation": [],
+   "clips": [
+    {
+     "type": "midi",
+     "id": "clp_000000000015",
+     "name": "MIDI",
+     "start": 0.0,
+     "length": 9.0,
+     "content_offset": 0.0,
+     "loop_length": null,
+     "muted": false,
+     "color": null,
+     "notes": [
+      {
+       "id": "n_000000000006",
+       "pitch": 55,
+       "start": 0.0,
+       "length": 2.5,
+       "velocity": 85,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000007",
+       "pitch": 59,
+       "start": 0.0,
+       "length": 2.5,
+       "velocity": 85,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000008",
+       "pitch": 62,
+       "start": 0.0,
+       "length": 2.5,
+       "velocity": 85,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000009",
+       "pitch": 55,
+       "start": 3.0,
+       "length": 2.5,
+       "velocity": 85,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000010",
+       "pitch": 59,
+       "start": 3.0,
+       "length": 2.5,
+       "velocity": 85,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000011",
+       "pitch": 62,
+       "start": 3.0,
+       "length": 2.5,
+       "velocity": 85,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000012",
+       "pitch": 55,
+       "start": 6.0,
+       "length": 2.5,
+       "velocity": 85,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000013",
+       "pitch": 59,
+       "start": 6.0,
+       "length": 2.5,
+       "velocity": 85,
+       "channel": 0
+      },
+      {
+       "id": "n_000000000014",
+       "pitch": 62,
+       "start": 6.0,
+       "length": 2.5,
+       "velocity": 85,
+       "channel": 0
+      }
+     ],
+     "controls": []
+    }
+   ]
+  }
+ ],
+ "master": {
+  "id": "master",
+  "name": "Master",
+  "kind": "master",
+  "color": null,
+  "output_id": null,
+  "parent_id": null,
+  "mixer": {
+   "volume_db": 0.0,
+   "pan": 0.0,
+   "mute": false,
+   "solo": false,
+   "solo_safe": false
+  },
+  "input": {
+   "channels": [
+    0
+   ],
+   "armed": false,
+   "monitor": "auto"
+  },
+  "instrument": null,
+  "inserts": [],
+  "sends": [],
+  "automation": [],
+  "clips": []
+ },
+ "assets": [],
+ "markers": [],
+ "sections": [],
+ "transport": {
+  "loop_enabled": false,
+  "loop_start": 0.0,
+  "loop_end": 16.0,
+  "punch_enabled": false,
+  "punch_in": 0.0,
+  "punch_out": 16.0,
+  "metronome": false,
+  "count_in_bars": 1
+ },
+ "metadata": {
+  "title": "Transport Record",
+  "artist": "",
+  "album": "",
+  "genre": "",
+  "composer": "",
+  "comment": "",
+  "created": "2026-01-01T12:00:00Z",
+  "modified": ""
+ },
+ "editor": {}
+}

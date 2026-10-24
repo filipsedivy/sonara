@@ -1,0 +1,9 @@
+{
+ "dtype": "f32le",
+ "sample_rate": 44100,
+ "shape": [
+  165074,
+  1
+ ],
+ "signal": "noise"
+}

@@ -1,0 +1,31 @@
+{
+ "config": "default",
+ "params": {
+  "feedback": 0.35,
+  "highcut_hz": 7000.0,
+  "lowcut_hz": 120.0,
+  "mix": 0.25,
+  "note": "1/8D",
+  "ping_pong": false,
+  "sync": true,
+  "time_ms": 375.0
+ },
+ "plugin": "sonara.delay",
+ "renders": {
+  "impulse": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 2.8425593999520347
+  },
+  "noise": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 2.8425593999520347
+  },
+  "sine-1k": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 2.8425593999520347
+  }
+ }
+}

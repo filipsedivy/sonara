@@ -1,0 +1,8 @@
+{
+ "dtype": "f64le",
+ "shape": [
+  66150,
+  1
+ ],
+ "source": "fixtures/tone-44k1-mono-16bit.wav"
+}

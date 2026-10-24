@@ -1,0 +1,42 @@
+{
+ "cases": [
+  "ar_smooth/fast",
+  "ar_smooth/slow",
+  "svf/lowpass-q0.5",
+  "svf/lowpass-q0.707",
+  "svf/lowpass-q4.0",
+  "svf/lowpass-q20.0",
+  "svf/highpass-q0.5",
+  "svf/highpass-q0.707",
+  "svf/highpass-q4.0",
+  "svf/highpass-q20.0",
+  "svf/bandpass-q0.5",
+  "svf/bandpass-q0.707",
+  "svf/bandpass-q4.0",
+  "svf/bandpass-q20.0",
+  "svf/notch-q0.5",
+  "svf/notch-q0.707",
+  "svf/notch-q4.0",
+  "svf/notch-q20.0",
+  "svf/peak-q0.5",
+  "svf/peak-q0.707",
+  "svf/peak-q4.0",
+  "svf/peak-q20.0",
+  "svf/allpass-q0.5",
+  "svf/allpass-q0.707",
+  "svf/allpass-q4.0",
+  "svf/allpass-q20.0",
+  "gate_hold/hold-0",
+  "gate_hold/hold-64",
+  "gate_hold/hold-600",
+  "osc_bank/pw-0.5",
+  "osc_bank/pw-0.2"
+ ],
+ "chunks": [
+  512,
+  333,
+  1,
+  1200
+ ],
+ "sample_rate": 48000
+}

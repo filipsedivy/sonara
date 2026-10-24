@@ -1,0 +1,8 @@
+{
+ "dtype": "f64le",
+ "name": "bongo_low",
+ "seed": 3068811546,
+ "shape": [
+  2048
+ ]
+}

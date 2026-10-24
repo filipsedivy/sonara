@@ -1,0 +1,8 @@
+{
+ "dtype": "f64le",
+ "shape": [
+  9000,
+  2
+ ],
+ "source": "inputs/caf-alac24-long.caf"
+}

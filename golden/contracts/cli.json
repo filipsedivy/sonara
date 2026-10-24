@@ -1,0 +1,513 @@
+{
+ "arguments": [
+  {
+   "action": "_VersionAction",
+   "choices": null,
+   "default": "==SUPPRESS==",
+   "dest": "version",
+   "help": "show program's version number and exit",
+   "nargs": "0",
+   "options": [
+    "--version"
+   ],
+   "required": false
+  },
+  {
+   "action": "_StoreAction",
+   "choices": null,
+   "default": "WARNING",
+   "dest": "log_level",
+   "help": null,
+   "nargs": null,
+   "options": [
+    "--log-level"
+   ],
+   "required": false
+  }
+ ],
+ "commands": {
+  "analyze": {
+   "arguments": [
+    {
+     "action": "_StoreAction",
+     "choices": null,
+     "default": null,
+     "dest": "file",
+     "help": null,
+     "nargs": null,
+     "options": [],
+     "required": true
+    },
+    {
+     "action": "_StoreTrueAction",
+     "choices": null,
+     "default": false,
+     "dest": "series",
+     "help": null,
+     "nargs": "0",
+     "options": [
+      "--series"
+     ],
+     "required": false
+    }
+   ],
+   "commands": {},
+   "description": null,
+   "prog": "sonara analyze"
+  },
+  "batch": {
+   "arguments": [
+    {
+     "action": "_StoreAction",
+     "choices": null,
+     "default": null,
+     "dest": "file",
+     "help": null,
+     "nargs": null,
+     "options": [],
+     "required": true
+    },
+    {
+     "action": "_StoreTrueAction",
+     "choices": null,
+     "default": false,
+     "dest": "keep_going",
+     "help": null,
+     "nargs": "0",
+     "options": [
+      "--keep-going"
+     ],
+     "required": false
+    },
+    {
+     "action": "_StoreAction",
+     "choices": null,
+     "default": null,
+     "dest": "results",
+     "help": "write every step's full result envelope to this JSON file",
+     "nargs": null,
+     "options": [
+      "--results"
+     ],
+     "required": false
+    },
+    {
+     "action": "_StoreAction",
+     "choices": [
+      "auto",
+      "always",
+      "never"
+     ],
+     "default": "auto",
+     "dest": "connect",
+     "help": null,
+     "nargs": null,
+     "options": [
+      "--connect"
+     ],
+     "required": false
+    },
+    {
+     "action": "_StoreAction",
+     "choices": [
+      "auto",
+      "native",
+      "null"
+     ],
+     "default": "null",
+     "dest": "audio",
+     "help": null,
+     "nargs": null,
+     "options": [
+      "--audio"
+     ],
+     "required": false
+    },
+    {
+     "action": "_AppendAction",
+     "choices": null,
+     "default": [],
+     "dest": "allow",
+     "help": null,
+     "nargs": null,
+     "options": [
+      "--allow"
+     ],
+     "required": false
+    }
+   ],
+   "commands": {},
+   "description": null,
+   "prog": "sonara batch"
+  },
+  "devices": {
+   "arguments": [],
+   "commands": {},
+   "description": null,
+   "prog": "sonara devices"
+  },
+  "gui": {
+   "arguments": [
+    {
+     "action": "_StoreAction",
+     "choices": null,
+     "default": null,
+     "dest": "project",
+     "help": null,
+     "nargs": "?",
+     "options": [],
+     "required": false
+    }
+   ],
+   "commands": {},
+   "description": null,
+   "prog": "sonara gui"
+  },
+  "info": {
+   "arguments": [
+    {
+     "action": "_StoreAction",
+     "choices": null,
+     "default": null,
+     "dest": "file",
+     "help": null,
+     "nargs": null,
+     "options": [],
+     "required": true
+    }
+   ],
+   "commands": {},
+   "description": null,
+   "prog": "sonara info"
+  },
+  "mcp": {
+   "arguments": [
+    {
+     "action": "_StoreAction",
+     "choices": null,
+     "default": null,
+     "dest": "rest",
+     "help": null,
+     "nargs": "...",
+     "options": [],
+     "required": false
+    }
+   ],
+   "commands": {},
+   "description": null,
+   "prog": "sonara mcp"
+  },
+  "render": {
+   "arguments": [
+    {
+     "action": "_StoreAction",
+     "choices": null,
+     "default": null,
+     "dest": "project",
+     "help": null,
+     "nargs": null,
+     "options": [],
+     "required": true
+    },
+    {
+     "action": "_StoreAction",
+     "choices": null,
+     "default": null,
+     "dest": "output",
+     "help": null,
+     "nargs": null,
+     "options": [
+      "-o",
+      "--output"
+     ],
+     "required": true
+    },
+    {
+     "action": "_AppendAction",
+     "choices": [
+      "wav",
+      "bwf",
+      "aiff",
+      "flac",
+      "mp3",
+      "ogg",
+      "opus"
+     ],
+     "default": null,
+     "dest": "format",
+     "help": null,
+     "nargs": null,
+     "options": [
+      "-f",
+      "--format"
+     ],
+     "required": false
+    },
+    {
+     "action": "_StoreAction",
+     "choices": [
+      16,
+      24,
+      32
+     ],
+     "default": 24,
+     "dest": "bit_depth",
+     "help": null,
+     "nargs": null,
+     "options": [
+      "--bit-depth"
+     ],
+     "required": false
+    },
+    {
+     "action": "_StoreAction",
+     "choices": [
+      "none",
+      "peak",
+      "true_peak",
+      "loudness"
+     ],
+     "default": "none",
+     "dest": "normalize",
+     "help": null,
+     "nargs": null,
+     "options": [
+      "--normalize"
+     ],
+     "required": false
+    },
+    {
+     "action": "_StoreAction",
+     "choices": null,
+     "default": -14.0,
+     "dest": "target",
+     "help": null,
+     "nargs": null,
+     "options": [
+      "--target"
+     ],
+     "required": false
+    },
+    {
+     "action": "_StoreTrueAction",
+     "choices": null,
+     "default": false,
+     "dest": "overwrite",
+     "help": null,
+     "nargs": "0",
+     "options": [
+      "--overwrite"
+     ],
+     "required": false
+    }
+   ],
+   "commands": {},
+   "description": null,
+   "prog": "sonara render"
+  },
+  "serve": {
+   "arguments": [
+    {
+     "action": "_StoreAction",
+     "choices": null,
+     "default": null,
+     "dest": "project",
+     "help": null,
+     "nargs": null,
+     "options": [
+      "--project"
+     ],
+     "required": false
+    },
+    {
+     "action": "_StoreAction",
+     "choices": [
+      "auto",
+      "native",
+      "null"
+     ],
+     "default": null,
+     "dest": "audio",
+     "help": null,
+     "nargs": null,
+     "options": [
+      "--audio"
+     ],
+     "required": false
+    },
+    {
+     "action": "_AppendAction",
+     "choices": null,
+     "default": [],
+     "dest": "allow",
+     "help": null,
+     "nargs": null,
+     "options": [
+      "--allow"
+     ],
+     "required": false
+    }
+   ],
+   "commands": {},
+   "description": null,
+   "prog": "sonara serve"
+  },
+  "tool": {
+   "arguments": [
+    {
+     "action": "_StoreAction",
+     "choices": null,
+     "default": null,
+     "dest": "name",
+     "help": null,
+     "nargs": null,
+     "options": [],
+     "required": true
+    },
+    {
+     "action": "_StoreAction",
+     "choices": null,
+     "default": null,
+     "dest": "json",
+     "help": "JSON object with arguments",
+     "nargs": "?",
+     "options": [],
+     "required": false
+    },
+    {
+     "action": "_AppendAction",
+     "choices": null,
+     "default": [],
+     "dest": "arg",
+     "help": "key=value (JSON values allowed)",
+     "nargs": null,
+     "options": [
+      "-a",
+      "--arg"
+     ],
+     "required": false
+    },
+    {
+     "action": "_StoreAction",
+     "choices": null,
+     "default": null,
+     "dest": "project",
+     "help": "open this project first (in-process mode)",
+     "nargs": null,
+     "options": [
+      "--project"
+     ],
+     "required": false
+    },
+    {
+     "action": "_StoreTrueAction",
+     "choices": null,
+     "default": false,
+     "dest": "save",
+     "help": "save the project afterwards",
+     "nargs": "0",
+     "options": [
+      "--save"
+     ],
+     "required": false
+    },
+    {
+     "action": "_StoreAction",
+     "choices": [
+      "auto",
+      "always",
+      "never"
+     ],
+     "default": "auto",
+     "dest": "connect",
+     "help": null,
+     "nargs": null,
+     "options": [
+      "--connect"
+     ],
+     "required": false
+    },
+    {
+     "action": "_StoreAction",
+     "choices": [
+      "auto",
+      "native",
+      "null"
+     ],
+     "default": "null",
+     "dest": "audio",
+     "help": null,
+     "nargs": null,
+     "options": [
+      "--audio"
+     ],
+     "required": false
+    },
+    {
+     "action": "_AppendAction",
+     "choices": null,
+     "default": [],
+     "dest": "allow",
+     "help": null,
+     "nargs": null,
+     "options": [
+      "--allow"
+     ],
+     "required": false
+    }
+   ],
+   "commands": {},
+   "description": null,
+   "prog": "sonara tool"
+  },
+  "tools": {
+   "arguments": [
+    {
+     "action": "_StoreAction",
+     "choices": null,
+     "default": null,
+     "dest": "name",
+     "help": null,
+     "nargs": "?",
+     "options": [],
+     "required": false
+    }
+   ],
+   "commands": {},
+   "description": null,
+   "prog": "sonara tools"
+  },
+  "verify": {
+   "arguments": [
+    {
+     "action": "_StoreAction",
+     "choices": null,
+     "default": null,
+     "dest": "project",
+     "help": null,
+     "nargs": null,
+     "options": [],
+     "required": true
+    },
+    {
+     "action": "_StoreTrueAction",
+     "choices": null,
+     "default": false,
+     "dest": "quick",
+     "help": "skip hash verification",
+     "nargs": "0",
+     "options": [
+      "--quick"
+     ],
+     "required": false
+    }
+   ],
+   "commands": {},
+   "description": null,
+   "prog": "sonara verify"
+  }
+ },
+ "commands_required": true,
+ "description": "Sonara digital audio workstation",
+ "prog": "sonara"
+}

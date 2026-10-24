@@ -1,0 +1,4372 @@
+{
+ "capabilities": {
+  "tools": {
+   "listChanged": false
+  }
+ },
+ "protocol_version": "2025-06-18",
+ "server_info": {
+  "name": "sonara",
+  "title": "Sonara DAW",
+  "version": "0.1.0"
+ },
+ "tools": [
+  {
+   "annotations": {
+    "destructiveHint": true,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Create project"
+   },
+   "description": "Create a new project (replacing the open one) with tempo, time signature, sample rate and an optional template ('electronic', 'band', 'orchestral'). Discarding unsaved changes requires confirmation. Returns the project state summary.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "bpm": {
+      "default": 120.0,
+      "description": "Initial tempo",
+      "maximum": 999,
+      "minimum": 10,
+      "title": "Bpm",
+      "type": "number"
+     },
+     "confirmation_token": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Token from a previous CONFIRMATION_REQUIRED response, after the user agreed",
+      "title": "Confirmation Token"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "length": {
+      "anyOf": [
+       {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "Beats (number), '4 bars' / '4b', or seconds like '30s'"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Optional song length (sets the project end)",
+      "title": "Length"
+     },
+     "name": {
+      "default": "Untitled",
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "path": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Save immediately to this .sonara path",
+      "title": "Path"
+     },
+     "sample_rate": {
+      "default": 48000,
+      "enum": [
+       44100,
+       48000,
+       88200,
+       96000
+      ],
+      "title": "Sample Rate",
+      "type": "integer"
+     },
+     "template": {
+      "default": "empty",
+      "description": "Starting point; 'empty' has no tracks",
+      "enum": [
+       "empty",
+       "electronic",
+       "band",
+       "orchestral"
+      ],
+      "title": "Template",
+      "type": "string"
+     },
+     "time_signature": {
+      "default": "4/4",
+      "pattern": "^\\d{1,2}/(1|2|4|8|16|32)$",
+      "title": "Time Signature",
+      "type": "string"
+     }
+    },
+    "type": "object"
+   },
+   "name": "create_project",
+   "title": "Create project"
+  },
+  {
+   "annotations": {
+    "destructiveHint": true,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Open project"
+   },
+   "description": "Open a .sonara project (bundle directory or archive). Reports recovered saves, missing media and available autosaves.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "confirmation_token": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Token from a previous CONFIRMATION_REQUIRED response, after the user agreed",
+      "title": "Confirmation Token"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "path": {
+      "description": "Path to a .sonara bundle directory or archive",
+      "title": "Path",
+      "type": "string"
+     },
+     "recover_autosave": {
+      "default": false,
+      "description": "Restore unsaved changes from the autosave if present",
+      "title": "Recover Autosave",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "type": "object"
+   },
+   "name": "open_project",
+   "title": "Open project"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Save project"
+   },
+   "description": "Save the project in place, to a new path (Save As), or as a copy. Overwriting a different existing file or directory requires confirmation.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "as_copy": {
+      "default": false,
+      "description": "Save a copy without switching the open project to it",
+      "title": "As Copy",
+      "type": "boolean"
+     },
+     "confirmation_token": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Token from a previous CONFIRMATION_REQUIRED response, after the user agreed",
+      "title": "Confirmation Token"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "packaged": {
+      "default": false,
+      "description": "Write a single-file ZIP archive instead of a bundle directory",
+      "title": "Packaged",
+      "type": "boolean"
+     },
+     "path": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Target path (Save As); omit to save in place",
+      "title": "Path"
+     }
+    },
+    "type": "object"
+   },
+   "name": "save_project",
+   "title": "Save project"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": true,
+    "title": "Get project state"
+   },
+   "description": "The actual project: tempo, meter, sections, tracks (mixer, instrument, effects, sends, clips), master and media. Positions are given as beats, seconds and bar:beat.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "detail": {
+      "default": "summary",
+      "description": "'full' adds devices, parameters and automation",
+      "enum": [
+       "summary",
+       "full"
+      ],
+      "title": "Detail",
+      "type": "string"
+     },
+     "include_notes": {
+      "default": false,
+      "description": "Include every MIDI note (can be large)",
+      "title": "Include Notes",
+      "type": "boolean"
+     },
+     "track_ids": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Limit the report to these tracks",
+      "title": "Track Ids"
+     }
+    },
+    "type": "object"
+   },
+   "name": "get_project_state",
+   "title": "Get project state"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": true,
+    "title": "List tracks"
+   },
+   "description": "Tracks in display order with kind, mixer state, instrument and clip counts.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {},
+    "type": "object"
+   },
+   "name": "list_tracks",
+   "title": "List tracks"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Set tempo"
+   },
+   "description": "Set the song tempo, or add a tempo change (optionally a ramp) at a position.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "at": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "default": 0.0,
+      "description": "Where the tempo starts (0 = song tempo)",
+      "title": "At"
+     },
+     "bpm": {
+      "maximum": 999,
+      "minimum": 10,
+      "title": "Bpm",
+      "type": "number"
+     },
+     "clear_changes": {
+      "default": false,
+      "description": "Replace all tempo changes with one constant tempo",
+      "title": "Clear Changes",
+      "type": "boolean"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "ramp": {
+      "default": false,
+      "description": "Glide linearly from this point to the next tempo point",
+      "title": "Ramp",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "bpm"
+    ],
+    "type": "object"
+   },
+   "name": "set_tempo",
+   "title": "Set tempo"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Set time signature"
+   },
+   "description": "Set the time signature from a 1-based bar onward.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "bar": {
+      "default": 1,
+      "description": "1-based bar where the signature starts",
+      "minimum": 1,
+      "title": "Bar",
+      "type": "integer"
+     },
+     "denominator": {
+      "enum": [
+       1,
+       2,
+       4,
+       8,
+       16,
+       32
+      ],
+      "title": "Denominator",
+      "type": "integer"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "numerator": {
+      "maximum": 64,
+      "minimum": 1,
+      "title": "Numerator",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "numerator",
+     "denominator"
+    ],
+    "type": "object"
+   },
+   "name": "set_time_signature",
+   "title": "Set time signature"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Set project length"
+   },
+   "description": "Set the song length (render/export end). null = end of the last clip.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "length": {
+      "anyOf": [
+       {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "Beats (number), '4 bars' / '4b', or seconds like '30s'"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "Song length; null = end of the last clip",
+      "title": "Length"
+     }
+    },
+    "required": [
+     "length"
+    ],
+    "type": "object"
+   },
+   "name": "set_project_length",
+   "title": "Set project length"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Add arrangement section"
+   },
+   "description": "Add a named song section (intro, verse, drop...) spanning a range.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "color": {
+      "anyOf": [
+       {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Color"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "length": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "description": "Beats (number), '4 bars' / '4b', or seconds like '30s'",
+      "title": "Length"
+     },
+     "name": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "start": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'",
+      "title": "Start"
+     }
+    },
+    "required": [
+     "name",
+     "start",
+     "length"
+    ],
+    "type": "object"
+   },
+   "name": "add_section",
+   "title": "Add arrangement section"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Add marker"
+   },
+   "description": "Add a named timeline marker.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "at": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'",
+      "title": "At"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "name": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "at"
+    ],
+    "type": "object"
+   },
+   "name": "add_marker",
+   "title": "Add marker"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Set project metadata"
+   },
+   "description": "Title, artist, album, genre, composer, comment (written into exports).",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "album": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Album"
+     },
+     "artist": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Artist"
+     },
+     "comment": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Comment"
+     },
+     "composer": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Composer"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "genre": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Genre"
+     },
+     "title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Title"
+     }
+    },
+    "type": "object"
+   },
+   "name": "set_metadata",
+   "title": "Set project metadata"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Set loop region"
+   },
+   "description": "Enable/disable and position the transport loop region.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "enabled": {
+      "default": true,
+      "title": "Enabled",
+      "type": "boolean"
+     },
+     "end": {
+      "anyOf": [
+       {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "End"
+     },
+     "start": {
+      "anyOf": [
+       {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Start"
+     }
+    },
+    "type": "object"
+   },
+   "name": "set_loop",
+   "title": "Set loop region"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Create track"
+   },
+   "description": "Create an audio, instrument, bus or folder track. Instrument tracks take an instrument plugin_id and preset (see list_plugins); default instrument is the Poly Synth.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "color": {
+      "anyOf": [
+       {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Color"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "index": {
+      "anyOf": [
+       {
+        "minimum": 0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Position in the track list (default: end)",
+      "title": "Index"
+     },
+     "instrument": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Instrument plugin_id (instrument tracks), e.g. 'sonara.synth.poly'",
+      "title": "Instrument"
+     },
+     "kind": {
+      "default": "instrument",
+      "enum": [
+       "audio",
+       "instrument",
+       "bus",
+       "folder"
+      ],
+      "title": "Kind",
+      "type": "string"
+     },
+     "name": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "output": {
+      "default": "master",
+      "description": "Output: 'master' or a bus track_id",
+      "title": "Output",
+      "type": "string"
+     },
+     "parent_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Folder track to place the track in",
+      "title": "Parent Id"
+     },
+     "preset": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Instrument preset name, e.g. 'Analog Bass'",
+      "title": "Preset"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "type": "object"
+   },
+   "name": "create_track",
+   "title": "Create track"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Rename track"
+   },
+   "description": "Rename a track (its ID stays the same).",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "name": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "track_id": {
+      "title": "Track Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "track_id",
+     "name"
+    ],
+    "type": "object"
+   },
+   "name": "rename_track",
+   "title": "Rename track"
+  },
+  {
+   "annotations": {
+    "destructiveHint": true,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Delete track"
+   },
+   "description": "Delete a track. References are repaired (outputs to a deleted bus go to the master, sends are removed). Tracks with clips or devices require confirmation. Undoable.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "confirmation_token": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Token from a previous CONFIRMATION_REQUIRED response, after the user agreed",
+      "title": "Confirmation Token"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "track_id": {
+      "title": "Track Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "track_id"
+    ],
+    "type": "object"
+   },
+   "name": "delete_track",
+   "title": "Delete track"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Set track volume"
+   },
+   "description": "Set a track's (or the master's) fader level in dB.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "track_id": {
+      "description": "Track ID or 'master'",
+      "title": "Track Id",
+      "type": "string"
+     },
+     "volume_db": {
+      "description": "Fader level in dB (0 = unity)",
+      "maximum": 12,
+      "minimum": -144,
+      "title": "Volume Db",
+      "type": "number"
+     }
+    },
+    "required": [
+     "track_id",
+     "volume_db"
+    ],
+    "type": "object"
+   },
+   "name": "set_track_volume",
+   "title": "Set track volume"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Set track pan"
+   },
+   "description": "Set a track's stereo pan/balance (-1 left .. +1 right).",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "pan": {
+      "description": "-1 = hard left, 0 = centre, +1 = hard right",
+      "maximum": 1,
+      "minimum": -1,
+      "title": "Pan",
+      "type": "number"
+     },
+     "track_id": {
+      "title": "Track Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "track_id",
+     "pan"
+    ],
+    "type": "object"
+   },
+   "name": "set_track_pan",
+   "title": "Set track pan"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Set mute/solo/arm/color"
+   },
+   "description": "Mute, solo, solo-safe, record-arm or color a track.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "armed": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Arm for recording",
+      "title": "Armed"
+     },
+     "color": {
+      "anyOf": [
+       {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Color"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "mute": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Mute"
+     },
+     "solo": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Solo"
+     },
+     "solo_safe": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Solo Safe"
+     },
+     "track_id": {
+      "title": "Track Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "track_id"
+    ],
+    "type": "object"
+   },
+   "name": "set_track_state",
+   "title": "Set mute/solo/arm/color"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Set instrument"
+   },
+   "description": "Replace an instrument track's instrument (plugin_id, preset, parameters).",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "params": {
+      "additionalProperties": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "integer"
+        },
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "string"
+        }
+       ]
+      },
+      "title": "Params",
+      "type": "object"
+     },
+     "plugin_id": {
+      "description": "Instrument plugin_id",
+      "title": "Plugin Id",
+      "type": "string"
+     },
+     "preset": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Preset"
+     },
+     "track_id": {
+      "title": "Track Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "track_id",
+     "plugin_id"
+    ],
+    "type": "object"
+   },
+   "name": "set_instrument",
+   "title": "Set instrument"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Configure routing"
+   },
+   "description": "Change a track's output (master or a bus), add/update/remove aux sends, and set a device's sidechain source. Feedback loops are rejected (ROUTING_CYCLE).",
+   "inputSchema": {
+    "$defs": {
+     "SendSpec": {
+      "additionalProperties": false,
+      "properties": {
+       "level_db": {
+        "default": 0.0,
+        "maximum": 12,
+        "minimum": -144,
+        "title": "Level Db",
+        "type": "number"
+       },
+       "pre_fader": {
+        "default": false,
+        "title": "Pre Fader",
+        "type": "boolean"
+       },
+       "target": {
+        "description": "Bus track_id",
+        "title": "Target",
+        "type": "string"
+       }
+      },
+      "required": [
+       "target"
+      ],
+      "title": "SendSpec",
+      "type": "object"
+     }
+    },
+    "additionalProperties": false,
+    "properties": {
+     "add_sends": {
+      "items": {
+       "$ref": "#/$defs/SendSpec"
+      },
+      "title": "Add Sends",
+      "type": "array"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "output": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "New output: 'master' or a bus track_id",
+      "title": "Output"
+     },
+     "remove_sends": {
+      "description": "send IDs to remove",
+      "items": {
+       "type": "string"
+      },
+      "title": "Remove Sends",
+      "type": "array"
+     },
+     "sidechain_device_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Device on this track whose sidechain to set",
+      "title": "Sidechain Device Id"
+     },
+     "sidechain_source": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Track ID feeding the sidechain ('' clears it)",
+      "title": "Sidechain Source"
+     },
+     "track_id": {
+      "title": "Track Id",
+      "type": "string"
+     },
+     "update_sends": {
+      "additionalProperties": {
+       "type": "number"
+      },
+      "description": "send_id -> new level in dB",
+      "title": "Update Sends",
+      "type": "object"
+     }
+    },
+    "required": [
+     "track_id"
+    ],
+    "type": "object"
+   },
+   "name": "configure_routing",
+   "title": "Configure routing"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Create MIDI clip"
+   },
+   "description": "Create a MIDI clip on an instrument track, optionally with notes (note starts are beats relative to the clip start).",
+   "inputSchema": {
+    "$defs": {
+     "NoteInput": {
+      "additionalProperties": false,
+      "properties": {
+       "channel": {
+        "default": 0,
+        "maximum": 15,
+        "minimum": 0,
+        "title": "Channel",
+        "type": "integer"
+       },
+       "length": {
+        "description": "Duration in beats",
+        "exclusiveMinimum": 0,
+        "maximum": 4096,
+        "title": "Length",
+        "type": "number"
+       },
+       "pitch": {
+        "anyOf": [
+         {
+          "type": "integer"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "MIDI number 0-127 or a name like 'C4' (C4 = 60), 'F#3', 'Bb2'",
+        "title": "Pitch"
+       },
+       "start": {
+        "description": "Beats from the clip start",
+        "minimum": 0,
+        "title": "Start",
+        "type": "number"
+       },
+       "velocity": {
+        "default": 100,
+        "maximum": 127,
+        "minimum": 1,
+        "title": "Velocity",
+        "type": "integer"
+       }
+      },
+      "required": [
+       "pitch",
+       "start",
+       "length"
+      ],
+      "title": "NoteInput",
+      "type": "object"
+     }
+    },
+    "additionalProperties": false,
+    "properties": {
+     "color": {
+      "anyOf": [
+       {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Color"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "length": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "description": "Beats (number), '4 bars' / '4b', or seconds like '30s'",
+      "title": "Length"
+     },
+     "loop_length": {
+      "anyOf": [
+       {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "Beats (number), '4 bars' / '4b', or seconds like '30s'"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Repeat the first N beats of content across the clip",
+      "title": "Loop Length"
+     },
+     "name": {
+      "default": "MIDI",
+      "maxLength": 120,
+      "title": "Name",
+      "type": "string"
+     },
+     "notes": {
+      "items": {
+       "$ref": "#/$defs/NoteInput"
+      },
+      "maxItems": 20000,
+      "title": "Notes",
+      "type": "array"
+     },
+     "start": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'",
+      "title": "Start"
+     },
+     "track_id": {
+      "title": "Track Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "track_id",
+     "start",
+     "length"
+    ],
+    "type": "object"
+   },
+   "name": "create_midi_clip",
+   "title": "Create MIDI clip"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Add MIDI notes"
+   },
+   "description": "Add notes to a MIDI clip. Returns the new note IDs (use them with edit_midi_notes).",
+   "inputSchema": {
+    "$defs": {
+     "NoteInput": {
+      "additionalProperties": false,
+      "properties": {
+       "channel": {
+        "default": 0,
+        "maximum": 15,
+        "minimum": 0,
+        "title": "Channel",
+        "type": "integer"
+       },
+       "length": {
+        "description": "Duration in beats",
+        "exclusiveMinimum": 0,
+        "maximum": 4096,
+        "title": "Length",
+        "type": "number"
+       },
+       "pitch": {
+        "anyOf": [
+         {
+          "type": "integer"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "MIDI number 0-127 or a name like 'C4' (C4 = 60), 'F#3', 'Bb2'",
+        "title": "Pitch"
+       },
+       "start": {
+        "description": "Beats from the clip start",
+        "minimum": 0,
+        "title": "Start",
+        "type": "number"
+       },
+       "velocity": {
+        "default": 100,
+        "maximum": 127,
+        "minimum": 1,
+        "title": "Velocity",
+        "type": "integer"
+       }
+      },
+      "required": [
+       "pitch",
+       "start",
+       "length"
+      ],
+      "title": "NoteInput",
+      "type": "object"
+     }
+    },
+    "additionalProperties": false,
+    "properties": {
+     "clip_id": {
+      "title": "Clip Id",
+      "type": "string"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "notes": {
+      "items": {
+       "$ref": "#/$defs/NoteInput"
+      },
+      "maxItems": 20000,
+      "minItems": 1,
+      "title": "Notes",
+      "type": "array"
+     }
+    },
+    "required": [
+     "clip_id",
+     "notes"
+    ],
+    "type": "object"
+   },
+   "name": "add_midi_notes",
+   "title": "Add MIDI notes"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Edit MIDI notes"
+   },
+   "description": "Edit, delete, transpose, quantize, humanize or rescale notes in a MIDI clip, or replace them all. All changes are applied as one undoable step.",
+   "inputSchema": {
+    "$defs": {
+     "HumanizeSpec": {
+      "additionalProperties": false,
+      "properties": {
+       "seed": {
+        "default": 0,
+        "title": "Seed",
+        "type": "integer"
+       },
+       "timing": {
+        "default": 0.01,
+        "description": "Timing deviation (std. dev., beats)",
+        "maximum": 0.25,
+        "minimum": 0,
+        "title": "Timing",
+        "type": "number"
+       },
+       "velocity": {
+        "default": 8,
+        "maximum": 64,
+        "minimum": 0,
+        "title": "Velocity",
+        "type": "integer"
+       }
+      },
+      "title": "HumanizeSpec",
+      "type": "object"
+     },
+     "NoteEditInput": {
+      "additionalProperties": false,
+      "properties": {
+       "length": {
+        "anyOf": [
+         {
+          "exclusiveMinimum": 0,
+          "type": "number"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Length"
+       },
+       "note_id": {
+        "title": "Note Id",
+        "type": "string"
+       },
+       "pitch": {
+        "anyOf": [
+         {
+          "type": "integer"
+         },
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Pitch"
+       },
+       "start": {
+        "anyOf": [
+         {
+          "minimum": 0,
+          "type": "number"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Start"
+       },
+       "velocity": {
+        "anyOf": [
+         {
+          "maximum": 127,
+          "minimum": 1,
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Velocity"
+       }
+      },
+      "required": [
+       "note_id"
+      ],
+      "title": "NoteEditInput",
+      "type": "object"
+     },
+     "NoteInput": {
+      "additionalProperties": false,
+      "properties": {
+       "channel": {
+        "default": 0,
+        "maximum": 15,
+        "minimum": 0,
+        "title": "Channel",
+        "type": "integer"
+       },
+       "length": {
+        "description": "Duration in beats",
+        "exclusiveMinimum": 0,
+        "maximum": 4096,
+        "title": "Length",
+        "type": "number"
+       },
+       "pitch": {
+        "anyOf": [
+         {
+          "type": "integer"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "MIDI number 0-127 or a name like 'C4' (C4 = 60), 'F#3', 'Bb2'",
+        "title": "Pitch"
+       },
+       "start": {
+        "description": "Beats from the clip start",
+        "minimum": 0,
+        "title": "Start",
+        "type": "number"
+       },
+       "velocity": {
+        "default": 100,
+        "maximum": 127,
+        "minimum": 1,
+        "title": "Velocity",
+        "type": "integer"
+       }
+      },
+      "required": [
+       "pitch",
+       "start",
+       "length"
+      ],
+      "title": "NoteInput",
+      "type": "object"
+     },
+     "QuantizeSpec": {
+      "additionalProperties": false,
+      "properties": {
+       "ends": {
+        "default": false,
+        "title": "Ends",
+        "type": "boolean"
+       },
+       "grid": {
+        "description": "Grid in beats (0.25 = sixteenths)",
+        "exclusiveMinimum": 0,
+        "title": "Grid",
+        "type": "number"
+       },
+       "strength": {
+        "default": 1.0,
+        "maximum": 1,
+        "minimum": 0,
+        "title": "Strength",
+        "type": "number"
+       },
+       "swing": {
+        "default": 0.0,
+        "maximum": 1,
+        "minimum": 0,
+        "title": "Swing",
+        "type": "number"
+       }
+      },
+      "required": [
+       "grid"
+      ],
+      "title": "QuantizeSpec",
+      "type": "object"
+     }
+    },
+    "additionalProperties": false,
+    "properties": {
+     "clip_id": {
+      "title": "Clip Id",
+      "type": "string"
+     },
+     "delete_note_ids": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Delete Note Ids",
+      "type": "array"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "edits": {
+      "items": {
+       "$ref": "#/$defs/NoteEditInput"
+      },
+      "maxItems": 20000,
+      "title": "Edits",
+      "type": "array"
+     },
+     "humanize": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/HumanizeSpec"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "note_ids": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Restrict transpose/quantize/humanize/velocity to these notes",
+      "title": "Note Ids"
+     },
+     "quantize": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/QuantizeSpec"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "replace_all": {
+      "anyOf": [
+       {
+        "items": {
+         "$ref": "#/$defs/NoteInput"
+        },
+        "maxItems": 20000,
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Replace the clip's notes entirely",
+      "title": "Replace All"
+     },
+     "transpose": {
+      "anyOf": [
+       {
+        "maximum": 48,
+        "minimum": -48,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Semitones applied to the selected notes",
+      "title": "Transpose"
+     },
+     "velocity_scale": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0,
+        "maximum": 4,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Velocity Scale"
+     }
+    },
+    "required": [
+     "clip_id"
+    ],
+    "type": "object"
+   },
+   "name": "edit_midi_notes",
+   "title": "Edit MIDI notes"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Generate MIDI"
+   },
+   "description": "Generate musical material into a new (or existing) MIDI clip: voice-led chords, arpeggios, basslines, drum grooves (GM map) or a melody, from a key and a progression of Roman numerals or chord symbols. Deterministic for a given seed. The notes are ordinary, editable MIDI.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "bars": {
+      "default": 4,
+      "description": "Drums: number of bars",
+      "maximum": 512,
+      "minimum": 1,
+      "title": "Bars",
+      "type": "integer"
+     },
+     "beats_per_chord": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "items": {
+         "type": "number"
+        },
+        "type": "array"
+       }
+      ],
+      "default": 4.0,
+      "description": "Chord duration(s) in beats",
+      "title": "Beats Per Chord"
+     },
+     "clip_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Append into this existing clip instead of creating one",
+      "title": "Clip Id"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "fill": {
+      "default": true,
+      "description": "Drums: fill in the last half bar",
+      "title": "Fill",
+      "type": "boolean"
+     },
+     "humanize": {
+      "default": true,
+      "description": "Small, reproducible timing/velocity deviations",
+      "title": "Humanize",
+      "type": "boolean"
+     },
+     "key": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Key like 'A minor', 'F# major', 'D dorian' (Roman numerals need it)",
+      "title": "Key"
+     },
+     "kind": {
+      "enum": [
+       "chords",
+       "arpeggio",
+       "bass",
+       "drums",
+       "melody"
+      ],
+      "title": "Kind",
+      "type": "string"
+     },
+     "length": {
+      "anyOf": [
+       {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "Beats (number), '4 bars' / '4b', or seconds like '30s'"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Clip length; default = the progression length (or bars*4)",
+      "title": "Length"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Name"
+     },
+     "octave": {
+      "default": 4,
+      "description": "Register: chord/arp centre octave (C4 = 60) or bass octave",
+      "maximum": 8,
+      "minimum": 0,
+      "title": "Octave",
+      "type": "integer"
+     },
+     "progression": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Roman numerals ('i','VI','III','VII', 'V7') or chord symbols ('Am','F','C','G7')",
+      "title": "Progression"
+     },
+     "rate": {
+      "default": 0.5,
+      "description": "Arpeggio/bass/melody note rate in beats",
+      "exclusiveMinimum": 0,
+      "maximum": 8,
+      "title": "Rate",
+      "type": "number"
+     },
+     "seed": {
+      "default": 0,
+      "description": "Random seed; same inputs + seed = same notes",
+      "title": "Seed",
+      "type": "integer"
+     },
+     "start": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "default": 0.0,
+      "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'",
+      "title": "Start"
+     },
+     "style": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "chords: sustain|stabs|offbeat|pulse8|half; arpeggio: up|down|updown|downup|random|pinky; bass: root|pulse|octaves|offbeat|fifths|walking|syncopated; drums: four_on_the_floor|house|techno|breakbeat|hiphop|trap|rock|halftime|dnb|ride_jazz|cinematic",
+      "title": "Style"
+     },
+     "swing": {
+      "default": 0.0,
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Swing",
+      "type": "number"
+     },
+     "track_id": {
+      "description": "Instrument track receiving a new clip",
+      "title": "Track Id",
+      "type": "string"
+     },
+     "variation": {
+      "default": 0.2,
+      "description": "Drums: ghost notes and kick variation",
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Variation",
+      "type": "number"
+     },
+     "velocity": {
+      "default": 95,
+      "maximum": 127,
+      "minimum": 1,
+      "title": "Velocity",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "track_id",
+     "kind"
+    ],
+    "type": "object"
+   },
+   "name": "generate_midi",
+   "title": "Generate MIDI"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Import audio"
+   },
+   "description": "Import an audio file (WAV, AIFF, FLAC, MP3, Ogg Vorbis/Opus; more with FFmpeg) onto a new or existing audio track. The original is preserved; 'copy' embeds it in the project.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "mode": {
+      "default": "copy",
+      "description": "copy into the project (safe) or link in place",
+      "enum": [
+       "copy",
+       "link"
+      ],
+      "title": "Mode",
+      "type": "string"
+     },
+     "path": {
+      "title": "Path",
+      "type": "string"
+     },
+     "start": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "default": 0.0,
+      "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'",
+      "title": "Start"
+     },
+     "track_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Existing audio track; omit to create a new track",
+      "title": "Track Id"
+     },
+     "track_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Track Name"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "type": "object"
+   },
+   "name": "import_audio",
+   "title": "Import audio"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Import MIDI file"
+   },
+   "description": "Import a Standard MIDI File: each MIDI track/channel becomes an instrument track (channel 10 uses the drum kit). Optionally adopts the file's tempo map.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "apply_tempo": {
+      "default": true,
+      "description": "Use the file's tempo map and time signatures",
+      "title": "Apply Tempo",
+      "type": "boolean"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "path": {
+      "title": "Path",
+      "type": "string"
+     },
+     "start": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "default": 0.0,
+      "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'",
+      "title": "Start"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "type": "object"
+   },
+   "name": "import_midi",
+   "title": "Import MIDI file"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Move clip"
+   },
+   "description": "Move a clip in time and/or to another compatible track.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "clip_id": {
+      "title": "Clip Id",
+      "type": "string"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "start": {
+      "anyOf": [
+       {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Start"
+     },
+     "track_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Move to another compatible track",
+      "title": "Track Id"
+     }
+    },
+    "required": [
+     "clip_id"
+    ],
+    "type": "object"
+   },
+   "name": "move_clip",
+   "title": "Move clip"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Edit clip"
+   },
+   "description": "Rename, mute, set gain and fades (audio), trim edges (non-destructive) or set a loop length (MIDI).",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "clip_id": {
+      "title": "Clip Id",
+      "type": "string"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "fade_curve": {
+      "anyOf": [
+       {
+        "enum": [
+         "linear",
+         "equal_power",
+         "exponential",
+         "s_curve"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Fade Curve"
+     },
+     "fade_in_seconds": {
+      "anyOf": [
+       {
+        "minimum": 0,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Fade In Seconds"
+     },
+     "fade_out_seconds": {
+      "anyOf": [
+       {
+        "minimum": 0,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Fade Out Seconds"
+     },
+     "gain_db": {
+      "anyOf": [
+       {
+        "maximum": 24,
+        "minimum": -96,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Audio clips only",
+      "title": "Gain Db"
+     },
+     "loop_length": {
+      "anyOf": [
+       {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "Beats (number), '4 bars' / '4b', or seconds like '30s'"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "MIDI clips: repeat the first N beats",
+      "title": "Loop Length"
+     },
+     "muted": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Muted"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Name"
+     },
+     "trim_end": {
+      "anyOf": [
+       {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "New clip end",
+      "title": "Trim End"
+     },
+     "trim_start": {
+      "anyOf": [
+       {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "New clip start (content stays in place)",
+      "title": "Trim Start"
+     }
+    },
+    "required": [
+     "clip_id"
+    ],
+    "type": "object"
+   },
+   "name": "edit_clip",
+   "title": "Edit clip"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Split clip"
+   },
+   "description": "Split a clip at a position into two clips.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "at": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'",
+      "title": "At"
+     },
+     "clip_id": {
+      "title": "Clip Id",
+      "type": "string"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "clip_id",
+     "at"
+    ],
+    "type": "object"
+   },
+   "name": "split_clip",
+   "title": "Split clip"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Duplicate clip"
+   },
+   "description": "Duplicate a clip one or more times, back to back (e.g. repeat a 4-bar loop).",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "clip_id": {
+      "title": "Clip Id",
+      "type": "string"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "start": {
+      "anyOf": [
+       {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Start of the first copy (default: right after the clip)",
+      "title": "Start"
+     },
+     "times": {
+      "default": 1,
+      "description": "Number of copies placed back to back",
+      "maximum": 256,
+      "minimum": 1,
+      "title": "Times",
+      "type": "integer"
+     },
+     "track_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Track Id"
+     }
+    },
+    "required": [
+     "clip_id"
+    ],
+    "type": "object"
+   },
+   "name": "duplicate_clip",
+   "title": "Duplicate clip"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Delete clips"
+   },
+   "description": "Delete clips (undoable; media stays in the project).",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "clip_ids": {
+      "items": {
+       "type": "string"
+      },
+      "minItems": 1,
+      "title": "Clip Ids",
+      "type": "array"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "clip_ids"
+    ],
+    "type": "object"
+   },
+   "name": "delete_clips",
+   "title": "Delete clips"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": true,
+    "title": "List instruments and effects"
+   },
+   "description": "Available instruments and effects with presets; pass plugin_id for the full parameter schema (ranges, units, defaults).",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "kind": {
+      "anyOf": [
+       {
+        "enum": [
+         "effect",
+         "instrument"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Kind"
+     },
+     "plugin_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Return full parameter schema for one plugin",
+      "title": "Plugin Id"
+     }
+    },
+    "type": "object"
+   },
+   "name": "list_plugins",
+   "title": "List instruments and effects"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Add effect"
+   },
+   "description": "Insert an effect on a track, bus or the master, optionally from a preset and with a sidechain source (e.g. a compressor on the bass keyed by the kick track).",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "index": {
+      "anyOf": [
+       {
+        "minimum": 0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Insert position (default: end of chain)",
+      "title": "Index"
+     },
+     "params": {
+      "additionalProperties": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "integer"
+        },
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "string"
+        }
+       ]
+      },
+      "title": "Params",
+      "type": "object"
+     },
+     "plugin_id": {
+      "description": "Effect plugin_id, e.g. 'sonara.dynamics.compressor'",
+      "title": "Plugin Id",
+      "type": "string"
+     },
+     "preset": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Preset"
+     },
+     "sidechain_source": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Track ID keying the sidechain (compressor/gate)",
+      "title": "Sidechain Source"
+     },
+     "track_id": {
+      "description": "Track, bus or 'master'",
+      "title": "Track Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "track_id",
+     "plugin_id"
+    ],
+    "type": "object"
+   },
+   "name": "add_effect",
+   "title": "Add effect"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Set effect parameters"
+   },
+   "description": "Set one or more parameters of an effect or instrument, load a preset, or bypass it. Values are validated against the plugin's parameter schema.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "device_id": {
+      "description": "Effect or instrument device ID",
+      "title": "Device Id",
+      "type": "string"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "enabled": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "false = bypass",
+      "title": "Enabled"
+     },
+     "param": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Parameter ID (use with value)",
+      "title": "Param"
+     },
+     "params": {
+      "additionalProperties": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "integer"
+        },
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "string"
+        }
+       ]
+      },
+      "description": "Several parameters at once",
+      "title": "Params",
+      "type": "object"
+     },
+     "preset": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Load a preset first",
+      "title": "Preset"
+     },
+     "value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "integer"
+       },
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Value"
+     }
+    },
+    "required": [
+     "device_id"
+    ],
+    "type": "object"
+   },
+   "name": "set_effect_parameter",
+   "title": "Set effect parameters"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Remove effect"
+   },
+   "description": "Remove an effect from its chain (undoable).",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "device_id": {
+      "title": "Device Id",
+      "type": "string"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "device_id"
+    ],
+    "type": "object"
+   },
+   "name": "remove_effect",
+   "title": "Remove effect"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Load impulse response"
+   },
+   "description": "Load an impulse-response audio file into a Convolution Reverb device.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "device_id": {
+      "title": "Device Id",
+      "type": "string"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "path": {
+      "title": "Path",
+      "type": "string"
+     }
+    },
+    "required": [
+     "device_id",
+     "path"
+    ],
+    "type": "object"
+   },
+   "name": "load_impulse_response",
+   "title": "Load impulse response"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Create automation"
+   },
+   "description": "Write automation for volume, pan, a send level or any automatable device parameter. Points are (position, value, curve); values use the parameter's units.",
+   "inputSchema": {
+    "$defs": {
+     "AutomationPointInput": {
+      "additionalProperties": false,
+      "properties": {
+       "at": {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "Position (same forms as other positions)",
+        "title": "At"
+       },
+       "curve": {
+        "default": "linear",
+        "description": "Shape of the segment after this point",
+        "enum": [
+         "linear",
+         "hold",
+         "smooth"
+        ],
+        "title": "Curve",
+        "type": "string"
+       },
+       "value": {
+        "description": "Value in the parameter's units (dB, Hz, 0..1, ...)",
+        "title": "Value",
+        "type": "number"
+       }
+      },
+      "required": [
+       "at",
+       "value"
+      ],
+      "title": "AutomationPointInput",
+      "type": "object"
+     }
+    },
+    "additionalProperties": false,
+    "properties": {
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "points": {
+      "items": {
+       "$ref": "#/$defs/AutomationPointInput"
+      },
+      "maxItems": 10000,
+      "minItems": 1,
+      "title": "Points",
+      "type": "array"
+     },
+     "replace_range": {
+      "default": false,
+      "description": "Only replace existing points between the first and last new point",
+      "title": "Replace Range",
+      "type": "boolean"
+     },
+     "target": {
+      "description": "'volume', 'pan', 'send:<send_id>' or '<device_id>:<param>' (e.g. 'dev_x:cutoff_hz')",
+      "title": "Target",
+      "type": "string"
+     },
+     "track_id": {
+      "title": "Track Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "track_id",
+     "target",
+     "points"
+    ],
+    "type": "object"
+   },
+   "name": "create_automation",
+   "title": "Create automation"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": true,
+    "title": "Render preview"
+   },
+   "description": "Render the project (or a range / one track) offline to a WAV file and analyze it: loudness (LUFS), true peak, clipping, stereo correlation, spectral balance and detected issues. Use this to judge the actual sound before revising.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "end": {
+      "anyOf": [
+       {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Default: project end",
+      "title": "End"
+     },
+     "path": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "WAV output path (default: project cache/previews)",
+      "title": "Path"
+     },
+     "per_track_levels": {
+      "default": false,
+      "description": "Also measure each track's loudness in isolation",
+      "title": "Per Track Levels",
+      "type": "boolean"
+     },
+     "preroll_seconds": {
+      "default": 0.0,
+      "description": "Warm up reverbs/delays before 'start'",
+      "maximum": 30,
+      "minimum": 0,
+      "title": "Preroll Seconds",
+      "type": "number"
+     },
+     "start": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "default": 0.0,
+      "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'",
+      "title": "Start"
+     },
+     "tail": {
+      "anyOf": [
+       {
+        "enum": [
+         "auto",
+         "none"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "number"
+       }
+      ],
+      "default": "auto",
+      "description": "Effect tail after the end: auto, none or seconds",
+      "title": "Tail"
+     },
+     "timeout_seconds": {
+      "default": 300.0,
+      "exclusiveMinimum": 0,
+      "maximum": 3600,
+      "title": "Timeout Seconds",
+      "type": "number"
+     },
+     "track_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Render one track/bus alone (through its output path)",
+      "title": "Track Id"
+     },
+     "wait": {
+      "default": true,
+      "description": "Wait for completion (up to timeout) and return the analysis",
+      "title": "Wait",
+      "type": "boolean"
+     }
+    },
+    "type": "object"
+   },
+   "name": "render_preview",
+   "title": "Render preview"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": true,
+    "title": "Play through audio device"
+   },
+   "description": "Start real-time playback on the audio output device from a position (optionally a looped range). Fails with ENGINE_UNAVAILABLE when no audio device/engine is available.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "end": {
+      "anyOf": [
+       {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Stop (or loop back) here",
+      "title": "End"
+     },
+     "loop": {
+      "default": false,
+      "title": "Loop",
+      "type": "boolean"
+     },
+     "start": {
+      "anyOf": [
+       {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Start position (default: current playhead)",
+      "title": "Start"
+     }
+    },
+    "type": "object"
+   },
+   "name": "play_preview",
+   "title": "Play through audio device"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Start recording"
+   },
+   "description": "Record armed tracks (audio from the input device, MIDI from open MIDI inputs) from a position until stop_playback, which returns the takes. Requires the audio engine.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "start": {
+      "anyOf": [
+       {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Where recording starts (default: current position)",
+      "title": "Start"
+     },
+     "track_ids": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Tracks to record (default: all armed tracks)",
+      "title": "Track Ids"
+     }
+    },
+    "type": "object"
+   },
+   "name": "start_recording",
+   "title": "Start recording"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": true,
+    "title": "List MIDI devices"
+   },
+   "description": "Available MIDI input/output ports and the live-input status (open ports, target tracks: armed instrument tracks plus the GUI-focused one).",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {},
+    "type": "object"
+   },
+   "name": "list_midi_devices",
+   "title": "List MIDI devices"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Set MIDI input"
+   },
+   "description": "Open or close MIDI inputs for live playing and recording into armed instrument tracks.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "enabled": {
+      "default": true,
+      "description": "Open (true) or close (false) MIDI inputs",
+      "title": "Enabled",
+      "type": "boolean"
+     },
+     "ports": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Input port names; null = all available",
+      "title": "Ports"
+     }
+    },
+    "type": "object"
+   },
+   "name": "set_midi_input",
+   "title": "Set MIDI input"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": true,
+    "title": "Stop playback"
+   },
+   "description": "Stop real-time playback (or recording).",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {},
+    "type": "object"
+   },
+   "name": "stop_playback",
+   "title": "Stop playback"
+  },
+  {
+   "annotations": {
+    "destructiveHint": true,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Export audio"
+   },
+   "description": "Render and export the mix (or a range / one track) to one or more formats at once: WAV/BWF/AIFF/FLAC (16/24/32-bit, float), MP3, Ogg Vorbis, Opus. Supports dither, resampling, peak or loudness normalization (never exceeding the true-peak ceiling) and metadata. Overwriting existing files requires overwrite=true and confirmation.",
+   "inputSchema": {
+    "$defs": {
+     "FormatSpec": {
+      "additionalProperties": false,
+      "properties": {
+       "bit_depth": {
+        "default": 24,
+        "description": "PCM bit depth (ignored for lossy formats)",
+        "enum": [
+         16,
+         24,
+         32
+        ],
+        "title": "Bit Depth",
+        "type": "integer"
+       },
+       "bitrate_kbps": {
+        "anyOf": [
+         {
+          "maximum": 512,
+          "minimum": 8,
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "description": "Lossy target bitrate (MP3 default 320 CBR)",
+        "title": "Bitrate Kbps"
+       },
+       "channels": {
+        "default": 2,
+        "enum": [
+         1,
+         2
+        ],
+        "title": "Channels",
+        "type": "integer"
+       },
+       "dither": {
+        "default": "tpdf",
+        "enum": [
+         "tpdf",
+         "none"
+        ],
+        "title": "Dither",
+        "type": "string"
+       },
+       "floating_point": {
+        "default": false,
+        "description": "32-bit float (WAV/AIFF/CAF/W64/RF64)",
+        "title": "Floating Point",
+        "type": "boolean"
+       },
+       "format": {
+        "default": "wav",
+        "enum": [
+         "wav",
+         "bwf",
+         "rf64",
+         "w64",
+         "aiff",
+         "caf",
+         "flac",
+         "mp3",
+         "ogg",
+         "opus"
+        ],
+        "title": "Format",
+        "type": "string"
+       },
+       "path": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "description": "Explicit file path; default derives from the main path/extension",
+        "title": "Path"
+       },
+       "sample_rate": {
+        "anyOf": [
+         {
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "description": "Resample on export (default: project rate)",
+        "title": "Sample Rate"
+       },
+       "variable_bitrate": {
+        "default": false,
+        "title": "Variable Bitrate",
+        "type": "boolean"
+       }
+      },
+      "title": "FormatSpec",
+      "type": "object"
+     }
+    },
+    "additionalProperties": false,
+    "properties": {
+     "confirmation_token": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Token from a previous CONFIRMATION_REQUIRED response, after the user agreed",
+      "title": "Confirmation Token"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "end": {
+      "anyOf": [
+       {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Default: project end",
+      "title": "End"
+     },
+     "formats": {
+      "items": {
+       "$ref": "#/$defs/FormatSpec"
+      },
+      "maxItems": 8,
+      "minItems": 1,
+      "title": "Formats",
+      "type": "array"
+     },
+     "metadata": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "title": "Metadata",
+      "type": "object"
+     },
+     "normalize": {
+      "default": "none",
+      "enum": [
+       "none",
+       "peak",
+       "true_peak",
+       "loudness"
+      ],
+      "title": "Normalize",
+      "type": "string"
+     },
+     "overwrite": {
+      "default": false,
+      "title": "Overwrite",
+      "type": "boolean"
+     },
+     "path": {
+      "description": "Output file path (the extension may be replaced per format)",
+      "title": "Path",
+      "type": "string"
+     },
+     "preroll_seconds": {
+      "default": 0.0,
+      "description": "Warm up reverbs/delays before 'start'",
+      "maximum": 30,
+      "minimum": 0,
+      "title": "Preroll Seconds",
+      "type": "number"
+     },
+     "start": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "default": 0.0,
+      "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'",
+      "title": "Start"
+     },
+     "tail": {
+      "anyOf": [
+       {
+        "enum": [
+         "auto",
+         "none"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "number"
+       }
+      ],
+      "default": "auto",
+      "description": "Effect tail after the end: auto, none or seconds",
+      "title": "Tail"
+     },
+     "target_db": {
+      "default": -14.0,
+      "description": "Peak dBFS / dBTP or integrated LUFS target",
+      "maximum": 0,
+      "minimum": -60,
+      "title": "Target Db",
+      "type": "number"
+     },
+     "timeout_seconds": {
+      "default": 600.0,
+      "exclusiveMinimum": 0,
+      "maximum": 7200,
+      "title": "Timeout Seconds",
+      "type": "number"
+     },
+     "track_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Render one track/bus alone (through its output path)",
+      "title": "Track Id"
+     },
+     "true_peak_ceiling_db": {
+      "default": -1.0,
+      "maximum": 0,
+      "minimum": -20,
+      "title": "True Peak Ceiling Db",
+      "type": "number"
+     },
+     "wait": {
+      "default": true,
+      "title": "Wait",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "type": "object"
+   },
+   "name": "export_audio",
+   "title": "Export audio"
+  },
+  {
+   "annotations": {
+    "destructiveHint": true,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Export stems"
+   },
+   "description": "Export each track/bus as its own file (isolated through its output path; master processing optional).",
+   "inputSchema": {
+    "$defs": {
+     "FormatSpec": {
+      "additionalProperties": false,
+      "properties": {
+       "bit_depth": {
+        "default": 24,
+        "description": "PCM bit depth (ignored for lossy formats)",
+        "enum": [
+         16,
+         24,
+         32
+        ],
+        "title": "Bit Depth",
+        "type": "integer"
+       },
+       "bitrate_kbps": {
+        "anyOf": [
+         {
+          "maximum": 512,
+          "minimum": 8,
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "description": "Lossy target bitrate (MP3 default 320 CBR)",
+        "title": "Bitrate Kbps"
+       },
+       "channels": {
+        "default": 2,
+        "enum": [
+         1,
+         2
+        ],
+        "title": "Channels",
+        "type": "integer"
+       },
+       "dither": {
+        "default": "tpdf",
+        "enum": [
+         "tpdf",
+         "none"
+        ],
+        "title": "Dither",
+        "type": "string"
+       },
+       "floating_point": {
+        "default": false,
+        "description": "32-bit float (WAV/AIFF/CAF/W64/RF64)",
+        "title": "Floating Point",
+        "type": "boolean"
+       },
+       "format": {
+        "default": "wav",
+        "enum": [
+         "wav",
+         "bwf",
+         "rf64",
+         "w64",
+         "aiff",
+         "caf",
+         "flac",
+         "mp3",
+         "ogg",
+         "opus"
+        ],
+        "title": "Format",
+        "type": "string"
+       },
+       "path": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "description": "Explicit file path; default derives from the main path/extension",
+        "title": "Path"
+       },
+       "sample_rate": {
+        "anyOf": [
+         {
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "description": "Resample on export (default: project rate)",
+        "title": "Sample Rate"
+       },
+       "variable_bitrate": {
+        "default": false,
+        "title": "Variable Bitrate",
+        "type": "boolean"
+       }
+      },
+      "title": "FormatSpec",
+      "type": "object"
+     }
+    },
+    "additionalProperties": false,
+    "properties": {
+     "confirmation_token": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Token from a previous CONFIRMATION_REQUIRED response, after the user agreed",
+      "title": "Confirmation Token"
+     },
+     "directory": {
+      "title": "Directory",
+      "type": "string"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "end": {
+      "anyOf": [
+       {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Default: project end",
+      "title": "End"
+     },
+     "format": {
+      "$ref": "#/$defs/FormatSpec"
+     },
+     "overwrite": {
+      "default": false,
+      "title": "Overwrite",
+      "type": "boolean"
+     },
+     "preroll_seconds": {
+      "default": 0.0,
+      "description": "Warm up reverbs/delays before 'start'",
+      "maximum": 30,
+      "minimum": 0,
+      "title": "Preroll Seconds",
+      "type": "number"
+     },
+     "start": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "default": 0.0,
+      "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'",
+      "title": "Start"
+     },
+     "tail": {
+      "anyOf": [
+       {
+        "enum": [
+         "auto",
+         "none"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "number"
+       }
+      ],
+      "default": "auto",
+      "description": "Effect tail after the end: auto, none or seconds",
+      "title": "Tail"
+     },
+     "through_master": {
+      "default": false,
+      "description": "Include master processing in each stem",
+      "title": "Through Master",
+      "type": "boolean"
+     },
+     "timeout_seconds": {
+      "default": 1200.0,
+      "exclusiveMinimum": 0,
+      "maximum": 7200,
+      "title": "Timeout Seconds",
+      "type": "number"
+     },
+     "track_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Render one track/bus alone (through its output path)",
+      "title": "Track Id"
+     },
+     "track_ids": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Default: all audio, instrument and bus tracks",
+      "title": "Track Ids"
+     },
+     "wait": {
+      "default": true,
+      "title": "Wait",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "directory"
+    ],
+    "type": "object"
+   },
+   "name": "export_stems",
+   "title": "Export stems"
+  },
+  {
+   "annotations": {
+    "destructiveHint": true,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Export MIDI file"
+   },
+   "description": "Export instrument tracks as a Standard MIDI File (Type 1, 960 PPQ) with tempo map, time signatures and markers.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "confirmation_token": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Token from a previous CONFIRMATION_REQUIRED response, after the user agreed",
+      "title": "Confirmation Token"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "overwrite": {
+      "default": false,
+      "title": "Overwrite",
+      "type": "boolean"
+     },
+     "path": {
+      "title": "Path",
+      "type": "string"
+     },
+     "track_ids": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Track Ids"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "type": "object"
+   },
+   "name": "export_midi",
+   "title": "Export MIDI file"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": true,
+    "title": "Analyze audio"
+   },
+   "description": "Measure an audio file, a project media asset, or a fresh render of the project: LUFS (integrated/short-term/momentary), LRA, sample and true peak, RMS, crest factor, clipping, silence, stereo correlation/width, octave-band balance, plus issues found.",
+   "inputSchema": {
+    "$defs": {
+     "RenderRange": {
+      "additionalProperties": false,
+      "properties": {
+       "end": {
+        "anyOf": [
+         {
+          "anyOf": [
+           {
+            "type": "number"
+           },
+           {
+            "type": "string"
+           }
+          ],
+          "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "description": "Default: project end",
+        "title": "End"
+       },
+       "preroll_seconds": {
+        "default": 0.0,
+        "description": "Warm up reverbs/delays before 'start'",
+        "maximum": 30,
+        "minimum": 0,
+        "title": "Preroll Seconds",
+        "type": "number"
+       },
+       "start": {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "default": 0.0,
+        "description": "Beats (number, 0 = song start), 'bar:beat[:tick]' (1-based) or seconds like '12.5s'",
+        "title": "Start"
+       },
+       "tail": {
+        "anyOf": [
+         {
+          "enum": [
+           "auto",
+           "none"
+          ],
+          "type": "string"
+         },
+         {
+          "type": "number"
+         }
+        ],
+        "default": "auto",
+        "description": "Effect tail after the end: auto, none or seconds",
+        "title": "Tail"
+       },
+       "track_id": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "description": "Render one track/bus alone (through its output path)",
+        "title": "Track Id"
+       }
+      },
+      "title": "RenderRange",
+      "type": "object"
+     }
+    },
+    "additionalProperties": false,
+    "properties": {
+     "asset_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Project media asset to analyze",
+      "title": "Asset Id"
+     },
+     "path": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Audio file to analyze",
+      "title": "Path"
+     },
+     "per_track_levels": {
+      "default": false,
+      "title": "Per Track Levels",
+      "type": "boolean"
+     },
+     "render": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/RenderRange"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Render this part of the project and analyze it"
+     }
+    },
+    "type": "object"
+   },
+   "name": "analyze_audio",
+   "title": "Analyze audio"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": true,
+    "title": "Get audio analysis"
+   },
+   "description": "Return the analysis of a finished render_preview/export operation, or of a preview file rendered earlier.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "include_series": {
+      "default": false,
+      "description": "Include the short-term loudness series (1 value/s)",
+      "title": "Include Series",
+      "type": "boolean"
+     },
+     "operation_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Render/export operation whose analysis to return",
+      "title": "Operation Id"
+     },
+     "path": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "A preview WAV rendered earlier (reads its .analysis.json)",
+      "title": "Path"
+     }
+    },
+    "type": "object"
+   },
+   "name": "get_audio_analysis",
+   "title": "Get audio analysis"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": true,
+    "title": "Get operation status"
+   },
+   "description": "Status, progress, result or error of a background operation (render, export, decode).",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "operation_id": {
+      "title": "Operation Id",
+      "type": "string"
+     },
+     "wait_seconds": {
+      "default": 0.0,
+      "description": "Block up to this long for completion",
+      "maximum": 600,
+      "minimum": 0,
+      "title": "Wait Seconds",
+      "type": "number"
+     }
+    },
+    "required": [
+     "operation_id"
+    ],
+    "type": "object"
+   },
+   "name": "get_operation_status",
+   "title": "Get operation status"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Cancel operation"
+   },
+   "description": "Request cancellation of a running background operation.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "operation_id": {
+      "title": "Operation Id",
+      "type": "string"
+     },
+     "wait_seconds": {
+      "default": 0.0,
+      "description": "Block up to this long for completion",
+      "maximum": 600,
+      "minimum": 0,
+      "title": "Wait Seconds",
+      "type": "number"
+     }
+    },
+    "required": [
+     "operation_id"
+    ],
+    "type": "object"
+   },
+   "name": "cancel_operation",
+   "title": "Cancel operation"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": true,
+    "title": "List operations"
+   },
+   "description": "Recent background operations and their status.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {},
+    "type": "object"
+   },
+   "name": "list_operations",
+   "title": "List operations"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Undo"
+   },
+   "description": "Undo the last edit (shared history with the GUI).",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {},
+    "type": "object"
+   },
+   "name": "undo",
+   "title": "Undo"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Redo"
+   },
+   "description": "Redo the last undone edit.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {},
+    "type": "object"
+   },
+   "name": "redo",
+   "title": "Redo"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": true,
+    "title": "Get edit history"
+   },
+   "description": "Undo/redo stacks (labels, newest last) and recent agent actions.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {},
+    "type": "object"
+   },
+   "name": "get_history",
+   "title": "Get edit history"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": true,
+    "title": "Verify project integrity"
+   },
+   "description": "Check media presence, sizes and hashes, and the routing graph. ``intact`` is true when nothing is missing, mismatched or misrouted.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {},
+    "type": "object"
+   },
+   "name": "verify_project",
+   "title": "Verify project integrity"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": false,
+    "title": "Relink media"
+   },
+   "description": "Point a missing or moved media asset at a file (optionally copying it into the project).",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "string"
+     },
+     "dry_run": {
+      "default": false,
+      "description": "Validate and describe the change without committing it",
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "embed": {
+      "default": false,
+      "description": "Copy the file into the project instead of linking",
+      "title": "Embed",
+      "type": "boolean"
+     },
+     "path": {
+      "title": "Path",
+      "type": "string"
+     }
+    },
+    "required": [
+     "asset_id",
+     "path"
+    ],
+    "type": "object"
+   },
+   "name": "relink_media",
+   "title": "Relink media"
+  },
+  {
+   "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": false,
+    "readOnlyHint": true,
+    "title": "Get capabilities"
+   },
+   "description": "What this Sonara build can do: API version, export formats, audio engine status, allowed file locations and limits.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {},
+    "type": "object"
+   },
+   "name": "get_capabilities",
+   "title": "Get capabilities"
+  }
+ ]
+}

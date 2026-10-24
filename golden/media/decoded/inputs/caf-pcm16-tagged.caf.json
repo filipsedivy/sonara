@@ -1,0 +1,8 @@
+{
+ "dtype": "f64le",
+ "shape": [
+  4800,
+  2
+ ],
+ "source": "media/inputs/caf-pcm16-tagged.caf"
+}

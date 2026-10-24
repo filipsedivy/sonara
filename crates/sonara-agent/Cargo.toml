@@ -1,0 +1,57 @@
+[package]
+name = "sonara-agent"
+description = "Sonara agent interfaces: tools, permissions, audit, IPC, MCP"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+# The IPC session token compared in constant time (`ipc` module).
+constant_time_eq.workspace = true
+# Confirmation tokens and the IPC session token from the operating system's random source.
+getrandom.workspace = true
+# Insertion-ordered dict arguments (`params`, `metadata`) in the typed argument structs.
+indexmap = { workspace = true, features = ["serde"] }
+# UTC timestamps of audit log entries.
+jiff.workspace = true
+# The warnings the prototype's registry logs: audit log failures and crashed tools.
+log.workspace = true
+regex.workspace = true
+# The MCP server over stdio (`mcp` module).
+rmcp.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+# The application services the tools run on (one session, projects, jobs, settings).
+sonara-app.workspace = true
+sonara-core.workspace = true
+# The MIDI generators and note transforms of `generate_midi` and `edit_midi_notes`.
+sonara-midi.workspace = true
+thiserror.workspace = true
+# The runtime of the MCP server only; nothing outside the `mcp` module is async.
+tokio = { workspace = true, features = ["rt", "io-std"] }
+
+[target.'cfg(unix)'.dependencies]
+# `kill(pid, 0)` and `getuid` for IPC discovery (`ipc` module); safe wrappers, no `unsafe` here.
+rustix.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+# Golden project snapshots, read and hashed in the transcript replay.
+sonara-project.workspace = true
+# The MIDI ring of the injected keyboard in `tests/midi_take.rs` (TST-08).
+sonara-rt.workspace = true
+sonara-testkit.workspace = true
+# Temporary sandbox trees and audit log files.
+tempfile.workspace = true
+
+# Writes docs/agent-api.md from the registry (P2). `test = true` makes `cargo test` run its test,
+# which fails while the committed file is out of date; that is CI's check of the file.
+[[example]]
+name = "gen_agent_docs"
+test = true
+
+[lints]
+workspace = true

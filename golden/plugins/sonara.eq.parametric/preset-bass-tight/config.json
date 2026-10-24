@@ -1,0 +1,63 @@
+{
+ "config": "preset-bass-tight",
+ "params": {
+  "high_freq": 8000.0,
+  "high_gain": 0.0,
+  "high_on": true,
+  "high_q": 0.71,
+  "high_type": "shelf",
+  "hp_freq": 35.0,
+  "hp_on": true,
+  "hp_slope": "12",
+  "low_freq": 80.0,
+  "low_gain": 2.0,
+  "low_on": true,
+  "low_q": 0.71,
+  "low_type": "shelf",
+  "lp_freq": 18000.0,
+  "lp_on": false,
+  "lp_slope": "12",
+  "mid1_freq": 250.0,
+  "mid1_gain": -3.0,
+  "mid1_on": true,
+  "mid1_q": 1.4,
+  "mid2_freq": 2500.0,
+  "mid2_gain": 0.0,
+  "mid2_on": true,
+  "mid2_q": 1.0,
+  "output_db": 0.0
+ },
+ "plugin": "sonara.eq.parametric",
+ "renders": {
+  "clipped": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "impulse": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "noise": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "silence": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "sine-1k": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  },
+  "sweep": {
+   "latency": 0,
+   "report": {},
+   "tail_seconds": 0.0
+  }
+ }
+}
