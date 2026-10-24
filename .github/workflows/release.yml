@@ -112,8 +112,12 @@ jobs:
           mkdir -p "$RUNNER_TEMP/node"
           tar -xJf "$RUNNER_TEMP/node.tar.xz" -C "$RUNNER_TEMP/node" --strip-components 1
           echo "$RUNNER_TEMP/node/bin" >>"$GITHUB_PATH"
-          "$RUNNER_TEMP/node/bin/npm" install --global --no-fund --no-audit "pnpm@${PNPM_VERSION}"
+          # --prefix pins the install next to node's own bin, regardless of the runner's default
+          # npm global prefix, so pnpm lands where the PATH entry above points.
+          "$RUNNER_TEMP/node/bin/npm" install --global --no-fund --no-audit \
+            --prefix "$RUNNER_TEMP/node" "pnpm@${PNPM_VERSION}"
           "$RUNNER_TEMP/node/bin/node" --version
+          "$RUNNER_TEMP/node/bin/pnpm" --version
       - name: Bundle (ad hoc)
         run: scripts/bundle-macos.sh
       - name: Checksums
