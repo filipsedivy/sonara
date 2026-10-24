@@ -110,7 +110,11 @@ fetch() {
     local url="$1" sha256="$2" file="$3" actual
     if [ ! -f "$file" ]; then
         echo "build-codecs: downloading $url"
-        curl -fsSL --retry 3 -o "$file.part" "$url"
+        # --retry alone only retries curl's own notion of a transient error (timeouts, HTTP
+        # 408/429/5xx); a mid-handshake TLS failure (curl exit 35, seen against
+        # downloads.xiph.org on CI) is not one of those and was never retried.
+        # --retry-all-errors (curl >= 7.71) retries on any failure, including that one.
+        curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 -o "$file.part" "$url"
         mv "$file.part" "$file"
     fi
     actual="$(shasum -a 256 "$file" | cut -d ' ' -f 1)"
