@@ -135,6 +135,18 @@ fn wait_until(timeout: Duration, mut predicate: impl FnMut() -> bool) -> bool {
     false
 }
 
+/// Waits until the render thread has actually produced a block for the new recording
+/// generation: `record()` arms the state synchronously, but the render thread only starts
+/// capturing MIDI once it picks up the cue and advances the published position past the
+/// record-from beat (TST-04: a fixed sleep here races a CPU-starved runner instead).
+fn wait_until_rolling(transport: &TransportService) -> bool {
+    wait_until(Duration::from_secs(2), || {
+        transport.status()["position_beat"]
+            .as_f64()
+            .is_some_and(|beat| beat > 0.0)
+    })
+}
+
 fn number(value: &Value) -> f64 {
     value.as_f64().expect("a number")
 }
@@ -413,6 +425,10 @@ fn live_midi_injected_records_into_clip() {
     keyboard.send(&[0x80, 60, 0]);
     // Record two notes from beat 0.
     transport.record(Some(0.0), None).expect("record");
+    assert!(
+        wait_until_rolling(&transport),
+        "the render thread never advanced past the record start"
+    );
     thread::sleep(Duration::from_millis(300));
     keyboard.send(&[0x90, 62, 100]);
     thread::sleep(Duration::from_millis(250));
@@ -475,6 +491,10 @@ fn midi_take_keeps_controllers() {
     let (rt, synth) = live_rt(&keyboard);
     let transport = rt.app.transport();
     transport.record(Some(0.0), None).expect("record");
+    assert!(
+        wait_until_rolling(&transport),
+        "the render thread never advanced past the record start"
+    );
     thread::sleep(Duration::from_millis(200));
     keyboard.send(&[0x90, 64, 90]);
     thread::sleep(Duration::from_millis(50));
