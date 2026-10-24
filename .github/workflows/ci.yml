@@ -139,6 +139,12 @@ jobs:
       - name: Playwright's WebKit
         working-directory: apps/sonara-desktop
         run: pnpm exec playwright install webkit
+      # macOS defaults Tab to moving focus between text fields only, not every control
+      # ("Keyboard navigation: Text boxes and lists only" in System Settings); WebKit follows
+      # that system setting, so a focus-trap test's Tab/⇧Tab walk never reaches a dialog's
+      # buttons unless full keyboard access is on. Runner images don't set this by default.
+      - name: Full keyboard access (Tab moves focus to every control)
+        run: defaults write NSGlobalDomain AppleKeyboardUIMode -int 2
       - name: licences, svelte-check, build, tests
         working-directory: apps/sonara-desktop
         run: |

@@ -265,10 +265,13 @@ test("while a dialog is open, neither the menu's commands nor the single-key sho
 test("the single-key shortcuts never fire while a text field has focus, each of them", async ({ page }) => {
   await openWindow(page);
   const name = page.locator("#project-name");
+  const before = await name.inputValue();
   await name.focus();
   for (const key of ["Space", "Home", "r", "l", "c"]) await page.keyboard.press(key);
-  // The field took them as text.
-  await expect(name).toHaveValue(/^rlc.+ $/);
+  // The field took them as text: none became the global shortcut. Home is a no-op here on
+  // macOS WebKit (unlike Linux's WebKitGTK, it does not move the caret to the field's start),
+  // so every key lands where typed, at the end.
+  await expect(name).toHaveValue(`${before} rlc`);
   await page.keyboard.press("Escape");
   await page.getByRole("spinbutton", { name: "Tempo" }).focus();
   for (const key of ["Space", "Home", "r", "l", "c"]) await page.keyboard.press(key);
