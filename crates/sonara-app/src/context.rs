@@ -26,9 +26,11 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Instant;
 
+use sonara_core::error::{DomainError, ErrorCode};
 use sonara_core::model::track::TrackKind;
 use sonara_core::plugins::{PluginRegistry, builtin_registry};
 use sonara_core::session::ProjectSession;
+use sonara_dsp::processor::{EventKind, InstrumentEvent};
 use sonara_project::store::ProjectStore;
 
 use crate::clock::{LocalZone, WallClock, system_clock};
@@ -387,6 +389,60 @@ impl AppContext {
             (track.kind == TrackKind::Instrument).then(|| track.id.clone())
         });
         self.transport().set_midi_focus(focus);
+    }
+
+    /// Plays (`on: true`) or releases one preview note of `track_id`'s instrument, for a key
+    /// clicked in the piano roll's keyboard: the user hears which pitch a row is. Opens the
+    /// device and builds a graph on first use, like [`AppContext::transport`].
+    ///
+    /// # Errors
+    ///
+    /// `INVALID_ARGUMENT` for a pitch past 127 (`on`) or a velocity outside 1–127 (`on`);
+    /// `NOT_FOUND` for an unknown track, or one that is not an instrument track; the errors of
+    /// [`focus_midi`](Self::focus_midi)'s transport, `NO_PROJECT` and `ENGINE_UNAVAILABLE`
+    /// included.
+    pub fn audition_note(
+        &self,
+        track_id: &str,
+        pitch: u8,
+        velocity: u8,
+        on: bool,
+    ) -> AppResult<()> {
+        if pitch > 127 || (on && !(1..=127).contains(&velocity)) {
+            return Err(DomainError::new(
+                ErrorCode::InvalidArgument,
+                "audition_note needs a pitch and velocity of 0-127",
+            )
+            .into());
+        }
+        let project = self
+            .session
+            .project()
+            .ok_or_else(|| DomainError::new(ErrorCode::NoProject, "no project is open"))?;
+        let track = project
+            .find_track(track_id)
+            .ok_or_else(|| DomainError::new(ErrorCode::NotFound, format!("no track {track_id}")))?;
+        if track.kind != TrackKind::Instrument {
+            return Err(DomainError::new(
+                ErrorCode::InvalidArgument,
+                format!("track {track_id} is not an instrument track"),
+            )
+            .into());
+        }
+        let event = InstrumentEvent {
+            offset: 0,
+            kind: if on {
+                EventKind::NoteOn
+            } else {
+                EventKind::NoteOff
+            },
+            pitch,
+            velocity: if on { velocity } else { 0 },
+            channel: 0,
+            value: 0,
+            number: 0,
+        };
+        self.transport().audition_note(track_id, event)
     }
 
     /// Shuts the transport down (a running recording is finished first), stops the background

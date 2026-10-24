@@ -104,6 +104,23 @@ pub fn seek(app: &AppContext, beat: f64) -> Result<Value, ErrorNotice> {
         .map_err(|error| ErrorNotice::from(&error))
 }
 
+/// GUI-only: plays (`on: true`) or releases one preview note of `track_id`'s instrument, for a
+/// key clicked in the piano roll's keyboard.
+///
+/// # Errors
+///
+/// `INVALID_ARGUMENT`, `NOT_FOUND`, `NO_PROJECT`, `ENGINE_UNAVAILABLE` ([`AppContext::audition_note`]).
+pub fn audition_note(
+    app: &AppContext,
+    track_id: &str,
+    pitch: u8,
+    velocity: u8,
+    on: bool,
+) -> Result<(), ErrorNotice> {
+    app.audition_note(track_id, pitch, velocity, on)
+        .map_err(|error| ErrorNotice::from(&error))
+}
+
 /// The engine label's status (`transport.status()`): `{"available": false, "backend",
 /// "reason"}` without a usable backend, else the backend and the player's status. `None` before
 /// the transport exists, which this never creates.

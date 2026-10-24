@@ -150,6 +150,7 @@ fn invoke_handler() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + 
         commands::redo,
         commands::seal_undo,
         commands::set_midi_focus,
+        commands::audition_note,
         commands::eq_response,
         commands::peaks,
         commands::subscribe_live,

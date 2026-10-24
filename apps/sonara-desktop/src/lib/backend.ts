@@ -99,6 +99,12 @@ export function setMidiFocus(trackId: string | null): Promise<void> {
   return invoke<void>("set_midi_focus", { trackId });
 }
 
+/** GUI-only: plays (`on: true`) or releases one preview note of `trackId`'s instrument, for a
+ * key clicked in the piano roll's keyboard. */
+export function auditionNote(trackId: string, pitch: number, velocity: number, on: boolean): Promise<void> {
+  return invoke<void>("audition_note", { trackId, pitch, velocity, on });
+}
+
 /** The parametric EQ's response curve. */
 export function eqResponse(deviceId: string): Promise<EqResponse> {
   return invoke<EqResponse>("eq_response", { deviceId });

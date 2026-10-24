@@ -6,6 +6,13 @@ independently, see docs/project-format.md).
 
 ## [Unreleased]
 
+### Added
+
+- **Piano roll keyboard audition:** clicking (or dragging across) a key in the piano roll's
+  keyboard plays that pitch through the clip's track instrument, so the user hears which note a
+  row is. GUI-only: it opens the device and builds a graph on a stopped transport too, the same
+  as live MIDI input, but adds no agent or MCP tool (the 57-tool contract, CTR-01, is unchanged).
+
 ### Changed
 
 - **Sonara is a native Rust application for macOS** (Apple Silicon, macOS 26 or later). The

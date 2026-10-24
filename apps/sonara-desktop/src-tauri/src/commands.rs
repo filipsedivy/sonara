@@ -378,6 +378,27 @@ pub fn set_midi_focus(
     Ok(())
 }
 
+/// GUI-only: plays (`on: true`) or releases one preview note of `track_id`'s instrument, for a
+/// key clicked in the piano roll's keyboard. No agent or MCP tool: CTR-01 fixes the 57 tools.
+///
+/// # Errors
+///
+/// `INVALID_ARGUMENT`, `NOT_FOUND`, `NO_PROJECT`, `ENGINE_UNAVAILABLE`.
+#[tauri::command(async)]
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "Tauri passes command arguments by value"
+)]
+pub fn audition_note(
+    shell: State<'_, Shell>,
+    track_id: String,
+    pitch: u8,
+    velocity: u8,
+    on: bool,
+) -> Result<(), ErrorNotice> {
+    transport_control::audition_note(shell.app(), &track_id, pitch, velocity, on)
+}
+
 /// The response curve of the parametric EQ `device_id` (the device editor's curve).
 ///
 /// # Errors

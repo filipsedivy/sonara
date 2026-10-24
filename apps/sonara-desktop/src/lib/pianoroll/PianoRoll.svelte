@@ -33,6 +33,7 @@
     type RollView,
     scrollBy,
     timelineToContent,
+    yPitch,
     zoomPitch,
     zoomTime,
   } from "./model";
@@ -347,13 +348,52 @@
 
   function keysDown(event: PointerEvent) {
     if (event.button !== 0 || !clip) return;
-    grid.selectPitch(local(event, keysCanvas).y);
+    capture(event);
+    const y = local(event, keysCanvas).y;
+    grid.selectPitch(y);
+    const pitch = yPitch(view, y);
+    if (found && pitch >= 0 && pitch <= 127) auditionOn(found.track.id, pitch);
+  }
+
+  function keysMove(event: PointerEvent) {
+    if ((event.buttons & 1) === 0 || !found) return;
+    const pitch = yPitch(view, local(event, keysCanvas).y);
+    if (pitch >= 0 && pitch <= 127) auditionOn(found.track.id, pitch);
+  }
+
+  function keysUp() {
+    auditionOff();
   }
 
   function keysWheel(event: WheelEvent) {
     event.preventDefault();
     const { x, y } = local(event, keysCanvas);
     applyWheel(keyboardWheel(event), x, y);
+  }
+
+  // -- the keyboard's audition (the user hears which pitch a key is) -------------------------
+
+  /** Serializes the keyboard's NoteOn before the NoteOff that ends it: a fast click must not
+   * let the backend's async command queue reorder them into a stuck note. */
+  let auditionChain: Promise<void> = Promise.resolve();
+  let auditioning: { trackId: string; pitch: number } | null = null;
+
+  function auditionOn(trackId: string, pitch: number) {
+    if (auditioning?.trackId === trackId && auditioning.pitch === pitch) return;
+    auditionOff();
+    auditioning = { trackId, pitch };
+    auditionChain = auditionChain
+      .then(() => backend.auditionNote(trackId, pitch, session.roll.velocity, true))
+      .catch(() => {});
+  }
+
+  function auditionOff() {
+    const held = auditioning;
+    if (!held) return;
+    auditioning = null;
+    auditionChain = auditionChain
+      .then(() => backend.auditionNote(held.trackId, held.pitch, 0, false))
+      .catch(() => {});
   }
 
   function rulerDown(event: PointerEvent) {
@@ -559,6 +599,7 @@
       roll = null;
       benchHooks.pianoRoll = null;
       stopEditing();
+      auditionOff();
     };
   });
 </script>
@@ -670,6 +711,9 @@
         class="fill keys"
         aria-label={drums ? "Drum notes" : "Keyboard"}
         onpointerdown={keysDown}
+        onpointermove={keysMove}
+        onpointerup={keysUp}
+        onpointercancel={keysUp}
         onwheel={keysWheel}
       ></canvas>
       <!-- The grid is one focusable widget with its own keys; its notes are a list box of

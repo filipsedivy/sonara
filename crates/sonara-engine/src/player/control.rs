@@ -23,7 +23,7 @@ use sonara_core::model::project::Project;
 use sonara_core::model::track::TrackKind;
 use sonara_core::plugins::PluginRegistry;
 use sonara_dsp::numpy::math::py_round;
-use sonara_dsp::processor::Report;
+use sonara_dsp::processor::{InstrumentEvent, Report};
 use sonara_media::MediaProvider;
 use sonara_rt::{
     CaptureReader, Generation, MidiEvent, MidiReceiver, StatsSnapshot, StreamControl, handoff,
@@ -944,6 +944,31 @@ impl Player {
         core.flush_outbox();
     }
 
+    /// Plays or releases one GUI preview note of `track_id`'s instrument node, for the piano
+    /// roll keyboard's click. Builds the stream and a graph for a stopped transport too
+    /// (`Core::prepare_live`), as live MIDI input does, but bypasses its "an input is open"
+    /// gate: the GUI click is itself the input. Does nothing, without an error, when the current
+    /// graph has no node for `track_id` (not an instrument track, or the graph has not caught up
+    /// with it yet) — a preview is best-effort, never a reason to fail the click.
+    ///
+    /// # Errors
+    ///
+    /// The errors of opening the stream and of building the graph.
+    pub fn audition(
+        &self,
+        snapshot: &ProjectSnapshot,
+        track_id: &str,
+        event: InstrumentEvent,
+    ) -> Result<(), EngineError> {
+        let mut core = lock(&self.core);
+        core.prepare_live(snapshot)?;
+        if let Some((graph, node)) = core.node_for(track_id) {
+            core.post(Message::Audition { graph, node, event });
+        }
+        core.flush_outbox();
+        Ok(())
+    }
+
     /// `_live_targets`: the armed instrument tracks and the focused one, in track order.
     #[must_use]
     pub fn midi_targets(&self, project: &Project) -> Vec<String> {
@@ -1520,6 +1545,19 @@ impl Core {
                 .filter_map(|track| layout.node_index(track))
                 .collect(),
         }
+    }
+
+    /// The node of `track_id` in the graph now built, with its id, for a GUI preview note.
+    /// `None` for an unknown or non-instrument track, or before any graph exists.
+    fn node_for(&self, track_id: &str) -> Option<(GraphId, NodeIndex)> {
+        let graph = self.graph.as_ref()?;
+        let node = self
+            .layouts
+            .iter()
+            .rev()
+            .find(|layout| layout.id() == graph.id)?
+            .node_index(track_id)?;
+        Some((graph.id, node))
     }
 
     /// The targets of the last graph sent, after a focus change.

@@ -28,6 +28,7 @@ use sonara_core::ids::{self, IdGenerator};
 use sonara_core::midi::{ControlKind, MidiNote};
 use sonara_core::model::clip::Clip;
 use sonara_core::model::track::TrackKind;
+use sonara_dsp::processor::{EventKind, InstrumentEvent};
 use sonara_io::MidiError;
 use sonara_rt::{MidiEvent, MidiSender, midi_channel};
 use tempfile::TempDir;
@@ -136,14 +137,17 @@ fn wait_until(timeout: Duration, mut predicate: impl FnMut() -> bool) -> bool {
 }
 
 /// Waits until the render thread has actually produced a block for the new recording
-/// generation: `record()` arms the state synchronously, but the render thread only starts
-/// capturing MIDI once it picks up the cue and advances the published position past the
-/// record-from beat (TST-04: a fixed sleep here races a CPU-starved runner instead).
+/// generation: `record()` arms the state synchronously, but the render thread only picks up
+/// the new cue and starts capturing MIDI once it runs its play step for it. `position_beat`
+/// cannot tell this apart from the idle step that already ran before `record()` (both tag
+/// their blocks with the resting frame), so this polls `render_load`, which the idle step is
+/// excluded from (`blocks_rendered`, `shared.rs`) and so stays `0.0` until a real block of the
+/// new generation has rendered (TST-04: a fixed sleep here races a CPU-starved runner instead).
 fn wait_until_rolling(transport: &TransportService) -> bool {
-    wait_until(Duration::from_secs(2), || {
-        transport.status()["position_beat"]
+    wait_until(Duration::from_secs(10), || {
+        transport.status()["render_load"]
             .as_f64()
-            .is_some_and(|beat| beat > 0.0)
+            .is_some_and(|load| load > 0.0)
     })
 }
 
@@ -641,7 +645,7 @@ fn service_call(
     caller: u32,
     call: u32,
 ) -> bool {
-    match (call + caller) % 16 {
+    match (call + caller) % 17 {
         0 => {
             return transport
                 .play(Some(f64::from(call % 8)), None, false)
@@ -682,6 +686,22 @@ fn service_call(
         }
         14 => {
             let _ = transport.midi_devices();
+        }
+        15 => {
+            let event = InstrumentEvent {
+                offset: 0,
+                kind: if call.is_multiple_of(2) {
+                    EventKind::NoteOn
+                } else {
+                    EventKind::NoteOff
+                },
+                pitch: 60,
+                velocity: 100,
+                channel: 0,
+                value: 0,
+                number: 0,
+            };
+            let _ = transport.audition_note(synth, event);
         }
         _ => {
             let _ = transport.status();

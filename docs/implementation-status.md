@@ -87,6 +87,7 @@ These need hardware or a person and are never CI gates (HW-01). Their results be
 |---|---|---|
 | SMF import/export | done | Type 1, 960 PPQ, tempo and time-signature maps, markers, CC and pitch bend; UTF-8 names |
 | Piano roll editing, quantize, velocity | done | Drags within two display frames; 10,000-note clips |
+| Piano roll keyboard audition | done | Clicking or dragging a keyboard key plays that pitch through the clip's track instrument; GUI-only, no agent or MCP tool |
 | CC automation and pitch bend in clips | partial | Stored, played and exported; the piano roll does not edit CC lanes yet |
 | External MIDI devices (input) | done | midir (CoreMIDI). Hot-plug rescans every 2 s. Live playing reaches armed or selected instrument tracks, also while stopped, with a 25 ms live lookahead. Verified with virtual CoreMIDI ports only |
 | MIDI recording | done | Armed instrument tracks record into a MIDI clip; timing is mapped through the output-latency estimate |

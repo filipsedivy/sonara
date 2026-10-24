@@ -5,9 +5,13 @@
 //! `player.py`). One [`RenderLoop::step`] does, in order:
 //!
 //! 1. **Apply** every waiting message of the control thread (starts, seeks, halts, graphs,
-//!    setup, the stream, MIDI inputs, targets), swapping each new value in and the old one out
-//!    to be dropped on the control thread (RT-09).
-//! 2. **Live MIDI:** drain every input's ring, merged by arrival time (ties in input order, as
+//!    setup, the stream, MIDI inputs, targets, GUI preview notes), swapping each new value in
+//!    and the old one out to be dropped on the control thread (RT-09).
+//! 2. **GUI previews:** inject each pending preview note (the piano roll keyboard's click,
+//!    [`Message::Audition`]) into its own node, for the graph it was posted for; a stale graph
+//!    drops it. On a stopped transport this alone is enough to run the idle step, the same as
+//!    live MIDI input.
+//! 3. **Live MIDI:** drain every input's ring, merged by arrival time (ties in input order, as
 //!    the prototype's stable sort). While there are targets, count the messages
 //!    (`messages_received`, system-exclusive markers included) and inject note, controller,
 //!    pitch-bend and channel-pressure events at offset 0 into every target instrument. While a
@@ -15,7 +19,7 @@
 //!    timeline frame they were heard at: each input's newest message of the drain at
 //!    the device's software position minus the output latency, the others earlier by their
 //!    difference in arrival time (`_poll_midi`'s anchoring).
-//! 3. **Render**, while playing: one block per step until the lookahead target is queued
+//! 4. **Render**, while playing: one block per step until the lookahead target is queued
 //!    (80 ms, or 25 ms while live input is active) or the ring is full. A block is
 //!    assembled from the carry of whole graph blocks; a loop end cuts the source block
 //!    sample-accurately and rendering continues at the loop start. Each source block's clip
@@ -26,7 +30,7 @@
 //!    play range disarms it, and once the ring has drained the range ends.
 //!    Stopped or paused with live input active, the idle step renders the live input alone at
 //!    the resting position: no scheduled notes, no clip audio.
-//! 4. **Post** the processors' setup requests to the builder thread.
+//! 5. **Post** the processors' setup requests to the builder thread.
 //!
 //! `render_load` times only the graph and the carry (`_next_block`), as the prototype does.
 //! Reading the monotonic clock is the one system call RT-03 allows.
@@ -59,7 +63,7 @@ use super::message::{
     RecordedMidi, ReportEntry, StreamPart,
 };
 use super::shared::Shared;
-use crate::graph::{LIVE_EVENTS, NodeIndex, RenderGraph};
+use crate::graph::{GraphId, LIVE_EVENTS, NodeIndex, RenderGraph};
 use crate::update::{Applied, SetupTicket, apply};
 
 /// The filler of unused live-event slots.
@@ -75,6 +79,10 @@ const NO_EVENT: InstrumentEvent = InstrumentEvent {
 
 /// The most MIDI events one step takes from the inputs; the rest wait for the next step.
 const MAX_MIDI_PER_STEP: usize = 4096;
+/// The most GUI preview notes pending at once (`Message::Audition`, drained every step); a
+/// click and its release are the common case, this covers a quick run across keys too. One
+/// arriving past this is dropped, as a note preview is best-effort.
+const AUDITION_CAPACITY: usize = 8;
 /// The filler of unused slots of the recorded-message scratch.
 const NO_MESSAGE: (usize, MidiEvent) = (0, MidiEvent::sysex(0, 0));
 /// The most chunks the carry holds: the rest of a block, a loop's cut block, the next block.
@@ -308,6 +316,8 @@ struct State {
     midi: [MidiSlot; MAX_MIDI_INPUTS],
     targets: LiveTargets,
     events: Vec<InstrumentEvent>,
+    /// Pending GUI preview notes (`Message::Audition`), each with the graph it was posted for.
+    audition: [Option<(GraphId, NodeIndex, InstrumentEvent)>; AUDITION_CAPACITY],
     /// The messages of one drain to record, with the slot of their input.
     heard: Vec<(usize, MidiEvent)>,
     recorded: queue::Sender<RecordedMidi>,
@@ -366,6 +376,7 @@ impl RenderLoop {
                 midi: std::array::from_fn(|_| None),
                 targets: LiveTargets::default(),
                 events: vec![NO_EVENT; LIVE_EVENTS],
+                audition: [None; AUDITION_CAPACITY],
                 heard: vec![NO_MESSAGE; MAX_MIDI_PER_STEP],
                 recorded,
                 tickets,
@@ -387,10 +398,11 @@ impl RenderLoop {
         while messages.receive(|message| state.apply(message)).is_some() {
             applied = true;
         }
+        let audition = state.drain_auditions();
         let live = state.drain_midi();
         let step = match state.mode {
             Mode::Playing => state.play_step(live),
-            Mode::Halted if live => state.idle_step(),
+            Mode::Halted if live || audition => state.idle_step(),
             Mode::Halted => Step::Idle,
         };
         state.post_setup_requests();
@@ -475,7 +487,30 @@ impl State {
             Message::Stream(part) => std::mem::swap(&mut self.stream, part),
             Message::Midi(change) => change_inputs(&mut self.midi, change),
             Message::Targets(targets) => std::mem::swap(&mut self.targets, targets),
+            Message::Audition { graph, node, event } => {
+                if let Some(slot) = self.audition.iter_mut().find(|slot| slot.is_none()) {
+                    *slot = Some((*graph, *node, *event));
+                }
+            }
         }
+    }
+
+    /// Injects pending GUI preview notes (`Message::Audition`) into their node, for the graph
+    /// they were posted for; a stale graph (rebuilt since) drops its note silently. Returns
+    /// whether anything was injected, so a stopped transport renders this step too.
+    fn drain_auditions(&mut self) -> bool {
+        let mut injected = false;
+        for slot in &mut self.audition {
+            let Some((id, node, event)) = slot.take() else {
+                continue;
+            };
+            if let Some(graph) = self.graph.as_deref_mut()
+                && graph.id() == id
+            {
+                injected |= graph.inject(node, std::slice::from_ref(&event));
+            }
+        }
+        injected
     }
 
     /// Starts the sequence of `cue` (`_start_locked`, or a seek while playing): a new

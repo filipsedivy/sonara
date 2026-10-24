@@ -41,6 +41,7 @@ use sonara_core::model::media::MediaAsset;
 use sonara_core::model::project::Project;
 use sonara_core::model::track::{Track, TrackKind};
 use sonara_core::plugins::PluginRegistry;
+use sonara_dsp::processor::InstrumentEvent;
 pub use sonara_engine::player::{DeviceReport, PlayerState, PlayerStatus, Position, TrackMeter};
 use sonara_engine::player::{
     Player, PlayerSettings, PlayerSetup, ProjectSnapshot, RecordPlan, TakeTarget,
@@ -334,6 +335,22 @@ impl TransportService {
         let player = self.player(&mut inner)?;
         let project = self.shared.parts.session.lock().require_project()?.clone();
         Ok(Value::Object(position_json(&player.seek(&project, beat))))
+    }
+
+    /// Plays or releases one GUI preview note of `track_id`'s instrument, for the piano roll
+    /// keyboard's click. Opens the device and builds a graph on a stopped transport too, the
+    /// same as live MIDI input.
+    ///
+    /// # Errors
+    ///
+    /// `NO_PROJECT`, `ENGINE_UNAVAILABLE`, and the player's errors (`DEVICE_ERROR`).
+    pub fn audition_note(&self, track_id: &str, event: InstrumentEvent) -> AppResult<()> {
+        self.shared.parts.session.lock().require_project()?;
+        let mut inner = self.inner();
+        let player = self.player(&mut inner)?;
+        let snapshot = self.snapshot()?;
+        player.audition(&snapshot, track_id, event)?;
+        Ok(())
     }
 
     /// `position_beats()`: the transport's position in beats; 0 before a player exists.

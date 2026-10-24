@@ -25,7 +25,7 @@
     clippy::disallowed_macros
 )]
 
-use sonara_dsp::processor::Report;
+use sonara_dsp::processor::{InstrumentEvent, Report};
 use sonara_rt::{BlockProducer, Generation, MidiEvent, MidiReceiver, StreamControl, handoff};
 
 use super::clicks::ClickTables;
@@ -80,6 +80,14 @@ pub(crate) enum Message {
     Midi(Box<MidiChange>),
     /// New live-input targets for the current graph (a focus change).
     Targets(LiveTargets),
+    /// A GUI preview note (the piano roll keyboard's click), injected straight into `node` of
+    /// `graph`: no live-input routing, no recording. A stale `graph` (rebuilt since the GUI
+    /// posted it) is dropped by the render thread.
+    Audition {
+        graph: GraphId,
+        node: NodeIndex,
+        event: InstrumentEvent,
+    },
 }
 
 /// The sequence a start plays.
