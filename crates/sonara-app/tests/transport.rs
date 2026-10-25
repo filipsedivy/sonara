@@ -548,7 +548,10 @@ fn midi_take_keeps_controllers() {
             .iter()
             .all(|c| c.beat > note_on && c.beat < clip.length)
     );
-    assert!(clip.controls.windows(2).all(|w| w[0].beat < w[1].beat));
+    // Non-decreasing, not strictly increasing (TST-04): a message is timed by the device's
+    // software position, which advances only per callback period, so two messages drained
+    // before the next period share a frame on a slow runner. Their order is checked above.
+    assert!(clip.controls.windows(2).all(|w| w[0].beat <= w[1].beat));
     // One undo step removes the clip with its controllers.
     let clip_id = clip.id.clone();
     rt.app.session().lock().undo("test").expect("undo");
