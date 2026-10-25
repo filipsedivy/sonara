@@ -6,6 +6,8 @@ independently, see docs/project-format.md).
 
 ## [Unreleased]
 
+## [0.1.3] — 2026-10-25
+
 ### Added
 
 - **Piano roll keyboard audition:** clicking (or dragging across) a key in the piano roll's
