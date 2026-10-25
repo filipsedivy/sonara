@@ -142,6 +142,11 @@ fn check_outputs(name: &str, base: &str, report: &Report, declared: &[Allowance]
         let recorded = golden
             .bytes(&format!("{prefix}{rel}"))
             .expect("a recorded output");
+        let recorded = if rel.ends_with("manifest.json") {
+            patch_manifest_version(&recorded)
+        } else {
+            recorded
+        };
         if rel.ends_with(".analysis.json") {
             check_sidecar(name, rel, &ours, &recorded, report, declared);
             continue;
@@ -177,6 +182,17 @@ fn check_outputs(name: &str, base: &str, report: &Report, declared: &[Allowance]
             "{name}: {rel} is not recorded"
         );
     }
+}
+
+/// GLD-01 deviation: the recorder pinned the prototype's own version (0.1.0) into
+/// `sonara_version`. The field reports the current application version (VER-01), so it moves
+/// with every release; replace the recording's value with the build's before any comparison.
+fn patch_manifest_version(manifest: &[u8]) -> Vec<u8> {
+    let text = String::from_utf8_lossy(manifest).replace(
+        "\"sonara_version\": \"0.1.0\"",
+        &format!("\"sonara_version\": \"{}\"", env!("CARGO_PKG_VERSION")),
+    );
+    text.into_bytes()
 }
 
 /// A saved project of a batch whose project equals the recording only within `replay::LIBM`
