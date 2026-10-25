@@ -984,7 +984,7 @@ fn the_manifest_escapes_non_ascii_like_python() {
     // the file's (8), the linked one falls back to `size_bytes` (7).
     let expected = format!(
         "{{\n \"format\": \"sonara.manifest\",\n \"format_version\": 1,\n \"sonara_version\": \
-         \"0.1.0\",\n \"project_id\": \"{id}\",\n \"saved\": \"2026-01-01T12:00:00Z\",\n \
+         \"{version}\",\n \"project_id\": \"{id}\",\n \"saved\": \"2026-01-01T12:00:00Z\",\n \
          \"required_features\": [\n  \"core\",\n  \"linked-media\"\n ],\n \"project_file\": \
          {{\n  \"path\": \"project.json\",\n  \"sha256\": \"{project_sha}\",\n  \"size\": \
          {size}\n }},\n \"assets\": [\n  {{\n   \"id\": \"med_a\",\n   \"path\": \
@@ -994,6 +994,7 @@ fn the_manifest_escapes_non_ascii_like_python() {
          \\ud83d\\ude00\\u007f.wav\",\n   \"location\": \"linked\",\n   \"size\": 7,\n   \
          \"sha256\": null,\n   \"kind\": \"audio\"\n  }}\n ],\n \"compatibility\": {{\n  \
          \"min_reader_version\": 1\n }}\n}}\n",
+        version = env!("CARGO_PKG_VERSION"),
         id = project.id,
         project_sha = sha256_bytes(&project_bytes),
         size = project_bytes.len(),

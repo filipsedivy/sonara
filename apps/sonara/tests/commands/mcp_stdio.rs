@@ -143,9 +143,13 @@ impl Server {
 
 #[test]
 fn mcp_stdio_end_to_end() {
-    let golden: Value = Golden::open()
+    let mut golden: Value = Golden::open()
         .and_then(|golden| golden.json("contracts/mcp-tools-list.json"))
         .unwrap();
+    // GLD-01 deviation: the recorder pinned the prototype's own version (0.1.0).
+    // `serverInfo.version` reports the current application version (VER-01), so it moves with
+    // every release; pin it to the build's version instead of the recording's.
+    golden["server_info"]["version"] = json!(env!("CARGO_PKG_VERSION"));
     let sandbox = Sandbox::new();
     let mut server = Server::start(&sandbox);
 
