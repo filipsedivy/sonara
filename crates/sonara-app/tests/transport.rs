@@ -161,14 +161,22 @@ fn player_plays_without_underruns_and_tracks_position() {
     let rt = Rt::new(250.0, None);
     rt.drums();
     let transport = rt.app.transport();
+    let started = Instant::now();
     let status = transport.play(Some(0.0), None, false).expect("play");
     assert_eq!(status["state"], "playing");
     thread::sleep(Duration::from_millis(600));
     let status = rt.status();
+    let elapsed = started.elapsed().as_secs_f64();
     assert_eq!(status["underruns"], 0);
-    // 0.6 s at 120 BPM is 1.2 beats; allow for lookahead and scheduling jitter.
+    // 0.6 s at 120 BPM is 1.2 beats; allow 0.2 beats for lookahead and scheduling jitter. The
+    // null device runs on wall-clock time and a loaded runner can oversleep, so the upper bound
+    // follows the measured elapsed time, not the requested sleep (TST-04).
     let beat = number(&status["position_beat"]);
-    assert!(0.6 < beat && beat < 1.4, "position {beat}");
+    let upper = elapsed * 2.0 + 0.2;
+    assert!(
+        0.6 < beat && beat < upper,
+        "position {beat}, elapsed {elapsed:.3} s"
+    );
     assert!(number(&status["render_load"]) < 1.0);
     let stopped = transport.stop().expect("stop");
     assert_eq!(stopped["was_playing"], true);
@@ -540,7 +548,10 @@ fn midi_take_keeps_controllers() {
             .iter()
             .all(|c| c.beat > note_on && c.beat < clip.length)
     );
-    assert!(clip.controls.windows(2).all(|w| w[0].beat < w[1].beat));
+    // Non-decreasing, not strictly increasing (TST-04): a message is timed by the device's
+    // software position, which advances only per callback period, so two messages drained
+    // before the next period share a frame on a slow runner. Their order is checked above.
+    assert!(clip.controls.windows(2).all(|w| w[0].beat <= w[1].beat));
     // One undo step removes the clip with its controllers.
     let clip_id = clip.id.clone();
     rt.app.session().lock().undo("test").expect("undo");
