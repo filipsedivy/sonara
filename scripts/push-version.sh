@@ -5,7 +5,7 @@
 #
 #   scripts/push-version.sh patch|minor|major|X.Y.Z
 #
-# Order: bump Cargo.toml -> refresh Cargo.lock -> commit -> push main -> tag -> push tag. Each
+# Order: bump Cargo.toml -> refresh Cargo.lock -> stamp CHANGELOG.md -> commit -> push main -> tag -> push tag. Each
 # step only runs once the previous one has landed, so a failure midway leaves nothing dangling
 # except a commit already on main (the tag step can then be retried on its own).
 set -euo pipefail
@@ -73,6 +73,20 @@ if git rev-parse -q --verify "refs/tags/$tag" >/dev/null || git ls-remote --exit
     exit 1
 fi
 
+# The release workflow publishes the version's CHANGELOG.md section as the release notes and
+# fails without one, so the [Unreleased] section must have content to become that section.
+unreleased_notes() {
+    awk '
+        $0 == "## [Unreleased]" { found = 1; next }
+        found && /^## \[/ { exit }
+        found && NF { print }
+    ' CHANGELOG.md
+}
+[ -n "$(unreleased_notes)" ] || {
+    echo "error: CHANGELOG.md has no entries under ## [Unreleased]" >&2
+    exit 1
+}
+
 echo "Sonara $current -> $new"
 read -r -p "Bump, commit, push to main, tag $tag and push the tag? [y/N] " reply
 case "$reply" in
@@ -90,18 +104,25 @@ mv Cargo.toml.new Cargo.toml
 export PATH="/opt/homebrew/opt/rustup/bin:$PATH"
 cargo update --workspace --locked 2>/dev/null || cargo update --workspace
 
+# The [Unreleased] entries become this version's section; a fresh empty [Unreleased] stays on top.
+awk -v heading="## [$new] — $(date +%Y-%m-%d)" '
+    !done && $0 == "## [Unreleased]" { print; print ""; print heading; done = 1; next }
+    { print }
+' CHANGELOG.md > CHANGELOG.md.new
+mv CHANGELOG.md.new CHANGELOG.md
+
 changed="$(git diff --name-only; git status --porcelain --untracked-files=no | awk '{print $2}')"
-unexpected="$(printf '%s\n' "$changed" | sort -u | grep -v -E '^(Cargo\.toml|Cargo\.lock)$' || true)"
+unexpected="$(printf '%s\n' "$changed" | sort -u | grep -v -E '^(Cargo\.toml|Cargo\.lock|CHANGELOG\.md)$' || true)"
 if [ -n "$unexpected" ]; then
     echo "error: unexpected files changed, aborting:" >&2
     printf '%s\n' "$unexpected" >&2
-    git checkout -- Cargo.toml Cargo.lock
+    git checkout -- Cargo.toml Cargo.lock CHANGELOG.md
     exit 1
 fi
 
 scripts/check-versions.sh --tag "$tag"
 
-git add Cargo.toml Cargo.lock
+git add Cargo.toml Cargo.lock CHANGELOG.md
 git commit -m "Release $new"
 git push origin main
 

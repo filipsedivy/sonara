@@ -45,6 +45,16 @@ fn recorded_bundles(golden: &Golden) -> Vec<(String, PathBuf)> {
     out
 }
 
+/// GLD-01 deviation: the recorder pinned the prototype's own version (0.1.0) into
+/// `sonara_version`. The field reports the current application version (VER-01), so it moves
+/// with every release; replace the recording's value with the build's before a byte comparison.
+fn with_current_version(manifest: &[u8]) -> String {
+    String::from_utf8_lossy(manifest).replace(
+        "\"sonara_version\": \"0.1.0\"",
+        &format!("\"sonara_version\": \"{}\"", env!("CARGO_PKG_VERSION")),
+    )
+}
+
 /// The recorded `save_project` result whose path names `bundle`.
 fn save_result(golden: &Golden, workflow: &str, bundle: &Path) -> Value {
     let transcript: Value = golden
@@ -93,7 +103,7 @@ fn saving_a_recorded_project_writes_the_recorded_bundle() {
         let written_manifest = fs::read(target.join(MANIFEST)).expect("written");
         assert_eq!(
             String::from_utf8_lossy(&written_manifest),
-            String::from_utf8_lossy(&recorded_manifest),
+            with_current_version(&recorded_manifest),
             "{workflow}: manifest.json"
         );
 
