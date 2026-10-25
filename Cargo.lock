@@ -4070,7 +4070,7 @@ dependencies = [
 
 [[package]]
 name = "sonara"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "clap",
  "env_logger",
@@ -4090,7 +4090,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-agent"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "constant_time_eq",
  "getrandom 0.4.3",
@@ -4115,7 +4115,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-app"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "crossbeam-channel",
  "hound",
@@ -4140,7 +4140,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-core"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "getrandom 0.4.3",
  "indexmap 2.14.2",
@@ -4152,7 +4152,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-desktop"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "clap",
  "env_logger",
@@ -4173,7 +4173,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-dsp"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "assert_no_alloc",
  "crc32fast",
@@ -4188,7 +4188,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-engine"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "assert_no_alloc",
  "rtsan-standalone",
@@ -4206,7 +4206,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-io"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "assert_no_alloc",
  "cc",
@@ -4219,7 +4219,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-media"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "jiff",
  "libloading 0.9.0",
@@ -4242,7 +4242,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-midi"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "midly",
  "proptest",
@@ -4255,7 +4255,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-project"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "fs4",
  "hound",
@@ -4275,7 +4275,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-rt"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "assert_no_alloc",
  "loom",
@@ -4287,7 +4287,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-testkit"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "flate2",
  "hound",

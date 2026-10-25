@@ -6,6 +6,13 @@ independently, see docs/project-format.md).
 
 ## [Unreleased]
 
+## [0.1.4] — 2026-10-25
+
+### Fixed
+
+- The transport integration test in `sonara-app` is stable (test-only change; no user-visible
+  behaviour changes).
+
 ## [0.1.3] — 2026-10-25
 
 ### Added
