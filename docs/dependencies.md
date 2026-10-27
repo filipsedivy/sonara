@@ -108,6 +108,9 @@ exactly those, while `interprocess`'s local sockets are named pipes on Windows (
 decision, 2026-10-24: the Linux Docker development container is gone):
 
 - cargo-deny 0.20.2 (MIT/Apache-2.0), installed with `cargo install --locked cargo-deny@0.20.2`;
+- cargo-nextest 0.9.150 (MIT/Apache-2.0), the test runner of the CI test jobs, installed with
+  `cargo install --locked cargo-nextest@0.9.150`. CI only: `scripts/dev.sh` keeps `cargo test`, and
+  nextest is optional locally. Not in `Cargo.lock`, never shipped;
 - for the desktop frontend (`scripts/dev.sh frontend`): Node 26.12.1 (MIT, with the licences of
   its bundled components) and pnpm 12.14.0 through npm (MIT), the same versions
   `scripts/bundle-macos.sh` and the release workflow install; and Playwright 1.64.1's WebKit
