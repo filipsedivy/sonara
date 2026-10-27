@@ -8,6 +8,10 @@ independently, see docs/project-format.md).
 
 ### Added
 
+- **Transport tests and timing documentation (SON-P03):** tests that a seek, a resume and a
+  stop end the notes that sound, and that the note schedule follows a tempo change; the
+  timing rules are written down in `docs/audio-engine.md` ("Transport and event scheduling").
+  No behaviour changed.
 - **Sample-based instruments (`sonara.sampler`, ADR 0010):** a pure-Rust SFZ sample player
   (velocity layers, round robin, keyswitches, release samples, exclusive groups, loops, 64
   voices) for orchestral libraries that you install yourself; Sonara ships no samples. The
