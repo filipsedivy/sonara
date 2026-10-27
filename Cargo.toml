@@ -134,6 +134,11 @@ disallowed_macros = "allow"
 # engine code and the dependencies changes no result: Rust never reassociates or contracts
 # floating-point operations at any level (RT-11), and debug assertions and overflow checks stay
 # on (RT-05).
+# Line tables keep panic backtraces readable; full debug info only slows the build and the link of
+# every test binary (CI wall time) and nobody steps through the test builds in a debugger.
+[profile.dev]
+debug = "line-tables-only"
+
 [profile.dev.package.sonara-dsp]
 opt-level = 3
 
