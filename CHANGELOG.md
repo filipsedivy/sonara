@@ -18,6 +18,13 @@ independently, see docs/project-format.md).
   not-installed patch renders as silence with a warning. See `docs/sample-libraries.md` and
   `docs/orchestral-audio-engine-research.md`. Sound quality of real libraries has not been
   listened to.
+- **Instrument catalog (`sonara_app::instruments`):** the instrument presets of the installed
+  sample libraries, with a stable ID that does not depend on the install path, a family (declared
+  by an optional `sonara-library.json` manifest, else inferred from the patch's path and marked as
+  such), declared articulations only, a licence note and availability (available, missing,
+  invalid). A broken library, manifest or patch is reported as data, never a crash. A library
+  API only: no tool, command or GUI uses it yet, and the 57-tool contract, the `.sonara` schema
+  and the golden plugin catalog are unchanged. See `docs/instrument-catalog.md`.
 
 ## [0.1.4] — 2026-10-25
 
