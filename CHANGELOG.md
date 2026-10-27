@@ -6,6 +6,11 @@ independently, see docs/project-format.md).
 
 ## [Unreleased]
 
+### Added
+
+- `sonara-io`: the `AudioBackend` trait, an engine-agnostic seam over the device lifecycle
+  (implemented by `Engine`), and `MockBackend` for tests. No user-visible behaviour changes.
+
 ## [0.1.4] — 2026-10-25
 
 ### Fixed
