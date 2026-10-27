@@ -153,6 +153,16 @@ every processor match the golden data recorded from the original prototype, most
 for bit. Parameter changes glide (gain-type parameters per sample; filter frequencies
 geometrically per block), so automation does not click. No fast-math is used (RT-11).
 
+### Sample player (`sonara.sampler`)
+
+Not part of the prototype and not covered by the golden data (ADR 0010). It runs 64 preallocated
+voices with linear interpolation and linear attack/release ramps; the render thread allocates
+nothing (checked with `assert_no_alloc` in `crates/sonara-dsp/tests/sampler.rs`). An SFZ patch is
+parsed and its samples decoded on the builder thread (`sonara-media::sfz`), cached in the
+`MediaProvider`, and handed to the processor through `DeviceState::sample_bank`. A graph rebuild
+recreates sampler devices, so sounding notes restart. There are no measured load or memory
+numbers for it yet (HW-01: they are measured locally).
+
 ## Measured performance
 
 These are measurements, not guarantees, and never CI gates (HW-01). The requirements

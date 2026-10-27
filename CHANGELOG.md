@@ -6,6 +6,19 @@ independently, see docs/project-format.md).
 
 ## [Unreleased]
 
+### Added
+
+- **Sample-based instruments (`sonara.sampler`, ADR 0010):** a pure-Rust SFZ sample player
+  (velocity layers, round robin, keyswitches, release samples, exclusive groups, loops, 64
+  voices) for orchestral libraries that you install yourself; Sonara ships no samples. The
+  directories in the settings key `sample_libraries` are scanned for `.sfz` files at startup;
+  when any exist, the sampler is offered and its `instrument` parameter lists the patches
+  (`list_plugins`, `set_instrument`). The 57-tool contract, the `.sonara` schema and the golden
+  plugin catalog are unchanged: without a configured library nothing differs. A missing or
+  not-installed patch renders as silence with a warning. See `docs/sample-libraries.md` and
+  `docs/orchestral-audio-engine-research.md`. Sound quality of real libraries has not been
+  listened to.
+
 ## [0.1.4] — 2026-10-25
 
 ### Fixed

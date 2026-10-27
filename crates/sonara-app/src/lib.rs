@@ -46,6 +46,7 @@ pub mod projects;
 pub mod prompts;
 pub mod pyjson;
 pub mod render;
+pub mod samples;
 pub mod session;
 pub mod settings;
 pub mod settings_dialog;

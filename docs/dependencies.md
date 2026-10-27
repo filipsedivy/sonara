@@ -7,6 +7,9 @@ decision (LIC-01). This inventory was verified on 2026-10-21 and updated on 2026
 
 ## Rust workspace
 
+The SFZ sampler (ADR 0010) added no dependency. Sample libraries are user-installed data, not
+dependencies, and none is shipped.
+
 | Component | Version | Licence | Use | Notes |
 |---|---|---|---|---|
 | Rust toolchain | 1.99.1 | MIT/Apache-2.0 | compiler | Pinned in `rust-toolchain.toml` |
