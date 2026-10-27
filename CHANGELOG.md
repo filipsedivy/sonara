@@ -6,6 +6,14 @@ independently, see docs/project-format.md).
 
 ## [Unreleased]
 
+### Changed
+
+- CI runs the Rust gate as parallel jobs (lint, tests in two halves, loom, RealtimeSanitizer) and
+  runs the tests with cargo-nextest. The development profile keeps line tables only instead of
+  full debug info. No user-visible behaviour changes.
+- The `golden_export` tests of `sonara-media` use a scratch directory per process, so that they
+  also pass when every test runs in its own process (test-only change).
+
 ## [0.1.4] — 2026-10-25
 
 ### Fixed
