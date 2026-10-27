@@ -1,0 +1,281 @@
+{
+ "format": "sonara.project",
+ "schema_version": 1,
+ "id": "prj_song",
+ "name": "Song Fixture",
+ "settings": {
+  "sample_rate": 48000,
+  "length_beats": 32.0,
+  "record_subtype": "FLOAT"
+ },
+ "tempo_map": [
+  {
+   "beat": 0.0,
+   "bpm": 120.0,
+   "ramp": false
+  },
+  {
+   "beat": 16.0,
+   "bpm": 90.0,
+   "ramp": false
+  }
+ ],
+ "time_signatures": [
+  {
+   "bar": 0,
+   "numerator": 4,
+   "denominator": 4
+  },
+  {
+   "bar": 4,
+   "numerator": 3,
+   "denominator": 4
+  }
+ ],
+ "tracks": [
+  {
+   "id": "trk_pad",
+   "name": "Pad",
+   "kind": "instrument",
+   "color": null,
+   "output_id": "master",
+   "parent_id": null,
+   "mixer": {
+    "volume_db": 0.0,
+    "pan": 0.0,
+    "mute": false,
+    "solo": false,
+    "solo_safe": false
+   },
+   "input": {
+    "channels": [
+     0
+    ],
+    "armed": false,
+    "monitor": "auto"
+   },
+   "instrument": {
+    "id": "dev_pad",
+    "plugin_id": "sonara.synth.poly",
+    "name": "Pad",
+    "enabled": true,
+    "params": {},
+    "sidechain_id": null,
+    "preset": null,
+    "state": {}
+   },
+   "inserts": [],
+   "sends": [],
+   "automation": [],
+   "clips": [
+    {
+     "type": "midi",
+     "id": "clp_pad",
+     "name": "Pad chords",
+     "start": 0.0,
+     "length": 16.0,
+     "content_offset": 0.0,
+     "loop_length": null,
+     "muted": false,
+     "color": null,
+     "notes": [
+      {
+       "id": "n_pad_1",
+       "pitch": 60,
+       "start": 0.0,
+       "length": 4.0,
+       "velocity": 80,
+       "channel": 0
+      },
+      {
+       "id": "n_pad_2",
+       "pitch": 64,
+       "start": 0.0,
+       "length": 4.0,
+       "velocity": 80,
+       "channel": 0
+      },
+      {
+       "id": "n_pad_3",
+       "pitch": 67,
+       "start": 2.0,
+       "length": 6.0,
+       "velocity": 70,
+       "channel": 0
+      }
+     ],
+     "controls": []
+    }
+   ]
+  },
+  {
+   "id": "trk_lead",
+   "name": "Lead",
+   "kind": "instrument",
+   "color": null,
+   "output_id": "master",
+   "parent_id": null,
+   "mixer": {
+    "volume_db": 0.0,
+    "pan": 0.0,
+    "mute": false,
+    "solo": false,
+    "solo_safe": false
+   },
+   "input": {
+    "channels": [
+     0
+    ],
+    "armed": false,
+    "monitor": "auto"
+   },
+   "instrument": {
+    "id": "dev_lead",
+    "plugin_id": "sonara.synth.poly",
+    "name": "Lead",
+    "enabled": true,
+    "params": {},
+    "sidechain_id": null,
+    "preset": null,
+    "state": {}
+   },
+   "inserts": [],
+   "sends": [],
+   "automation": [],
+   "clips": [
+    {
+     "type": "midi",
+     "id": "clp_lead",
+     "name": "Lead line",
+     "start": 16.0,
+     "length": 16.0,
+     "content_offset": 0.0,
+     "loop_length": null,
+     "muted": false,
+     "color": null,
+     "notes": [
+      {
+       "id": "n_lead_1",
+       "pitch": 72,
+       "start": 0.0,
+       "length": 0.5,
+       "velocity": 127,
+       "channel": 0
+      },
+      {
+       "id": "n_lead_2",
+       "pitch": 74,
+       "start": 0.5,
+       "length": 0.5,
+       "velocity": 1,
+       "channel": 15
+      }
+     ],
+     "controls": []
+    }
+   ]
+  },
+  {
+   "id": "trk_drm",
+   "name": "Drums",
+   "kind": "instrument",
+   "color": null,
+   "output_id": "master",
+   "parent_id": null,
+   "mixer": {
+    "volume_db": 0.0,
+    "pan": 0.0,
+    "mute": false,
+    "solo": false,
+    "solo_safe": false
+   },
+   "input": {
+    "channels": [
+     0
+    ],
+    "armed": false,
+    "monitor": "auto"
+   },
+   "instrument": {
+    "id": "dev_drm",
+    "plugin_id": "sonara.drums",
+    "name": "Drums",
+    "enabled": true,
+    "params": {},
+    "sidechain_id": null,
+    "preset": null,
+    "state": {}
+   },
+   "inserts": [],
+   "sends": [],
+   "automation": [],
+   "clips": []
+  }
+ ],
+ "master": {
+  "id": "master",
+  "name": "Master",
+  "kind": "master",
+  "color": null,
+  "output_id": null,
+  "parent_id": null,
+  "mixer": {
+   "volume_db": 0.0,
+   "pan": 0.0,
+   "mute": false,
+   "solo": false,
+   "solo_safe": false
+  },
+  "input": {
+   "channels": [
+    0
+   ],
+   "armed": false,
+   "monitor": "auto"
+  },
+  "instrument": null,
+  "inserts": [],
+  "sends": [],
+  "automation": [],
+  "clips": []
+ },
+ "assets": [],
+ "markers": [],
+ "sections": [
+  {
+   "id": "sec_a",
+   "name": "A",
+   "start": 0.0,
+   "length": 16.0,
+   "color": null
+  },
+  {
+   "id": "sec_b",
+   "name": "B",
+   "start": 16.0,
+   "length": 16.0,
+   "color": null
+  }
+ ],
+ "transport": {
+  "loop_enabled": false,
+  "loop_start": 0.0,
+  "loop_end": 16.0,
+  "punch_enabled": false,
+  "punch_in": 0.0,
+  "punch_out": 16.0,
+  "metronome": false,
+  "count_in_bars": 0
+ },
+ "metadata": {
+  "title": "Song Fixture",
+  "artist": "",
+  "album": "",
+  "genre": "",
+  "composer": "",
+  "comment": "",
+  "created": "2026-10-28T00:00:00Z",
+  "modified": ""
+ },
+ "editor": {}
+}
