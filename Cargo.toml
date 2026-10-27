@@ -83,7 +83,7 @@ realfft = { version = "3.5", default-features = false }
 rand_mt = "6.1"
 regex = "1.13"
 # The MCP server of `sonara mcp` over stdio. Exact pin: the SDK changes fast.
-rmcp = { version = "=3.5.1", default-features = false, features = ["server", "transport-io"] }
+rmcp = { version = "=3.6.0", default-features = false, features = ["server", "transport-io"] }
 # The SPSC rings of sonara-rt. RUSTSEC-2026-0274 affects versions before 0.3.5.
 rtrb = "0.4.0"
 rtsan-standalone = "0.3.0"
@@ -134,6 +134,11 @@ disallowed_macros = "allow"
 # engine code and the dependencies changes no result: Rust never reassociates or contracts
 # floating-point operations at any level (RT-11), and debug assertions and overflow checks stay
 # on (RT-05).
+# Line tables keep panic backtraces readable; full debug info only slows the build and the link of
+# every test binary (CI wall time) and nobody steps through the test builds in a debugger.
+[profile.dev]
+debug = "line-tables-only"
+
 [profile.dev.package.sonara-dsp]
 opt-level = 3
 
