@@ -17,6 +17,7 @@
 )]
 
 pub mod analysis;
+pub mod bank;
 pub mod convolution;
 pub mod filters;
 pub mod kernels;

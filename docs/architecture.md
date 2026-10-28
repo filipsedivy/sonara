@@ -80,6 +80,23 @@ GUI, the CLI, local IPC clients and the MCP server are all interfaces onto that 
 - The GUI and agents share one session and therefore one undo history: an agent edit can be
   undone from the GUI, and the reverse.
 
+### Command and history guarantees
+
+Pinned by `crates/sonara-core/tests/commands.rs` and `tests/history.rs`:
+
+- **Atomic.** A command that fails (missing target, invalid value, a failing step of a
+  `Transaction`) returns its `DomainError` and leaves the project, the version and both undo
+  stacks untouched, including the redo branch left by an earlier undo.
+- **No-ops.** A command that returns the input snapshot commits nothing and records no step.
+  A command that rewrites a value with itself builds a new snapshot and is recorded, as in the
+  prototype.
+- **New edits end redo.** A committed command clears the redo stack. Commands with an equal
+  merge key inside the merge window (1.5 s) share one undo step; `seal_undo` ends a merge.
+- **Identity.** Edits keep object IDs and unrelated fields; undo of a delete restores the same
+  IDs and values. History is linear, so undo never overwrites a later, unrelated edit.
+- **Limits.** 500 steps by default; older steps are dropped. View-state commands bypass the
+  history and do not dirty the project.
+
 ## Interfaces onto the session
 
 - **GUI.** The Tauri shell exposes `sonara-app` services as commands. The `sonara-events`

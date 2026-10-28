@@ -51,6 +51,7 @@ mod pcm;
 mod provider;
 mod reader;
 mod resample;
+pub mod sfz;
 mod stream;
 
 pub use cache::{CACHE_VERSION, CacheInfo, DECODE_CHUNK, decode_to_cache};

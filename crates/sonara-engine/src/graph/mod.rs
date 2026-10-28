@@ -49,10 +49,10 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use sonara_core::error::{DomainError, ErrorCode};
 use sonara_core::ids::MASTER_ID;
-use sonara_core::model::device::Device;
+use sonara_core::model::device::{Device, ParamValue};
 use sonara_core::model::project::Project;
 use sonara_core::model::track::{Track, TrackKind, db_to_gain};
-use sonara_core::plugins::{PluginDescriptor, PluginRegistry};
+use sonara_core::plugins::{PluginDescriptor, PluginRegistry, SAMPLER_ID};
 use sonara_core::pyfmt::str_repr;
 use sonara_core::routing;
 use sonara_dsp::filters::{DelayLine, SmoothedValue};
@@ -772,7 +772,11 @@ impl<'a> LiveBuilder<'a> {
             (None, None) => true,
             _ => false,
         };
+        // A sampler is rebuilt with every graph: its instrument is device state, which `reuse`
+        // does not compare, so a reused one could keep playing a replaced patch. The loaded
+        // bank is cached, so a rebuild costs no file reads; sounding notes restart (ADR 0010).
         let fits = old.plugin_id == device.plugin_id
+            && device.plugin_id != SAMPLER_ID
             && same_source
             && old.playable_notes == state.playable_notes
             && reusable(&device.plugin_id, &old.params, params)
@@ -980,11 +984,14 @@ impl Builder<'_> {
             ));
             return Ok(None);
         };
-        let params =
+        let params = if device.plugin_id == SAMPLER_ID {
+            self.sampler_params(descriptor, device)?
+        } else {
             param_slots(descriptor, &device.params).map_err(|source| EngineError::Params {
                 device: device.id.clone(),
                 source,
-            })?;
+            })?
+        };
         let (state, ir_source) = self.device_state(device)?;
         let state = DeviceState {
             playable_notes,
@@ -999,6 +1006,7 @@ impl Builder<'_> {
             processor.set_state(&DeviceState {
                 impulse_response: None,
                 playable_notes: NoteSet::EMPTY,
+                sample_bank: None,
             });
             processor.prepare(self.spec);
             processor.set_params(&params);
@@ -1047,6 +1055,88 @@ impl Builder<'_> {
         }))
     }
 
+    /// The parameters of a sampler. Its `instrument` names a patch of the libraries installed
+    /// on this machine; a project that names one that is not installed here (it was made
+    /// elsewhere, or the library moved) still renders, with a warning and silence from that
+    /// device, instead of failing on the choice.
+    fn sampler_params(
+        &mut self,
+        descriptor: &PluginDescriptor,
+        device: &Device,
+    ) -> Result<ParamSlots, EngineError> {
+        let mut params = device.params.clone();
+        let installed = descriptor
+            .params
+            .iter()
+            .find(|spec| spec.id == "instrument")
+            .map(|spec| &spec.choices);
+        let stale = params
+            .get("instrument")
+            .and_then(text)
+            .filter(|name| installed.is_some_and(|choices| !choices.iter().any(|c| c == name)));
+        if let Some(name) = stale {
+            self.warnings.push(format!(
+                "instrument {} of {} is not installed; it plays silence",
+                str_repr(name),
+                str_repr(&device.name)
+            ));
+            params.shift_remove("instrument");
+        }
+        param_slots(descriptor, &params).map_err(|source| EngineError::Params {
+            device: device.id.clone(),
+            source,
+        })
+    }
+
+    /// The installed patch `device` plays: its `instrument` parameter, or the descriptor's
+    /// default when the parameter was never set; `None` when the choice is not installed.
+    fn sampler_instrument(&self, device: &Device) -> Option<String> {
+        let spec = self
+            .registry
+            .find(SAMPLER_ID)?
+            .params
+            .iter()
+            .find(|spec| spec.id == "instrument")?;
+        let name = match device.params.get("instrument") {
+            Some(value) => text(value)?.to_owned(),
+            None => text(&spec.default)?.to_owned(),
+        };
+        spec.choices.contains(&name).then_some(name)
+    }
+
+    /// The state of a sampler: the instrument of the SFZ patch its `instrument` parameter
+    /// names. A patch that cannot be read is a warning, and the sampler plays silence, as a
+    /// missing impulse response does not stop a render (ADR 0010).
+    fn sampler_state(&mut self, device: &Device) -> DeviceState {
+        let Some(path) = self.sampler_instrument(device) else {
+            return DeviceState::default();
+        };
+        let path = path.as_str();
+        match self.media.load_sample_bank(std::path::Path::new(path)) {
+            Ok(bank) => {
+                if !bank.ignored_opcodes.is_empty() {
+                    self.warnings.push(format!(
+                        "instrument {} uses opcodes the sampler does not play: {}",
+                        str_repr(path),
+                        bank.ignored_opcodes.join(", ")
+                    ));
+                }
+                DeviceState {
+                    sample_bank: Some(bank),
+                    ..DeviceState::default()
+                }
+            }
+            Err(error) => {
+                self.warnings.push(format!(
+                    "instrument {} of {} cannot be loaded: {error}",
+                    str_repr(path),
+                    str_repr(&device.name)
+                ));
+                DeviceState::default()
+            }
+        }
+    }
+
     /// The non-parameter state of `device` (`_device_state`): its impulse response, loaded at
     /// the project rate, when the device names one, with the loaded audio it came from; every
     /// note playable.
@@ -1054,6 +1144,9 @@ impl Builder<'_> {
         &mut self,
         device: &Device,
     ) -> Result<(DeviceState, Option<Arc<FullAudio>>), EngineError> {
+        if device.plugin_id == SAMPLER_ID {
+            return Ok((self.sampler_state(device), None));
+        }
         let Some(ir_id) = ir_asset_id(device) else {
             return Ok((DeviceState::default(), None));
         };
@@ -1080,6 +1173,14 @@ impl Builder<'_> {
             ..DeviceState::default()
         };
         Ok((state, Some(full)))
+    }
+}
+
+/// The text of a string parameter value.
+fn text(value: &ParamValue) -> Option<&str> {
+    match value {
+        ParamValue::Str(text) => Some(text),
+        _ => None,
     }
 }
 

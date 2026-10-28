@@ -7,11 +7,13 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 use sonara_core::model::media::MediaAsset;
+use sonara_dsp::bank::SampleBank;
 
 use crate::cache::{CacheInfo, decode_to_cache};
 use crate::error::MediaError;
 use crate::format::needs_cache;
 use crate::reader::{CachedReader, DirectReader, MediaReader, SilentReader};
+use crate::sfz::load_sfz;
 
 /// A reader shared by everything that plays one asset at one rate.
 pub type SharedReader = Arc<Mutex<MediaReader>>;
@@ -38,6 +40,7 @@ pub struct MediaProvider {
     cache_dir: Option<PathBuf>,
     readers: Mutex<HashMap<Key, SharedReader>>,
     full: Mutex<HashMap<Key, Arc<FullAudio>>>,
+    banks: Mutex<HashMap<PathBuf, Arc<SampleBank>>>,
 }
 
 impl std::fmt::Debug for MediaProvider {
@@ -92,6 +95,7 @@ impl MediaProvider {
             cache_dir,
             readers: Mutex::new(HashMap::new()),
             full: Mutex::new(HashMap::new()),
+            banks: Mutex::new(HashMap::new()),
         }
     }
 
@@ -249,6 +253,21 @@ impl MediaProvider {
         Ok(full)
     }
 
+    /// The sampler instrument of the SFZ patch `path`, loaded once and then shared: a live
+    /// graph rebuild must not read the library again (`sonara.sampler`, ADR 0010).
+    ///
+    /// # Errors
+    ///
+    /// The errors of [`load_sfz`].
+    pub fn load_sample_bank(&self, path: &Path) -> Result<Arc<SampleBank>, MediaError> {
+        if let Some(bank) = lock(&self.banks).get(path) {
+            return Ok(Arc::clone(bank));
+        }
+        let bank = Arc::new(load_sfz(path)?);
+        lock(&self.banks).insert(path.to_owned(), Arc::clone(&bank));
+        Ok(bank)
+    }
+
     /// Whether `asset` plays as silence at `sample_rate` because its media is missing or
     /// unreadable.
     pub fn is_missing(&self, asset: &MediaAsset, sample_rate: u32) -> bool {
@@ -259,6 +278,7 @@ impl MediaProvider {
     pub fn close(&self) {
         lock(&self.readers).clear();
         lock(&self.full).clear();
+        lock(&self.banks).clear();
     }
 
     /// Drops the readers and loaded copies of one asset, for example after relinking it.
