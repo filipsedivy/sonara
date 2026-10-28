@@ -6,6 +6,14 @@ independently, see docs/project-format.md).
 
 ## [Unreleased]
 
+### Added
+
+- **Song form generator (SON-P10, `sonara-midi::form`):** deterministic templates (verse–chorus,
+  pop with pre-chorus, AABA, dance) that plan sections with roles, bar lengths and energy and
+  density levels on the project's meter grid; apply them as one undoable step, and regenerate a
+  single section without touching the others. Library API only; no tool, schema or golden
+  behaviour changes. See `docs/song-form.md`.
+
 ## [0.1.5] — 2026-10-28
 
 ### Added
