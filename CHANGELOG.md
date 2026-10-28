@@ -8,6 +8,11 @@ independently, see docs/project-format.md).
 
 ### Added
 
+- **Orchestration metadata (`sonara_midi::orchestration`):** pitch ranges (playable and
+  comfortable), transposition, family and idiomatic articulations for 16 orchestral instruments,
+  each value sourced or marked as an estimate, with range checks that warn instead of clamping.
+  Library-independent data; no agent tool, no contract change. See
+  `docs/orchestration-metadata.md`.
 - **Localized regeneration (SON-P11, `sonara-midi::regenerate`):** replaces the notes of a bounded
   region (beats or a section) of one MIDI clip through a `RegionGenerator` interface. The result
   is a validated patch that names the notes removed and added, applied as one undoable step;
