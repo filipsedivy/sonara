@@ -91,24 +91,43 @@ impl Fixture {
     }
 }
 
-/// Change calls that the project's validation must refuse, with the error code each gets.
-fn invalid_changes() -> Vec<(&'static str, Value)> {
+/// Change calls that the validation must refuse, with the error code each gets: a schema error
+/// is `INVALID_ARGUMENT`, a well-formed call about something absent is `NOT_FOUND`.
+fn invalid_changes() -> Vec<(&'static str, Value, &'static str)> {
+    let schema = "INVALID_ARGUMENT";
     vec![
-        ("set_tempo", json!({"bpm": -10.0})),
-        ("set_tempo", json!({"bpm": "fast"})),
+        ("set_tempo", json!({"bpm": -10.0}), schema),
+        ("set_tempo", json!({"bpm": 5000.0}), schema),
+        ("set_tempo", json!({"bpm": "fast"}), schema),
         (
             "set_tempo",
             json!({"bpm": 120.0, "bypass_validation": true}),
+            schema,
         ),
-        ("create_track", json!({"name": "X", "kind": "theremin"})),
-        ("rename_track", json!({"track": "trk_missing", "name": "Y"})),
+        (
+            "create_track",
+            json!({"name": "X", "kind": "theremin"}),
+            schema,
+        ),
         (
             "add_midi_notes",
-            json!({"clip": "clp_missing", "notes": []}),
+            json!({"clip_id": "clp_missing", "notes": []}),
+            schema,
         ),
         (
             "set_track_volume",
-            json!({"track": "trk_missing", "volume_db": 0.0}),
+            json!({"track_id": "master", "volume_db": 500.0}),
+            schema,
+        ),
+        (
+            "rename_track",
+            json!({"track_id": "trk_missing", "name": "Y"}),
+            "NOT_FOUND",
+        ),
+        (
+            "set_track_volume",
+            json!({"track_id": "trk_missing", "volume_db": 0.0}),
+            "NOT_FOUND",
         ),
     ]
 }
@@ -117,10 +136,10 @@ fn invalid_changes() -> Vec<(&'static str, Value)> {
 fn a_rejected_change_leaves_the_project_untouched() {
     let fixture = Fixture::new();
     let before = fixture.snapshot();
-    for (tool, args) in invalid_changes() {
+    for (tool, args, code) in invalid_changes() {
         let reply = fixture.call(tool, &args);
         assert_eq!(reply["ok"], false, "{tool} {args}: {reply}");
-        assert!(reply["error"]["code"].is_string(), "{tool}: {reply}");
+        assert_eq!(reply["error"]["code"], code, "{tool} {args}: {reply}");
         assert_eq!(
             fixture.snapshot(),
             before,
@@ -154,7 +173,7 @@ fn a_dry_run_validates_without_committing() {
 fn every_change_attempt_is_audited_with_its_outcome() {
     let fixture = Fixture::new();
     let attempts = invalid_changes();
-    for (tool, args) in &attempts {
+    for (tool, args, _) in &attempts {
         fixture.call(tool, args);
     }
     let accepted = fixture.call(
@@ -165,12 +184,12 @@ fn every_change_attempt_is_audited_with_its_outcome() {
 
     let log = fixture.audit();
     assert_eq!(log.len(), attempts.len() + 1, "one record per call");
-    for (record, (tool, _)) in log.iter().zip(&attempts) {
+    for (record, (tool, _, code)) in log.iter().zip(&attempts) {
         assert_eq!(record["tool"], *tool);
         assert_eq!(record["ok"], false, "{record}");
-        assert!(
-            record["error"].is_string(),
-            "a refusal names its error code: {record}"
+        assert_eq!(
+            record["error"], *code,
+            "a refusal is audited with its error code: {record}"
         );
         assert!(record["ts"].is_string());
     }
