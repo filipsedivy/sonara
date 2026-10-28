@@ -6,12 +6,18 @@ independently, see docs/project-format.md).
 
 ## [Unreleased]
 
+## [0.1.5] — 2026-10-28
+
 ### Added
 
 - **Theory primitives (SON-P05, `sonara-midi::theory`):** exact step-grid rhythm patterns,
   diatonic motifs with pure transforms, and validators that separate malformed data (errors)
   from valid but unusual choices (advisories). Library API only; no tool, schema or golden
   behaviour changes.
+- **Transport tests and timing documentation (SON-P03):** tests that a seek, a resume and a
+  stop end the notes that sound, and that the note schedule follows a tempo change; the
+  timing rules are written down in `docs/audio-engine.md` ("Transport and event scheduling").
+  No behaviour changed.
 - **Sample-based instruments (`sonara.sampler`, ADR 0010):** a pure-Rust SFZ sample player
   (velocity layers, round robin, keyswitches, release samples, exclusive groups, loops, 64
   voices) for orchestral libraries that you install yourself; Sonara ships no samples. The
@@ -22,6 +28,23 @@ independently, see docs/project-format.md).
   not-installed patch renders as silence with a warning. See `docs/sample-libraries.md` and
   `docs/orchestral-audio-engine-research.md`. Sound quality of real libraries has not been
   listened to.
+- **Instrument catalog (`sonara_app::instruments`):** the instrument presets of the installed
+  sample libraries, with a stable ID that does not depend on the install path, a family (declared
+  by an optional `sonara-library.json` manifest, else inferred from the patch's path and marked as
+  such), declared articulations only, a licence note and availability (available, missing,
+  invalid). A broken library, manifest or patch is reported as data, never a crash. A library
+  API only: no tool, command or GUI uses it yet, and the 57-tool contract, the `.sonara` schema
+  and the golden plugin catalog are unchanged. See `docs/instrument-catalog.md`.
+- `sonara-io`: the `AudioBackend` trait, an engine-agnostic seam over the device lifecycle
+  (implemented by `Engine`), and `MockBackend` for tests. No user-visible behaviour changes.
+
+### Changed
+
+- CI runs the Rust gate as parallel jobs (lint, tests in two halves, loom, RealtimeSanitizer) and
+  runs the tests with cargo-nextest. The development profile keeps line tables only instead of
+  full debug info. No user-visible behaviour changes.
+- The `golden_export` tests of `sonara-media` use a scratch directory per process, so that they
+  also pass when every test runs in its own process (test-only change).
 
 ## [0.1.4] — 2026-10-25
 
