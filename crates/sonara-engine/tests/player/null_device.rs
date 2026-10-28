@@ -143,6 +143,7 @@ fn wait_until(timeout: Duration, mut predicate: impl FnMut() -> bool) -> bool {
 fn player_plays_without_underruns_and_tracks_position() {
     let app = App::new(drums_only, 250.0);
     let snapshot = app.snapshot();
+    let started = Instant::now();
     let status = app
         .player
         .play(&snapshot, Some(0.0), None, false)
@@ -151,9 +152,14 @@ fn player_plays_without_underruns_and_tracks_position() {
     thread::sleep(Duration::from_millis(600));
     let status = app.player.status(Some(&snapshot.project));
     assert_eq!(status.underruns, 0);
-    // 0.6 s at 120 BPM is 1.2 beats; allow for lookahead and scheduling jitter.
     let beat = app.beats();
-    assert!(0.6 < beat && beat < 1.4, "position {beat}");
+    // At 120 BPM a beat is 0.5 s. The upper bound follows the measured elapsed time, because a
+    // loaded CI runner can oversleep; 0.2 beats allow for lookahead and scheduling jitter.
+    let elapsed_beats = started.elapsed().as_secs_f64() * 2.0;
+    assert!(
+        0.6 < beat && beat < elapsed_beats + 0.2,
+        "position {beat}, elapsed {elapsed_beats} beats"
+    );
     assert!(
         status.render_load < 1.0,
         "render load {}",
