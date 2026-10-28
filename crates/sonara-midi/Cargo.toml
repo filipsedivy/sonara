@@ -12,6 +12,7 @@ publish.workspace = true
 midly.workspace = true
 rand_mt.workspace = true
 sonara-core.workspace = true
+thiserror.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true

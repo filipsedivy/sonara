@@ -8,6 +8,12 @@ independently, see docs/project-format.md).
 
 ### Added
 
+- **Localized regeneration (SON-P11, `sonara-midi::regenerate`):** replaces the notes of a bounded
+  region (beats or a section) of one MIDI clip through a `RegionGenerator` interface. The result
+  is a validated patch that names the notes removed and added, applied as one undoable step;
+  notes outside the region keep their identity, and a stale or invalid plan changes nothing.
+  Library API only; no generator ships, no tool, schema or golden behaviour changes. See
+  `docs/regeneration.md`.
 - **Song form generator (SON-P10, `sonara-midi::form`):** deterministic templates (verse–chorus,
   pop with pre-chorus, AABA, dance) that plan sections with roles, bar lengths and energy and
   density levels on the project's meter grid; apply them as one undoable step, and regenerate a
