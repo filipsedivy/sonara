@@ -99,6 +99,7 @@ These need hardware or a person and are never CI gates (HW-01). Their results be
 | Instrument catalog (`sonara_app::instruments`) | partial | The presets of the installed sample libraries with stable IDs, declared or inferred family, declared articulations, licence note and availability (available, missing, invalid); optional `sonara-library.json` manifest; on-request deep check of a patch. A library-level API only: no agent tool, CLI command or GUI uses it yet, and the plugin registry is unchanged. SFZ only (no bank or program). Tested with generated fixtures (see [instrument-catalog.md](instrument-catalog.md)) |
 | Chords, scales, arpeggiator, humanize, swing | done | `sonara-midi` and `generate_midi` |
 | Programmatic MIDI generation | done | |
+| Rhythm patterns, motifs, theory validators | done (library) | `sonara-midi::theory::{rhythm, motif, validate}`; not yet exposed to agent tools |
 
 ### Mixer and routing
 
