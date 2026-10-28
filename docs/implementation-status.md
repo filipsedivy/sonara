@@ -186,6 +186,7 @@ These need hardware or a person and are never CI gates (HW-01). Their results be
 |---|---|---|
 | Menus, transport, timeline, headers, mixer, browser, piano roll, device editors, inspector, export and settings dialogs, status/progress | done | Tauri 2 + Svelte 5 + TypeScript ([ADR 0009](decisions/0009-gui-toolkit.md)); the mixer can move to a window of its own |
 | Dark theme | done | |
+| Brand: icon, logo, About dialog | done | The Generative Composition mark (scattered dots resolving into ordered notes); `docs/brand.md`; a bolder variant for 16–32 px, which stays hard to read at 16 px |
 | Light theme | partial | The panels follow the light palette, live from the setting; the canvases stay dark |
 | Keyboard shortcuts, context menus, drag and drop, zoom | done | Native macOS menu, HiDPI. A drop from the Finder always snaps |
 | Accessibility | done | VoiceOver labels on the AppKit tree (18 of 18 checks) |

@@ -20,6 +20,11 @@ independently, see docs/project-format.md).
   single section without touching the others. Library API only; no tool, schema or golden
   behaviour changes. See `docs/song-form.md`.
 
+### Changed
+
+- **New brand mark:** the "Generative Composition" mark replaces the arc-built "S" with sonar arcs: scattered dots that resolve into ordered, ascending notes, as ideas become a composition. The app icon, the bundle icons (`Sonara.icns`), the horizontal logos, the About dialog and the README logo use it; the wordmark is unchanged, and the colours stay Sonar Blue to Violet. A simplified variant serves the 16–32 px icon sizes. See `docs/brand.md`.
+
+
 ## [0.1.5] — 2026-10-28
 
 ### Added
