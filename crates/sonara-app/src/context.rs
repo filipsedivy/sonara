@@ -28,7 +28,7 @@ use std::time::Instant;
 
 use sonara_core::error::{DomainError, ErrorCode};
 use sonara_core::model::track::TrackKind;
-use sonara_core::plugins::{PluginRegistry, builtin_registry};
+use sonara_core::plugins::PluginRegistry;
 use sonara_core::session::ProjectSession;
 use sonara_dsp::processor::{EventKind, InstrumentEvent};
 use sonara_project::store::ProjectStore;
@@ -43,6 +43,7 @@ use crate::paths::workspaces_dir;
 use crate::peaks::PeakCache;
 use crate::projects::{MediaProbe, ProjectService};
 use crate::render::RenderService;
+use crate::samples::registry_for;
 use crate::session::SharedSession;
 use crate::settings::{Settings, load_settings, settings_file};
 use crate::sync::lock;
@@ -189,7 +190,7 @@ impl AppContext {
         };
         let ids = options.ids.clone().unwrap_or_default();
         let wall_clock = options.wall_clock.clone().unwrap_or_else(system_clock);
-        let plugins = Arc::new(builtin_registry());
+        let plugins = Arc::new(registry_for(&settings));
         // Python's limits behave as 0 when negative.
         let undo_limit = usize::try_from(settings.undo_limit).unwrap_or(0);
         let undo_clock: sonara_core::session::Clock = if let Some(clock) = &options.undo_clock {

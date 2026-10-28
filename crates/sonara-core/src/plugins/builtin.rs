@@ -751,6 +751,52 @@ fn drums() -> PluginDescriptor {
     }
 }
 
+/// The ID of the sample player.
+pub const SAMPLER_ID: &str = "sonara.sampler";
+
+/// The descriptor of `sonara.sampler`, Sonara's own SFZ sample player (ADR 0010), for the
+/// installed instruments `patches` (the absolute paths of their `.sfz` files). `None` when there
+/// are none: a sampler without an instrument has nothing to offer.
+///
+/// It is deliberately not in [`builtin_registry`]: that catalog reproduces the prototype and
+/// is pinned by `golden/plugins/catalog.json` (GLD-01). The application registers this
+/// descriptor next to it when a sample library is configured. The instrument is the enum
+/// parameter `instrument`, so the existing tools (`list_plugins`, `set_instrument`) choose it
+/// and the project stores it with the other parameters (CTR-01: no new tool, no schema change).
+#[must_use]
+pub fn sampler_descriptor(patches: &[String]) -> Option<PluginDescriptor> {
+    let first = patches.first()?;
+    let choices: Vec<&str> = patches.iter().map(String::as_str).collect();
+    Some(PluginDescriptor {
+        tags: strings(&[
+            "sampler",
+            "sfz",
+            "orchestral",
+            "strings",
+            "brass",
+            "woodwinds",
+        ]),
+        ..descriptor(
+            SAMPLER_ID,
+            "Sonara Sampler",
+            PluginKind::Instrument,
+            "sampler",
+            vec![
+                fp("volume", "Volume", 0.0, -36.0, 12.0, "dB"),
+                fp("pan", "Pan", 0.0, -1.0, 1.0, ""),
+                fp("release_scale", "Release", 1.0, 0.1, 4.0, "x").log(),
+                ep("instrument", "Instrument", first, &choices)
+                    .desc("The SFZ patch to play: the path of a .sfz file in a sample library"),
+            ],
+            concat!(
+                "Sample player for SFZ instruments (velocity layers, round robin, keyswitches, ",
+                "release samples, exclusive groups). The sample libraries are installed ",
+                "separately and listed in the settings key 'sample_libraries'."
+            ),
+        )
+    })
+}
+
 /// The built-in descriptors, in the prototype's registration order.
 fn builtin_descriptors() -> Vec<PluginDescriptor> {
     vec![

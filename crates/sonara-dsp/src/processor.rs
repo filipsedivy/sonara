@@ -44,6 +44,7 @@
 use std::fmt;
 use std::sync::Arc;
 
+use crate::bank::SampleBank;
 use crate::processors::setup::{Prepared, Request};
 
 /// Most parameters a processor has (the poly synth has 37).
@@ -248,6 +249,9 @@ pub struct DeviceState {
     /// instrument may then skip the setup work for the others (the drum kit synthesizes only
     /// the sounds of these notes), so a note outside the set may play silence.
     pub playable_notes: NoteSet,
+    /// A sampler's instrument: the decoded samples and regions of its SFZ patch, loaded off the
+    /// real-time thread and shared read-only.
+    pub sample_bank: Option<Arc<SampleBank>>,
 }
 
 /// Live measurements: up to [`MAX_REPORT`] named values, in the prototype's key order.

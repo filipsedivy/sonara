@@ -543,14 +543,16 @@ fn midi_take_keeps_controllers() {
         ]
     );
     let note_on = clip.notes[0].start;
+    // `>=`, not `>` (TST-04): a message is timed by the device's software position, which
+    // advances only per callback period, so a controller drained in the same period as the
+    // note-on shares its frame on a slow runner (RTSan debug build).
     assert!(
         clip.controls
             .iter()
-            .all(|c| c.beat > note_on && c.beat < clip.length)
+            .all(|c| c.beat >= note_on && c.beat < clip.length)
     );
-    // Non-decreasing, not strictly increasing (TST-04): a message is timed by the device's
-    // software position, which advances only per callback period, so two messages drained
-    // before the next period share a frame on a slow runner. Their order is checked above.
+    // Non-decreasing, not strictly increasing (TST-04), for the same reason: two messages
+    // drained before the next period share a frame. Their order is checked above.
     assert!(clip.controls.windows(2).all(|w| w[0].beat <= w[1].beat));
     // One undo step removes the clip with its controllers.
     let clip_id = clip.id.clone();

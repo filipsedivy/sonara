@@ -4,7 +4,7 @@
 
 | Capability | Status |
 |---|---|
-| Built-in instruments and effects through the common plugin contract | **done** (12 plugins) |
+| Built-in instruments and effects through the common plugin contract | **done** (12 plugins, plus `sonara.sampler` when a sample library is configured) |
 | Parameter schemas, presets, state serialization, latency reporting, automation | **done** for built-ins |
 | VST3 hosting | **not implemented** |
 | Audio Unit hosting (macOS) | **not implemented** |
