@@ -33,6 +33,7 @@
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process;
 use std::sync::{Arc, OnceLock};
 use std::time::{Duration, UNIX_EPOCH};
 
@@ -113,9 +114,11 @@ fn ratio(a: usize, b: usize) -> f64 {
     a as f64 / b as f64
 }
 
-/// A directory for the test's files below the target directory, emptied first.
+/// A directory for the test's files below the target directory, emptied first. The process id is
+/// part of the name: cargo-nextest runs every test in its own process, and each of them replays
+/// the cases (`runs`) into its own directory, so that no process empties another's files.
 fn scratch(name: &str) -> PathBuf {
-    let dir = Path::new(env!("CARGO_TARGET_TMPDIR")).join(name);
+    let dir = Path::new(env!("CARGO_TARGET_TMPDIR")).join(format!("{name}-{}", process::id()));
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(&dir).expect("scratch directory");
     dir
