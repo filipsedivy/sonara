@@ -30,7 +30,8 @@ behaviour stays in `golden/` as regression data, and these rules keep that behav
   - A licence outside `deny.toml`'s allow-list needs the owner's decision first.
   - Every dependency, including build-time and frontend ones, is recorded in
     `docs/dependencies.md`.
-  - `LICENSE` stays "all rights reserved".
+  - `LICENSE` is the BSD Zero Clause License (0BSD; owner decision of 2026-10-28, replacing "all
+    rights reserved"). Changing it again needs the owner's decision.
 - **HW-01 Hardware numbers stay local.** Underrun, render-load and GUI performance figures are
   measured locally and recorded in `docs/audio-engine.md`. They are never CI gates.
 - **VER-01 One version.** The workspace `Cargo.toml` holds the only version. The desktop's

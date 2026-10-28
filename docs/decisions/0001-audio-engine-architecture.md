@@ -21,7 +21,7 @@ buffers on time, every time, typically every 1–20 ms. The following constraint
   mix as live playback.
 - Plugin hosting (VST3/AU/CLAP) is a later milestone but must not be ruled out.
 - Target platforms: macOS, Windows, Linux. Development machine: macOS on Apple Silicon.
-- Licensing must keep the project's licence open (the Sonara licence is not yet final; see
+- Licensing must keep the project's licence open (Sonara is under 0BSD since 2026-10-28; see
   `LICENSE`). Copyleft-only dependencies would decide that question by accident.
 
 ## Options considered

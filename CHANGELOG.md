@@ -8,6 +8,12 @@ break the API. The project format is versioned independently, see
 
 ## [Unreleased]
 
+### Changed
+
+- **Licence:** Sonara is released under the BSD Zero Clause License (0BSD), replacing "all rights
+  reserved". The About dialog, the bundle copyright, the third-party licence text, the crate and
+  package metadata and the README state it.
+
 ## [0.1.6] — 2026-10-28
 
 ### Added
