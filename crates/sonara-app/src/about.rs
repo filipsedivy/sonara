@@ -33,7 +33,7 @@ pub const AUTHOR: &str = "Filip Sedivy";
 /// The author's address, a `mailto:` link in the dialog.
 pub const AUTHOR_EMAIL: &str = "mail@filipsedivy.cz";
 /// The copyright line.
-pub const COPYRIGHT: &str = "© 2026 Filip Sedivy. All rights reserved.";
+pub const COPYRIGHT: &str = "© 2026 Filip Sedivy. Free software under the 0BSD licence.";
 /// The generated licence texts, relative to the bundle's resources
 /// (`Sonara.app/Contents/Resources`): the plain-text file that joins every file of the
 /// `licenses` folder.

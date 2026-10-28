@@ -1,9 +1,21 @@
-Copyright (c) 2026 Filip Sedivy <mail@filipsedivy.cz>. All rights reserved.
+BSD Zero Clause License
 
-The licence under which Sonara will be distributed has not been chosen yet. Until a licence
-is added to this file, no permission is granted to use, copy, modify, merge, publish,
-distribute, sublicense or sell copies of this software, beyond what applicable law allows.
+Copyright (c) 2026 Filip Sedivy <mail@filipsedivy.cz>
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+
+This licence covers everything in this repository that is authored by the copyright holder,
+including the source code, documentation, golden data and brand resources.
 
 Third-party components included in or used by Sonara are licensed under their own terms;
-see docs/dependencies.md (for example, the vendored miniaudio in native/third_party/miniaudio
-is public domain / MIT-0, see native/third_party/miniaudio/LICENSE).
+see docs/dependencies.md (for example, the vendored miniaudio in third_party/miniaudio
+is public domain / MIT-0, see third_party/miniaudio/LICENSE).

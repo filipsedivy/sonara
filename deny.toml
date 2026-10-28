@@ -72,7 +72,7 @@ exceptions = [
 ]
 
 [licenses.private]
-# Sonara's own crates are unpublished and proprietary (see LICENSE).
+# Sonara's own crates are unpublished (see LICENSE: 0BSD).
 ignore = true
 
 [bans]
