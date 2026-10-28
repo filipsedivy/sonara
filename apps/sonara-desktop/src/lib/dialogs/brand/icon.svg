@@ -1,16 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <title>Sonara</title>
   <defs>
-    <linearGradient id="mark" gradientUnits="userSpaceOnUse" x1="300" y1="230" x2="724" y2="794"><stop offset="0" stop-color="#4C9BF0"/><stop offset="1" stop-color="#7D6BD9"/></linearGradient>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#23252B"/><stop offset="1" stop-color="#16171A"/>
-    </linearGradient>
+    <linearGradient id="mark" gradientUnits="userSpaceOnUse" x1="56" y1="84" x2="468" y2="446"><stop offset="0" stop-color="#4C9BF0"/><stop offset="1" stop-color="#7D6BD9"/></linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#23252B"/><stop offset="1" stop-color="#16171A"/></linearGradient>
   </defs>
   <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#bg)"/>
   <rect x="100.5" y="100.5" width="823" height="823" rx="185.5" fill="none" stroke="#FFFFFF" stroke-opacity="0.06"/>
-  <path d="M 550.42 238.65 A 276.04 276.04 0 0 1 774.53 426.70" fill="none" stroke="url(#mark)" stroke-width="21.42" stroke-linecap="round" opacity="0.95"/>
-  <path d="M 603.99 191.21 A 333.72 333.72 0 0 1 811.95 365.71" fill="none" stroke="url(#mark)" stroke-width="18.13" stroke-linecap="round" opacity="0.55"/>
-  <path d="M 473.58 785.35 A 276.04 276.04 0 0 1 249.47 597.30" fill="none" stroke="url(#mark)" stroke-width="21.42" stroke-linecap="round" opacity="0.95"/>
-  <path d="M 420.01 832.79 A 333.72 333.72 0 0 1 212.05 658.29" fill="none" stroke="url(#mark)" stroke-width="18.13" stroke-linecap="round" opacity="0.55"/>
-  <path d="M 593.81 344.26 A 103.82 103.82 0 1 0 512.00 512.00 A 113.71 113.71 0 1 1 422.39 695.72" fill="none" stroke="url(#mark)" stroke-width="70.04" stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="translate(512 512) scale(1.55) translate(-262 -265)"><rect x="56" y="274" width="52" height="52" rx="26" fill="url(#mark)"/><rect x="114" y="84" width="52" height="52" rx="26" fill="url(#mark)"/><rect x="170" y="394" width="52" height="52" rx="26" fill="url(#mark)"/><rect x="220" y="304" width="84" height="52" rx="26" fill="url(#mark)"/><rect x="276" y="198" width="108" height="52" rx="26" fill="url(#mark)"/><rect x="340" y="90" width="128" height="52" rx="26" fill="url(#mark)"/></g>
 </svg>
