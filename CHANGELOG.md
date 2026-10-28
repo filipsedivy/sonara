@@ -6,6 +6,11 @@ independently, see docs/project-format.md).
 
 ## [Unreleased]
 
+### Added
+
+- `sonara-io`: the `AudioBackend` trait, an engine-agnostic seam over the device lifecycle
+  (implemented by `Engine`), and `MockBackend` for tests. No user-visible behaviour changes.
+
 ### Changed
 
 - CI runs the Rust gate as parallel jobs (lint, tests in two halves, loom, RealtimeSanitizer) and
