@@ -23,8 +23,7 @@ Verified from the source and `docs/`:
   (5 kits). No sampler existed (milestone M4); plugin hosting (VST3/AU/CLAP) is milestone M5 and
   not implemented.
 - Hard constraints that shape the choice: **RT-10** (`unsafe` only in three FFI/ring modules),
-  **LIC-01** (no GPL/AGPL; no LGPL Rust crates; LGPL C only as replaceable dylibs; `LICENSE` stays
-  "all rights reserved"), **QG-13** (library first), **GLD-01/CTR-01** (the built-in catalog of
+  **LIC-01** (no GPL/AGPL; no LGPL Rust crates; LGPL C only as replaceable dylibs; `LICENSE` is 0BSD), **QG-13** (library first), **GLD-01/CTR-01** (the built-in catalog of
   twelve plugins is pinned by `golden/plugins/catalog.json`; 57 agent tools; the `.sonara` schema).
 - Integration seams that exist: `DeviceState` carries non-parameter state to a processor (an
   impulse response for the convolver); the engine builder loads media off the real-time thread;

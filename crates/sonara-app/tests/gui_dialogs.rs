@@ -1121,7 +1121,7 @@ fn about_shows_the_author_the_version_and_the_system() {
         shown.version,
         format!("Version {} (alpha)", env!("CARGO_PKG_VERSION"))
     );
-    assert_eq!(shown.copyright, "© 2026 Filip Sedivy. All rights reserved.");
+    assert_eq!(shown.copyright, "© 2026 Filip Sedivy. Free software under the 0BSD licence.");
     let info = about::system_text(&shown.system);
     assert!(
         info.starts_with(&format!("Sonara: {} (alpha)\n", env!("CARGO_PKG_VERSION"))),

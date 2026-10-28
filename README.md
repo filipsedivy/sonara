@@ -9,7 +9,7 @@
   <a href="https://github.com/filipsedivy/sonara/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/filipsedivy/sonara/ci.yml?branch=main&label=CI"></a>
   <a href="https://github.com/filipsedivy/sonara/releases"><img alt="Release" src="https://img.shields.io/github/v/release/filipsedivy/sonara?include_prereleases"></a>
   <img alt="macOS 26+" src="https://img.shields.io/badge/macOS-26%2B-black">
-  <img alt="Licence: all rights reserved" src="https://img.shields.io/badge/licence-all%20rights%20reserved-lightgrey">
+  <img alt="Licence: 0BSD" src="https://img.shields.io/badge/licence-0BSD-brightgreen">
 </p>
 
 # Sonara
@@ -115,5 +115,6 @@ To contribute, read [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licence
 
-Copyright © 2026 Filip Sedivy. All rights reserved; a licence has not been chosen yet. See
-[LICENSE](LICENSE).
+Copyright © 2026 Filip Sedivy. Sonara is free software under the
+[BSD Zero Clause License (0BSD)](LICENSE): use, copy, modify and distribute it for any purpose,
+with no attribution required.
