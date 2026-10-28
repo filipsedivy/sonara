@@ -102,6 +102,7 @@ These need hardware or a person and are never CI gates (HW-01). Their results be
 | Orchestral ranges, transposition and articulation metadata | partial | `sonara_midi::orchestration`: 16 instruments; several ranges and all articulation lists are estimates; library-independent; no tool or GUI uses it yet ([orchestration-metadata.md](orchestration-metadata.md)) |
 | Song form generator | partial | Library API (`sonara_midi::form`, SON-P10): templates, roles, bar lengths, one-step apply, single-section regeneration. The role and levels are not saved in the project; no agent tool or GUI yet. See `docs/song-form.md` |
 | Localized regeneration | partial | Library API (`sonara_midi::regenerate`, SON-P11): region and section targets, validated patch, one-step undoable apply, stale-plan rejection. Needs a real `RegionGenerator`; none ships. No agent tool or GUI yet. See `docs/regeneration.md` |
+| Reference audio analysis | partial | Library API (`sonara_media::reference`, SON-P15): tempo with confidence, energy windows, energy segmentation, limitations; `analyze_reference_file` imports through the media decoder. Constant tempo only; no agent tool or GUI yet. See `docs/reference-analysis.md` |
 | Rhythm patterns, motifs, theory validators | done (library) | `sonara-midi::theory::{rhythm, motif, validate}`; not yet exposed to agent tools |
 
 ### Mixer and routing

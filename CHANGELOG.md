@@ -18,6 +18,12 @@ break the API. The project format is versioned independently, see
 
 ### Added
 
+- **Reference audio analysis (`sonara_media::reference`):** a streaming, descriptive analysis of a
+  reference recording: tempo with a confidence and the half and double alternatives, the energy
+  over time and a segmentation by energy changes, each with explicit limitations. File import is
+  `sonara_media::export::analyze_reference_file`. Library API only; no melody or arrangement is
+  extracted, and no tool, schema or contract changes. See
+  [docs/reference-analysis.md](docs/reference-analysis.md).
 - **Orchestration metadata (`sonara_midi::orchestration`):** pitch ranges (playable and
   comfortable), transposition, family and idiomatic articulations for 16 orchestral instruments,
   each value sourced or marked as an estimate, with range checks that warn instead of clamping.

@@ -286,6 +286,21 @@ pub fn analyze_file(path: &Path) -> Result<AnalysisReport, ExportError> {
     verify::analyze_stream(path)
 }
 
+/// The descriptive analysis of a reference recording (SON-P15): tempo with confidence, energy and
+/// segments ([`crate::reference::ReferenceReport`]). Reads every container this crate decodes;
+/// nothing about the recording leaves the report.
+///
+/// # Errors
+///
+/// [`ExportError::Media`] when the file cannot be opened or decoded, and
+/// [`ExportError::InvalidArgument`] for a rate or channel count the analysis rejects, an empty
+/// file or one shorter than [`crate::reference::MIN_SECONDS`].
+pub fn analyze_reference_file(
+    path: &Path,
+) -> Result<crate::reference::ReferenceReport, ExportError> {
+    verify::analyze_reference_stream(path)
+}
+
 /// The containers this build can write (the agent capability `export_formats`).
 #[must_use]
 pub fn available_containers() -> Vec<Container> {

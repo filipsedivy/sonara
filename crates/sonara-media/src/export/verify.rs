@@ -10,6 +10,7 @@ use std::path::Path;
 use sonara_dsp::analysis::{AnalysisReport, Analyzer};
 
 use super::{CHUNK, ExportError};
+use crate::reference::{ReferenceAnalyzer, ReferenceError, ReferenceReport};
 use crate::stream::AudioStream;
 
 /// What `sf.info` reports for the verification.
@@ -32,6 +33,26 @@ pub(crate) fn shape(path: &Path) -> Result<FileShape, ExportError> {
         channels: usize::try_from(info.channels).unwrap_or(0),
         frames: info.frames,
     })
+}
+
+/// The descriptive reference analysis (SON-P15) of the file at `path`, decoded in blocks.
+pub(crate) fn analyze_reference_stream(path: &Path) -> Result<ReferenceReport, ExportError> {
+    let invalid = |err: ReferenceError| ExportError::InvalidArgument(err.to_string());
+    let mut stream = AudioStream::open(path)?.stream;
+    let channels = stream.channels();
+    let mut analyzer = ReferenceAnalyzer::new(stream.sample_rate(), channels).map_err(invalid)?;
+    let mut block = vec![0.0; CHUNK * channels];
+    loop {
+        let frames = stream.read(&mut block)?;
+        if frames == 0 {
+            break;
+        }
+        analyzer.feed(block.get(..frames * channels).unwrap_or_default());
+        if frames < CHUNK {
+            break;
+        }
+    }
+    analyzer.finish().map_err(invalid)
 }
 
 /// `_analyze_file`: the written file read back in 65536-frame blocks as `float64`, with
