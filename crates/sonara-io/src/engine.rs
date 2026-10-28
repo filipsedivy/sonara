@@ -257,6 +257,12 @@ impl Engine {
         }
     }
 
+    /// Whether a stream is open and started.
+    #[must_use]
+    pub fn is_running(&self) -> bool {
+        self.context.as_ref().is_some_and(Context::has_device)
+    }
+
     /// Stops the running stream and releases the context. [`init_context`](Self::init_context)
     /// creates a new one.
     pub fn shutdown(&mut self) {
@@ -286,4 +292,34 @@ fn channel_count(channels: usize) -> Result<u32, ConfigError> {
 /// The prototype's latency estimate: period × max(1, periods).
 fn latency(period_frames: u32, periods: u32) -> LatencyFrames {
     LatencyFrames::new(period_frames.saturating_mul(periods.max(1)))
+}
+
+impl crate::AudioBackend for Engine {
+    fn init_context(&mut self, kind: ContextKind) -> Result<(), EngineError> {
+        Self::init_context(self, kind)
+    }
+
+    fn backend_name(&self) -> &str {
+        Self::backend_name(self)
+    }
+
+    fn devices(&mut self) -> Result<Vec<DeviceInfo>, EngineError> {
+        Self::devices(self)
+    }
+
+    fn start(&mut self, config: &DeviceConfig) -> Result<StreamHandles, EngineError> {
+        Self::start(self, config)
+    }
+
+    fn stop(&mut self) {
+        Self::stop(self);
+    }
+
+    fn shutdown(&mut self) {
+        Self::shutdown(self);
+    }
+
+    fn is_running(&self) -> bool {
+        Self::is_running(self)
+    }
 }

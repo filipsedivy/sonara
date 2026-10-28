@@ -29,6 +29,8 @@ independently, see docs/project-format.md).
   invalid). A broken library, manifest or patch is reported as data, never a crash. A library
   API only: no tool, command or GUI uses it yet, and the 57-tool contract, the `.sonara` schema
   and the golden plugin catalog are unchanged. See `docs/instrument-catalog.md`.
+- `sonara-io`: the `AudioBackend` trait, an engine-agnostic seam over the device lifecycle
+  (implemented by `Engine`), and `MockBackend` for tests. No user-visible behaviour changes.
 
 ### Changed
 
