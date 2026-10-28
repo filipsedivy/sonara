@@ -4252,6 +4252,7 @@ dependencies = [
  "sonara-core",
  "sonara-project",
  "sonara-testkit",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
