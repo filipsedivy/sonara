@@ -3552,13 +3552,14 @@ dependencies = [
 
 [[package]]
 name = "rmcp"
-version = "3.5.1"
+version = "3.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab5023804cbe0304cbe06197ac16e645a0a0d0ffa2953bf735c15c2fa0213350"
+checksum = "ceb42e9e47443cd83a834dea57b5816d35481417bae72ade5dc5615c59122e26"
 dependencies = [
  "chrono",
  "futures",
  "indexmap 2.14.2",
+ "libc",
  "pastey",
  "pin-project-lite",
  "schemars 1.2.3",
@@ -4070,7 +4071,7 @@ dependencies = [
 
 [[package]]
 name = "sonara"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "clap",
  "env_logger",
@@ -4090,7 +4091,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-agent"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "constant_time_eq",
  "getrandom 0.4.3",
@@ -4115,7 +4116,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-app"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "crossbeam-channel",
  "hound",
@@ -4140,7 +4141,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-core"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "getrandom 0.4.3",
  "indexmap 2.14.2",
@@ -4152,7 +4153,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-desktop"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "clap",
  "env_logger",
@@ -4173,7 +4174,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-dsp"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "assert_no_alloc",
  "crc32fast",
@@ -4188,7 +4189,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-engine"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "assert_no_alloc",
  "rtsan-standalone",
@@ -4206,7 +4207,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-io"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "assert_no_alloc",
  "cc",
@@ -4219,7 +4220,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-media"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "jiff",
  "libloading 0.9.0",
@@ -4242,7 +4243,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-midi"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "midly",
  "proptest",
@@ -4256,7 +4257,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-project"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "fs4",
  "hound",
@@ -4276,7 +4277,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-rt"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "assert_no_alloc",
  "loom",
@@ -4288,7 +4289,7 @@ dependencies = [
 
 [[package]]
 name = "sonara-testkit"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "flate2",
  "hound",
@@ -5063,9 +5064,9 @@ checksum = "fd3ca314f692efd6c868f8408f53fe444634a845f96c028b97d35f6a1f79f0ee"
 
 [[package]]
 name = "tokio"
-version = "1.53.3"
+version = "1.54.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce3335fa71841cda333a58d7615b03901380ecf09d59b3296d21f8bbac0dde4e"
+checksum = "b52fd3255258d26fac7264ab5a76b53c13367136dc011d3d6ad4f8ed070396a3"
 dependencies = [
  "bytes",
  "libc",

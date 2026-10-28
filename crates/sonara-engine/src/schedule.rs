@@ -388,7 +388,7 @@ mod tests {
     use sonara_core::midi::{ControlKind, MidiControlEvent, MidiNote};
     use sonara_core::model::JsonMap;
     use sonara_core::model::clip::{MidiClip, MidiClipData};
-    use sonara_core::time::TempoMap;
+    use sonara_core::time::{TempoMap, TempoPoint};
     use sonara_dsp::processor::{EventKind, InstrumentEvent, NoteSet};
 
     use super::NoteSchedule;
@@ -464,6 +464,38 @@ mod tests {
                 (3, EventKind::NoteOff, 67),
                 (3, EventKind::NoteOff, 64),
             ]
+        );
+    }
+
+    /// The schedule follows the tempo map, not a fixed tempo (SON-P03): at 8 frames per second,
+    /// 120 BPM up to beat 4 and 60 BPM after it, a note from beat 6 to 7 starts at second
+    /// 2 + 2 = 4 (frame 32) and ends at second 5 (frame 40); the oracle is the arithmetic of the
+    /// map, not the code under test. A chase inside the note retriggers it at offset 0.
+    #[test]
+    fn notes_follow_a_tempo_change() {
+        let tempo = TempoMap::new(
+            [
+                TempoPoint::new(0.0, 120.0, false).unwrap(),
+                TempoPoint::new(4.0, 60.0, false).unwrap(),
+            ]
+            .to_vec(),
+        )
+        .unwrap();
+        let c = clip(0.0, 16.0, &[(60, 6.0, 1.0)], None);
+        let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8);
+        let notes = |events: &[InstrumentEvent]| {
+            kinds(events)
+                .into_iter()
+                .filter(|&(_, kind, _)| matches!(kind, EventKind::NoteOn | EventKind::NoteOff))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(
+            notes(schedule.events(32, 16, false)),
+            [(0, EventKind::NoteOn, 60), (8, EventKind::NoteOff, 60)]
+        );
+        assert_eq!(
+            notes(schedule.events(36, 8, true)),
+            [(0, EventKind::NoteOn, 60), (4, EventKind::NoteOff, 60)]
         );
     }
 

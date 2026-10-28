@@ -5,8 +5,8 @@
 
 Machine-readable schemas ship with the package:
 
-- `src/sonara/persistence/schemas/project-v1.schema.json`
-- `src/sonara/persistence/schemas/manifest-v1.schema.json`
+- `crates/sonara-project/schemas/project-v1.schema.json`
+- `crates/sonara-project/schemas/manifest-v1.schema.json`
 
 Both are JSON Schema draft 2020-12.
 
@@ -166,6 +166,18 @@ Extraction rejects all of the following:
 ## Versioning and migrations
 
 `project.schema_version` versions the document. Migrations live in
-`sonara/persistence/migrations.py` and are pure functions that upgrade a document by one
+`crates/sonara-project/src/migrations.rs` and are pure functions that upgrade a document by one
 version. They run before validation. A document from a newer schema is rejected with
 `UNSUPPORTED`, and is never treated as damaged. Container changes bump `format_version`.
+
+Schema version 1 is the only version so far, so the migration table is empty. A missing or
+non-integer `schema_version` is a `FORMAT_ERROR`.
+
+## Fixtures and contract tests
+
+`crates/sonara-project/tests/fixtures/` holds two canonical documents that other crates can
+load: `rich.project.json` (every feature, recorded from the prototype) and `song.project.json`
+(a three-track song with a tempo change, a meter change, two sections and overlapping notes).
+`crates/sonara-project/tests/song_project_contract.rs` checks the song fixture against the
+schema, the model and the routing rules, its byte-exact round trip, an empty project, and the
+rejection of out-of-range or inconsistent values.

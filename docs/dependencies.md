@@ -7,6 +7,9 @@ decision (LIC-01). This inventory was verified on 2026-10-21 and updated on 2026
 
 ## Rust workspace
 
+The SFZ sampler (ADR 0010) added no dependency. Sample libraries are user-installed data, not
+dependencies, and none is shipped.
+
 | Component | Version | Licence | Use | Notes |
 |---|---|---|---|---|
 | Rust toolchain | 1.99.1 | MIT/Apache-2.0 | compiler | Pinned in `rust-toolchain.toml` |
@@ -25,7 +28,7 @@ decision (LIC-01). This inventory was verified on 2026-10-21 and updated on 2026
 | sha2 | 0.11 | MIT/Apache-2.0 | SHA-256 | `sonara-project` (content hashes in the manifest, integrity checks), `sonara-testkit` |
 | hound | 3.5 | Apache-2.0 | WAV reading and writing | `sonara-testkit`; `sonara-project` and `sonara-app` tests (development only) |
 | flate2 | 1.1 | MIT/Apache-2.0 | gzip (golden snapshots); DEFLATE for `zip` | `sonara-testkit` directly (test-only); at runtime only through `zip` in `sonara-project` |
-| thiserror | 2.0 | MIT/Apache-2.0 | error types | `sonara-core`, `sonara-project`, `sonara-testkit`, `sonara-app`, `sonara-agent`, `sonara-rt`, `sonara-io`, `sonara-midi` |
+| thiserror | 2.0 | MIT/Apache-2.0 | error types | `sonara-core`, `sonara-midi`, `sonara-project`, `sonara-testkit`, `sonara-app`, `sonara-agent`, `sonara-rt`, `sonara-io` |
 | jsonschema | 0.59.0 | MIT | JSON Schema (Draft 2020-12) validation of `project.json` and `manifest.json` | `sonara-project`. `default-features = false`: no HTTP or file resolver, no TLS. Pulls in `referencing`, `fancy-regex`, `fraction`/`num`, `ahash`, `email_address`, `uuid-simd` (all MIT or MIT/Apache-2.0) |
 | zip | 9.0.5 | MIT | `.sonara` archives (read and write) | `sonara-project`. `default-features = false`, feature `deflate-flate2-zlib-rs` only: DEFLATE through `flate2` with the pure-Rust `zlib-rs` backend (Zlib); no other codecs, no encryption |
 | tempfile | 3.27.0 | MIT/Apache-2.0 | atomic writes (temporary file plus rename), temporary directories; the export's intermediate render file | `sonara-project` and `sonara-media`, at runtime and in tests; `sonara-app` and `sonara-agent` tests |
@@ -108,6 +111,9 @@ exactly those, while `interprocess`'s local sockets are named pipes on Windows (
 decision, 2026-10-24: the Linux Docker development container is gone):
 
 - cargo-deny 0.20.2 (MIT/Apache-2.0), installed with `cargo install --locked cargo-deny@0.20.2`;
+- cargo-nextest 0.9.150 (MIT/Apache-2.0), the test runner of the CI test jobs, installed with
+  `cargo install --locked cargo-nextest@0.9.150`. CI only: `scripts/dev.sh` keeps `cargo test`, and
+  nextest is optional locally. Not in `Cargo.lock`, never shipped;
 - for the desktop frontend (`scripts/dev.sh frontend`): Node 26.12.1 (MIT, with the licences of
   its bundled components) and pnpm 12.14.0 through npm (MIT), the same versions
   `scripts/bundle-macos.sh` and the release workflow install; and Playwright 1.64.1's WebKit

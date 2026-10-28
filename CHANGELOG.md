@@ -13,6 +13,57 @@ independently, see docs/project-format.md).
   each value sourced or marked as an estimate, with range checks that warn instead of clamping.
   Library-independent data; no agent tool, no contract change. See
   `docs/orchestration-metadata.md`.
+- **Localized regeneration (SON-P11, `sonara-midi::regenerate`):** replaces the notes of a bounded
+  region (beats or a section) of one MIDI clip through a `RegionGenerator` interface. The result
+  is a validated patch that names the notes removed and added, applied as one undoable step;
+  notes outside the region keep their identity, and a stale or invalid plan changes nothing.
+  Library API only; no generator ships, no tool, schema or golden behaviour changes. See
+  `docs/regeneration.md`.
+- **Song form generator (SON-P10, `sonara-midi::form`):** deterministic templates (verse–chorus,
+  pop with pre-chorus, AABA, dance) that plan sections with roles, bar lengths and energy and
+  density levels on the project's meter grid; apply them as one undoable step, and regenerate a
+  single section without touching the others. Library API only; no tool, schema or golden
+  behaviour changes. See `docs/song-form.md`.
+
+## [0.1.5] — 2026-10-28
+
+### Added
+
+- **Theory primitives (SON-P05, `sonara-midi::theory`):** exact step-grid rhythm patterns,
+  diatonic motifs with pure transforms, and validators that separate malformed data (errors)
+  from valid but unusual choices (advisories). Library API only; no tool, schema or golden
+  behaviour changes.
+- **Transport tests and timing documentation (SON-P03):** tests that a seek, a resume and a
+  stop end the notes that sound, and that the note schedule follows a tempo change; the
+  timing rules are written down in `docs/audio-engine.md` ("Transport and event scheduling").
+  No behaviour changed.
+- **Sample-based instruments (`sonara.sampler`, ADR 0010):** a pure-Rust SFZ sample player
+  (velocity layers, round robin, keyswitches, release samples, exclusive groups, loops, 64
+  voices) for orchestral libraries that you install yourself; Sonara ships no samples. The
+  directories in the settings key `sample_libraries` are scanned for `.sfz` files at startup;
+  when any exist, the sampler is offered and its `instrument` parameter lists the patches
+  (`list_plugins`, `set_instrument`). The 57-tool contract, the `.sonara` schema and the golden
+  plugin catalog are unchanged: without a configured library nothing differs. A missing or
+  not-installed patch renders as silence with a warning. See `docs/sample-libraries.md` and
+  `docs/orchestral-audio-engine-research.md`. Sound quality of real libraries has not been
+  listened to.
+- **Instrument catalog (`sonara_app::instruments`):** the instrument presets of the installed
+  sample libraries, with a stable ID that does not depend on the install path, a family (declared
+  by an optional `sonara-library.json` manifest, else inferred from the patch's path and marked as
+  such), declared articulations only, a licence note and availability (available, missing,
+  invalid). A broken library, manifest or patch is reported as data, never a crash. A library
+  API only: no tool, command or GUI uses it yet, and the 57-tool contract, the `.sonara` schema
+  and the golden plugin catalog are unchanged. See `docs/instrument-catalog.md`.
+- `sonara-io`: the `AudioBackend` trait, an engine-agnostic seam over the device lifecycle
+  (implemented by `Engine`), and `MockBackend` for tests. No user-visible behaviour changes.
+
+### Changed
+
+- CI runs the Rust gate as parallel jobs (lint, tests in two halves, loom, RealtimeSanitizer) and
+  runs the tests with cargo-nextest. The development profile keeps line tables only instead of
+  full debug info. No user-visible behaviour changes.
+- The `golden_export` tests of `sonara-media` use a scratch directory per process, so that they
+  also pass when every test runs in its own process (test-only change).
 
 ## [0.1.4] — 2026-10-25
 

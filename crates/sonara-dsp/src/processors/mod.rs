@@ -55,6 +55,7 @@ mod multimode;
 mod params;
 mod pyops;
 mod reverb;
+mod sampler;
 mod saturation;
 pub(crate) mod setup;
 mod synth;
@@ -89,8 +90,9 @@ pub const PORTED: &[&str] = &[
     drums::PLUGIN_ID,
 ];
 
-/// A new, unprepared processor for the built-in plugin `plugin_id`, or `None` when no
-/// processor has been ported for it.
+/// A new, unprepared processor for the plugin `plugin_id`, or `None` when no processor exists
+/// for it. Besides the ported built-ins ([`PORTED`]) this builds `sonara.sampler`, Sonara's own
+/// sample player, which has no prototype and is not in the golden catalog.
 ///
 /// Setup: allocates, so it runs before the stream starts, off the real-time thread. Call
 /// [`Processor::prepare`] before the first block.
@@ -122,6 +124,7 @@ pub fn create(plugin_id: &str) -> Option<Box<dyn Processor>> {
         reverb::PLUGIN_ID => Box::new(reverb::Reverb::new()),
         synth::PLUGIN_ID => Box::new(synth::PolySynth::new()),
         drums::PLUGIN_ID => Box::new(drums::DrumKit::new()),
+        sampler::PLUGIN_ID => Box::new(sampler::Sampler::new()),
         _ => return None,
     };
     Some(processor)
