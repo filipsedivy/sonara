@@ -34,6 +34,7 @@ pub mod error;
 pub mod events;
 pub mod export_dialog;
 pub mod ids;
+pub mod instruments;
 pub mod jobs;
 pub mod live;
 pub mod log_level;

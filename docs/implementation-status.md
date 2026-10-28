@@ -96,6 +96,7 @@ These need hardware or a person and are never CI gates (HW-01). Their results be
 | MIDI output to external devices | partial | The output port API exists; tracks cannot route to external outputs yet |
 | Instruments and presets | done | Poly Synth (13 presets), Drum Kit (5 kits) |
 | Sample-based instruments (SFZ sampler) | partial | `sonara.sampler`: velocity layers, round robin, keyswitches, release samples, exclusive groups, loops, sustain pedal, CC 7/11, bend. Offered only when `sample_libraries` in the settings holds `.sfz` patches; no samples are bundled. No CC-driven layers or crossfades, no legato, no streaming (whole samples in RAM); a graph rebuild restarts sounding notes. Tested with generated fixtures only: not listened to, not exercised in the GUI, no performance numbers (see [sample-libraries.md](sample-libraries.md)) |
+| Instrument catalog (`sonara_app::instruments`) | partial | The presets of the installed sample libraries with stable IDs, declared or inferred family, declared articulations, licence note and availability (available, missing, invalid); optional `sonara-library.json` manifest; on-request deep check of a patch. A library-level API only: no agent tool, CLI command or GUI uses it yet, and the plugin registry is unchanged. SFZ only (no bank or program). Tested with generated fixtures (see [instrument-catalog.md](instrument-catalog.md)) |
 | Chords, scales, arpeggiator, humanize, swing | done | `sonara-midi` and `generate_midi` |
 | Programmatic MIDI generation | done | |
 
