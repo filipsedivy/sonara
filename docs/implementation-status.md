@@ -95,6 +95,7 @@ These need hardware or a person and are never CI gates (HW-01). Their results be
 | Instruments and presets | done | Poly Synth (13 presets), Drum Kit (5 kits) |
 | Chords, scales, arpeggiator, humanize, swing | done | `sonara-midi` and `generate_midi` |
 | Programmatic MIDI generation | done | |
+| Orchestral ranges, transposition and articulation metadata | partial | `sonara_midi::orchestration`: 16 instruments; several ranges and all articulation lists are estimates; library-independent; no tool or GUI uses it yet ([orchestration-metadata.md](orchestration-metadata.md)) |
 
 ### Mixer and routing
 
