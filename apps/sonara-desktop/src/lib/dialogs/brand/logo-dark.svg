@@ -1,17 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2723 680" width="2723" height="680">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2974 680" width="2974" height="680">
   <title>Sonara</title>
-  <defs><linearGradient id="mark" gradientUnits="userSpaceOnUse" x1="180" y1="120" x2="660" y2="560"><stop offset="0" stop-color="#4C9BF0"/><stop offset="1" stop-color="#7D6BD9"/></linearGradient></defs>
-  <path d="M 457.30 74.61 A 268.00 268.00 0 0 1 674.88 257.18" fill="none" stroke="url(#mark)" stroke-width="20.80" stroke-linecap="round" opacity="0.95"/>
-  <path d="M 509.31 28.55 A 324.00 324.00 0 0 1 711.21 197.97" fill="none" stroke="url(#mark)" stroke-width="17.60" stroke-linecap="round" opacity="0.55"/>
-  <path d="M 382.70 605.39 A 268.00 268.00 0 0 1 165.12 422.82" fill="none" stroke="url(#mark)" stroke-width="20.80" stroke-linecap="round" opacity="0.95"/>
-  <path d="M 330.69 651.45 A 324.00 324.00 0 0 1 128.79 482.03" fill="none" stroke="url(#mark)" stroke-width="17.60" stroke-linecap="round" opacity="0.55"/>
-  <path d="M 499.43 177.14 A 100.80 100.80 0 1 0 420.00 340.00 A 110.40 110.40 0 1 1 333.00 518.37" fill="none" stroke="url(#mark)" stroke-width="68.00" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M 976.34 186.82 A 88.00 88.00 0 1 0 907.00 329.00 A 99.00 99.00 0 1 1 828.99 488.95" fill="none" stroke="#F4F5F7" stroke-width="56.0" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M 1126.00 405.00 A 122.00 122.00 0 1 1 1370.00 405.00 A 122.00 122.00 0 1 1 1126.00 405.00" fill="none" stroke="#F4F5F7" stroke-width="56.0" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M 1490.00 527.00 V 405.00 A 122.00 122.00 0 0 1 1734.00 405.00 V 527.00" fill="none" stroke="#F4F5F7" stroke-width="56.0" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M 1854.00 405.00 A 122.00 122.00 0 1 1 2098.00 405.00 A 122.00 122.00 0 1 1 1854.00 405.00" fill="none" stroke="#F4F5F7" stroke-width="56.0" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M 2098.00 283.00 V 527.00" fill="none" stroke="#F4F5F7" stroke-width="56.0" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M 2218.00 527.00 V 395.24 A 112.24 112.24 0 0 1 2330.24 283.00" fill="none" stroke="#F4F5F7" stroke-width="56.0" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M 2421.44 405.00 A 122.00 122.00 0 1 1 2665.44 405.00 A 122.00 122.00 0 1 1 2421.44 405.00" fill="none" stroke="#F4F5F7" stroke-width="56.0" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M 2665.44 283.00 V 527.00" fill="none" stroke="#F4F5F7" stroke-width="56.0" stroke-linecap="round" stroke-linejoin="round"/>
+  <defs><linearGradient id="mark" gradientUnits="userSpaceOnUse" x1="56" y1="84" x2="468" y2="446"><stop offset="0" stop-color="#4C9BF0"/><stop offset="1" stop-color="#7D6BD9"/></linearGradient></defs>
+  <g transform="translate(24 0) scale(1.88889)">
+    <g transform="translate(0 46.70) scale(0.73646) translate(-56 -84)"><rect x="56" y="274" width="52" height="52" rx="26" fill="url(#mark)"/><rect x="114" y="84" width="52" height="52" rx="26" fill="url(#mark)"/><rect x="170" y="394" width="52" height="52" rx="26" fill="url(#mark)"/><rect x="220" y="304" width="84" height="52" rx="26" fill="url(#mark)"/><rect x="276" y="198" width="108" height="52" rx="26" fill="url(#mark)"/><rect x="340" y="90" width="128" height="52" rx="26" fill="url(#mark)"/></g>
+    <g transform="translate(367.42 46.70) scale(0.62) translate(-800 -125)" fill="none" stroke="#F4F5F7" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"><path d="M 976.34 186.82 A 88.00 88.00 0 1 0 907.00 329.00 A 99.00 99.00 0 1 1 828.99 488.95"/><path d="M 1126.00 405.00 A 122.00 122.00 0 1 1 1370.00 405.00 A 122.00 122.00 0 1 1 1126.00 405.00"/><path d="M 1490.00 527.00 V 405.00 A 122.00 122.00 0 0 1 1734.00 405.00 V 527.00"/><path d="M 1854.00 405.00 A 122.00 122.00 0 1 1 2098.00 405.00 A 122.00 122.00 0 1 1 1854.00 405.00"/><path d="M 2098.00 283.00 V 527.00"/><path d="M 2218.00 527.00 V 395.24 A 112.24 112.24 0 0 1 2330.24 283.00"/><path d="M 2421.44 405.00 A 122.00 122.00 0 1 1 2665.44 405.00 A 122.00 122.00 0 1 1 2421.44 405.00"/><path d="M 2665.44 283.00 V 527.00"/></g>
+  </g>
 </svg>
