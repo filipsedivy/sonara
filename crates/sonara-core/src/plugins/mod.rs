@@ -7,7 +7,7 @@
 mod builtin;
 mod descriptor;
 
-pub use builtin::builtin_registry;
+pub use builtin::{SAMPLER_ID, builtin_registry, sampler_descriptor};
 pub use descriptor::{
     ParamKind, ParamScale, ParamSpec, PluginDescriptor, PluginFormat, PluginKind, PluginRegistry,
     Preset,
