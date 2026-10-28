@@ -98,6 +98,7 @@ These need hardware or a person and are never CI gates (HW-01). Their results be
 | Sample-based instruments (SFZ sampler) | partial | `sonara.sampler`: velocity layers, round robin, keyswitches, release samples, exclusive groups, loops, sustain pedal, CC 7/11, bend. Offered only when `sample_libraries` in the settings holds `.sfz` patches; no samples are bundled. No CC-driven layers or crossfades, no legato, no streaming (whole samples in RAM); a graph rebuild restarts sounding notes. Tested with generated fixtures only: not listened to, not exercised in the GUI, no performance numbers (see [sample-libraries.md](sample-libraries.md)) |
 | Chords, scales, arpeggiator, humanize, swing | done | `sonara-midi` and `generate_midi` |
 | Programmatic MIDI generation | done | |
+| Rhythm patterns, motifs, theory validators | done (library) | `sonara-midi::theory::{rhythm, motif, validate}`; not yet exposed to agent tools |
 
 ### Mixer and routing
 

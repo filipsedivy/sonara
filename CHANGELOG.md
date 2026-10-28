@@ -8,6 +8,10 @@ independently, see docs/project-format.md).
 
 ### Added
 
+- **Theory primitives (SON-P05, `sonara-midi::theory`):** exact step-grid rhythm patterns,
+  diatonic motifs with pure transforms, and validators that separate malformed data (errors)
+  from valid but unusual choices (advisories). Library API only; no tool, schema or golden
+  behaviour changes.
 - **Sample-based instruments (`sonara.sampler`, ADR 0010):** a pure-Rust SFZ sample player
   (velocity layers, round robin, keyswitches, release samples, exclusive groups, loops, 64
   voices) for orchestral libraries that you install yourself; Sonara ships no samples. The

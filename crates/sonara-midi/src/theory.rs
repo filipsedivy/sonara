@@ -4,6 +4,10 @@
 //! Pitches and pitch classes are `i64` so that out-of-range results of the arithmetic reach the
 //! note validation, which reports them with the prototype's messages.
 
+pub mod motif;
+pub mod rhythm;
+pub mod validate;
+
 use std::fmt;
 
 use sonara_core::error::{DomainError, Result};
