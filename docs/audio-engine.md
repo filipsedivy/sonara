@@ -119,6 +119,35 @@ Without a backend, real-time calls fail with `ENGINE_UNAVAILABLE`.
   `capture_start + i - (output_latency + input_latency)`. The estimate can be off by the
   unreported driver offsets. A per-device manual offset is planned.
 
+## Transport and event scheduling
+
+The transport is `sonara_engine::player::Player`; the application's `TransportService`
+(`sonara-app`) adds the project and the takes. The MIDI schedule of an instrument track is
+`sonara_engine::schedule::NoteSchedule`. Neither depends on a concrete device: the player takes
+an `AudioDevice`, and the tests drive a manual device and `Player::manual` step by step, with no
+audio hardware and no sleeping.
+
+- **Time base.** Everything is stored in beats. A note's frames are
+  `TempoMap::beat_to_sample(beat, sample_rate)`, a closed form over cumulative seconds per tempo
+  point (a ramp is logarithmic), so a long timeline accumulates no drift and a tempo change moves
+  every later note. Frames are `i64`; the generation and frame counters wrap on purpose.
+- **Per block.** The render thread asks the schedule for the events of `[frame, frame + n)`:
+  note-offs, then note-ons, then controller events, each with its offset in the block. Events
+  with the same offset keep that order. The buffer is sized at build, so no event is dropped and
+  nothing allocates on the render thread.
+- **Play** builds a fresh graph at the start frame; **pause** halts the stream at the device's
+  software position and keeps it as the resting position; **resume** is a play from there;
+  **seek** keeps the graph, moves the position and starts a new generation; **stop** halts the
+  stream and keeps the device position as the resting position. Each call flushes the stream
+  (128-frame fade) and drops stale blocks by generation, so nothing of an old position plays.
+- **Active notes.** A block that does not continue the last one (start, seek, loop wrap) chases:
+  an all-notes-off (a fast release), then a note-on for every note that is sounding at that
+  frame. A seek past a note's end therefore releases its voice, and a seek into a note
+  retriggers it. A stop leaves no voice: the next play builds a fresh graph.
+- **Tests.** `crates/sonara-engine/tests/player/transport.rs` (position, restart, end of range,
+  concurrency), `hanging_notes.rs` (a held voice after seek, resume and stop),
+  `schedule.rs` (order, chase, tempo change) and `crates/sonara-app/tests/transport*.rs`.
+
 ## Offline renderer (`sonara_engine::renderer`)
 
 - **`RenderGraph`** compiles a project snapshot into nodes in the topological order of the
