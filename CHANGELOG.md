@@ -6,6 +6,8 @@ independently, see docs/project-format.md).
 
 ## [Unreleased]
 
+## [0.1.5] — 2026-10-28
+
 ### Added
 
 - `sonara-io`: the `AudioBackend` trait, an engine-agnostic seam over the device lifecycle
