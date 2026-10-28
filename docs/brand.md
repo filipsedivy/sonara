@@ -4,19 +4,22 @@ Created by **Filip Sedivy** (mail@filipsedivy.cz).
 
 ## Concept
 
-The name joins *sonar* and *sonora* (sound). The mark draws the "S" as two half-waves of a
-sound wave, built from two circular arcs. Concentric sonar arcs radiate from it: sound going
-out, and the agent listening back to the rendered result.
+The name joins *sonar* and *sonora* (sound). The mark is called Generative Composition. Loose,
+round dots on the left stand for raw ideas. They resolve to the right into ordered pills that
+climb like notes on a piano roll: intent goes in, a structured composition comes out. That is
+what an agent does with the project.
 
-The wordmark is monoline and geometric. Its "S" uses the same construction as the mark, and
-its round letters ("o", "a") use the same radius family.
+The mark is built from one shape only, a pill of fixed height, from a circle to a long bar. Its
+height equals the cap height of the wordmark's "S", so the mark and the "S" start and end on
+the same lines. The wordmark is monoline and geometric, and its round letters use one radius
+family.
 
 ## Files
 
 | File | Use |
 |---|---|
 | `resources/brand/svg/icon.svg` | App icon (1024 canvas, macOS-style rounded square) |
-| `resources/brand/svg/icon-small.svg` | App icon at 16–32 px: the "S" only, bolder |
+| `resources/brand/svg/icon-small.svg` | App icon at 16–32 px: fewer, larger pills and dots |
 | `resources/brand/svg/mark.svg` | The mark on a transparent background |
 | `resources/brand/svg/logo-dark.svg` | Horizontal logo for dark backgrounds (light wordmark) |
 | `resources/brand/svg/logo-light.svg` | Horizontal logo for light backgrounds (dark wordmark) |
@@ -40,7 +43,8 @@ these masters (`crates/sonara-app/tests/gui_dialogs.rs`, `apps/sonara-desktop/sr
 | Ink | `#1E1F22` | Wordmark on light backgrounds; app window background |
 | Paper | `#F4F5F7` | Wordmark on dark backgrounds |
 
-The mark is always a diagonal gradient from Sonar Blue (top left) to Violet (bottom right).
+The mark is always a diagonal gradient from Sonar Blue (top left) to Violet (bottom right), spread over
+the mark's bounding box.
 
 ## Usage
 
