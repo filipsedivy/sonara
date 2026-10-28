@@ -15,10 +15,12 @@ import {
   VelocityGestures,
 } from "../../src/lib/pianoroll/gestures";
 import {
+  addNoteEdit,
   beatX,
   centerOnContent,
   clampView,
   contentExtent,
+  deleteEdit,
   duplicateEdit,
   movedNotes,
   NoteIndex,
@@ -560,4 +562,48 @@ test("an outcome's created notes are its new selection", () => {
     result: {},
   };
   expect(createdNotes(outcome)).toEqual(["n9"]);
+});
+
+test("every note edit is one stable command, sent to the clip and never written to the project", async () => {
+  // The vocabulary of editor commands the piano roll emits (contracts/editor-state.md): the op
+  // names and payload shapes are the wire format of sonara-app's note commands.
+  const roll = new Roll();
+  roll.setGrid("1/16");
+  roll.lengthName = "1/8";
+  roll.velocity = 77;
+  await roll.click(...roll.point(3.0, 65));
+  expect(roll.edits.at(-1)).toEqual({
+    op: "add_notes",
+    clip_id: "clp",
+    notes: [{ pitch: 65, start: 3, length: 0.5, velocity: 77 }],
+  });
+
+  const moving = new Roll();
+  await moving.drag(moving.point(0.5, 60), moving.point(1.52, 62));
+  expect(moving.edits.at(-1)).toEqual({ op: "edit_notes", clip_id: "clp", edits: [{ note_id: "n0", pitch: 62, start: 1 }] });
+
+  const resizing = new Roll();
+  const [x, y] = resizing.point(1.0, 60);
+  await resizing.drag([x - 2, y], [x - 2 + 50, y]);
+  expect(resizing.edits.at(-1)).toEqual({ op: "edit_notes", clip_id: "clp", edits: [{ note_id: "n0", length: 1.5 }] });
+
+  const deleting = new Roll();
+  await deleting.click(...deleting.point(0.5, 60));
+  deleting.grid.key("Delete", NO_MODS);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(deleting.edits.at(-1)).toEqual({ op: "delete_notes", clip_id: "clp", note_ids: ["n0"] });
+});
+
+test("notes cannot leave the MIDI range or beat 0, and a miss sends nothing", async () => {
+  const roll = new Roll();
+  const ctx = { clip: roll.clip, signatures: SIGNATURES, snap: roll.snap };
+  expect(addNoteEdit(ctx, 1, 128, "1/16", 90)).toBeNull();
+  expect(addNoteEdit(ctx, 1, -1, "1/16", 90)).toBeNull();
+  expect(deleteEdit("clp", roll.index, ["missing"])).toBeNull();
+  // A drag far above the top of the keyboard and before the clip's start clamps to 127 and 0.
+  const [x, y] = roll.point(0.5, 60);
+  await roll.drag([x, y], [x - 500, y - 2000]);
+  const moved = roll.note("n0");
+  expect(moved?.pitch).toBeLessThanOrEqual(127);
+  expect(moved?.start).toBeGreaterThanOrEqual(0);
 });
