@@ -12,6 +12,7 @@ use assert_no_alloc::AllocDisabler;
 static ALLOCATOR: AllocDisabler = AllocDisabler;
 
 mod golden;
+mod hanging_notes;
 mod media;
 mod null_device;
 mod record;
