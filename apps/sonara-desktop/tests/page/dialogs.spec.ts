@@ -290,7 +290,7 @@ test("About shows the author, the contact, the version and the system info", asy
       tagline: "A digital audio workstation with a first-class agent interface.",
       author: "Filip Sedivy",
       email: "mail@filipsedivy.cz",
-      copyright: "© 2026 Filip Sedivy. All rights reserved.",
+      copyright: "© 2026 Filip Sedivy. Free software under the 0BSD licence.",
       system: [
         ["Sonara", "0.1.0 (alpha)"],
         ["Audio", "test"],

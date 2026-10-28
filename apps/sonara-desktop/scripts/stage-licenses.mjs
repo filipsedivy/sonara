@@ -337,7 +337,7 @@ const joined = [
   `Sonara ${version}: third-party licences`,
   "=".repeat(`Sonara ${version}: third-party licences`.length),
   "",
-  "Sonara is © 2026 Filip Sedivy. All rights reserved. It contains the third-party software",
+  "Sonara is © 2026 Filip Sedivy, free software under the 0BSD licence. It contains the third-party software",
   "listed below, under the licences given. This text joins the files of",
   "Sonara.app/Contents/Resources/licenses:",
   "",
