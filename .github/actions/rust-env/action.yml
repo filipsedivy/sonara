@@ -1,0 +1,55 @@
+# The setup the Rust jobs of ci.yml share: the toolchain from rust-toolchain.toml, the Cargo cache
+# and, for the jobs that run tests, the golden data (Git LFS) and the run-time codec libraries.
+# Third-party actions are pinned to commit SHAs, the same as in the workflows.
+name: Rust environment
+description: Toolchain, Cargo cache and, optionally, golden data and codec libraries
+
+inputs:
+  cache-key:
+    description: Cache key of this job's build products (jobs with other flags or features differ)
+    required: true
+  save-cache:
+    description: Whether this job saves the Cargo cache (one job per shared key is enough)
+    default: "true"
+  runtime-data:
+    description: Pull the golden data and build the codec libraries (jobs that run tests)
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    # Golden data lives in Git LFS; the cache keeps CI from re-downloading it every run.
+    - name: List golden LFS objects
+      if: inputs.runtime-data == 'true'
+      shell: bash
+      run: git lfs ls-files --long | cut -d ' ' -f1 | sort > .lfs-objects
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      if: inputs.runtime-data == 'true'
+      with:
+        path: .git/lfs
+        key: lfs-${{ hashFiles('.lfs-objects') }}
+    - name: Pull golden data
+      if: inputs.runtime-data == 'true'
+      shell: bash
+      run: git lfs pull
+    - name: Toolchain from rust-toolchain.toml
+      shell: bash
+      run: rustup toolchain install && rustc --version
+    - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      with:
+        shared-key: ${{ inputs.cache-key }}
+        save-if: ${{ inputs.save-cache }}
+    # libsoxr, LAME and libFLAC are loaded at run time from target/native/lib
+    # (SONARA_NATIVE_LIB_DIR, .cargo/config.toml): the recording's builds, from pinned sources
+    # with the runner's cmake. Cached under the script's hash; the script skips an up-to-date
+    # build. This cache comes after rust-cache so that it saves target/native before
+    # rust-cache's post step prunes target/.
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      if: inputs.runtime-data == 'true'
+      with:
+        path: target/native
+        key: native-codecs-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/native/build-codecs.sh', 'scripts/native/*.patch') }}
+    - name: Codec libraries (libsoxr a66f3ee, LAME 3.100, libFLAC 1.4.3)
+      if: inputs.runtime-data == 'true'
+      shell: bash
+      run: scripts/native/build-codecs.sh
