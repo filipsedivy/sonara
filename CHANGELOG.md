@@ -1,8 +1,10 @@
 # Changelog
 
-All notable changes are recorded here. Sonara follows semantic versioning once 1.0 is
-reached; until then minor versions may break the API (the project format is versioned
-independently, see docs/project-format.md).
+All notable changes are recorded here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Sonara follows
+[semantic versioning](https://semver.org/) once 1.0 is reached; until then minor versions may
+break the API. The project format is versioned independently, see
+[docs/project-format.md](docs/project-format.md).
 
 ## [Unreleased]
 
@@ -27,8 +29,11 @@ independently, see docs/project-format.md).
 
 ### Changed
 
-- **New brand mark:** the "Generative Composition" mark replaces the arc-built "S" with sonar arcs: scattered dots that resolve into ordered, ascending notes, as ideas become a composition. The app icon, the bundle icons (`Sonara.icns`), the horizontal logos, the About dialog and the README logo use it; the wordmark is unchanged, and the colours stay Sonar Blue to Violet. A simplified variant serves the 16–32 px icon sizes. See `docs/brand.md`.
-
+- **New brand mark:** the "Generative Composition" mark replaces the arc-built "S" with sonar
+  arcs: scattered dots that resolve into ordered, ascending notes, as ideas become a
+  composition. The app icon, the bundle icons (`Sonara.icns`), the horizontal logos, the About
+  dialog and the README logo use it; the wordmark is unchanged, and the colours stay Sonar Blue
+  to Violet. A simplified variant serves the 16–32 px icon sizes. See `docs/brand.md`.
 
 ## [0.1.5] — 2026-10-28
 
