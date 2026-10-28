@@ -1,5 +1,8 @@
 # Contributing to Sonara
 
+This page covers the setup, the quality gates and the ground rules. For an overview of the
+project, see the [README](README.md).
+
 ## Setup
 
 Sonara is a native Rust application for macOS 26 or later on Apple Silicon. The workspace is at
@@ -85,6 +88,15 @@ After changing agent tools, regenerate the API reference with
   user-visible change.
 - **Keep format changes versioned.** A change to `project.json` bumps `schema_version` and adds
   a migration in `crates/sonara-project/src/migrations.rs` with a test.
+
+## Before you open a pull request
+
+- [ ] The quality gates above pass, and you say which ones you ran.
+- [ ] New behaviour has tests, including the failure paths (TST-03).
+- [ ] `CHANGELOG.md` and `docs/implementation-status.md` describe every user-visible change;
+      `docs/dependencies.md` lists every new dependency.
+- [ ] The contracts of CTR-01 (project format, tool schemas, IPC, CLI) are unchanged, or the
+      change is a deliberate, versioned decision.
 
 ## Layout
 
