@@ -101,6 +101,7 @@ These need hardware or a person and are never CI gates (HW-01). Their results be
 | Programmatic MIDI generation | done | |
 | Song form generator | partial | Library API (`sonara_midi::form`, SON-P10): templates, roles, bar lengths, one-step apply, single-section regeneration. The role and levels are not saved in the project; no agent tool or GUI yet. See `docs/song-form.md` |
 | Localized regeneration | partial | Library API (`sonara_midi::regenerate`, SON-P11): region and section targets, validated patch, one-step undoable apply, stale-plan rejection. Needs a real `RegionGenerator`; none ships. No agent tool or GUI yet. See `docs/regeneration.md` |
+| Rhythm patterns, motifs, theory validators | done (library) | `sonara-midi::theory::{rhythm, motif, validate}`; not yet exposed to agent tools |
 
 ### Mixer and routing
 

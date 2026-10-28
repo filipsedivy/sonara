@@ -24,6 +24,10 @@ independently, see docs/project-format.md).
 
 ### Added
 
+- **Theory primitives (SON-P05, `sonara-midi::theory`):** exact step-grid rhythm patterns,
+  diatonic motifs with pure transforms, and validators that separate malformed data (errors)
+  from valid but unusual choices (advisories). Library API only; no tool, schema or golden
+  behaviour changes.
 - **Transport tests and timing documentation (SON-P03):** tests that a seek, a resume and a
   stop end the notes that sound, and that the note schedule follows a tempo change; the
   timing rules are written down in `docs/audio-engine.md` ("Transport and event scheduling").
