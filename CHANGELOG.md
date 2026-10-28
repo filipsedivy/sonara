@@ -8,6 +8,8 @@ break the API. The project format is versioned independently, see
 
 ## [Unreleased]
 
+## [0.1.6] — 2026-10-28
+
 ### Added
 
 - **Orchestration metadata (`sonara_midi::orchestration`):** pitch ranges (playable and
