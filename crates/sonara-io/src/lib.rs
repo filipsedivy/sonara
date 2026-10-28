@@ -17,6 +17,9 @@
 //!   output device's audio workgroup with a time-constraint policy on macOS, or raises it to the
 //!   user-interactive `QoS` class, through the shim.
 //!
+//! - **[`AudioBackend`]** is the engine-agnostic seam over the lifecycle: [`Engine`] implements it,
+//!   and [`MockBackend`] is a scripted stand-in for tests of other crates.
+//!
 //! # MIDI
 //!
 //! - **The MIDI module** ([`midi`], not real-time) lists the ports and opens inputs and outputs,
@@ -27,6 +30,7 @@
 //!
 //! Real-time code here never depends on application, agent or GUI crates (RT-01).
 
+mod backend;
 mod callback;
 mod device;
 mod engine;
@@ -45,6 +49,7 @@ mod callback_tests;
 #[cfg(test)]
 mod midi_callback_tests;
 
+pub use backend::{AudioBackend, MockBackend};
 pub use device::{DeviceId, DeviceInfo, DeviceKind, InvalidDeviceId};
 pub use engine::{ContextKind, DeviceConfig, Engine, StreamFormat, StreamHandles};
 pub use error::{AudioWorkgroupError, EngineError, MaError, MidiError, ThreadQosError};
