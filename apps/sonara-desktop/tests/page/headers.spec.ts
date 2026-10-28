@@ -231,3 +231,24 @@ test("the wheel scrolls the headers with the canvas", async ({ page }) => {
   await page.mouse.wheel(0, 120);
   await expect.poll(first).toBeLessThan(before - 100);
 });
+
+test("an empty project shows an empty, inert track list", async ({ page }) => {
+  await openHeaders(page, project([]));
+  await expect(trackList(page)).toBeVisible();
+  const headers = await box(page);
+  // A click on the empty list clears the selection, which is already empty: no edit goes out.
+  await page.mouse.click(headers.x + 60, headers.y + 40);
+  await page.keyboard.press("ArrowDown");
+  expect(await edits(page)).toEqual([]);
+  await expect(rows(page)).toHaveCount(0);
+});
+
+test("a large project keeps every header, in order, one selectable row each", async ({ page }) => {
+  const many = Array.from({ length: 200 }, (_, i) => track(`t${i}`, `T${i}`));
+  await openHeaders(page, project(many));
+  await expect(rows(page)).toHaveCount(200);
+  await expect(rows(page).first()).toContainText("T0");
+  await expect(rows(page).last()).toContainText("T199");
+  await row(page, "T0").click();
+  await expect(row(page, "T0")).toHaveClass(/selected/);
+});
