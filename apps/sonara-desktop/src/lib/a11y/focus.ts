@@ -32,14 +32,27 @@ export function wrapTarget<T>(items: readonly T[], active: T | null, backwards: 
   return null;
 }
 
+/**
+ * The element Tab or ⇧Tab moves to inside `items`, cycling at the ends; null only when there is
+ * none. Unlike [`wrapTarget`] it never leaves a move to the browser: WebKit's Tab skips buttons
+ * unless the system's full keyboard access is on, so a browser move can leave the dialog.
+ */
+export function cycleTarget<T>(items: readonly T[], active: T | null, backwards: boolean): T | null {
+  const wrapped = wrapTarget(items, active, backwards);
+  if (wrapped !== null || active === null) return wrapped;
+  const at = items.indexOf(active);
+  return items[at + (backwards ? -1 : 1)] ?? null;
+}
+
 /** A Svelte action: Tab and ⇧Tab cycle through the focusable elements of `node`. */
 export function trapTab(node: HTMLElement) {
   const keydown = (event: KeyboardEvent) => {
     if (event.key !== "Tab" || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
     const items = tabbables(node);
     const active = document.activeElement instanceof HTMLElement && node.contains(document.activeElement) ? document.activeElement : null;
-    const target = wrapTarget(items, active, event.shiftKey);
-    if (items.length === 0 || target) event.preventDefault();
+    const target = cycleTarget(items, active, event.shiftKey);
+    // The trap always moves the focus itself, so no browser's idea of what is tabbable matters.
+    event.preventDefault();
     target?.focus();
   };
   node.addEventListener("keydown", keydown);

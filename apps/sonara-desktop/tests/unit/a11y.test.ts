@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { wrapTarget } from "../../src/lib/a11y/focus";
+import { cycleTarget, wrapTarget } from "../../src/lib/a11y/focus";
 import {
   beatsText,
   clipOptionLabel,
@@ -291,4 +291,17 @@ test("the scale watcher follows a move to a display with another scale, and stop
   expect(queries.every((q) => q.listeners.length === 0)).toBe(true);
   expect(backingSize(300.4, 0, 2)).toEqual({ width: 601, height: 1 });
   expect(backingSize(16, 120, 1)).toEqual({ width: 16, height: 120 });
+});
+
+test("Tab never leaves the move to the browser: every step names the next element", () => {
+  const items = ["name", "template", "cancel", "create"];
+  expect(cycleTarget(items, "name", false)).toBe("template");
+  expect(cycleTarget(items, "template", false)).toBe("cancel");
+  expect(cycleTarget(items, "template", true)).toBe("name");
+  expect(cycleTarget(items, "create", false)).toBe("name");
+  expect(cycleTarget(items, "name", true)).toBe("create");
+  expect(cycleTarget(items, null, false)).toBe("name");
+  expect(cycleTarget(items, null, true)).toBe("create");
+  expect(cycleTarget([], null, false)).toBeNull();
+  expect(cycleTarget(["only"], "only", false)).toBe("only");
 });
