@@ -484,3 +484,57 @@ fn regenerating_a_section_edited_since_planning_is_a_conflict() {
     assert_eq!(err.code, ErrorCode::Conflict);
     assert_eq!(project_sections(&session), before);
 }
+
+/// SON-P10: a song form is represented in the project model, so it survives saving and opening
+/// the project, and regenerating one section changes only that section on disk too.
+#[test]
+fn a_form_and_a_regenerated_section_survive_save_and_open() {
+    use sonara_project::store::ProjectStore;
+
+    let mut session = session();
+    let form = plan(&FormConfig::new(FormTemplate::VerseChorus), &four_four());
+    apply_song_form(&mut session, &form, "test").expect("applied");
+    let before = project_sections(&session);
+    assert_eq!(before.len(), 6);
+
+    let dir = std::env::temp_dir().join(format!("sonara-form-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("a temporary directory");
+    let store = ProjectStore::new(dir.join("workspaces"));
+    let target = dir.join("song.sonara");
+    let project = session.require_project().expect("project").clone();
+    store.save(&project, &dir, &target, None).expect("saved");
+    let reopened = store.open(&target, false).expect("opened");
+    assert_eq!(reopened.project.sections, before);
+
+    // Regenerate the second section's levels: every other section is unchanged after a round trip.
+    let target_id = before[1].id.clone();
+    regenerate_section(
+        &mut session,
+        &form,
+        &target_id,
+        &SectionChange {
+            role: None,
+            energy: Some(Level::new(10).expect("a level")),
+            density: None,
+        },
+        "test",
+    )
+    .expect("regenerated");
+    let project = session.require_project().expect("project").clone();
+    let target2 = dir.join("song2.sonara");
+    store
+        .save(&project, &dir, &target2, None)
+        .expect("saved again");
+    let after = store
+        .open(&target2, false)
+        .expect("opened again")
+        .project
+        .sections
+        .clone();
+    for (old, new) in before.iter().zip(&after) {
+        if old.id != target_id {
+            assert_eq!(old, new, "section {} changed", old.id);
+        }
+    }
+    std::fs::remove_dir_all(&dir).expect("cleanup");
+}
