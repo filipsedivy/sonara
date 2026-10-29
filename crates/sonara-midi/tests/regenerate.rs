@@ -579,3 +579,57 @@ fn the_plan_command_is_a_valid_project_command() {
     // Simulating does not commit.
     assert_eq!(f.notes("clp_lead").len(), 17);
 }
+
+/// SON-P11: a proposal that is dropped changes nothing (the user rejects it by not applying it),
+/// and an applied one survives save and open with every note outside the region unchanged.
+#[test]
+fn a_rejected_proposal_changes_nothing_and_an_applied_one_survives_save_and_open() {
+    use sonara_project::store::ProjectStore;
+
+    let mut f = fixture();
+    let before = f.notes("clp_lead");
+    let version = f.session.version();
+    let request = f.request(8.0, 12.0);
+    let plan = propose(&f.session, &request, &Pulse { pitch: 65 }, &mut ids()).expect("plan");
+    drop(plan);
+    assert_eq!(f.session.version(), version);
+    assert_eq!(f.notes("clp_lead"), before);
+
+    regenerate(
+        &mut f.session,
+        &request,
+        &Pulse { pitch: 65 },
+        &mut ids(),
+        "test",
+    )
+    .expect("applied");
+    let after = f.notes("clp_lead");
+    assert_ne!(after, before);
+
+    let dir = std::env::temp_dir().join(format!("sonara-regen-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("a temporary directory");
+    let store = ProjectStore::new(dir.join("workspaces"));
+    let target = dir.join("song.sonara");
+    let project = f.session.require_project().expect("project").clone();
+    store.save(&project, &dir, &target, None).expect("saved");
+    let reopened = store.open(&target, false).expect("opened");
+    let on_disk = match reopened.project.clip("clp_lead").expect("clip").1 {
+        Clip::Midi(clip) => clip.notes.as_ref().clone(),
+        Clip::Audio(_) => panic!("audio clip"),
+    };
+    assert_eq!(on_disk, after);
+    // The region is beats 8 to 12 on the timeline; the clip starts at beat 4, so content beats 4 to 8.
+    let untouched = |notes: &[MidiNote]| -> Vec<MidiNote> {
+        notes
+            .iter()
+            .filter(|n| n.start < 4.0 || n.start >= 8.0)
+            .cloned()
+            .collect()
+    };
+    assert_eq!(untouched(&on_disk), untouched(&before));
+    match reopened.project.clip("clp_bass").expect("other clip").1 {
+        Clip::Midi(clip) => assert_eq!(clip.notes.as_ref().clone(), f.notes("clp_bass")),
+        Clip::Audio(_) => panic!("audio clip"),
+    }
+    std::fs::remove_dir_all(&dir).expect("cleanup");
+}
