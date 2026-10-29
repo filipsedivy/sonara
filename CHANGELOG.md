@@ -8,6 +8,8 @@ break the API. The project format is versioned independently, see
 
 ## [Unreleased]
 
+## [0.1.9] — 2026-10-29
+
 ### Added
 
 - **Reference audio analysis (`sonara_media::reference`):** a streaming, descriptive analysis of a
