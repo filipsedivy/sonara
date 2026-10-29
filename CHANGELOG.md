@@ -8,6 +8,12 @@ break the API. The project format is versioned independently, see
 
 ## [Unreleased]
 
+### Fixed
+
+- **Meters after a pause:** the mixer meters kept showing the last played block while the
+  transport was paused or stopped. The live frame now carries meters only while playing or
+  recording, so they fall to silence.
+
 ## [0.1.9] — 2026-10-29
 
 ### Added
