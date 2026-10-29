@@ -173,6 +173,14 @@ audio hardware and no sleeping.
   is decoded and resampled once (libsoxr VHQ), streaming, into a float32 cache in the
   workspace (`cache/decoded`), read back with positional reads. Long media never needs to fit
   in RAM.
+- **Export parameters and determinism (SON-P16).** An export states its container, bit depth,
+  sample rate, channel count and dither in the request, and the result echoes the bit depth and
+  verifies the written file. The same project and the same parameters render the same samples;
+  the written bytes are identical when dither is `none`. The default TPDF dither is random when
+  the bit depth is reduced, so two such exports differ in the least significant bit.
+  `crates/sonara-agent/tests/render_tools.rs` checks a WAV's header against the request, its
+  length against the project's, reproducibility without dither and the refusal of invalid
+  parameters without a file.
 
 ## DSP
 

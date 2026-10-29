@@ -17,6 +17,8 @@ break the API. The project format is versioned independently, see
   commit. Library API with no language model; no new tool, schema or error code. See
   [docs/orchestration.md](docs/orchestration.md).
 
+## [0.1.7] — 2026-10-29
+
 ### Changed
 
 - **Licence:** Sonara is released under the BSD Zero Clause License (0BSD), replacing "all rights
@@ -27,6 +29,11 @@ break the API. The project format is versioned independently, see
 
 ### Added
 
+- **Quality checks (`sonara_app::quality`):** explained findings about a project (a missing
+  instrument, duplicate or overlapping notes, notes after a clip's end, empty clips, hot faders,
+  uniform velocities, tracks silenced by a solo) and about rendered audio (the analyzer's issues
+  with an explanation each), split into errors, warnings and recommendations. Library API only;
+  no tool, schema or contract change. See [docs/quality-checks.md](docs/quality-checks.md).
 - **Orchestration metadata (`sonara_midi::orchestration`):** pitch ranges (playable and
   comfortable), transposition, family and idiomatic articulations for 16 orchestral instruments,
   each value sourced or marked as an estimate, with range checks that warn instead of clamping.

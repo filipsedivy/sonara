@@ -65,6 +65,7 @@ use sonara_media::{FullAudio, MediaProvider};
 
 pub use layout::GraphLayout;
 pub(crate) use layout::Plan;
+pub(crate) use live::is_clipping_peak;
 pub use live::{LIVE_EVENTS, NodeMeter, StalePlan};
 
 use crate::EngineError;
