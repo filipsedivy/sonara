@@ -659,10 +659,17 @@ impl TransportService {
             };
         };
         let project = self.shared.parts.session.project();
+        let status = player.status(project.as_ref());
+        // The player keeps the last block's meters after a pause or stop; the interface must not
+        // re-apply them every frame, or its meters never fall to silence.
+        let meters = match status.state {
+            PlayerState::Playing | PlayerState::Recording => player.meters(),
+            PlayerState::Stopped | PlayerState::Paused => Vec::new(),
+        };
         TransportSnapshot {
             available: true,
-            status: Some(player.status(project.as_ref())),
-            meters: player.meters(),
+            status: Some(status),
+            meters,
             reports: player.device_reports(),
         }
     }

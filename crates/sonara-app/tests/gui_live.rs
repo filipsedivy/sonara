@@ -521,6 +521,21 @@ fn a_playing_feed_sends_a_frame_per_display_frame() {
         playing.iter().any(|f| f.meters[index].peak[0] > 0.0),
         "the kick shows in its meter"
     );
+    assert_eq!(transport.pause()["paused"], true, "pause");
+    assert!(
+        wait_until(Duration::from_secs(2), || {
+            let snapshot = live.app.transport().live_snapshot();
+            snapshot
+                .status
+                .is_some_and(|status| status.state == PlayerState::Paused)
+        }),
+        "the pause is reached"
+    );
+    // The meters of the last block must not outlive the playback.
+    assert!(
+        live.app.transport().live_snapshot().meters.is_empty(),
+        "a paused transport reports no meters"
+    );
     transport.stop().expect("stop");
     let stopped_at = Instant::now();
     assert!(
