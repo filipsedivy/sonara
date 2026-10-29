@@ -82,6 +82,8 @@ GUI, the CLI, local IPC clients and the MCP server are all interfaces onto that 
 
 ### Command and history guarantees
 
+The commands are listed in [project-commands.md](project-commands.md).
+
 Pinned by `crates/sonara-core/tests/commands.rs` and `tests/history.rs`:
 
 - **Atomic.** A command that fails (missing target, invalid value, a failing step of a
