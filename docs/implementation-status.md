@@ -34,6 +34,8 @@ These need hardware or a person and are never CI gates (HW-01). Their results be
 - VoiceOver, the microphone prompt and the native menus in the bundled app;
 - dropping a WAV file from the Finder onto the timeline;
 - Claude Code against `sonara mcp`;
+- the AI Composer in the bundled app, started from the Finder (the live test uses `sonara serve`
+  and a terminal environment, so the desktop path is not exercised end to end);
 - the sampler with a real library (VSCO 2 CE): listen, check the GUI device editor, measure the
   render load and memory.
 
@@ -104,6 +106,7 @@ These need hardware or a person and are never CI gates (HW-01). Their results be
 | Localized regeneration | partial | Library API (`sonara_midi::regenerate`, SON-P11): region and section targets, validated patch, one-step undoable apply, stale-plan rejection. Needs a real `RegionGenerator`; none ships. No agent tool or GUI yet. See `docs/regeneration.md` |
 | Reference audio analysis | partial | Library API (`sonara_media::reference`, SON-P15): tempo with confidence, energy windows, energy segmentation, limitations; `analyze_reference_file` imports through the media decoder. Constant tempo only; no agent tool or GUI yet. See `docs/reference-analysis.md` |
 | Conversational orchestration | partial | Library API (`sonara_agent::orchestration`, SON-P13): deterministic planner for tempo, instrument and delete-track requests over the existing tools, clarification questions, confirmation gate, dry-run validation of the whole plan. No language model, no agent tool or GUI yet. See `docs/orchestration.md` |
+| AI Composer | partial | Menu AI → AI Composer…: a headless Claude Code (`claude -p`, `sonara_app::composer`) composes into the open project through this window's agent session, with a streamed step log, Stop (SIGINT, then escalation) and a result summary. Web search and fetch allowed; no shell, no file writes, no save or export. Needs Claude Code ≥ 2.1.259, signed in. Covered by unit tests, a fake-process run test and a local-only live test (`apps/sonara/tests/composer_live.rs`). Not done: one undo step for a whole run, a native-menu check in the bundled app, and the panel's page tests have not run in CI yet. See [ai-composer.md](ai-composer.md) |
 | Quality checks | partial | Library API (`sonara_app::quality`, SON-P18): project checks and the analyzer's audio issues as explained findings with a severity, a code and a place. No musical-theory checks beyond note overlaps; no agent tool or GUI yet. See `docs/quality-checks.md` |
 | Rhythm patterns, motifs, theory validators | done (library) | `sonara-midi::theory::{rhythm, motif, validate}`; not yet exposed to agent tools |
 

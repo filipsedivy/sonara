@@ -18,7 +18,8 @@
 //! ([`browser`]), the New Project form ([`projects`]), the Settings dialog
 //! ([`settings_dialog`]), the Export dialog ([`export_dialog`]), the prompts and reports
 //! ([`prompts`]) and About and Agent Connection ([`about`]).
-//! The menus and shortcuts add the native menu bar's tree ([`menus`]).
+//! The menus and shortcuts add the native menu bar's tree ([`menus`]). The AI composer
+//! ([`composer`]) runs a headless Claude Code as an agent that composes in the open project.
 #![forbid(unsafe_code)]
 
 pub mod about;
@@ -27,6 +28,7 @@ pub mod browser;
 pub mod catalog;
 pub mod chrome;
 pub mod clock;
+pub mod composer;
 pub mod context;
 pub mod edit;
 pub mod eq_response;

@@ -82,7 +82,9 @@ Help
 ";
 
 /// The menu bar as the desktop builds it: the prototype's tree after the macOS move, with the
-/// system's items in brackets and the checkable panes marked.
+/// system's items in brackets and the checkable panes marked. The AI menu is the one deliberate
+/// addition to the prototype's menus (GLD-01: it has no counterpart in the golden data, and the
+/// prototype's menus are still compared in full below).
 const MACOS_TREE: &str = "\
 Sonara
   About Sonara
@@ -147,6 +149,8 @@ View
   Mixer  ⌘1
   Piano Roll  ⌘2
   Devices  ⌘3
+AI
+  AI Composer…
 Window
   [Minimize]
   [Zoom]

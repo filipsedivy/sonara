@@ -311,6 +311,7 @@ fn dialog_of(action: MenuAction) -> Option<&'static str> {
         MenuAction::NewProject => "new-project",
         MenuAction::ImportAudio => "import-audio",
         MenuAction::ExportAudio => "export-audio",
+        MenuAction::AiComposer => "ai-composer",
         MenuAction::AgentConnection => "agent-connection",
         _ => return None,
     })

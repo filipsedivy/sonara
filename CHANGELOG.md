@@ -8,6 +8,20 @@ break the API. The project format is versioned independently, see
 
 ## [Unreleased]
 
+### Added
+
+- **AI Composer (menu AI → AI Composer…):** describe the music you want, and a headless Claude Code
+  (`claude -p`) composes it into the open project while you watch it appear on the timeline. The
+  panel checks that Claude Code is installed, shows the run step by step (tool calls, text,
+  retries), can stop it at any time (the run is interrupted, and its result is still reported),
+  and ends with everything Claude Code returned: the final message, time, turns, estimated cost,
+  tokens, session id, denied tools, exit code and the full output. The agent uses the existing
+  Sonara tools, attached to this window's session (shared undo history), plus `WebSearch` and
+  `WebFetch` for musical reference. It has no shell, cannot write files, and cannot save, export,
+  open or create projects: you save and export. A system prompt tells it what Sonara is and how
+  to build a song in small visible steps. The AI menu is a deliberate addition to the prototype's
+  menus. No tool, schema or CLI contract changes. See [docs/ai-composer.md](docs/ai-composer.md).
+
 ## [0.1.10] — 2026-10-29
 
 ### Fixed

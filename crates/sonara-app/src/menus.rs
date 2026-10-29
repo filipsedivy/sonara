@@ -111,13 +111,16 @@ pub enum MenuAction {
     ShowPianoRoll,
     /// Raises the Devices tab.
     ShowDevices,
+    /// The AI Composer panel: a deliberate addition to the prototype's menus (the AI menu, between
+    /// View and Window), which has no counterpart in the golden data. See [`crate::composer`].
+    AiComposer,
     /// MW-23, DL-03.
     AgentConnection,
 }
 
 impl MenuAction {
     /// Every action, in the menu's order.
-    pub const ALL: [Self; 38] = [
+    pub const ALL: [Self; 39] = [
         Self::About,
         Self::Settings,
         Self::Quit,
@@ -155,6 +158,7 @@ impl MenuAction {
         Self::ShowMixer,
         Self::ShowPianoRoll,
         Self::ShowDevices,
+        Self::AiComposer,
         Self::AgentConnection,
     ];
 
@@ -200,6 +204,7 @@ impl MenuAction {
             Self::ShowMixer => "view:mixer",
             Self::ShowPianoRoll => "view:piano-roll",
             Self::ShowDevices => "view:devices",
+            Self::AiComposer => "ai-composer",
             Self::AgentConnection => "agent-connection",
         }
     }
@@ -241,6 +246,7 @@ impl MenuAction {
             | Self::NewProject
             | Self::ImportAudio
             | Self::ExportAudio
+            | Self::AiComposer
             | Self::AgentConnection => Route::PageDialog,
             Self::Quit
             | Self::Open
@@ -503,7 +509,8 @@ const fn plain(key: &'static str) -> Shortcut {
     Shortcut::key(key)
 }
 
-/// The menu bar: the prototype's File, Edit, Track, Transport, View and Help menus,
+/// The menu bar: the prototype's File, Edit, Track, Transport, View and Help menus, and the AI
+/// menu that the composer adds,
 /// with About Sonara, Settings… and Quit in the application menu, and the system's items.
 #[must_use]
 pub fn menu_bar() -> Vec<Menu> {
@@ -514,6 +521,10 @@ pub fn menu_bar() -> Vec<Menu> {
         track_menu(),
         transport_menu(),
         view_menu(),
+        Menu {
+            title: "AI",
+            entries: vec![item(MenuAction::AiComposer, "AI Composer…")],
+        },
         Menu {
             title: "Window",
             entries: vec![
