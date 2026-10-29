@@ -8,6 +8,15 @@ break the API. The project format is versioned independently, see
 
 ## [Unreleased]
 
+### Added
+
+- **Conversational orchestration (`sonara_agent::orchestration`):** turns a plain-language request
+  (tempo, a track's instrument, deleting a track) into a plan of calls to the existing agent
+  tools and a report of what changed. Ambiguous requests only produce questions, destructive
+  plans wait for confirmation, and every step is validated with `dry_run` before the first
+  commit. Library API with no language model; no new tool, schema or error code. See
+  [docs/orchestration.md](docs/orchestration.md).
+
 ## [0.1.7] — 2026-10-29
 
 ### Changed
