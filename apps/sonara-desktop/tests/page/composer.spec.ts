@@ -37,7 +37,7 @@ test("it is a panel, not a modal dialog, and checks Claude Code first", async ({
   // The window stays usable: no modal state is reported to the menu.
   const contexts = (await calls(page)).filter((c) => c.cmd === "set_menu_context");
   expect(contexts.every((c) => (c.args as { context: { modal: boolean } }).context.modal === false)).toBe(true);
-  await expect(panel.getByRole("button", { name: "Compose" })).toBeDisabled();
+  await expect(panel.getByRole("button", { name: "Compose", exact: true })).toBeDisabled();
 });
 
 test("a missing Claude Code is explained and can be checked again", async ({ page }) => {
@@ -45,7 +45,7 @@ test("a missing Claude Code is explained and can be checked again", async ({ pag
   const panel = page.getByRole("region", { name: "AI Composer" });
   await expect(panel.getByRole("alert")).toContainText("Claude Code is not installed");
   await panel.getByRole("textbox", { name: "Describe the music you want" }).fill("a beat");
-  await expect(panel.getByRole("button", { name: "Compose" })).toBeDisabled();
+  await expect(panel.getByRole("button", { name: "Compose", exact: true })).toBeDisabled();
   await panel.getByRole("button", { name: "Check again" }).click();
   await expect.poll(async () => (await calls(page)).filter((c) => c.cmd === "composer_check").length).toBe(2);
 });
@@ -54,7 +54,7 @@ test("the prompt is sent, the progress streams in, and the result ends the run",
   await openWindow(page, READY);
   const panel = page.getByRole("region", { name: "AI Composer" });
   await panel.getByRole("textbox", { name: "Describe the music you want" }).fill("  A chill lo-fi beat  ");
-  await panel.getByRole("button", { name: "Compose" }).click();
+  await panel.getByRole("button", { name: "Compose", exact: true }).click();
   const started = (await calls(page)).filter((c) => c.cmd === "composer_start");
   expect(started).toHaveLength(1);
   expect((started[0].args as { prompt: string }).prompt).toBe("  A chill lo-fi beat  ");
@@ -94,14 +94,14 @@ test("the prompt is sent, the progress streams in, and the result ends the run",
   await panel.getByText("Full output of Claude Code").click();
   await expect(panel.locator("pre").first()).toContainText('"type": "result"');
   // Ready for the next one.
-  await expect(panel.getByRole("button", { name: "Compose" })).toBeEnabled();
+  await expect(panel.getByRole("button", { name: "Compose", exact: true })).toBeEnabled();
 });
 
 test("Stop interrupts the run and the panel reports it as stopped", async ({ page }) => {
   await openWindow(page, READY);
   const panel = page.getByRole("region", { name: "AI Composer" });
   await panel.getByRole("textbox", { name: "Describe the music you want" }).fill("a beat");
-  await panel.getByRole("button", { name: "Compose" }).click();
+  await panel.getByRole("button", { name: "Compose", exact: true }).click();
   await sendChannelMessage(page, { kind: "init", session_id: "s", model: "m", tool_count: 1, mcp_servers: [{ name: "sonara", status: "connected" }], mcp_errors: [] });
   await panel.getByRole("button", { name: "Stop" }).click();
   expect((await calls(page)).filter((c) => c.cmd === "composer_stop")).toHaveLength(1);
@@ -117,7 +117,7 @@ test("a start that the desktop refuses is shown, and nothing runs", async ({ pag
   });
   const panel = page.getByRole("region", { name: "AI Composer" });
   await panel.getByRole("textbox", { name: "Describe the music you want" }).fill("a beat");
-  await panel.getByRole("button", { name: "Compose" }).click();
+  await panel.getByRole("button", { name: "Compose", exact: true }).click();
   await expect(panel.getByRole("heading", { name: "Did not finish" })).toBeVisible();
   await expect(panel.getByText("the agent server did not start")).toBeVisible();
 });
@@ -126,7 +126,7 @@ test("a Sonara connection that failed stops the run at once", async ({ page }) =
   await openWindow(page, READY);
   const panel = page.getByRole("region", { name: "AI Composer" });
   await panel.getByRole("textbox", { name: "Describe the music you want" }).fill("a beat");
-  await panel.getByRole("button", { name: "Compose" }).click();
+  await panel.getByRole("button", { name: "Compose", exact: true }).click();
   await sendChannelMessage(page, { kind: "init", session_id: "s", model: "m", tool_count: 1, mcp_servers: [{ name: "sonara", status: "failed" }], mcp_errors: [] });
   await expect.poll(async () => (await calls(page)).filter((c) => c.cmd === "composer_stop").length).toBe(1);
   await expect(panel.getByRole("alert")).toContainText("not connected");
