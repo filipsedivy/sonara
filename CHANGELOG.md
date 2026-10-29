@@ -8,6 +8,8 @@ break the API. The project format is versioned independently, see
 
 ## [Unreleased]
 
+## [0.1.10] — 2026-10-29
+
 ### Fixed
 
 - **Meters after a pause:** the mixer meters kept showing the last played block while the
