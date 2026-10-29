@@ -852,3 +852,99 @@ fn sidecars_are_python_json_with_ascii_escapes() {
     );
     assert!(text.ends_with('}'));
 }
+
+/// The chunks of a RIFF/WAVE file as `(id, body)`, after checking the container: the RIFF size
+/// covers the file, and every chunk lies inside it.
+fn wav_chunks(bytes: &[u8]) -> Vec<([u8; 4], &[u8])> {
+    assert_eq!(&bytes[..4], b"RIFF");
+    assert_eq!(&bytes[8..12], b"WAVE");
+    let riff = u32::from_le_bytes(bytes[4..8].try_into().expect("four bytes")) as usize;
+    assert_eq!(riff + 8, bytes.len(), "the RIFF size covers the file");
+    let mut chunks = Vec::new();
+    let mut at = 12;
+    while at < bytes.len() {
+        let id: [u8; 4] = bytes[at..at + 4].try_into().expect("four bytes");
+        let size =
+            u32::from_le_bytes(bytes[at + 4..at + 8].try_into().expect("four bytes")) as usize;
+        assert!(
+            at + 8 + size <= bytes.len(),
+            "chunk {id:?} overruns the file"
+        );
+        chunks.push((id, &bytes[at + 8..at + 8 + size]));
+        at += 8 + size + (size & 1);
+    }
+    chunks
+}
+
+/// SON-P16: the exported WAV is a valid file whose header states the requested parameters, and
+/// whose length is the project's length.
+#[test]
+fn a_wav_export_is_valid_and_states_its_parameters() {
+    let fx = Fixture::new();
+    fx.small_song();
+    let res = fx.ok(
+        "export_audio",
+        &json!({"path": "out/params.wav", "tail": "none",
+                "formats": [{"format": "wav", "bit_depth": 16, "sample_rate": 44100,
+                             "channels": 2, "dither": "none"}]}),
+    );
+    let output = &res["result"]["outputs"][0];
+    assert_eq!(output["verified"], true);
+    assert_eq!(output["bit_depth"], 16);
+    let bytes = fs::read(fx.work("out/params.wav")).unwrap();
+    let chunks = wav_chunks(&bytes);
+    let fmt = chunks
+        .iter()
+        .find(|(id, _)| id == b"fmt ")
+        .expect("a fmt chunk")
+        .1;
+    let u16_at = |at: usize| u16::from_le_bytes(fmt[at..at + 2].try_into().expect("four bytes"));
+    let u32_at = |at: usize| u32::from_le_bytes(fmt[at..at + 4].try_into().expect("four bytes"));
+    assert_eq!(u16_at(0), 1, "integer PCM");
+    assert_eq!(u16_at(2), 2, "channels");
+    assert_eq!(u32_at(4), 44_100, "sample rate");
+    assert_eq!(u32_at(8), 44_100 * 4, "byte rate");
+    assert_eq!(u16_at(12), 4, "block align");
+    assert_eq!(u16_at(14), 16, "bits per sample");
+    let data = chunks
+        .iter()
+        .find(|(id, _)| id == b"data")
+        .expect("a data chunk")
+        .1;
+    // 2 bars at 120 BPM are 4 s, with no tail.
+    assert_eq!(data.len(), 4 * 44_100 * 4);
+}
+
+/// SON-P16: with dither off, the same project and parameters give the same bytes (the default
+/// TPDF dither is random and is therefore the one documented source of difference).
+#[test]
+fn a_wav_export_without_dither_is_reproducible() {
+    let fx = Fixture::new();
+    fx.small_song();
+    let spec = |path: &str| {
+        json!({"path": path, "tail": "none",
+               "formats": [{"format": "wav", "bit_depth": 16, "dither": "none"}]})
+    };
+    fx.ok("export_audio", &spec("out/a.wav"));
+    fx.ok("export_audio", &spec("out/b.wav"));
+    let (a, b) = (
+        fs::read(fx.work("out/a.wav")).unwrap(),
+        fs::read(fx.work("out/b.wav")).unwrap(),
+    );
+    assert!(a.len() > 1000);
+    assert_eq!(a, b);
+}
+
+/// SON-P16: an export that cannot be honoured is an explicit error and leaves no file.
+#[test]
+fn an_invalid_wav_export_is_refused_without_a_file() {
+    let fx = Fixture::new();
+    fx.small_song();
+    let error = fx.err(
+        "export_audio",
+        &json!({"path": "out/bad.wav", "formats": [{"format": "wav", "channels": 6}]}),
+        "INVALID_ARGUMENT",
+    );
+    assert!(error["details"]["errors"].is_array(), "{error}");
+    assert!(!fx.work("out/bad.wav").exists());
+}

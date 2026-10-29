@@ -103,6 +103,8 @@ These need hardware or a person and are never CI gates (HW-01). Their results be
 | Song form generator | partial | Library API (`sonara_midi::form`, SON-P10): templates, roles, bar lengths, one-step apply, single-section regeneration. The role and levels are not saved in the project; no agent tool or GUI yet. See `docs/song-form.md` |
 | Localized regeneration | partial | Library API (`sonara_midi::regenerate`, SON-P11): region and section targets, validated patch, one-step undoable apply, stale-plan rejection. Needs a real `RegionGenerator`; none ships. No agent tool or GUI yet. See `docs/regeneration.md` |
 | Reference audio analysis | partial | Library API (`sonara_media::reference`, SON-P15): tempo with confidence, energy windows, energy segmentation, limitations; `analyze_reference_file` imports through the media decoder. Constant tempo only; no agent tool or GUI yet. See `docs/reference-analysis.md` |
+| Conversational orchestration | partial | Library API (`sonara_agent::orchestration`, SON-P13): deterministic planner for tempo, instrument and delete-track requests over the existing tools, clarification questions, confirmation gate, dry-run validation of the whole plan. No language model, no agent tool or GUI yet. See `docs/orchestration.md` |
+| Quality checks | partial | Library API (`sonara_app::quality`, SON-P18): project checks and the analyzer's audio issues as explained findings with a severity, a code and a place. No musical-theory checks beyond note overlaps; no agent tool or GUI yet. See `docs/quality-checks.md` |
 | Rhythm patterns, motifs, theory validators | done (library) | `sonara-midi::theory::{rhythm, motif, validate}`; not yet exposed to agent tools |
 
 ### Mixer and routing

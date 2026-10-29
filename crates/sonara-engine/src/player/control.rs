@@ -267,6 +267,15 @@ pub struct TrackMeter {
     pub rms: [f64; 2],
 }
 
+impl TrackMeter {
+    /// Whether the track clipped over the last block: a peak at or above full scale, or NaN
+    /// (SON-P17; the same rule as [`crate::graph::NodeMeter::is_clipping`]).
+    #[must_use]
+    pub fn is_clipping(&self) -> bool {
+        crate::graph::is_clipping_peak(&self.peak)
+    }
+}
+
 /// One device's live readouts (`device_reports`).
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeviceReport {

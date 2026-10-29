@@ -15,6 +15,7 @@ pub mod conversion;
 pub mod handlers;
 pub mod ipc;
 pub mod mcp;
+pub mod orchestration;
 pub mod permissions;
 mod pystr;
 pub mod registry;

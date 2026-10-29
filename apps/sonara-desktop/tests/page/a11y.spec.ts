@@ -244,7 +244,9 @@ test("the meters are meters named after their track, with a level a few times a 
   // The tracks in order (Drums 1, Bass, Vox), then the master: Bass peaks at 0.5 (−6 dB), then
   // falls at 24 dB/s.
   await sendChannel(page, frameHex({ meterLayout: 5, meters: [[0, 0, 0, 0], [0.5, 0.25, 0.3, 0.2], [0, 0, 0, 0], [0.5, 0.5, 0.3, 0.3]] }));
-  await page.waitForTimeout(2800);
+  // Wait for the meter to fall silent rather than for a fixed time: a loaded CI runner delays the
+  // timers, and the fall (2.25 s) plus the quarter-second throttle can overrun a fixed wait.
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __meterValues: [number, string][] }).__meterValues.at(-1)?.[1]), { timeout: 15_000 }).toBe("silent");
   const values = await page.evaluate(() => (window as unknown as { __meterValues: [number, string][] }).__meterValues);
   const levels = values.map(([, text]) => (text === "silent" ? -Infinity : Number.parseInt(text, 10)));
   // The first value is the peak, at most a quarter of a second of fall below −6 dB.

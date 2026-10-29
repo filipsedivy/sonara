@@ -8,6 +8,17 @@ break the API. The project format is versioned independently, see
 
 ## [Unreleased]
 
+### Added
+
+- **Conversational orchestration (`sonara_agent::orchestration`):** turns a plain-language request
+  (tempo, a track's instrument, deleting a track) into a plan of calls to the existing agent
+  tools and a report of what changed. Ambiguous requests only produce questions, destructive
+  plans wait for confirmation, and every step is validated with `dry_run` before the first
+  commit. Library API with no language model; no new tool, schema or error code. See
+  [docs/orchestration.md](docs/orchestration.md).
+
+## [0.1.7] — 2026-10-29
+
 ### Changed
 
 - **Licence:** Sonara is released under the BSD Zero Clause License (0BSD), replacing "all rights
@@ -24,6 +35,11 @@ break the API. The project format is versioned independently, see
   `sonara_media::export::analyze_reference_file`. Library API only; no melody or arrangement is
   extracted, and no tool, schema or contract changes. See
   [docs/reference-analysis.md](docs/reference-analysis.md).
+- **Quality checks (`sonara_app::quality`):** explained findings about a project (a missing
+  instrument, duplicate or overlapping notes, notes after a clip's end, empty clips, hot faders,
+  uniform velocities, tracks silenced by a solo) and about rendered audio (the analyzer's issues
+  with an explanation each), split into errors, warnings and recommendations. Library API only;
+  no tool, schema or contract change. See [docs/quality-checks.md](docs/quality-checks.md).
 - **Orchestration metadata (`sonara_midi::orchestration`):** pitch ranges (playable and
   comfortable), transposition, family and idiomatic articulations for 16 orchestral instruments,
   each value sourced or marked as an estimate, with range checks that warn instead of clamping.

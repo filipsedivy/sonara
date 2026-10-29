@@ -481,6 +481,74 @@ fn export_and_import_work_on_files() {
     std::fs::remove_dir_all(&dir).expect("cleanup");
 }
 
+/// SON-P14: the exported bytes read back with `midly` as plain events, without the importer, and
+/// agree with values known from the fixture: the header, the tempo of the first point
+/// (128 BPM is 468 750 µs per quarter note) and the note-on count.
+#[test]
+fn exported_bytes_parse_as_a_type_1_file_with_the_fixtures_tempo_and_notes() {
+    let encoded = encode_smf(&smf_project(), None).expect("encode");
+    let smf = Smf::parse(&encoded.bytes).expect("a standard MIDI file");
+    assert_eq!(smf.header.format, Format::Parallel);
+    assert_eq!(smf.header.timing, Timing::Metrical(u15::new(PPQ)));
+    assert_eq!(smf.tracks.len(), encoded.tracks);
+    let first_tempo = smf
+        .tracks
+        .iter()
+        .flatten()
+        .find_map(|event| match event.kind {
+            TrackEventKind::Meta(MetaMessage::Tempo(us)) => Some(us.as_int()),
+            _ => None,
+        })
+        .expect("a tempo event");
+    assert_eq!(first_tempo, 468_750);
+    let note_ons = smf
+        .tracks
+        .iter()
+        .flatten()
+        .filter(|event| {
+            matches!(
+                event.kind,
+                TrackEventKind::Midi { message: MidiMessage::NoteOn { vel, .. }, .. } if vel.as_int() > 0
+            )
+        })
+        .count();
+    // The looped drum clip (2 beats of 4) repeats its two notes, so 3 + 4 notes sound.
+    assert_eq!(note_ons, encoded.notes);
+    assert_eq!(note_ons, 7);
+}
+
+/// SON-P14: export failures are explicit errors with the documented codes, never a short file.
+#[test]
+fn export_failures_are_explicit() {
+    // A position beyond the 28-bit delta time of the file format.
+    let far = midi_clip(
+        "clp_far",
+        "Far",
+        400_000.0,
+        4.0,
+        vec![note("n_f", 60, 0.0, 1.0, 90)],
+        vec![],
+    );
+    let project = Valid::new(project_with(vec![instrument(
+        "trk_f",
+        "Far",
+        "sonara.synth.poly",
+        vec![far],
+    )]))
+    .expect("project");
+    let err = encode_smf(&project, None).expect_err("a delta time that does not fit");
+    assert_eq!(err.code, ErrorCode::LimitExceeded);
+
+    // The target's parent is a file, so the directory cannot be created.
+    let dir = temp_dir("export-io");
+    let blocker = dir.join("blocker");
+    std::fs::write(&blocker, b"x").expect("a file");
+    let err = export_smf(&smf_project(), &blocker.join("song.mid"), None).expect_err("io error");
+    assert_eq!(err.code, ErrorCode::IoError);
+    assert!(!blocker.join("song.mid").exists());
+    std::fs::remove_dir_all(&dir).expect("cleanup");
+}
+
 // -- import -------------------------------------------------------------------------------
 
 #[test]

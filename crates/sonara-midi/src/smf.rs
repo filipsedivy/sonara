@@ -6,6 +6,13 @@
 //! rounded to ticks, and the largest rounding error is reported. The bytes are identical to the
 //! prototype's (mido) output for the same project.
 //!
+//! # Not exported
+//!
+//! Audio tracks, folders and buses, muted clips, and everything that is not note, controller,
+//! pitch bend, tempo, time signature or marker data: track volume, pan, mute and solo, effects,
+//! instrument choice and parameters, and automation. Nothing is dropped silently within a
+//! supported kind: failures are errors (`INVALID_ARGUMENT`, `LIMIT_EXCEEDED`, `IO_ERROR`).
+//!
 //! # Deviations from the prototype
 //!
 //! * **Text encoding.** mido writes names as Latin-1 and

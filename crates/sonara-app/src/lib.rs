@@ -46,6 +46,7 @@ pub mod peaks;
 pub mod projects;
 pub mod prompts;
 pub mod pyjson;
+pub mod quality;
 pub mod render;
 pub mod samples;
 pub mod session;

@@ -106,6 +106,20 @@ impl NodeMeter {
             rms: [(sum[0] / n).sqrt(), (sum[1] / n).sqrt()],
         }
     }
+
+    /// Whether the block clipped (SON-P17): a channel's peak reached full scale (1.0, the level
+    /// the GUI's clip indicator latches at) or is NaN. The meter is post-fader, so this is the
+    /// level the next stage would receive.
+    #[must_use]
+    pub fn is_clipping(&self) -> bool {
+        is_clipping_peak(&self.peak)
+    }
+}
+
+/// Whether a peak (left, right) is at or above full scale, or NaN.
+#[must_use]
+pub(crate) fn is_clipping_peak(peak: &[f64; 2]) -> bool {
+    peak.iter().any(|p| p.is_nan() || *p >= 1.0)
 }
 
 /// A frame count as NumPy's `mean` divides by it.
@@ -689,6 +703,16 @@ mod tests {
     /// virtualenv (2026-10-22): `[peak_l, peak_r, rms_l, rms_r]`. NumPy's sum over axis 0 is
     /// sequential per column; a pairwise sum would end one ulp off in the left RMS
     /// (`0x3fd2_6b5e_382d_3a08`).
+    #[test]
+    fn clipping_is_a_peak_at_full_scale_or_nan() {
+        // Just below full scale does not clip; exactly 1.0 and above does, on either channel.
+        assert!(!NodeMeter::measure(&[[0.999, -0.5], [0.2, 0.9999]]).is_clipping());
+        assert!(NodeMeter::measure(&[[1.0, 0.0]]).is_clipping());
+        assert!(NodeMeter::measure(&[[0.0, 0.0], [0.1, -1.7]]).is_clipping());
+        assert!(NodeMeter::measure(&[[f64::NAN, 0.0]]).is_clipping());
+        assert!(!NodeMeter::measure(&[[0.0, 0.0]]).is_clipping());
+    }
+
     #[test]
     fn meters_match_prototype_formula() {
         let mut block = [[0.0; 2]; 512];
