@@ -50,6 +50,7 @@ mod opus;
 mod pcm;
 mod provider;
 mod reader;
+pub mod reference;
 mod resample;
 pub mod sfz;
 mod stream;
