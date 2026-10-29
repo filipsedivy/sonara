@@ -8,6 +8,15 @@ break the API. The project format is versioned independently, see
 
 ## [Unreleased]
 
+### Added
+
+- **Reference audio analysis (`sonara_media::reference`):** a streaming, descriptive analysis of a
+  reference recording: tempo with a confidence and the half and double alternatives, the energy
+  over time and a segmentation by energy changes, each with explicit limitations. File import is
+  `sonara_media::export::analyze_reference_file`. Library API only; no melody or arrangement is
+  extracted, and no tool, schema or contract changes. See
+  [docs/reference-analysis.md](docs/reference-analysis.md).
+
 ## [0.1.8] — 2026-10-29
 
 ### Added
@@ -31,12 +40,6 @@ break the API. The project format is versioned independently, see
 
 ### Added
 
-- **Reference audio analysis (`sonara_media::reference`):** a streaming, descriptive analysis of a
-  reference recording: tempo with a confidence and the half and double alternatives, the energy
-  over time and a segmentation by energy changes, each with explicit limitations. File import is
-  `sonara_media::export::analyze_reference_file`. Library API only; no melody or arrangement is
-  extracted, and no tool, schema or contract changes. See
-  [docs/reference-analysis.md](docs/reference-analysis.md).
 - **Quality checks (`sonara_app::quality`):** explained findings about a project (a missing
   instrument, duplicate or overlapping notes, notes after a clip's end, empty clips, hot faders,
   uniform velocities, tracks silenced by a solo) and about rendered audio (the analyzer's issues
