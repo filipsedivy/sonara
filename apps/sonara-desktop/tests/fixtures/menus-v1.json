@@ -323,6 +323,17 @@
       ]
     },
     {
+      "title": "AI",
+      "entries": [
+        {
+          "type": "item",
+          "id": "ai-composer",
+          "text": "AI Composer…",
+          "shortcut": null
+        }
+      ]
+    },
+    {
       "title": "Window",
       "entries": [
         {

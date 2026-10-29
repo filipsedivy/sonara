@@ -4,7 +4,7 @@
 //!
 //! **The page's dialogs** (HTML, `src/lib/dialogs/`): the menu asks the main window's page to
 //! open one (`dialog-command`: `new-project`, `settings`, `export-audio`, `agent-connection`,
-//! `about`, `import-audio`), the page reads its view through a command and sends the form back.
+//! `ai-composer`, `about`, `import-audio`), the page reads its view through a command and sends the form back.
 //! A form that is wrong comes back as an error, and the dialog stays open.
 //!
 //! **Native prompts and panels** (the dialog plugin) block, so they run off the
@@ -37,7 +37,7 @@ use crate::window::MAIN;
 /// A dialog the page opens (`dialog-command`).
 #[derive(Debug, Clone, Serialize)]
 pub struct DialogCommand {
-    /// `new-project`, `settings`, `export-audio`, `agent-connection`, `about` or
+    /// `new-project`, `settings`, `export-audio`, `agent-connection`, `ai-composer`, `about` or
     /// `import-audio`.
     pub dialog: &'static str,
 }

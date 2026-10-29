@@ -19,7 +19,8 @@
 //!    when the backend plays and input ports exist.
 //!
 //! The File menu's flows ([`lifecycle`]) and quitting ([`quit`]) ask about unsaved changes first.
-//! The browser, the inspector and the dialogs are [`dialogs`]; every native prompt and
+//! The AI composer, a headless Claude Code that edits the project, is [`composer`]. The browser, the
+//! inspector and the dialogs are [`dialogs`]; every native prompt and
 //! panel goes through [`prompt`]. The menu bar is [`menu`], built from `sonara-app`'s
 //! model of it.
 #![forbid(unsafe_code)]
@@ -28,6 +29,7 @@
 mod bench;
 mod chrome;
 mod commands;
+mod composer;
 mod dialogs;
 mod lifecycle;
 mod live;
@@ -89,6 +91,7 @@ fn main() -> ExitCode {
     let built = builder
         .plugin(tauri_plugin_dialog::init())
         .manage(shell)
+        .manage(composer::Composer::default())
         .register_asynchronous_uri_scheme_protocol("peaks", live::peaks_protocol)
         .invoke_handler(invoke_handler())
         .menu(menu::build)
@@ -124,6 +127,7 @@ fn main() -> ExitCode {
         if let RunEvent::Exit = event {
             // Quitting without the prompt (the Dock's Quit, logging out): the autosave stays
             // for recovery.
+            handle.state::<composer::Composer>().stop();
             let shell = handle.state::<Shell>();
             if !shell.is_stopped() {
                 window::save_layout(handle);
@@ -175,6 +179,9 @@ fn invoke_handler() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + 
         dialogs::export_browse,
         dialogs::export_audio,
         dialogs::agent_connection,
+        composer::composer_check,
+        composer::composer_start,
+        composer::composer_stop,
         dialogs::about_info,
         dialogs::open_link,
         dialogs::browser_devices,

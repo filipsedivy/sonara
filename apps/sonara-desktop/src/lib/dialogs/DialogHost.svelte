@@ -4,6 +4,8 @@
   import type { Session } from "../session.svelte";
   import About from "./About.svelte";
   import AgentConnection from "./AgentConnection.svelte";
+  import { composer } from "../composer/composer.svelte";
+  import ComposerPanel from "../composer/ComposerPanel.svelte";
   import { onDialogCommand, type DialogName } from "./api";
   import Export from "./Export.svelte";
   import NewProject from "./NewProject.svelte";
@@ -26,6 +28,7 @@
 
   export function show(dialog: DialogName) {
     if (dialog === "import-audio") importAudio();
+    else if (dialog === "ai-composer") composer.show();
     else open = dialog;
   }
 
@@ -48,3 +51,6 @@
 {:else if open === "about"}
   <About onclose={close} />
 {/if}
+
+<!-- The AI Composer is a panel, not a dialog: the window and the menu stay usable while it works. -->
+<ComposerPanel />
