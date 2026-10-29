@@ -8,6 +8,8 @@ break the API. The project format is versioned independently, see
 
 ## [Unreleased]
 
+## [0.1.8] — 2026-10-29
+
 ### Added
 
 - **Conversational orchestration (`sonara_agent::orchestration`):** turns a plain-language request
