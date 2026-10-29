@@ -8,6 +8,8 @@ break the API. The project format is versioned independently, see
 
 ## [Unreleased]
 
+## [0.1.11] — 2026-10-29
+
 ### Added
 
 - **AI Composer (menu AI → AI Composer…):** describe the music you want, and a headless Claude Code
