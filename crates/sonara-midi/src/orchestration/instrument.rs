@@ -167,8 +167,9 @@ pub enum InstrumentError {
 
 /// The values of an instrument record, checked by [`Instrument::try_new`].
 ///
-/// A record is written as a literal that ends in `..InstrumentSpec::EMPTY`, so a field added
-/// later gets its default without editing every record. [`InstrumentSpec::EMPTY`] is not a valid
+/// A record is written as a literal. One that leaves fields out ends in
+/// `..InstrumentSpec::EMPTY`, which gives them their "not known" value; a record that states every
+/// field leaves it out, since it would change nothing. [`InstrumentSpec::EMPTY`] is not a valid
 /// record: see there which fields a record must state.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct InstrumentSpec {

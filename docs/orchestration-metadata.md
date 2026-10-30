@@ -68,25 +68,35 @@ and `check_written` stay clef-free: they apply the transposition alone.
 
 `check_sounding` and `check_written` return `Within`, `OutsideComfortable` (a warning: still
 playable), `BelowPlayable` or `AbovePlayable`. Nothing is clamped or changed. Unpitched
-instruments (the snare drum) have no range and the check returns `CheckError::Unpitched`; a
-written pitch that converts outside MIDI returns `ConversionOutOfRange`. An unknown instrument id,
-or a type without a record, is `instrument(id) == None` (and `InstrumentType::get` is `None`); no
-generic range is substituted.
+instruments (the drums, cymbals and the other untuned percussion) have no range and the check
+returns `CheckError::Unpitched`; a written pitch that converts outside MIDI returns
+`ConversionOutOfRange`. An unknown instrument id is `instrument(id) == None`; no generic range is
+substituted. A comfortable range is unknown only for the carillon, whose range belongs to each
+tower instrument.
 
 ## Provenance
 
-Every range and every articulation list is `Cited { source }` or `Estimate { reason }`. Cited
-means a source that was read states it. Each source the dataset cites is written out once, in
-the dataset's source list (`crates/sonara-midi/src/orchestration/data/sources.rs`): its author
-or publisher, its title (with the edition for a book) and where it was read, a URL or, for a
-printed book without one, a page. A `Cited` value gives each source it rests on in full,
-followed by what that source states, so its text always names a URL or a page; the dataset test
-checks this. The range sources of the current records are English Wikipedia articles, read on
-2026-10-28 and used for facts only. Wikipedia is a tertiary source under CC BY-SA; only the
-numbers are taken. Verify against orchestration handbooks before relying on a value for
-production.
-Estimates: cello and double bass upper limits, horn in F, glockenspiel and xylophone ranges, and
-**all** articulation lists (general orchestration practice).
+Every range, every articulation list and every count of players is `Cited { source }` or
+`Estimate { reason }`. Cited means a source that was read states it. Each source the dataset
+cites is written out once, in the dataset's source list
+(`crates/sonara-midi/src/orchestration/data/sources.rs`): its author or publisher, its title (with
+the edition for a book) and where it was read, a URL or, for a printed book without one, a page.
+A `Cited` value gives each source it rests on in full, followed by what that source states, so
+its text always names a URL or a page; the dataset test checks this. An `Estimate` whose reason
+rests on a source names it in full the same way.
+
+The sources are orchestration handbooks (Berlioz, Rimsky-Korsakov, Forsyth, Widor, Prout), the
+documentation of instrument makers and sample-library makers, specifications, and articles of
+the English, Czech, German and French Wikipedia, read in October 2026. Wikipedia is a tertiary
+source under CC BY-SA, used for facts only. A `Cited` value may end with a remark that names the
+part of it that is estimated, such as a low end taken from the usual extension. The ranges that
+are estimates are those no source states as such: the playable range of the guitar, lute,
+mandolin, carillon and honky-tonk piano, and the comfortable range of the alto flute, the horn in
+F, the Wagner tubas, the bass trombone, the cimbasso, the harp, the guitar, lute and mandolin and
+of most keyboards (equal to the playable range where every key is equally reachable). The
+articulation lists of the wood block, temple blocks, sleigh bells, lute, felt and honky-tonk
+pianos and harpsichord are estimates from general practice. A count of players that no source
+states is an estimate of the instrument's usual scoring.
 
 ## Articulations
 
@@ -113,7 +123,11 @@ timbre modifier, mute, dynamic shape, keyboard control and vocal.
 - **Rolls.** A mallet instrument's roll is `tremolo`; the timpani, drums, cymbals and other
   unpitched percussion roll with `roll`.
 
-`Instrument::articulations` lists what the instrument idiomatically plays.
+`Instrument::articulations` lists what the instrument idiomatically plays, each record its own
+list. The ordinary sound has no id there either: a mallet instrument's ordinary stroke is not
+`staccato`, and the freely decaying note of a piano, harpsichord, celesta or plucked instrument
+is not `sustain`. A technique the vocabulary does not have yet (such as `detache` or `subtone`)
+joins the records when it is appended to the vocabulary.
 `articulation_availability(id, library_declared)` returns:
 
 - `Supported` only when the library declared the id (`library_declared`, passed in);
@@ -125,19 +139,21 @@ modelled.
 
 ## Ensemble profile
 
-A record may carry an `EnsembleProfile` (`Instrument::ensemble`, `None` when not recorded): its
+Every record carries an `EnsembleProfile` (`Instrument::ensemble`; the type allows `None`): its
 `Forms` (`Solo`, `Section` or `Both`) and, for each `Era` (`Classical`, `Romantic`, `Film`,
 `Chamber`), the typical players as an `EraPlayers` value. Its `players` is a `PlayerRange`
 (`min <= max`; `PlayerRange::NOT_USED`, `0..=0`, means the instrument is not used there) or
 `None` when the source states no number; `note` keeps the qualifier that came with the number,
-and `provenance` says where it comes from. The section sizes of a particular orchestra are
-ensemble data, not part of the profile. No record of the dataset carries a profile yet.
+and `provenance` says where it comes from. The count is the players of the instrument in such a
+score, all parts together: a Romantic orchestra's violins, 16 first and 14 second (16 and 16 in
+Die Walküre), count as 30 to 32, while a choir section counts the singers of its one part. The
+section sizes of a particular orchestra are ensemble data, not part of the profile.
 
 ## Validation
 
 A record is an `InstrumentSpec` checked by `Instrument::try_new(instrument_type, spec)`. Records
-are written as literals ending in `..InstrumentSpec::EMPTY`, so a field added later gets its
-default without editing every record. `EMPTY` itself is not a valid record: its name and its
+are written as literals; one that leaves fields out ends in `..InstrumentSpec::EMPTY`, which
+gives them their "not known" value. `EMPTY` itself is not a valid record: its name and its
 articulation provenance are empty, so a record that forgets either does not build.
 
 `PitchRange::try_new`, `PlayerRange::try_new` and `Instrument::try_new` reject:
@@ -160,17 +176,19 @@ built with the panicking `new` in a `static`, so invalid data is a compile error
 Compile-time checks also hold the identity together: every type id and every articulation id is
 unique lower-case `snake_case`, `InstrumentType::ALL` and `Articulation::ALL` list every variant
 once in declaration order, every articulation has a description, each family is one block of the
-score order, and `INSTRUMENTS` lists at most one record per type, in score order.
+score order, and `INSTRUMENTS` holds one record per type, each at its type's place in score
+order.
 `crates/sonara-midi/tests/orchestration.rs` also checks the type ids against an independently
 written list, provenance, the score-order conventions above, that every record rebuilds from its
-spec, and that a fixture breaking each check is rejected.
+spec, and that a fixture breaking each check is rejected. It also compares every record's ranges,
+transposition, written range, clefs, forms and articulations with tables written out
+independently of the data.
 
 ## Coverage
 
-16 of the 85 types have a record, listed in score order by `INSTRUMENTS` and `instruments()`:
-piccolo, flute, oboe, English horn, Bb clarinet, bassoon, contrabassoon, horn in F, Bb trumpet,
-tenor trombone, snare drum, glockenspiel, xylophone, violin, cello, double bass. The records live
-in one file per family under `crates/sonara-midi/src/orchestration/data/`. The other types
-(among them the viola, harp, timpani, tuba, bass clarinet, the other clarinets and trumpets, the
-voices and the keyboards) have no record yet; alternative tunings and extended techniques are not
-modelled. Absence of a record means "no metadata", not "unrestricted".
+All 85 types have a record, listed in score order by `INSTRUMENTS` and `instruments()`. The
+records live in one file per family under `crates/sonara-midi/src/orchestration/data/`
+(woodwinds, brass, percussion, plucked, keyboards, voices, strings). A display name is the first
+form of the English name, with a flat spelled `♭` ("Clarinet in B♭"); an alternate in parentheses
+("Timpani (kettledrums)") is not part of it. Range extensions and gaps, alternative tunings and
+techniques outside the vocabulary are not modelled.

@@ -6,8 +6,9 @@
 //!
 //! A `Cited` provenance is written with [`cite!`], which expands at compile time to each named
 //! source in full followed by what the source states, so the record keeps the statement next to
-//! the value and the source's text lives in one place (DES-01). A name that is not listed here
-//! does not compile.
+//! the value and the source's text lives in one place (DES-01). An `Estimate` whose reason names
+//! a source is written with [`reason!`] in the same way. A name that is not listed here does not
+//! compile.
 
 /// Defines `source!`, which expands the name of a listed source to its full text, and, for the
 /// tests, `SOURCES`: every name with its text, in the order listed.
@@ -28,7 +29,9 @@ macro_rules! define_sources {
 }
 
 /// The text of a `Cited` provenance: `cite!(name: "what it states", ...)` gives each named source
-/// in full, then `": "` and what it states; several citations are joined by `"; "`.
+/// in full, then `": "` and what it states; several citations are joined by `"; "`. A remark that
+/// belongs to no single source, such as which part of a value is estimated, follows the last
+/// citation after a `;` and is joined the same way.
 /// `cite!(wikipedia_piccolo: "tessitura D5-C8")` is
 /// `"Wikipedia, Piccolo, https://en.wikipedia.org/wiki/Piccolo: tessitura D5-C8"`.
 macro_rules! cite {
@@ -37,6 +40,15 @@ macro_rules! cite {
             $crate::orchestration::data::sources::source!($name),
             ": ",
             $states
+        )
+    };
+    ($name:ident: $states:literal; $remark:literal $(,)?) => {
+        concat!(
+            $crate::orchestration::data::sources::source!($name),
+            ": ",
+            $states,
+            "; ",
+            $remark
         )
     };
     ($name:ident: $states:literal, $($rest:tt)+) => {
@@ -50,6 +62,27 @@ macro_rules! cite {
     };
 }
 pub(super) use cite;
+
+/// The text of an `Estimate` reason that names sources: `reason!("text (", name, ") text")` joins
+/// its parts, each listed source written in full in place of its name.
+macro_rules! reason {
+    (@join [$($parts:tt)*]) => {
+        concat!($($parts)*)
+    };
+    (@join [$($parts:tt)*] $name:ident $(, $($rest:tt)*)?) => {
+        $crate::orchestration::data::sources::reason!(
+            @join [$($parts)* $crate::orchestration::data::sources::source!($name),]
+            $($($rest)*)?
+        )
+    };
+    (@join [$($parts:tt)*] $text:literal $(, $($rest:tt)*)?) => {
+        $crate::orchestration::data::sources::reason!(@join [$($parts)* $text,] $($($rest)*)?)
+    };
+    ($($part:tt)+) => {
+        $crate::orchestration::data::sources::reason!(@join [] $($part)+)
+    };
+}
+pub(super) use reason;
 
 define_sources! {
     // Orchestration handbooks and acoustics texts.
@@ -581,6 +614,36 @@ mod tests {
         );
         assert_eq!(listed("forsyth"), Some(source!(forsyth)));
         assert_eq!(listed("vsco2_ce"), Some(source!(vsco2_ce)));
+    }
+
+    #[test]
+    fn a_remark_follows_the_last_citation() {
+        // TST-10: the expected texts are written out by hand.
+        assert_eq!(
+            cite!(wikipedia_oboe: "Bb3 to G6"; "the top is an estimate"),
+            "Wikipedia, Oboe, https://en.wikipedia.org/wiki/Oboe: Bb3 to G6; the top is an \
+             estimate"
+        );
+        assert_eq!(
+            cite!(wikipedia_oboe: "Bb3 to G6", wikipedia_cor_anglais: "E3 to C6"; "both sounding",),
+            "Wikipedia, Oboe, https://en.wikipedia.org/wiki/Oboe: Bb3 to G6; \
+             Wikipedia, Cor anglais, https://en.wikipedia.org/wiki/Cor_anglais: E3 to C6; \
+             both sounding"
+        );
+    }
+
+    #[test]
+    fn reason_writes_each_named_source_in_full() {
+        assert_eq!(
+            reason!("an 88-key piano (", wikipedia_piano, "); no key count"),
+            "an 88-key piano (Wikipedia, Piano, https://en.wikipedia.org/wiki/Piano); no key count"
+        );
+        assert_eq!(reason!("no source names it"), "no source names it");
+        assert_eq!(
+            reason!(wikipedia_oboe, " and ", wikipedia_cor_anglais,),
+            "Wikipedia, Oboe, https://en.wikipedia.org/wiki/Oboe and Wikipedia, Cor anglais, \
+             https://en.wikipedia.org/wiki/Cor_anglais"
+        );
     }
 
     #[test]

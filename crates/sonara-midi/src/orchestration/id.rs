@@ -399,8 +399,9 @@ impl InstrumentType {
             .find(|instrument_type| instrument_type.id() == id)
     }
 
-    /// The record of this type in the dataset, or `None` while the dataset holds no record for
-    /// it. Never another type's record: the lookup table is checked at compile time.
+    /// The record of this type in the dataset. The dataset holds one record for every type, at
+    /// the type's place in score order, which a compile-time check proves: the answer is always
+    /// `Some` and never another type's record.
     #[must_use]
     pub fn get(self) -> Option<&'static Instrument> {
         data::record(self)

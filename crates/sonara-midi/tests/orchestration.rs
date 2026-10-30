@@ -175,7 +175,22 @@ fn dataset_invariants_hold() {
                 Some(*articulation)
             );
         }
-        // A cited source names a URL or a page; an estimate gives its reason.
+        // A cited source names a URL or a page; an estimate gives its reason. Every text, notes
+        // included, is trimmed and has single spaces, so its parts joined cleanly.
+        let mut texts: Vec<&str> = provenances(instrument)
+            .into_iter()
+            .map(|provenance| match provenance {
+                Provenance::Cited { source } => source,
+                Provenance::Estimate { reason } => reason,
+            })
+            .collect();
+        if let Some(profile) = instrument.ensemble() {
+            texts.extend(Era::ALL.map(|era| profile.players(era).note));
+        }
+        for text in texts {
+            assert_eq!(text.trim(), text, "{}", instrument.id());
+            assert!(!text.contains("  "), "{}: {text}", instrument.id());
+        }
         for provenance in provenances(instrument) {
             assert!(
                 is_traceable(provenance),
@@ -216,24 +231,93 @@ fn dataset_invariants_hold() {
 }
 
 /// The clefs of the records, in order of use (TST-10: the expected values are slugs written
-/// independently of the data's `Clef` values).
+/// independently of the data's `Clef` values). A tenor voice's usual clef is `treble_8vb`.
 #[test]
 fn record_clefs_match_the_expected_slugs() {
-    let table: [(&str, &[&str]); 16] = [
+    let table: [(&str, &[&str]); 85] = [
         ("piccolo", &["treble"]),
         ("flute", &["treble"]),
+        ("alto_flute", &["treble"]),
+        ("bass_flute", &["treble"]),
         ("oboe", &["treble"]),
+        ("oboe_damore", &["treble"]),
         ("english_horn", &["treble"]),
+        ("clarinet_eb", &["treble"]),
         ("clarinet_bb", &["treble"]),
+        ("clarinet_a", &["treble"]),
+        ("bass_clarinet", &["treble", "bass"]),
+        ("saxophone_soprano", &["treble"]),
+        ("saxophone_alto", &["treble"]),
+        ("saxophone_tenor", &["treble"]),
+        ("saxophone_baritone", &["treble"]),
         ("bassoon", &["bass", "tenor", "treble"]),
         ("contrabassoon", &["bass", "tenor"]),
         ("horn_f", &["treble", "bass"]),
+        ("wagner_tuba_tenor", &["treble", "bass"]),
+        ("wagner_tuba_bass", &["treble", "bass"]),
+        ("trumpet_piccolo", &["treble"]),
+        ("trumpet_c", &["treble"]),
         ("trumpet_bb", &["treble"]),
+        ("cornet", &["treble"]),
+        ("flugelhorn", &["treble"]),
         ("trombone_tenor", &["bass", "tenor", "alto"]),
+        ("trombone_bass", &["bass", "tenor"]),
+        ("euphonium", &["bass", "tenor", "treble"]),
+        ("tuba", &["bass"]),
+        ("cimbasso", &["bass"]),
+        ("timpani", &["bass"]),
+        ("bass_drum", &["single_line", "bass", "percussion"]),
         ("snare_drum", &["single_line", "treble", "percussion"]),
+        ("clash_cymbals", &["single_line", "bass", "percussion"]),
+        ("suspended_cymbal", &["single_line", "bass", "percussion"]),
+        ("tam_tam", &["single_line", "bass", "percussion"]),
+        ("triangle", &["single_line", "treble", "percussion"]),
+        ("tambourine", &["single_line", "treble", "percussion"]),
+        ("castanets", &["single_line", "treble", "percussion"]),
+        ("wood_block", &["single_line", "percussion"]),
+        ("temple_blocks", &["percussion"]),
+        ("sleigh_bells", &["single_line", "percussion"]),
+        ("maracas", &["single_line", "percussion"]),
+        ("shaker", &["single_line", "percussion"]),
+        ("whip", &["single_line", "percussion"]),
         ("glockenspiel", &["treble"]),
         ("xylophone", &["treble"]),
+        ("vibraphone", &["treble"]),
+        ("marimba", &["treble", "bass"]),
+        ("tubular_bells", &["treble"]),
+        ("crotales", &["treble"]),
+        ("carillon", &["treble", "bass"]),
+        ("harp", &["treble", "bass"]),
+        ("guitar_classical", &["treble"]),
+        ("lute", &["treble"]),
+        ("mandolin", &["treble"]),
+        ("celesta", &["treble", "bass"]),
+        ("piano_concert_grand", &["treble", "bass"]),
+        ("piano_studio_grand", &["treble", "bass"]),
+        ("piano_upright", &["treble", "bass"]),
+        ("piano_felt", &["treble", "bass"]),
+        ("piano_prepared", &["treble", "bass"]),
+        ("piano_honky_tonk", &["treble", "bass"]),
+        ("harpsichord", &["treble", "bass"]),
+        ("clavichord", &["treble", "bass"]),
+        ("electric_piano_rhodes", &["treble", "bass"]),
+        ("electric_piano_wurlitzer", &["treble", "bass"]),
+        ("clavinet", &["treble", "bass"]),
+        ("organ_pipe", &["treble", "bass"]),
+        ("organ_hammond", &["treble", "bass"]),
+        ("accordion", &["treble", "bass"]),
+        ("voice_soprano", &["treble"]),
+        ("voice_mezzo_soprano", &["treble"]),
+        ("voice_alto", &["treble"]),
+        ("voice_tenor", &["treble_8vb"]),
+        ("voice_baritone", &["bass"]),
+        ("voice_bass", &["bass"]),
+        ("choir_soprano", &["treble"]),
+        ("choir_alto", &["treble"]),
+        ("choir_tenor", &["treble_8vb", "bass"]),
+        ("choir_bass", &["bass"]),
         ("violin", &["treble"]),
+        ("viola", &["alto", "treble"]),
         ("cello", &["bass", "tenor", "treble"]),
         ("double_bass", &["bass", "tenor", "treble"]),
     ];
@@ -684,7 +768,8 @@ fn lookup_is_by_stable_id_not_display_name() {
     assert!(instrument("violin").is_some());
     assert!(instrument("Violin").is_none());
     assert!(instrument("Clarinet in Bb").is_none());
-    assert_eq!(get("clarinet_bb").name(), "Clarinet in Bb");
+    assert!(instrument("Clarinet in B♭").is_none());
+    assert_eq!(get("clarinet_bb").name(), "Clarinet in B♭");
     assert_eq!(get("clarinet_bb").family().slug(), "woodwinds");
 }
 
@@ -943,56 +1028,20 @@ fn score_order_follows_the_conventions() {
     assert_eq!(InstrumentType::ALL.last(), Some(&T::DoubleBass));
 }
 
-/// The records are in score order, at most one per type, and each type finds its own record
-/// (TST-07).
+/// The records are in score order, one per type, and each type finds its own record (TST-07).
 #[test]
 fn records_are_in_score_order_and_found_by_type() {
     assert_eq!(instruments(), &INSTRUMENTS[..]);
-    assert!(
-        instruments()
-            .windows(2)
-            .all(|pair| pair[0].instrument_type() < pair[1].instrument_type())
-    );
-    let mut covered = Vec::new();
-    for instrument_type in InstrumentType::ALL {
+    assert_eq!(instruments().len(), InstrumentType::ALL.len());
+    for (record, instrument_type) in instruments().iter().zip(InstrumentType::ALL) {
+        assert_eq!(record.instrument_type(), instrument_type);
+        assert_eq!(record.id(), instrument_type.id());
+        assert_eq!(record.family(), instrument_type.family());
+        let by_type = instrument_type.get().expect("every type has a record");
+        assert!(std::ptr::eq(by_type, record), "{instrument_type:?}");
         let by_id = instrument(instrument_type.id());
-        if let Some(record) = instrument_type.get() {
-            assert_eq!(record.instrument_type(), instrument_type);
-            assert_eq!(record.id(), instrument_type.id());
-            assert_eq!(record.family(), instrument_type.family());
-            assert!(by_id.is_some_and(|found| std::ptr::eq(found, record)));
-            covered.push(instrument_type.id());
-        } else {
-            assert_eq!(by_id, None, "{instrument_type:?}");
-            assert!(
-                !instruments()
-                    .iter()
-                    .any(|record| record.instrument_type() == instrument_type)
-            );
-        }
+        assert!(by_id.is_some_and(|found| std::ptr::eq(found, record)));
     }
-    covered.sort_unstable();
-    assert_eq!(
-        covered,
-        [
-            "bassoon",
-            "cello",
-            "clarinet_bb",
-            "contrabassoon",
-            "double_bass",
-            "english_horn",
-            "flute",
-            "glockenspiel",
-            "horn_f",
-            "oboe",
-            "piccolo",
-            "snare_drum",
-            "trombone_tenor",
-            "trumpet_bb",
-            "violin",
-            "xylophone",
-        ]
-    );
 }
 
 /// The families of the records did not change when the family moved from the record to its
@@ -1022,21 +1071,223 @@ fn record_families_are_unchanged() {
     }
 }
 
-/// Written ranges that the sources state, against the ranges the data derives from the sounding
-/// ones: the oracle for transposition and the stored endpoints.
-#[test]
-fn derived_written_ranges_match_the_sources() {
-    let table = [
-        ("clarinet_bb", 52, 96),   // written E3-C7
-        ("trumpet_bb", 54, 84),    // written F#3-C6 (as sources state)
-        ("english_horn", 59, 91),  // written B3-C6 sounding E3-C6: written is a fifth up
-        ("piccolo", 62, 96),       // written D4-C7, sounding D5-C8
-        ("contrabassoon", 34, 74), // written Bb1 (A1) up to D5 notation per octave rule
-    ];
-    for (id, low, high) in table {
-        let (got_low, got_high) = get(id).written_playable().expect("pitched");
-        assert_eq!((got_low.get(), got_high.get()), (low, high), "{id}");
+/// The pitched records' researched values, written out independently of the data constants
+/// (TST-10). A row holds the id, the transposition, the sounding playable range, the sounding
+/// comfortable range (`-` when none is known), the written playable range in the record's first
+/// clef, and the provenance kinds of the playable and comfortable ranges. The written range is
+/// the one the sources publish, so it checks the transposition and the clef's octave against the
+/// stored sounding range: the tenor voices are at transposition 0 and written an octave up in
+/// `treble_8vb`.
+const PITCHED: [&str; 71] = [
+    "piccolo 12 74-108 80-106 62-96 cited cited",
+    "flute 0 59-98 60-94 59-98 cited cited",
+    "alto_flute -5 55-91 55-81 60-96 cited estimate",
+    "bass_flute -12 47-84 48-81 59-96 cited cited",
+    "oboe 0 58-91 60-87 58-91 cited cited",
+    "oboe_damore -3 56-88 56-85 59-91 cited cited",
+    "english_horn -7 52-84 52-81 59-91 cited cited",
+    "clarinet_eb 3 55-96 63-94 52-93 cited cited",
+    "clarinet_bb -2 50-94 50-91 52-96 cited cited",
+    "clarinet_a -3 49-93 49-90 52-96 cited cited",
+    "bass_clarinet -14 34-86 37-74 48-100 cited cited",
+    "saxophone_soprano -2 56-94 56-87 58-96 cited cited",
+    "saxophone_alto -9 49-87 49-80 58-96 cited cited",
+    "saxophone_tenor -14 44-82 44-75 58-96 cited cited",
+    "saxophone_baritone -21 36-75 37-68 57-96 cited cited",
+    "bassoon 0 34-80 34-72 34-80 cited cited",
+    "contrabassoon -12 22-62 22-57 34-74 cited cited",
+    "horn_f -7 35-77 41-72 42-84 cited estimate",
+    "wagner_tuba_tenor -2 27-82 40-74 29-84 cited estimate",
+    "wagner_tuba_bass -7 27-77 34-67 34-84 cited estimate",
+    "trumpet_piccolo 10 59-91 62-86 49-81 cited cited",
+    "trumpet_c 0 54-89 54-84 54-89 cited cited",
+    "trumpet_bb -2 52-91 52-82 54-93 cited cited",
+    "cornet -2 52-91 52-82 54-93 cited cited",
+    "flugelhorn -2 52-84 52-82 54-86 cited cited",
+    "trombone_tenor 0 40-77 40-74 40-77 cited cited",
+    "trombone_bass 0 22-77 31-67 22-77 cited estimate",
+    "euphonium 0 23-74 40-67 23-74 cited cited",
+    "tuba 0 21-67 29-60 21-67 cited cited",
+    "cimbasso 0 29-65 30-60 29-65 cited estimate",
+    "timpani 0 36-61 38-57 36-61 cited cited",
+    "glockenspiel 24 72-108 79-108 48-84 cited cited",
+    "xylophone 12 60-108 65-108 48-96 cited cited",
+    "vibraphone 0 48-89 53-89 48-89 cited cited",
+    "marimba 0 36-96 45-96 36-96 cited cited",
+    "tubular_bells 0 51-79 60-77 51-79 cited cited",
+    "crotales 24 84-108 84-108 60-84 cited cited",
+    "carillon 0 48-96 - 48-96 estimate",
+    "harp 0 23-103 36-96 23-103 cited estimate",
+    "guitar_classical -12 40-83 40-76 52-95 estimate estimate",
+    "lute -12 36-79 43-74 48-91 estimate estimate",
+    "mandolin 0 55-91 55-88 55-91 estimate estimate",
+    "celesta 12 48-113 60-108 36-101 cited cited",
+    "piano_concert_grand 0 21-108 21-108 21-108 cited estimate",
+    "piano_studio_grand 0 21-108 21-108 21-108 cited estimate",
+    "piano_upright 0 21-108 21-108 21-108 cited estimate",
+    "piano_felt 0 21-108 21-108 21-108 cited estimate",
+    "piano_prepared 0 21-108 21-108 21-108 cited estimate",
+    "piano_honky_tonk 0 21-108 21-108 21-108 estimate estimate",
+    "harpsichord 0 29-89 36-84 29-89 cited estimate",
+    "clavichord 0 29-96 36-86 29-96 cited cited",
+    "electric_piano_rhodes 0 21-108 28-100 21-108 cited estimate",
+    "electric_piano_wurlitzer 0 33-96 33-96 33-96 cited estimate",
+    "clavinet 0 29-88 29-88 29-88 cited estimate",
+    "organ_pipe 0 36-96 36-91 36-96 cited cited",
+    "organ_hammond 0 36-96 36-96 36-96 cited estimate",
+    "accordion 0 36-98 53-93 36-98 cited cited",
+    "voice_soprano 0 60-88 62-83 60-88 cited cited",
+    "voice_mezzo_soprano 0 57-84 59-79 57-84 cited cited",
+    "voice_alto 0 53-79 55-77 53-79 cited cited",
+    "voice_tenor 0 48-74 50-72 60-86 cited cited",
+    "voice_baritone 0 45-69 47-67 45-69 cited cited",
+    "voice_bass 0 40-65 43-64 40-65 cited cited",
+    "choir_soprano 0 60-84 62-81 60-84 cited cited",
+    "choir_alto 0 53-77 55-74 53-77 cited cited",
+    "choir_tenor 0 48-70 50-69 60-82 cited cited",
+    "choir_bass 0 36-66 43-62 36-66 cited cited",
+    "violin 0 55-105 55-93 55-105 cited cited",
+    "viola 0 48-93 48-81 48-93 cited cited",
+    "cello 0 36-88 36-76 36-88 cited cited",
+    "double_bass -12 23-67 28-55 35-79 cited cited",
+];
+
+/// A `low-high` range of a table row.
+fn parse_range(text: &str) -> (i64, i64) {
+    let (low, high) = text.split_once('-').expect("low-high");
+    (low.parse().expect("low"), high.parse().expect("high"))
+}
+
+/// The records without a definite pitch.
+const UNPITCHED: [&str; 14] = [
+    "bass_drum",
+    "snare_drum",
+    "clash_cymbals",
+    "suspended_cymbal",
+    "tam_tam",
+    "triangle",
+    "tambourine",
+    "castanets",
+    "wood_block",
+    "temple_blocks",
+    "sleigh_bells",
+    "maracas",
+    "shaker",
+    "whip",
+];
+
+/// The kind of a provenance, as written in the tables above.
+fn kind(provenance: Provenance) -> &'static str {
+    match provenance {
+        Provenance::Cited { .. } => "cited",
+        Provenance::Estimate { .. } => "estimate",
     }
+}
+
+#[test]
+fn pitched_records_match_the_researched_values() {
+    for row in PITCHED {
+        let fields: Vec<&str> = row.split_whitespace().collect();
+        let [id, semitones, playable, comfortable, written, kinds @ ..] = fields.as_slice() else {
+            panic!("malformed row {row}");
+        };
+        let (id, kinds) = (*id, kinds.join(" "));
+        let semitones: i8 = semitones.parse().expect("transposition");
+        let (low, high) = parse_range(playable);
+        let comfortable = (*comfortable != "-").then(|| parse_range(comfortable));
+        let (written_low, written_high) = parse_range(written);
+        let record = get(id);
+        let PitchModel::Pitched(pitched) = record.pitch() else {
+            panic!("{id} is pitched");
+        };
+        assert_eq!(pitched.transposition, Transposition::new(semitones), "{id}");
+        assert_eq!(pitched.playable.range, PitchRange::new(low, high), "{id}");
+        assert_eq!(
+            pitched.comfortable.map(|sourced| sourced.range),
+            comfortable.map(|(low, high)| PitchRange::new(low, high)),
+            "{id}"
+        );
+        let mut recorded = vec![kind(pitched.playable.provenance)];
+        recorded.extend(pitched.comfortable.map(|sourced| kind(sourced.provenance)));
+        assert_eq!(recorded.join(" "), kinds, "{id}");
+        let clef = record.clefs()[0];
+        let written = |note| {
+            record
+                .written_in(clef, sounding(note))
+                .map(WrittenPitch::get)
+        };
+        assert_eq!(
+            (written(low), written(high)),
+            (Some(written_low), Some(written_high)),
+            "{id}"
+        );
+    }
+    for id in UNPITCHED {
+        assert_eq!(get(id).pitch(), &PitchModel::Unpitched, "{id}");
+    }
+    assert_eq!(PITCHED.len() + UNPITCHED.len(), INSTRUMENTS.len());
+}
+
+/// The sixteen records of the first dataset against the researched values that replaced them
+/// (TST-06). A row holds the id, then the earlier playable and comfortable ranges and, after `|`,
+/// the current ones, each a `low-high` range and its provenance kind, or `-` for none. Fourteen
+/// records changed; the tenor trombone and the snare drum (unpitched, not listed) did not.
+const EARLIER_AND_RESEARCHED: [&str; 15] = [
+    "violin 55-108 cited 55-100 cited | 55-105 cited 55-93 cited",
+    "cello 36-93 estimate - | 36-88 cited 36-76 cited",
+    "double_bass 24-67 estimate 28-55 cited | 23-67 cited 28-55 cited",
+    "flute 59-96 cited - | 59-98 cited 60-94 cited",
+    "piccolo 74-108 cited - | 74-108 cited 80-106 cited",
+    "oboe 58-91 cited - | 58-91 cited 60-87 cited",
+    "english_horn 52-84 cited - | 52-84 cited 52-81 cited",
+    "clarinet_bb 50-94 cited - | 50-94 cited 50-91 cited",
+    "bassoon 34-80 cited 34-76 cited | 34-80 cited 34-72 cited",
+    "contrabassoon 22-62 cited - | 22-62 cited 22-57 cited",
+    "horn_f 35-77 estimate - | 35-77 cited 41-72 estimate",
+    "trumpet_bb 52-82 cited - | 52-91 cited 52-82 cited",
+    "trombone_tenor 40-77 cited 40-74 cited | 40-77 cited 40-74 cited",
+    "glockenspiel 79-108 estimate - | 72-108 cited 79-108 cited",
+    "xylophone 65-108 estimate - | 60-108 cited 65-108 cited",
+];
+
+/// The playable and comfortable ranges of a table row as `low-high kind` pairs, `-` for none.
+fn parse_sourced(text: &str) -> Vec<Option<((i64, i64), &str)>> {
+    let mut tokens = text.split_whitespace();
+    let mut ranges = Vec::new();
+    while let Some(token) = tokens.next() {
+        ranges.push((token != "-").then(|| {
+            let kind = tokens.next().expect("a provenance kind follows a range");
+            (parse_range(token), kind)
+        }));
+    }
+    ranges
+}
+
+#[test]
+fn researched_ranges_replace_the_earlier_values() {
+    let mut changed = 0;
+    for row in EARLIER_AND_RESEARCHED {
+        let (id, rest) = row.split_once(' ').expect("id");
+        let (earlier, current) = rest.split_once('|').expect("earlier | current");
+        let PitchModel::Pitched(pitched) = get(id).pitch() else {
+            panic!("{id} is pitched");
+        };
+        let recorded: Vec<_> = [Some(&pitched.playable), pitched.comfortable.as_ref()]
+            .into_iter()
+            .map(|range| {
+                range.map(|sourced| {
+                    let (low, high) = (sourced.range.low(), sourced.range.high());
+                    ((low.get(), high.get()), kind(sourced.provenance))
+                })
+            })
+            .collect();
+        assert_eq!(recorded, parse_sourced(current), "{id}");
+        if parse_sourced(earlier) != parse_sourced(current) {
+            changed += 1;
+        }
+    }
+    assert_eq!(get("snare_drum").pitch(), &PitchModel::Unpitched);
+    assert_eq!(changed, 14);
 }
 
 #[test]
@@ -1056,29 +1307,36 @@ fn transposing_conversions() {
 
 #[test]
 fn range_checks_do_not_clamp_and_distinguish_comfortable_from_playable() {
-    let violin = get("violin");
+    // The violin plays G3-A7 (55-105) and is comfortable up to A6 (93); the flute plays B3-D7
+    // (59-98) and is comfortable from C4 to Bb6 (60-94).
     let cases = [
-        (54, RangeCheck::BelowPlayable),
-        (55, RangeCheck::Within),
-        (100, RangeCheck::Within),
-        (101, RangeCheck::OutsideComfortable),
-        (108, RangeCheck::OutsideComfortable),
-        (109, RangeCheck::AbovePlayable),
+        ("violin", 54, RangeCheck::BelowPlayable),
+        ("violin", 55, RangeCheck::Within),
+        ("violin", 93, RangeCheck::Within),
+        ("violin", 94, RangeCheck::OutsideComfortable),
+        ("violin", 105, RangeCheck::OutsideComfortable),
+        ("violin", 106, RangeCheck::AbovePlayable),
+        ("flute", 58, RangeCheck::BelowPlayable),
+        ("flute", 59, RangeCheck::OutsideComfortable),
+        ("flute", 60, RangeCheck::Within),
+        ("flute", 94, RangeCheck::Within),
+        ("flute", 95, RangeCheck::OutsideComfortable),
+        ("flute", 98, RangeCheck::OutsideComfortable),
+        ("flute", 99, RangeCheck::AbovePlayable),
+        // No comfortable range known (a carillon's belongs to each tower): the playable range
+        // alone decides.
+        ("carillon", 47, RangeCheck::BelowPlayable),
+        ("carillon", 48, RangeCheck::Within),
+        ("carillon", 96, RangeCheck::Within),
+        ("carillon", 97, RangeCheck::AbovePlayable),
     ];
-    for (note, expected) in cases {
+    for (id, note, expected) in cases {
         assert_eq!(
-            violin.check_sounding(sounding(note)),
+            get(id).check_sounding(sounding(note)),
             Ok(expected),
-            "{note}"
+            "{id} {note}"
         );
     }
-    // No comfortable range known: the playable range alone decides.
-    let flute = get("flute");
-    assert_eq!(flute.check_sounding(sounding(59)), Ok(RangeCheck::Within));
-    assert_eq!(
-        flute.check_sounding(sounding(97)),
-        Ok(RangeCheck::AbovePlayable)
-    );
 }
 
 #[test]
@@ -1095,7 +1353,17 @@ fn written_pitch_is_converted_once() {
         clarinet.check_sounding(sounding(49)),
         Ok(RangeCheck::BelowPlayable)
     );
-    assert_eq!(clarinet.check_written(written(96)), Ok(RangeCheck::Within));
+    // Written A6 (93) sounds G6 (91), the top of the comfortable range; written C7 (96) sounds
+    // Bb6 (94), the top of the playable one.
+    assert_eq!(clarinet.check_written(written(93)), Ok(RangeCheck::Within));
+    assert_eq!(
+        clarinet.check_written(written(94)),
+        Ok(RangeCheck::OutsideComfortable)
+    );
+    assert_eq!(
+        clarinet.check_written(written(96)),
+        Ok(RangeCheck::OutsideComfortable)
+    );
     assert_eq!(
         clarinet.check_written(written(97)),
         Ok(RangeCheck::AbovePlayable)
@@ -1572,4 +1840,427 @@ fn percussion_rolls_follow_the_vocabulary() {
             );
         }
     }
+}
+
+/// Display names keep the first form of an instrument's name: an alternate in parentheses
+/// ("Timpani (kettledrums)", "Cello (violoncello)") is not part of the name, and a flat is
+/// spelled `♭`.
+#[test]
+fn display_names_drop_their_parenthetical_alternates() {
+    let table = [
+        ("clarinet_eb", "E♭ clarinet"),
+        ("clarinet_bb", "Clarinet in B♭"),
+        ("wagner_tuba_tenor", "Tenor Wagner tuba"),
+        ("wagner_tuba_bass", "Bass Wagner tuba"),
+        ("trumpet_bb", "Trumpet in B♭"),
+        ("cornet", "Cornet in B♭"),
+        ("timpani", "Timpani"),
+        ("glockenspiel", "Glockenspiel"),
+        ("tubular_bells", "Tubular bells"),
+        ("crotales", "Crotales"),
+        ("electric_piano_rhodes", "Rhodes piano"),
+        ("voice_alto", "Contralto"),
+        ("choir_soprano", "Sopranos"),
+        ("choir_alto", "Altos"),
+        ("choir_tenor", "Tenors"),
+        ("choir_bass", "Basses"),
+        ("cello", "Cello"),
+    ];
+    for (id, name) in table {
+        assert_eq!(get(id).name(), name, "{id}");
+    }
+    for record in instruments() {
+        assert!(!record.name().contains(['(', ')']), "{}", record.id());
+    }
+}
+
+/// Ids that instruments idiomatically play but that the vocabulary does not have yet. They join
+/// the vocabulary, and the records, when they are appended to it.
+const NOT_YET_IN_VOCABULARY: [&str; 19] = [
+    "behind_the_bridge",
+    "cluster",
+    "detache",
+    "fingered_tremolo",
+    "golpe",
+    "jet_whistle",
+    "left_hand_pizzicato",
+    "loure",
+    "martele",
+    "rasgueado",
+    "ricochet",
+    "rute",
+    "sautille",
+    "slap_pizzicato",
+    "strum",
+    "subtone",
+    "thumb_roll",
+    "tongue_ram",
+    "whistle_tone",
+];
+
+/// The ordinary sound carries no articulation id (the vocabulary's module doc): a mallet
+/// instrument's ordinary stroke is not `staccato`, and the freely decaying note of a piano, a
+/// harpsichord, a celesta or a plucked instrument is not `sustain`, which is the long, held note.
+const ORDINARY_SOUND: [(&str, &str); 14] = [
+    ("xylophone", "staccato"),
+    ("marimba", "staccato"),
+    ("piano_concert_grand", "sustain"),
+    ("piano_studio_grand", "sustain"),
+    ("piano_upright", "sustain"),
+    ("piano_felt", "sustain"),
+    ("piano_prepared", "sustain"),
+    ("piano_honky_tonk", "sustain"),
+    ("harpsichord", "sustain"),
+    ("celesta", "sustain"),
+    ("harp", "sustain"),
+    ("guitar_classical", "sustain"),
+    ("lute", "sustain"),
+    ("mandolin", "sustain"),
+];
+
+/// Each record's idiomatic articulations, written out independently of the data constants
+/// (TST-10): a row is the id, then the ids of the original vocabulary and, after `|`, the newer
+/// ones, in the record's order. An id of [`NOT_YET_IN_VOCABULARY`] is left out of the record, and
+/// so is the ordinary sound of [`ORDINARY_SOUND`].
+const ARTICULATION_LISTS: [&str; 85] = [
+    "piccolo: sustain legato staccato tenuto marcato trill flutter_tongue | staccatissimo \
+        multi_tongue fingered_tremolo sforzando fortepiano crescendo_swell rip fall key_click \
+        air_tone vibrato_on",
+    "flute: sustain legato staccato tenuto marcato trill flutter_tongue harmonics | staccatissimo \
+        portato multi_tongue fingered_tremolo sforzando crescendo_swell rip fall glissando \
+        key_click slap_tongue tongue_ram air_tone jet_whistle whistle_tone multiphonic vibrato_on \
+        non_vibrato",
+    "alto_flute: sustain legato staccato tenuto marcato trill flutter_tongue | staccatissimo \
+        portato multi_tongue sforzando crescendo_swell rip fall key_click air_tone vibrato_on \
+        non_vibrato",
+    "bass_flute: sustain legato staccato tenuto marcato trill flutter_tongue | staccatissimo \
+        portato multi_tongue sforzando crescendo_swell rip fall vibrato_on",
+    "oboe: sustain legato staccato tenuto marcato trill flutter_tongue con_sordino | portato \
+        sforzando fortepiano crescendo_swell trill_half trill_whole fingered_tremolo glissando \
+        multiphonic key_click slap_tongue vibrato_on non_vibrato",
+    "oboe_damore: sustain legato staccato tenuto marcato trill flutter_tongue | portato \
+        trill_half trill_whole",
+    "english_horn: sustain legato staccato tenuto marcato trill flutter_tongue con_sordino | \
+        portato sforzando fortepiano crescendo_swell trill_half trill_whole fingered_tremolo \
+        glissando bisbigliando vibrato_on non_vibrato",
+    "clarinet_eb: sustain legato staccato trill flutter_tongue | staccatissimo portato sforzando \
+        trill_half trill_whole crescendo_swell",
+    "clarinet_bb: sustain legato staccato tenuto marcato trill flutter_tongue | staccatissimo \
+        portato sforzando trill_half trill_whole fingered_tremolo multi_tongue glissando growl \
+        crescendo_swell",
+    "clarinet_a: sustain legato staccato tenuto marcato trill flutter_tongue | staccatissimo \
+        portato sforzando trill_half trill_whole fingered_tremolo multi_tongue glissando growl \
+        crescendo_swell",
+    "bass_clarinet: sustain legato staccato marcato trill flutter_tongue | staccatissimo portato \
+        sforzando trill_half trill_whole multi_tongue",
+    "saxophone_soprano: sustain legato staccato tenuto marcato trill flutter_tongue harmonics | \
+        staccatissimo fortepiano crescendo_swell vibrato_on non_vibrato trill_half trill_whole \
+        glissando scoop fall doit growl subtone slap_tongue multiphonic key_click",
+    "saxophone_alto: sustain legato staccato tenuto marcato trill flutter_tongue harmonics | \
+        staccatissimo fortepiano crescendo_swell vibrato_on non_vibrato trill_half trill_whole \
+        glissando scoop fall doit rip growl subtone slap_tongue multiphonic key_click",
+    "saxophone_tenor: sustain legato staccato tenuto marcato trill flutter_tongue harmonics | \
+        staccatissimo fortepiano crescendo_swell vibrato_on non_vibrato trill_half trill_whole \
+        glissando scoop fall doit rip growl subtone slap_tongue multiphonic key_click",
+    "saxophone_baritone: sustain legato staccato tenuto marcato trill flutter_tongue harmonics | \
+        staccatissimo fortepiano crescendo_swell vibrato_on non_vibrato trill_half trill_whole \
+        glissando scoop fall doit rip growl subtone slap_tongue multiphonic key_click",
+    "bassoon: sustain legato staccato tenuto marcato trill flutter_tongue con_sordino | portato \
+        sforzando crescendo_swell trill_half trill_whole fingered_tremolo glissando multiphonic \
+        key_click slap_tongue vibrato_on non_vibrato",
+    "contrabassoon: sustain legato staccato tenuto marcato flutter_tongue | sforzando fortepiano \
+        vibrato_on",
+    "horn_f: sustain legato staccato tenuto marcato trill flutter_tongue con_sordino | stopped \
+        cuivre bells_up glissando rip fall staccatissimo sforzando fortepiano crescendo_swell \
+        trill_whole trill_half multi_tongue multiphonic",
+    "wagner_tuba_tenor: sustain legato staccato tenuto marcato trill flutter_tongue con_sordino | \
+        portato sforzando fortepiano glissando multi_tongue vibrato_on",
+    "wagner_tuba_bass: sustain legato staccato tenuto marcato trill flutter_tongue con_sordino | \
+        portato sforzando fortepiano glissando multi_tongue vibrato_on",
+    "trumpet_piccolo: sustain legato staccato tenuto marcato trill flutter_tongue con_sordino | \
+        portato sforzando fortepiano multi_tongue vibrato_on non_vibrato",
+    "trumpet_c: sustain legato staccato tenuto marcato trill flutter_tongue con_sordino | accent \
+        sforzando fortepiano crescendo_swell portato glissando half_valve cuivre multi_tongue \
+        vibrato_on non_vibrato mute_cup mute_harmon mute_bucket",
+    "trumpet_bb: sustain legato staccato tenuto marcato trill flutter_tongue con_sordino | accent \
+        sforzando fortepiano crescendo_swell portato glissando portamento half_valve fall doit \
+        shake scoop rip growl cuivre multi_tongue vibrato_on non_vibrato mute_cup mute_harmon \
+        mute_plunger mute_bucket wah_wah",
+    "cornet: sustain legato staccato tenuto marcato trill flutter_tongue con_sordino | accent \
+        portato multi_tongue glissando half_valve fall shake growl vibrato_on mute_cup \
+        mute_harmon mute_plunger wah_wah",
+    "flugelhorn: sustain legato staccato tenuto marcato trill flutter_tongue | portato \
+        multi_tongue vibrato_on fall shake glissando half_valve",
+    "trombone_tenor: sustain legato staccato tenuto marcato trill flutter_tongue con_sordino | \
+        glissando staccatissimo sforzando fortepiano crescendo_swell rip fall doit cuivre \
+        vibrato_on growl",
+    "trombone_bass: sustain legato staccato tenuto marcato trill flutter_tongue con_sordino | \
+        glissando staccatissimo sforzando fortepiano crescendo_swell rip fall cuivre vibrato_on",
+    "euphonium: sustain legato staccato tenuto marcato trill flutter_tongue con_sordino | \
+        staccatissimo sforzando crescendo_swell vibrato_on half_valve",
+    "tuba: sustain legato staccato tenuto marcato trill flutter_tongue con_sordino | \
+        staccatissimo sforzando fortepiano crescendo_swell rip fall half_valve vibrato_on",
+    "cimbasso: sustain legato staccato tenuto marcato flutter_tongue con_sordino | staccatissimo \
+        sforzando crescendo_swell cuivre rip fall half_valve",
+    "timpani: roll marcato con_sordino | let_ring damped glissando crescendo_swell \
+        tremolo_measured fortepiano",
+    "bass_drum: roll marcato con_sordino | damped let_ring rute",
+    "snare_drum: roll marcato con_sordino | flam drag rimshot rim snares_off",
+    "clash_cymbals: roll marcato | let_ring damped choke",
+    "suspended_cymbal: roll marcato | crescendo_swell let_ring damped choke bowed scrape",
+    "tam_tam: roll marcato | let_ring damped crescendo_swell scrape bowed",
+    "triangle: roll marcato | let_ring damped",
+    "tambourine: roll marcato | thumb_roll shake_stroke",
+    "castanets: roll marcato | ",
+    "wood_block: marcato roll | ",
+    "temple_blocks: marcato roll | glissando",
+    "sleigh_bells: roll marcato | shake_stroke",
+    "maracas: roll marcato | shake_stroke",
+    "shaker: roll marcato | shake_stroke",
+    "whip: marcato | ",
+    "glockenspiel: staccato marcato tremolo trill | let_ring damped glissando bowed",
+    "xylophone: staccato marcato tremolo | glissando dead_stroke bowed",
+    "vibraphone: staccato marcato tremolo | let_ring damped dead_stroke glissando bowed \
+        vibrato_on non_vibrato portamento",
+    "marimba: staccato marcato tremolo trill | glissando dead_stroke bowed",
+    "tubular_bells: marcato tremolo | let_ring damped glissando",
+    "crotales: marcato tremolo | let_ring damped bowed",
+    "carillon: tremolo marcato | let_ring",
+    "harp: sustain harmonics tremolo trill | glissando bisbigliando pres_de_la_table let_ring \
+        damped portamento xylophonic",
+    "guitar_classical: sustain legato tremolo trill harmonics sul_ponticello | harmonics_natural \
+        harmonics_artificial sul_tasto rasgueado strum palm_mute bartok_pizzicato golpe \
+        vibrato_on let_ring damped glissando",
+    "lute: sustain trill | let_ring",
+    "mandolin: sustain staccato tremolo | strum let_ring",
+    "celesta: sustain staccato legato trill tremolo | ",
+    "piano_concert_grand: sustain legato staccato tenuto marcato trill tremolo | staccatissimo \
+        portato accent sforzando glissando let_ring cluster",
+    "piano_studio_grand: sustain legato staccato tenuto marcato trill tremolo | staccatissimo \
+        portato accent sforzando glissando let_ring cluster",
+    "piano_upright: sustain legato staccato tenuto marcato trill tremolo | staccatissimo portato \
+        accent sforzando glissando let_ring cluster",
+    "piano_felt: sustain legato staccato tenuto | portato let_ring",
+    "piano_prepared: sustain staccato marcato tremolo harmonics pizzicato | let_ring glissando \
+        damped cluster palm_mute",
+    "piano_honky_tonk: sustain staccato marcato trill tremolo | accent glissando let_ring",
+    "harpsichord: sustain legato staccato trill | ",
+    "clavichord: sustain legato staccato trill | vibrato_on portato",
+    "electric_piano_rhodes: sustain legato staccato tenuto marcato trill | glissando",
+    "electric_piano_wurlitzer: sustain legato staccato tenuto marcato trill | glissando",
+    "clavinet: sustain legato staccato marcato trill | portato damped",
+    "organ_pipe: sustain legato staccato tenuto trill | glissando",
+    "organ_hammond: sustain legato staccato | glissando",
+    "accordion: sustain legato staccato tremolo | crescendo_swell air_tone",
+    "voice_soprano: sustain legato staccato tenuto marcato trill | vowel text humming whisper \
+        crescendo_swell sforzando vibrato_on non_vibrato portamento",
+    "voice_mezzo_soprano: sustain legato staccato tenuto marcato trill | vowel text humming \
+        whisper crescendo_swell sforzando vibrato_on non_vibrato portamento",
+    "voice_alto: sustain legato staccato tenuto marcato trill | vowel text humming whisper \
+        crescendo_swell sforzando vibrato_on non_vibrato portamento",
+    "voice_tenor: sustain legato staccato tenuto marcato trill | vowel text humming whisper \
+        crescendo_swell sforzando vibrato_on non_vibrato portamento falsetto",
+    "voice_baritone: sustain legato staccato tenuto marcato trill | vowel text humming whisper \
+        crescendo_swell sforzando vibrato_on non_vibrato portamento falsetto",
+    "voice_bass: sustain legato staccato tenuto marcato trill | vowel text humming whisper \
+        crescendo_swell sforzando vibrato_on non_vibrato portamento falsetto",
+    "choir_soprano: sustain legato staccato tenuto marcato | vowel text humming whisper \
+        crescendo_swell sforzando vibrato_on non_vibrato portamento",
+    "choir_alto: sustain legato staccato tenuto marcato | vowel text humming whisper \
+        crescendo_swell sforzando vibrato_on non_vibrato portamento",
+    "choir_tenor: sustain legato staccato tenuto marcato | vowel text humming whisper \
+        crescendo_swell sforzando vibrato_on non_vibrato portamento falsetto",
+    "choir_bass: sustain legato staccato tenuto marcato | vowel text humming whisper \
+        crescendo_swell sforzando vibrato_on non_vibrato portamento falsetto",
+    "violin: sustain legato staccato spiccato tenuto marcato pizzicato tremolo trill col_legno \
+        harmonics sul_ponticello con_sordino | detache martele sautille ricochet loure portato \
+        sul_tasto flautando bartok_pizzicato left_hand_pizzicato col_legno_battuto \
+        col_legno_tratto tremolo_measured fingered_tremolo harmonics_natural harmonics_artificial \
+        trill_half trill_whole portamento glissando fortepiano crescendo_swell non_vibrato \
+        vibrato_on su_una_corda behind_the_bridge",
+    "viola: sustain legato staccato spiccato tenuto marcato pizzicato tremolo trill col_legno \
+        harmonics sul_ponticello con_sordino | detache martele sautille ricochet loure portato \
+        sul_tasto flautando bartok_pizzicato left_hand_pizzicato col_legno_battuto \
+        col_legno_tratto tremolo_measured fingered_tremolo harmonics_natural harmonics_artificial \
+        trill_half trill_whole portamento glissando fortepiano crescendo_swell non_vibrato \
+        vibrato_on su_una_corda behind_the_bridge",
+    "cello: sustain legato staccato spiccato tenuto marcato pizzicato tremolo trill col_legno \
+        harmonics sul_ponticello con_sordino | detache martele sautille ricochet loure portato \
+        sul_tasto flautando bartok_pizzicato left_hand_pizzicato col_legno_battuto \
+        col_legno_tratto tremolo_measured fingered_tremolo harmonics_natural harmonics_artificial \
+        trill_half trill_whole portamento glissando fortepiano crescendo_swell non_vibrato \
+        vibrato_on su_una_corda behind_the_bridge",
+    "double_bass: sustain legato staccato spiccato tenuto marcato pizzicato tremolo trill \
+        col_legno harmonics sul_ponticello con_sordino | detache martele loure portato sul_tasto \
+        flautando bartok_pizzicato left_hand_pizzicato slap_pizzicato col_legno_battuto \
+        col_legno_tratto tremolo_measured fingered_tremolo harmonics_natural harmonics_artificial \
+        trill_half trill_whole portamento glissando fortepiano crescendo_swell non_vibrato \
+        vibrato_on",
+];
+
+#[test]
+fn articulation_lists_match_the_researched_ones() {
+    let mut not_yet = std::collections::BTreeSet::new();
+    for row in ARTICULATION_LISTS {
+        let (id, lists) = row.split_once(':').expect("id: lists");
+        let (original, newer) = lists.split_once('|').expect("original | newer");
+        let mut expected = Vec::new();
+        for slug in original.split_whitespace().chain(newer.split_whitespace()) {
+            let is_ordinary = ORDINARY_SOUND.contains(&(id, slug));
+            match Articulation::from_id(slug) {
+                Some(articulation) if !is_ordinary => expected.push(articulation),
+                Some(_) => {}
+                None => {
+                    not_yet.insert(slug);
+                }
+            }
+        }
+        // The original ids are all in the vocabulary.
+        assert!(
+            original
+                .split_whitespace()
+                .all(|slug| Articulation::from_id(slug).is_some_and(Articulation::is_stable)),
+            "{id}"
+        );
+        assert_eq!(get(id).articulations(), expected.as_slice(), "{id}");
+        assert!(!expected.is_empty(), "{id}");
+    }
+    assert_eq!(
+        not_yet.into_iter().collect::<Vec<_>>(),
+        NOT_YET_IN_VOCABULARY
+    );
+    assert_eq!(ARTICULATION_LISTS.len(), INSTRUMENTS.len());
+}
+
+#[test]
+fn the_ordinary_sound_carries_no_articulation() {
+    for (id, slug) in ORDINARY_SOUND {
+        let articulation = Articulation::from_id(slug).expect("in the vocabulary");
+        assert!(!get(id).articulations().contains(&articulation), "{id}");
+        assert_eq!(
+            get(id).articulation_availability(slug, &[]),
+            ArticulationAvailability::NotIdiomatic,
+            "{id}"
+        );
+    }
+    // A held note on an instrument that sustains, and a short note on one whose notes ring, keep
+    // their ids.
+    assert!(
+        get("organ_pipe")
+            .articulations()
+            .contains(&Articulation::Sustain)
+    );
+    assert!(
+        get("vibraphone")
+            .articulations()
+            .contains(&Articulation::Staccato)
+    );
+}
+
+/// The instruments recorded as sections or as both soloist and section; every other one is a
+/// soloist.
+const SECTION: [&str; 6] = [
+    "wagner_tuba_tenor",
+    "wagner_tuba_bass",
+    "choir_soprano",
+    "choir_alto",
+    "choir_tenor",
+    "choir_bass",
+];
+const BOTH: [&str; 18] = [
+    "flute",
+    "oboe",
+    "clarinet_bb",
+    "clarinet_a",
+    "bassoon",
+    "horn_f",
+    "trumpet_c",
+    "trumpet_bb",
+    "cornet",
+    "flugelhorn",
+    "trombone_tenor",
+    "trombone_bass",
+    "euphonium",
+    "harp",
+    "violin",
+    "viola",
+    "cello",
+    "double_bass",
+];
+
+/// Every record carries an ensemble profile with the researched forms, and a use stated without
+/// a number of players says what it is (TST-07).
+#[test]
+fn ensemble_profiles_record_forms_and_players() {
+    for record in instruments() {
+        let profile = record.ensemble().expect("every record has a profile");
+        let expected = if SECTION.contains(&record.id()) {
+            Forms::Section
+        } else if BOTH.contains(&record.id()) {
+            Forms::Both
+        } else {
+            Forms::Solo
+        };
+        assert_eq!(profile.forms, expected, "{}", record.id());
+        for era in Era::ALL {
+            let players = profile.players(era);
+            if players.players.is_none() {
+                assert!(!players.note.trim().is_empty(), "{} {era:?}", record.id());
+            }
+        }
+    }
+    // A few counts read from their sources (TST-10).
+    let cases = [
+        (
+            "horn_f",
+            Era::Romantic,
+            Some(PlayerRange::new(4, 4)),
+            "estimate",
+        ),
+        (
+            "violin",
+            Era::Romantic,
+            Some(PlayerRange::new(30, 32)),
+            "cited",
+        ),
+        ("viola", Era::Film, Some(PlayerRange::new(12, 12)), "cited"),
+        (
+            "oboe",
+            Era::Classical,
+            Some(PlayerRange::new(2, 2)),
+            "cited",
+        ),
+        ("oboe", Era::Film, Some(PlayerRange::new(2, 3)), "estimate"),
+        (
+            "bass_flute",
+            Era::Classical,
+            Some(PlayerRange::NOT_USED),
+            "estimate",
+        ),
+        ("clarinet_eb", Era::Chamber, None, "estimate"),
+        (
+            "choir_soprano",
+            Era::Romantic,
+            Some(PlayerRange::new(8, 32)),
+            "cited",
+        ),
+        ("choir_bass", Era::Chamber, None, "cited"),
+        (
+            "tam_tam",
+            Era::Classical,
+            Some(PlayerRange::NOT_USED),
+            "cited",
+        ),
+    ];
+    for (id, era, expected, provenance) in cases {
+        let players = get(id).ensemble().expect("recorded").players(era);
+        assert_eq!(players.players, expected, "{id} {era:?}");
+        assert_eq!(kind(players.provenance), provenance, "{id} {era:?}");
+    }
+    assert_eq!(
+        get("horn_f")
+            .ensemble()
+            .map(|profile| profile.romantic.note),
+        Some("6-8 in large scores; Wagner's Ring 8")
+    );
 }

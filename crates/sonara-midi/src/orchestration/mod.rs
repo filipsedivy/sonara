@@ -22,8 +22,8 @@ pub use instrument::{
 };
 pub use pitch::{Clef, PitchRange, RangeError, SoundingPitch, Transposition, WrittenPitch};
 
-/// The instrument with id `id`, or `None` for an unknown id or a type without a record. The id
-/// must match exactly ([`InstrumentType::from_id`]).
+/// The instrument with id `id`, or `None` for an unknown id. The id must match exactly
+/// ([`InstrumentType::from_id`]).
 #[must_use]
 pub fn instrument(id: &str) -> Option<&'static Instrument> {
     InstrumentType::from_id(id).and_then(InstrumentType::get)
