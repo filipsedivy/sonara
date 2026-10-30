@@ -8,6 +8,19 @@ break the API. The project format is versioned independently, see
 
 ## [Unreleased]
 
+### Added
+
+- **Orchestra and keyboard research, and a proposal for orchestral instruments (documentation only):** sourced
+  cards for 85 instruments (strings, woodwinds, brass, pitched and unpitched percussion, the acoustic, electric and
+  historical keyboards and organs, harp and plucked strings, choir and solo voices), each fact marked Cited or
+  Estimate and fact-checked; a generated instrument model with ranges, transpositions, GM programs and articulations;
+  ensemble templates, doubling and balance rules, a harmonized articulation vocabulary, the mapping of instruments to
+  free sample libraries with their licences, a coverage and gap analysis, and a check of the SFZ sampler against those
+  libraries (eleven confirmed divergences from the SFZ specification and seven further findings). The four-layer design
+  (instrument model, sound source, performance layer, user interface) and ADR 0011 are **proposed**; nothing is
+  implemented, and no tool, schema or contract changes. See [docs/orchestra-research.md](docs/orchestra-research.md) and
+  [docs/orchestra-design.md](docs/orchestra-design.md).
+
 ## [0.1.12] — 2026-10-30
 
 ### Changed

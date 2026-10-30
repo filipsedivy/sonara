@@ -37,6 +37,8 @@ These need hardware or a person and are never CI gates (HW-01). Their results be
 - the AI menu and the AI Composer in the bundled app, started from the Finder (the live test uses
   `sonara serve` and a terminal environment, so the desktop path is not exercised end to end):
   the steps are in [smoke-tests.md](smoke-tests.md#by-hand-the-ai-menu-and-the-ai-composer-in-the-bundled-app-owner);
+- the human checks of the orchestra research ([orchestra/open-questions.md](orchestra/open-questions.md), B1-B8):
+  renders of the SFZ divergences, listening tests, printed-score checks;
 - the sampler with a real library (VSCO 2 CE): listen, check the GUI device editor, measure the
   render load and memory.
 
@@ -102,7 +104,8 @@ These need hardware or a person and are never CI gates (HW-01). Their results be
 | Instrument catalog (`sonara_app::instruments`) | partial | The presets of the installed sample libraries with stable IDs, declared or inferred family, declared articulations, licence note and availability (available, missing, invalid); optional `sonara-library.json` manifest; on-request deep check of a patch. A library-level API only: no agent tool, CLI command or GUI uses it yet, and the plugin registry is unchanged. SFZ only (no bank or program). Tested with generated fixtures (see [instrument-catalog.md](instrument-catalog.md)) |
 | Chords, scales, arpeggiator, humanize, swing | done | `sonara-midi` and `generate_midi` |
 | Programmatic MIDI generation | done | |
-| Orchestral ranges, transposition and articulation metadata | partial | `sonara_midi::orchestration`: 16 instruments; several ranges and all articulation lists are estimates; library-independent; no tool or GUI uses it yet ([orchestration-metadata.md](orchestration-metadata.md)) |
+| Orchestral ranges, transposition and articulation metadata | partial | `sonara_midi::orchestration`: 16 instruments; several ranges and all articulation lists are estimates; library-independent; no tool or GUI uses it yet ([orchestration-metadata.md](orchestration-metadata.md)). Researched and fact-checked for 85 instruments; corrections to 14 of the 16 entries are proposed, not applied ([orchestra-research.md](orchestra-research.md), [orchestra/model.md](orchestra/model.md)) |
+| Orchestral instruments: instrument model, sound mapping, performance layer and instrument-aware UI | planned | Proposed in [orchestra-design.md](orchestra-design.md) and [ADR 0011](decisions/0011-orchestral-instruments-and-performance.md): 85 instrument ids with aliases, GM voices and ensembles; library profiles and preset ids for the sampler; `articulation` and `dynamics` sampler parameters; SFZ conformance fixes, crossfades and overlap legato; articulation inference, dynamics shaping and playability checks; a Library browser, family panels and piano-roll lanes. Milestones O1-O6; contract changes only in O6, by owner decision |
 | Song form generator | partial | Library API (`sonara_midi::form`, SON-P10): templates, roles, bar lengths, one-step apply, single-section regeneration. The role and levels are not saved in the project; no agent tool or GUI yet. See `docs/song-form.md` |
 | Localized regeneration | partial | Library API (`sonara_midi::regenerate`, SON-P11): region and section targets, validated patch, one-step undoable apply, stale-plan rejection. Needs a real `RegionGenerator`; none ships. No agent tool or GUI yet. See `docs/regeneration.md` |
 | Reference audio analysis | partial | Library API (`sonara_media::reference`, SON-P15): tempo with confidence, energy windows, energy segmentation, limitations; `analyze_reference_file` imports through the media decoder. Constant tempo only; no agent tool or GUI yet. See `docs/reference-analysis.md` |

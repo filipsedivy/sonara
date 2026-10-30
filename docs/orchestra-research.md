@@ -71,7 +71,7 @@ speed are instrument **controls**, not articulations.
 ## 3. The existing metadata, verified
 
 `crates/sonara-midi/src/orchestration/data.rs` holds 16 instruments today. The research confirms every transposition
-and changes a range or adds a comfortable range for 13 of them; the table is in
+and changes a range or adds a comfortable range for 14 of them (21 values); the table is in
 [model.md, "Proposed corrections to data.rs"](orchestra/model.md#proposed-corrections-to-datars). The largest changes:
 violin playable top A7 (105) instead of C8, with a comfortable top of A6 (93); cello C2–E6 instead of the estimated
 C2–A6; horn in F now cited (Forsyth: written F#2–C6); trumpet in Bb playable to G6; glockenspiel C5–C8 and xylophone
