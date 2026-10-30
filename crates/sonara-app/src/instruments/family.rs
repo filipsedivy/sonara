@@ -1,28 +1,14 @@
 //! Instrument families, and the guess of a family from a patch's path.
+//!
+//! The family is the orchestration metadata's own enum, re-exported here as [`InstrumentFamily`],
+//! so a preset and an instrument type name their family with one type. Its serialized form is
+//! the lowercase slug (`"strings"`, `"woodwinds"`, …), which manifests declare and family claims
+//! write.
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
-/// The orchestral family of an instrument.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum InstrumentFamily {
-    /// Bowed strings: violin, viola, cello, double bass, string ensembles.
-    Strings,
-    /// Woodwinds: flute, oboe, clarinet, bassoon and relatives.
-    Woodwinds,
-    /// Brass: horn, trumpet, trombone, tuba.
-    Brass,
-    /// Tuned and untuned percussion: timpani, drums, bells, cymbals.
-    Percussion,
-    /// Piano, organ, harpsichord, celesta.
-    Keyboards,
-    /// Plucked strings: harp, guitar.
-    Plucked,
-    /// Voices.
-    Choir,
-    /// Anything else that a manifest declares.
-    Other,
-}
+/// The orchestral family of an instrument: [`sonara_midi::orchestration::Family`].
+pub use sonara_midi::orchestration::Family as InstrumentFamily;
 
 /// What is known about the family of a preset. A manifest's word is trusted; a guess from the
 /// path is not, so the two stay apart (`contracts/orchestration-metadata.md`).
@@ -211,5 +197,69 @@ mod tests {
         assert_eq!(inferred("Pad 7.sfz"), FamilyClaim::Unknown);
         assert_eq!(inferred(""), FamilyClaim::Unknown);
         assert_eq!(FamilyClaim::Unknown.family(), None);
+    }
+
+    /// A family serializes as its lowercase slug, and a claim as its source with that slug, the
+    /// form the catalog has always written (TST-05).
+    #[test]
+    fn every_claim_keeps_its_json_form() {
+        let families = [
+            (InstrumentFamily::Strings, "strings"),
+            (InstrumentFamily::Woodwinds, "woodwinds"),
+            (InstrumentFamily::Brass, "brass"),
+            (InstrumentFamily::Percussion, "percussion"),
+            (InstrumentFamily::Keyboards, "keyboards"),
+            (InstrumentFamily::Plucked, "plucked"),
+            (InstrumentFamily::Choir, "choir"),
+            (InstrumentFamily::Other, "other"),
+        ];
+        for (family, slug) in families {
+            assert_eq!(
+                serde_json::to_string(&family).expect("a family serializes"),
+                format!("\"{slug}\"")
+            );
+            assert_eq!(
+                serde_json::to_string(&FamilyClaim::Declared(family)).expect("a claim serializes"),
+                format!(r#"{{"source":"declared","family":"{slug}"}}"#)
+            );
+            assert_eq!(
+                serde_json::to_string(&FamilyClaim::Inferred(family)).expect("a claim serializes"),
+                format!(r#"{{"source":"inferred","family":"{slug}"}}"#)
+            );
+        }
+        assert_eq!(
+            serde_json::to_string(&FamilyClaim::Unknown).expect("a claim serializes"),
+            r#"{"source":"unknown"}"#
+        );
+    }
+
+    /// The families sort in the catalog's order, strings first, not in the score order of the
+    /// instrument types, which starts with the woodwinds.
+    #[test]
+    fn families_sort_in_the_catalog_order() {
+        let mut families = [
+            InstrumentFamily::Other,
+            InstrumentFamily::Choir,
+            InstrumentFamily::Plucked,
+            InstrumentFamily::Keyboards,
+            InstrumentFamily::Percussion,
+            InstrumentFamily::Brass,
+            InstrumentFamily::Woodwinds,
+            InstrumentFamily::Strings,
+        ];
+        families.sort();
+        assert_eq!(
+            families,
+            [
+                InstrumentFamily::Strings,
+                InstrumentFamily::Woodwinds,
+                InstrumentFamily::Brass,
+                InstrumentFamily::Percussion,
+                InstrumentFamily::Keyboards,
+                InstrumentFamily::Plucked,
+                InstrumentFamily::Choir,
+                InstrumentFamily::Other,
+            ]
+        );
     }
 }

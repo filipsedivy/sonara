@@ -231,6 +231,42 @@ mod tests {
         assert!(reasons.contains(&"listed twice"));
     }
 
+    /// Every family slug is read as its family; the match is exact, so a capitalised or padded
+    /// slug rejects the entry (TST-03, TST-05).
+    #[test]
+    fn a_family_is_read_from_its_exact_slug() {
+        let families = [
+            ("strings", InstrumentFamily::Strings),
+            ("woodwinds", InstrumentFamily::Woodwinds),
+            ("brass", InstrumentFamily::Brass),
+            ("percussion", InstrumentFamily::Percussion),
+            ("keyboards", InstrumentFamily::Keyboards),
+            ("plucked", InstrumentFamily::Plucked),
+            ("choir", InstrumentFamily::Choir),
+            ("other", InstrumentFamily::Other),
+        ];
+        for (slug, family) in families {
+            let manifest = parse(
+                format!(r#"{{"version":1,"instruments":[{{"path":"a.sfz","family":"{slug}"}}]}}"#)
+                    .as_bytes(),
+            )
+            .expect("valid");
+            assert_eq!(manifest.entries[0].family, Some(family), "{slug}");
+        }
+        for text in ["Strings", "STRINGS", "strings ", "string", ""] {
+            let manifest = parse(
+                format!(r#"{{"version":1,"instruments":[{{"path":"a.sfz","family":"{text}"}}]}}"#)
+                    .as_bytes(),
+            )
+            .expect("the manifest itself is valid");
+            assert!(manifest.entries.is_empty(), "{text:?}");
+            assert_eq!(
+                manifest.rejected,
+                [("a.sfz".to_owned(), format!("unknown family {text:?}"))]
+            );
+        }
+    }
+
     #[test]
     fn a_broken_manifest_is_an_error() {
         assert!(matches!(parse(b"not json"), Err(ManifestError::Parse(_))));

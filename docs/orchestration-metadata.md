@@ -16,8 +16,12 @@ adds no agent tool and changes no contract (CTR-01).
 Ids name the **acoustic instrument type** (`violin`, `clarinet_bb`, `horn_f`), not a sample
 preset. They are independent of the preset ids of the instrument catalog
 (`<library>/<patch path>`); the catalog may map presets to these ids later. Display names are not
-identifiers. Family slugs equal the catalog's (`strings`, `woodwinds`, `brass`, `percussion`,
-`keyboards`, `plucked`, `choir`, `other`).
+identifiers. The family enum, `Family`, is the catalog's too: the catalog re-exports it as
+`InstrumentFamily`, so presets and instrument types name a family with one type. Its slugs
+(`strings`, `woodwinds`, `brass`, `percussion`, `keyboards`, `plucked`, `choir`, `other`) are its
+serialized form, the one library manifests and the catalog's family claims use, and are never
+renamed; `from_slug` accepts only an exact slug. Families sort in that order, strings first, which
+is not the score order below.
 
 `InstrumentType` is the typed id: one variant for each of the 85 instrument types the metadata
 knows, from the piccolo to the double bass. `id()` gives the string id, which is the external form

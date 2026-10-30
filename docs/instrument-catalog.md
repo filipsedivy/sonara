@@ -11,7 +11,7 @@ and adds no agent tool (CTR-01). Sonara ships no samples and no library.
 |---|---|
 | `id` | `<library id>/<patch path below the library, without .sfz>`, for example `vsco2ce/Strings/Violin Solo`. It holds no absolute path, so it survives moving the library or opening the project on another machine. |
 | `display_name` | The manifest's name, else the file name. |
-| `family` | `strings`, `woodwinds`, `brass`, `percussion`, `keyboards`, `plucked`, `choir` or `other`, with its source: **declared** (manifest), **inferred** (words in the path, such as `Violin`, `Horn`, `Timpani`) or **unknown**. An inferred family is a guess; treat it as one. |
+| `family` | `strings`, `woodwinds`, `brass`, `percussion`, `keyboards`, `plucked`, `choir` or `other`, with its source: **declared** (manifest), **inferred** (words in the path, such as `Violin`, `Horn`, `Timpani`) or **unknown**. An inferred family is a guess; treat it as one. The family is the orchestration metadata's ([orchestration-metadata.md](orchestration-metadata.md)), so a preset and an instrument type share one family type; a manifest must spell the slug exactly, in lower case. |
 | `articulations` | Only what a manifest declares. Empty means **not verified**, never "none". Keyswitch labels in a patch are not read. |
 | `license` | The licence the library's manifest states. `None` means **unknown**: read the library's own terms. |
 | `availability` | `available` (a regular, non-empty, readable file inside the library), `missing` (listed by the manifest, not on disk) or `invalid` with a reason. |

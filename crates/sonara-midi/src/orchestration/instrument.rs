@@ -1,5 +1,6 @@
 //! The instrument record: family, pitch capabilities with provenance, and idiomatic articulations.
 
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use super::articulation::{Articulation, ArticulationAvailability, Request, RequestAvailability};
@@ -12,31 +13,50 @@ use super::names::{Alias, Names, alias_fault};
 use super::pitch::{Clef, PitchRange, SoundingPitch, Transposition, WrittenPitch};
 use super::playability::Fact;
 
-/// The instrument family. The slugs equal the family slugs of the instrument catalog
-/// (`sonara_app::instruments`), so the two map by string. Voices, solo and choral, are `Choir`;
-/// `Other` exists for that mapping, and no instrument type has it.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+/// The instrument family, shared with the instrument catalog (`sonara_app::instruments`
+/// re-exports it as `InstrumentFamily`), so the metadata and the sample presets name a family
+/// with one type. Voices, solo and choral, are `Choir`; `Other` is for whatever a library
+/// manifest declares outside the other families, and no instrument type has it.
+///
+/// The serialized form is the [`slug`](Self::slug), for example `"woodwinds"`, which the
+/// catalog's library manifests and family claims already use. The derived order is the order of
+/// the variants, strings first; it is not the score order, which comes from
+/// [`InstrumentType`]'s order.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Family {
-    /// Bowed strings.
+    /// Bowed strings: violin, viola, cello, double bass, string ensembles.
     Strings,
-    /// Woodwinds.
+    /// Woodwinds: flutes, oboes, clarinets, bassoons, saxophones and relatives.
     Woodwinds,
-    /// Brass.
+    /// Brass: horns, trumpets, trombones, tubas and relatives.
     Brass,
-    /// Percussion, pitched or not.
+    /// Percussion, pitched or not: timpani, drums, mallets, bells, cymbals.
     Percussion,
-    /// Keyboards.
+    /// Keyboards: piano, organ, harpsichord, celesta and relatives.
     Keyboards,
-    /// Plucked strings.
+    /// Plucked strings: harp, guitar and relatives.
     Plucked,
-    /// Voices.
+    /// Voices, solo and choral.
     Choir,
-    /// Anything else.
+    /// Anything else that a library manifest declares.
     Other,
 }
 
 impl Family {
-    /// The slug, for example `woodwinds`.
+    /// Every family, in declaration order.
+    pub const ALL: [Self; 8] = [
+        Self::Strings,
+        Self::Woodwinds,
+        Self::Brass,
+        Self::Percussion,
+        Self::Keyboards,
+        Self::Plucked,
+        Self::Choir,
+        Self::Other,
+    ];
+
+    /// The slug, for example `woodwinds`. It is the serialized form and is never renamed.
     #[must_use]
     pub const fn slug(self) -> &'static str {
         match self {
@@ -49,6 +69,13 @@ impl Family {
             Self::Choir => "choir",
             Self::Other => "other",
         }
+    }
+
+    /// The family with slug `slug`, or `None` for anything else: the match is exact, with no case
+    /// folding or trimming, as when the family is deserialized.
+    #[must_use]
+    pub fn from_slug(slug: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|family| family.slug() == slug)
     }
 
     /// The words that name the family as a whole, such as "strings" or the Czech "smyčce"

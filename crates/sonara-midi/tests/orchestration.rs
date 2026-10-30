@@ -1221,6 +1221,74 @@ fn record_families_are_unchanged() {
     }
 }
 
+/// The family slugs, in declaration order: the catalog's manifests and family claims write them,
+/// so they are never renamed (TST-05).
+#[test]
+fn family_slugs_round_trip() {
+    let slugs: Vec<&str> = Family::ALL.into_iter().map(Family::slug).collect();
+    assert_eq!(
+        slugs,
+        [
+            "strings",
+            "woodwinds",
+            "brass",
+            "percussion",
+            "keyboards",
+            "plucked",
+            "choir",
+            "other"
+        ]
+    );
+    for (index, family) in Family::ALL.into_iter().enumerate() {
+        assert_eq!(family as usize, index, "{family:?}");
+        assert_eq!(Family::from_slug(family.slug()), Some(family));
+    }
+}
+
+/// `from_slug` takes the exact slug only (TST-03).
+#[test]
+fn family_lookup_is_strict() {
+    for text in [
+        "", "Strings", "STRINGS", "strings ", " strings", "string", "woodwind", "voices", "smycce",
+    ] {
+        assert_eq!(Family::from_slug(text), None, "{text:?}");
+    }
+}
+
+/// The derived serialization agrees with `slug` and `from_slug` for every family: a family
+/// serializes as its slug, the slug deserializes back, and what `from_slug` rejects is rejected
+/// (TST-05, TST-03).
+#[test]
+fn family_serializes_as_its_slug() {
+    for family in Family::ALL {
+        let json = serde_json::to_string(&family).expect("a family serializes");
+        assert_eq!(json, format!("\"{}\"", family.slug()));
+        let back: Family = serde_json::from_str(&json).expect("a slug deserializes");
+        assert_eq!(back, family);
+    }
+    for text in ["Strings", "STRINGS", "strings ", "string", ""] {
+        assert!(
+            serde_json::from_str::<Family>(&format!("\"{text}\"")).is_err(),
+            "{text:?}"
+        );
+    }
+}
+
+/// The families sort in declaration order, strings first, which is the catalog's order; the score
+/// order of the instrument types, woodwinds first, is a different order.
+#[test]
+fn families_sort_in_declaration_order() {
+    let mut reversed = Family::ALL;
+    reversed.reverse();
+    reversed.sort();
+    assert_eq!(reversed, Family::ALL);
+    assert!(Family::Strings < Family::Woodwinds);
+    assert_eq!(
+        InstrumentType::ALL.first().map(|t| t.family()),
+        Some(Family::Woodwinds)
+    );
+}
+
 /// The pitched records' researched values, written out independently of the data constants
 /// (TST-10). A row holds the id, the transposition, the sounding playable range, the sounding
 /// comfortable range (`-` when none is known), the written playable range in the record's first
