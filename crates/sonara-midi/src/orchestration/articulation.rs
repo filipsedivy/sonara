@@ -775,6 +775,17 @@ impl Mute {
             Self::Xylophonic => Some(Articulation::Xylophonic),
         }
     }
+
+    /// Whether the mute is a device the player puts on and takes off, which takes time: a mute of
+    /// no named type, a cup, harmon, plunger or bucket mute. A hand stopping a horn, resting on a
+    /// string or damping a harp string is not one, and neither is [`Mute::Open`].
+    #[must_use]
+    pub const fn is_device(self) -> bool {
+        matches!(
+            self,
+            Self::Generic | Self::Cup | Self::Harmon | Self::Plunger | Self::Bucket
+        )
+    }
 }
 
 /// The vibrato of a passage. [`Vibrato::Ordinary`], the default, leaves vibrato to the player or

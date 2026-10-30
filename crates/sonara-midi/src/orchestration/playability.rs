@@ -10,7 +10,7 @@
 //! A source often measures a duration in bars of moderate time. Such a [`Span`] keeps the source's
 //! unit, and [`MODERATO_BPM`], one estimate, converts it to time.
 
-use super::articulation::{Articulation, Axis, Mute};
+use super::articulation::{Articulation, Axis};
 use super::id::InstrumentType;
 use super::instrument::{Family, Provenance};
 
@@ -255,10 +255,10 @@ const fn names(letters: &[LetterName], letter: LetterName) -> bool {
 /// Whether `articulation` names a mute the player puts on and takes off: a device, not a hand
 /// stopping a horn, resting on a string or damping a harp string.
 const fn is_mute_device(articulation: Articulation) -> bool {
-    matches!(
-        articulation.axis(),
-        Axis::Mute(Mute::Generic | Mute::Cup | Mute::Harmon | Mute::Plunger | Mute::Bucket)
-    )
+    match articulation.axis() {
+        Axis::Mute(mute) => mute.is_device(),
+        Axis::Primary | Axis::Vibrato(_) => false,
+    }
 }
 
 #[cfg(test)]

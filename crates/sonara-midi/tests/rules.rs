@@ -2,6 +2,14 @@
 
 use sonara_midi::orchestration::Provenance;
 use sonara_midi::orchestration::rules::{
+    ALL_PERCUSSION, BASS_SPACING, CHARACTERISTIC_COLOUR_SHARE, DOUBLE_BASS_PIZZICATO, DynamicBand,
+    FEWEST_FIRST_VIOLINS, FLUTE_LOW_NOTES, LOUD_BRASS_PHRASE, LOUD_DIVISI, LOW_DISSONANCE, Level,
+    MANY_NOTE_SLUR, MELODY_MARGIN, MIDDLE_GAP, PIZZICATO_SPEED, RAPID_LEAP, RULES, RUN_NOTES, Rule,
+    RuleError, RuleGroup, RuleId, RuleInput, RuleSpec, SHORT_CHORD, SINGLE_TONGUING, SOFT_SLUR,
+    SOLO_STRING_ACCOMPANIMENT, SUSTAINED_HIGH_BRASS, Severity, UNDOUBLED_HIGH_MELODY,
+    UNDOUBLED_LOW_MELODY, UNRESTING_BARS, WEAK_CHORD_MEMBER, WIND_PHRASE, WIND_REST,
+};
+use sonara_midi::orchestration::rules::{
     Applies, Combination, DYNAMIC_STEP, HEAVY_PERCUSSION, IntervalLimit, IntervalLimits,
     LOW_INTERVAL_LIMITS, Limit, MASKING_ACCOMPANIMENT, REGISTER_FACTORS, RegisterBand,
     RegisterFactor, STRONG_REGISTER, WEAK_REGISTER, WEIGHTS, WeightRow, register_factor,
@@ -10,13 +18,6 @@ use sonara_midi::orchestration::rules::{
 use sonara_midi::orchestration::rules::{
     Avoid, CARRIERS, Carriers, DO_NOT_DOUBLE, Forces, Member, NAMED_DOUBLINGS, NamedDoubling,
     Playing, Prevails, Role, Selector, Spacing, WOODWIND_ORDER, WoodwindOrder, carriers,
-};
-use sonara_midi::orchestration::rules::{
-    BASS_SPACING, CHARACTERISTIC_COLOUR_SHARE, DynamicBand, FEWEST_FIRST_VIOLINS, LOUD_DIVISI,
-    LOW_DISSONANCE, Level, MANY_NOTE_SLUR, MELODY_MARGIN, MIDDLE_GAP, RULES, Rule, RuleError,
-    RuleGroup, RuleId, RuleInput, RuleSpec, SOFT_SLUR, SOLO_STRING_ACCOMPANIMENT,
-    SUSTAINED_HIGH_BRASS, Severity, UNDOUBLED_HIGH_MELODY, UNDOUBLED_LOW_MELODY, WEAK_CHORD_MEMBER,
-    WIND_PHRASE,
 };
 use sonara_midi::orchestration::{
     Articulation, Family, InstrumentType, MODERATO_BPM, PitchModel, PitchRange, PlayerRange,
@@ -238,11 +239,22 @@ fn range_rules_grade_errors_and_warnings_as_range_checks_do() {
 #[test]
 fn rules_list_the_inputs_their_checks_name() {
     use RuleInput::{
-        Dynamic, Harmony, HarpPedals, Instrument, Part, RegisterFactors, TimpaniTuning, Weights,
+        Articulation, Dynamic, Harmony, HarpPedals, Instrument, Meter, Notes, Part,
+        RegisterFactors, Tempo, TimpaniTuning, Weights,
     };
-    // TST-10: the inputs the catalogue names for these rules.
-    let cases: [(RuleId, &[RuleInput]); 8] = [
+    // TST-10: the inputs the catalogue names for these rules, and what the checks that run on a
+    // project read besides: a dynamic for a loud or soft note, the tempo for a time, the metre
+    // for bars, the notes for when a change happens.
+    let cases: [(RuleId, &[RuleInput]); 16] = [
         (RuleId::Rng01, &[Instrument]),
+        (RuleId::Voi12, &[Notes, Dynamic, Tempo]),
+        (RuleId::Ply02, &[Notes, Dynamic, Tempo]),
+        (RuleId::Ply04, &[Notes, Part, Articulation, Tempo]),
+        (RuleId::Ply05, &[Notes, Articulation, Tempo]),
+        (RuleId::Ply06, &[Articulation, Tempo]),
+        (RuleId::Ply15, &[Tempo]),
+        (RuleId::Tex01, &[Meter]),
+        (RuleId::Tex02, &[Meter]),
         (RuleId::Spc04, &[Harmony, Dynamic]),
         (RuleId::Dbl05, &[Part]),
         (RuleId::Bal01, &[Weights, RegisterFactors, Dynamic, Harmony]),
@@ -313,14 +325,27 @@ fn thresholds() -> Vec<(&'static str, &'static [RuleId], String, Provenance)> {
         threshold!(WEAK_REGISTER, number),
         threshold!(STRONG_REGISTER, number),
         threshold!(MASKING_ACCOMPANIMENT, number),
+        threshold!(WIND_REST, span),
+        threshold!(FLUTE_LOW_NOTES, count),
+        threshold!(LOUD_BRASS_PHRASE, span),
+        threshold!(PIZZICATO_SPEED, span),
+        threshold!(DOUBLE_BASS_PIZZICATO, span),
+        threshold!(SINGLE_TONGUING, span),
+        threshold!(RAPID_LEAP, span),
+        threshold!(SHORT_CHORD, span),
+        threshold!(RUN_NOTES, count),
+        threshold!(ALL_PERCUSSION, count),
+        threshold!(UNRESTING_BARS, count),
     ]
 }
 
 #[test]
 fn thresholds_hold_the_catalogue_numbers() {
     // TST-10: the values and sources written from the catalogue: two bars of moderate 4/4 are
-    // eight beats, eight bars thirty-two; MIDI 90, 42 and D3 = 50; an octave is 12 semitones.
-    let expected: [(&str, &[RuleId], &str, bool); 19] = [
+    // eight beats, eight bars thirty-two; MIDI 90, 42 and D3 = 50; an octave is 12 semitones. A
+    // quaver at crotchet = 120 lasts 250 ms and a semiquaver 125 ms; a semiquaver at 140 lasts
+    // 60 000 / 560 = 107.1 ms.
+    let expected: [(&str, &[RuleId], &str, bool); 30] = [
         ("SUSTAINED_HIGH_BRASS", &[RuleId::Rng03], "8 beats", false),
         ("UNDOUBLED_HIGH_MELODY", &[RuleId::Rng04], "90", false),
         ("UNDOUBLED_LOW_MELODY", &[RuleId::Rng04], "42", false),
@@ -350,6 +375,35 @@ fn thresholds_hold_the_catalogue_numbers() {
         ),
         ("STRONG_REGISTER", &[RuleId::Voi06], "1.25", false),
         ("MASKING_ACCOMPANIMENT", &[RuleId::Msk03], "1", false),
+        (
+            "WIND_REST",
+            &[RuleId::Rng03, RuleId::Ply01, RuleId::Ply02],
+            "250 ms",
+            false,
+        ),
+        ("FLUTE_LOW_NOTES", &[RuleId::Ply01], "4", false),
+        ("LOUD_BRASS_PHRASE", &[RuleId::Ply02], "16 beats", false),
+        ("PIZZICATO_SPEED", &[RuleId::Ply06], "125 ms", false),
+        ("DOUBLE_BASS_PIZZICATO", &[RuleId::Ply06], "250 ms", false),
+        ("SINGLE_TONGUING", &[RuleId::Ply14], "107 ms", false),
+        ("RAPID_LEAP", &[RuleId::Ply15], "250 ms", false),
+        ("SHORT_CHORD", &[RuleId::Voi12], "250 ms", false),
+        (
+            "RUN_NOTES",
+            &[
+                RuleId::Dbl02,
+                RuleId::Dbl03,
+                RuleId::Dbl04,
+                RuleId::Dbl09,
+                RuleId::Ply02,
+                RuleId::Ply06,
+                RuleId::Ply14,
+            ],
+            "4",
+            false,
+        ),
+        ("ALL_PERCUSSION", &[RuleId::Tex02], "3", false),
+        ("UNRESTING_BARS", &[RuleId::Tex02], "8", false),
     ];
     let actual = thresholds();
     assert_eq!(actual.len(), expected.len());
@@ -407,6 +461,22 @@ fn check_texts_state_their_thresholds() {
         (RuleId::Msk03, "weight 1 or more"),
         (RuleId::Voi06, "factor 0.5 or less"),
         (RuleId::Voi06, "factor 1.25 or more"),
+        (RuleId::Rng03, "a quaver of moderate time"),
+        (RuleId::Ply01, "a quaver of moderate time"),
+        (RuleId::Ply01, "more than four notes"),
+        (RuleId::Ply02, "four bars of moderate 4/4"),
+        (RuleId::Ply02, "four or more repeated notes"),
+        (RuleId::Ply02, "a quaver of moderate time"),
+        (RuleId::Ply06, "four or more pizzicato notes"),
+        (RuleId::Ply06, "semiquavers at crotchet = 120"),
+        (RuleId::Ply06, "quavers at that tempo"),
+        (RuleId::Ply14, "four or more repeated notes"),
+        (RuleId::Ply14, "semiquavers at crotchet = 140"),
+        (RuleId::Ply14, "multi_tongue"),
+        (RuleId::Ply15, "a quaver of moderate time"),
+        (RuleId::Voi12, "a quaver of moderate time"),
+        (RuleId::Tex02, "three or more percussion parts"),
+        (RuleId::Tex02, "eight bars or more"),
     ];
     for (id, words) in cases {
         assert!(id.get().check().contains(words), "{}: {words}", id.code());
@@ -416,6 +486,11 @@ fn check_texts_state_their_thresholds() {
     assert_eq!(SOFT_SLUR.value, Span::ModerateBeats(4 * 4));
     assert_eq!(BASS_SPACING.value, 12);
     assert_eq!(MIDDLE_GAP.value, 12);
+    // A quaver at crotchet = 120, a semiquaver, and a semiquaver at 140 rounded down.
+    assert_eq!(WIND_REST.value, Span::Millis(60_000 / 120 / 2));
+    assert_eq!(PIZZICATO_SPEED.value, Span::Millis(60_000 / 120 / 4));
+    assert_eq!(SINGLE_TONGUING.value, Span::Millis(60_000 / (140 * 4)));
+    assert_eq!(LOUD_BRASS_PHRASE.value, Span::ModerateBeats(4 * 4));
 }
 
 fn spec() -> RuleSpec {

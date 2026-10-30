@@ -233,7 +233,9 @@ timbre modifier, mute, dynamic shape, keyboard control and vocal.
   `mute_plunger`, `mute_bucket`, `stopped`, `palm_mute`, `xylophonic`) and the two vibrato ids
   (`vibrato_on`, `non_vibrato`) name a `Mute` or a `Vibrato` that holds over a passage (`axis()`),
   not a note's primary articulation. `Mute::Open` and `Vibrato::Ordinary` are the defaults and have
-  no id.
+  no id. `Mute::is_device` tells the mutes a player puts on and takes off, which take time (no
+  named type, cup, harmon, plunger, bucket), from a hand stopping a horn, resting on a string or
+  damping a harp string.
 - **Refinements.** `parent()` names the general id that a specific one refines (`trill_half` →
   `trill`, `mute_cup` → `con_sordino`, `col_legno_battuto` → `col_legno`), so a library without the
   refinement can play the parent. The original ids refine nothing.
@@ -521,10 +523,18 @@ use it and its own provenance: `SUSTAINED_HIGH_BRASS` (two bars of moderate 4/4)
 `FEWEST_FIRST_VIOLINS` (8), `LOUD_DIVISI` (four ways), `WIND_PHRASE` (eight bars of moderate
 4/4), `SOFT_SLUR` and `MANY_NOTE_SLUR` (four and two bars of moderate time),
 `CHARACTERISTIC_COLOUR_SHARE` (more than half the bars), `DYNAMIC_STEP` (one marked step is a
-weight factor of 2), `WEAK_REGISTER` and `STRONG_REGISTER` (factors 0.5 and 1.25) and
-`MASKING_ACCOMPANIMENT` (a weight of 1). Most of them turn a source's words into
-a number and are estimates; a rule that compares with an estimated threshold is never stronger
-than a warning. Durations are `Span`s and convert at `MODERATO_BPM`, as the playability facts do.
+weight factor of 2), `WEAK_REGISTER` and `STRONG_REGISTER` (factors 0.5 and 1.25),
+`MASKING_ACCOMPANIMENT` (a weight of 1), `WIND_REST` (a quaver of moderate time, 250 ms, the
+shortest rest a wind part breathes in), `FLUTE_LOW_NOTES` (four notes in the flute's lowest
+register), `LOUD_BRASS_PHRASE` (four bars of moderate 4/4 loud or high), `PIZZICATO_SPEED` and
+`DOUBLE_BASS_PIZZICATO` (semiquavers and quavers at crotchet = 120, 125 and 250 ms),
+`SINGLE_TONGUING` (107 ms, semiquavers at crotchet = 140, the fastest single tonguing the
+Vienna Symphonic Library gives, for the oboe), `RAPID_LEAP` and `SHORT_CHORD` (a quaver of
+moderate time), `RUN_NOTES` (four notes in a row make a doubled line or a run), `ALL_PERCUSSION`
+(three percussion parts) and `UNRESTING_BARS` (eight bars). Most of them turn a source's words
+into a number and are estimates; a rule that compares with an estimated threshold is never
+stronger than a warning. Durations are `Span`s and convert at `MODERATO_BPM`, as the playability
+facts do.
 
 ## Fallbacks
 

@@ -102,7 +102,7 @@ const RNG_03: Rule = rule(
     RuleId::Rng03,
     "Sustained extreme high brass",
     "a brass part holds or repeats notes above its comfortable range for more than about two \
-        bars of moderate 4/4",
+        bars of moderate 4/4 with no rest of a quaver of moderate time between them",
     &[Instrument, Notes, Tempo],
     WARNING,
     Provenance::Cited {
@@ -797,14 +797,15 @@ const VOI_11: Rule = rule(
 const VOI_12: Rule = rule(
     RuleId::Voi12,
     "Sustained multi-stop string chords",
-    "one string part plays three or four notes at once, longer than a short chord or at p; only \
-        the upper two notes can be held",
-    &[Instrument, Notes],
+    "one string part plays three or four notes at once for longer than a quaver of moderate \
+        time, or at p; only the upper two notes can be held",
+    &[Instrument, Notes, Dynamic, Tempo],
     WARNING,
     Provenance::Cited {
         source: cite!(
             rimsky_korsakov: "Ch. III, String harmony, p. 69: chords of three or four notes can \
-                only be played rapidly on the strings; the two upper notes can be sustained",
+                only be played rapidly on the strings; the two upper notes can be sustained";
+            "the length of a rapid chord is an estimate"
         ),
     },
 );
@@ -814,9 +815,9 @@ const VOI_12: Rule = rule(
 const PLY_01: Rule = rule(
     RuleId::Ply01,
     "Wind breath",
-    "a wind part plays without a rest for longer than 8 bars of moderate 4/4; one held note \
-        outlasts the instrument's breath; the flute's lowest register runs more than a few notes \
-        without a breath",
+    "a wind part plays for longer than 8 bars of moderate 4/4 without a rest of a quaver of \
+        moderate time; one held note outlasts the instrument's breath; the flute's lowest register \
+        runs more than four notes without such a rest",
     &[Instrument, Notes, Tempo],
     WARNING,
     Provenance::Cited {
@@ -827,7 +828,7 @@ const PLY_01: Rule = rule(
             widor: "p. 127: a medium-register saxophone note cannot be held longer than about \
                 ten bars of moderate 4/4, about forty seconds being a soloist's maximum at piano",
             forsyth: "in the flute's lowest notes the player must breathe after every few notes";
-            "the phrase length is an estimate"
+            "the phrase length, the rest and the count of a few notes are estimates"
         ),
     },
 );
@@ -835,15 +836,19 @@ const PLY_01: Rule = rule(
 const PLY_02: Rule = rule(
     RuleId::Ply02,
     "Brass endurance",
-    "a brass part plays long loud or high passages with no rest, or repeated notes outside the \
-        middle register",
-    &[Instrument, Notes],
+    "a brass part plays loud notes or notes above its middle register for more than four bars \
+        of moderate 4/4 without a rest of a quaver of moderate time, or four or more repeated \
+        notes outside the middle register without such a rest; the middle register is the middle \
+        third of the comfortable range",
+    &[Instrument, Notes, Dynamic, Tempo],
     WARNING,
     Provenance::Cited {
         source: cite!(
             widor: "p. 198: the brass player's lips tire under the pressure of high notes",
             forsyth_second_scan: "p. 98: repeated trumpet notes are best placed in the middle \
                 register and broken up to give the player time to breathe",
+            vsl_academy_trumpet_c: "the trumpet's registers: low, middle and high";
+            "the length, the count, the rest and the registers in thirds are estimates"
         ),
     },
 );
@@ -869,7 +874,7 @@ const PLY_04: Rule = rule(
     "Mute change time",
     "a mute is put on with less free time than the instrument's mute change needs (about two bars \
         of moderate time for strings), or taken off with less than slightly under that",
-    &[Instrument, Part, Articulation, Tempo],
+    &[Instrument, Notes, Part, Articulation, Tempo],
     WARNING,
     Provenance::Cited {
         source: cite!(
@@ -883,7 +888,7 @@ const PLY_05: Rule = rule(
     RuleId::Ply05,
     "Pizzicato and arco switch",
     "a string part changes from pizzicato to arco with less than about half a second free",
-    &[Instrument, Articulation, Tempo],
+    &[Instrument, Notes, Articulation, Tempo],
     WARNING,
     Provenance::Cited {
         source: cite!(
@@ -896,14 +901,16 @@ const PLY_05: Rule = rule(
 const PLY_06: Rule = rule(
     RuleId::Ply06,
     "Pizzicato speed",
-    "a pizzicato passage is faster than it could be bowed, or a double-bass pizzicato is nearly \
-        as fast as a violin's",
-    &[Instrument, Articulation, Notes],
+    "four or more pizzicato notes follow each other faster than semiquavers at crotchet = 120, \
+        or on the double bass faster than quavers at that tempo: pizzicato is slower than bowed \
+        playing, and the double bass plucks much more slowly than the violin",
+    &[Instrument, Articulation, Notes, Tempo],
     HINT,
     Provenance::Cited {
         source: cite!(
             rimsky_korsakov: "Ch. I, Pizzicato, p. 27: pizzicato cannot be as rapid as bowed \
-                playing, and the double basses pluck much more slowly than the violins",
+                playing, and the double basses pluck much more slowly than the violins";
+            "the speeds and the count are estimates"
         ),
     },
 );
@@ -1031,16 +1038,19 @@ const PLY_13: Rule = rule(
 const PLY_14: Rule = rule(
     RuleId::Ply14,
     "Fast repeated notes and tonguing",
-    "fast repeated notes need double tonguing on an oboe, clarinet or bassoon, where only the \
-        flute double-tongues among the woodwinds, or on a low brass instrument, where only \
-        trumpets and cornets do among the brass",
+    "four or more repeated notes follow each other faster than semiquavers at crotchet = 140, \
+        which needs multiple tonguing, on a woodwind or brass instrument whose articulations do \
+        not include it (`multi_tongue`), such as an oboe, a bassoon, a trombone or a tuba",
     &[Instrument, Notes, Tempo],
     HINT,
     Provenance::Cited {
         source: cite!(
             rimsky_korsakov: "Ch. I, p. 18: repetition of a single note by double tonguing is \
                 only possible on the flute among the wood-wind; Ch. I, brass remarks, p. 25: \
-                double tonguing among the brass",
+                double tonguing among the brass";
+            "which instruments multi-tongue comes from their articulations, which follow later \
+                sources: the flutes, the clarinets, the horns and the trumpets do; the speed and \
+                the count are estimates"
         ),
     },
 );
@@ -1048,14 +1058,16 @@ const PLY_14: Rule = rule(
 const PLY_15: Rule = rule(
     RuleId::Ply15,
     "Clarinet octave leaps",
-    "a clarinet leaps rapidly between octaves",
-    &[Instrument, Notes],
+    "a clarinet leaps an octave or more between two notes that start less than a quaver of \
+        moderate time apart",
+    &[Instrument, Notes, Tempo],
     HINT,
     Provenance::Cited {
         source: cite!(
             rimsky_korsakov: "Ch. I, p. 18: on account of its construction the clarinet is not \
                 well adapted to sudden leaps from one octave to another; these skips are easier \
-                on flutes, oboes and bassoons",
+                on flutes, oboes and bassoons";
+            "the speed is an estimate"
         ),
     },
 );
@@ -1066,7 +1078,7 @@ const TEX_01: Rule = rule(
     RuleId::Tex01,
     "Characteristic colours overused",
     "a celesta, glockenspiel, xylophone, castanets or piano sounds in most bars of a piece",
-    &[Instrument, Notes],
+    &[Instrument, Notes, Meter],
     HINT,
     Provenance::Cited {
         source: cite!(
@@ -1081,15 +1093,17 @@ const TEX_01: Rule = rule(
 const TEX_02: Rule = rule(
     RuleId::Tex02,
     "Percussion all together, or never resting",
-    "all the percussion plays at once, or the brass and percussion never rest",
-    &[Instrument, Notes],
+    "three or more percussion parts play at once, all the percussion there is, or the brass \
+        and the percussion both sound in every bar of a piece of eight bars or more",
+    &[Instrument, Notes, Meter],
     HINT,
     Provenance::Cited {
         source: cite!(
             rimsky_korsakov: "Ch. IV, Economy in orchestral colour, p. 118: the percussion is \
                 seldom employed, and practically never all together; the trombones, trumpets and \
                 tuba are occasionally tacet for long periods, and a silent group gains fresh \
-                interest on its return",
+                interest on its return";
+            "the counts are estimates"
         ),
     },
 );
@@ -1389,6 +1403,183 @@ pub const CHARACTERISTIC_COLOUR_SHARE: Threshold<f32> = Threshold {
             rimsky_korsakov,
             ") Ch. IV, p. 118, warns against employing such colours over frequently and gives no \
                 share; most bars, read as more than half",
+        ),
+    },
+};
+
+/// RNG-03, PLY-01 and PLY-02: the shortest silence that counts as a rest for a wind or brass
+/// player, a quaver of moderate time; shorter gaps, such as the space between detached notes, do
+/// not.
+pub const WIND_REST: Threshold<Span> = Threshold {
+    rules: &[RuleId::Rng03, RuleId::Ply01, RuleId::Ply02],
+    value: Span::Millis(250),
+    provenance: Provenance::Estimate {
+        reason: reason!(
+            "Rimsky-Korsakov (",
+            rimsky_korsakov,
+            ") Ch. I, p. 19, asks for a little rest from time to time and Forsyth (",
+            forsyth_second_scan,
+            ") p. 98 for repeated trumpet notes broken up to breathe, but neither times the rest; \
+                a quaver of moderate time, the shortest rest a part commonly breathes in",
+        ),
+    },
+};
+
+/// PLY-01: the most notes in a row the flute plays in its lowest register without a rest.
+pub const FLUTE_LOW_NOTES: Threshold<u8> = Threshold {
+    rules: &[RuleId::Ply01],
+    value: 4,
+    provenance: Provenance::Estimate {
+        reason: reason!(
+            "Forsyth (",
+            forsyth,
+            ") says the player must breathe after every few notes in the flute's lowest notes; a \
+                few, read as four",
+        ),
+    },
+};
+
+/// PLY-02: how long a brass part may play loud or high notes without a rest, four bars of
+/// moderate 4/4.
+pub const LOUD_BRASS_PHRASE: Threshold<Span> = Threshold {
+    rules: &[RuleId::Ply02],
+    value: Span::ModerateBeats(16),
+    provenance: Provenance::Estimate {
+        reason: reason!(
+            "Widor (",
+            widor,
+            ") p. 70 halves the trumpet's breath at forte and p. 198 warns that high notes tire \
+                the lips, but gives no length; half the wind phrase",
+        ),
+    },
+};
+
+/// PLY-06: the shortest time between two pizzicato notes on the violin, viola or cello,
+/// semiquavers at crotchet = 120.
+pub const PIZZICATO_SPEED: Threshold<Span> = Threshold {
+    rules: &[RuleId::Ply06],
+    value: Span::Millis(125),
+    provenance: Provenance::Estimate {
+        reason: reason!(
+            "Rimsky-Korsakov (",
+            rimsky_korsakov,
+            ") Ch. I, p. 27, says pizzicato cannot be as rapid as bowed playing and gives no \
+                speed; semiquavers at crotchet = 120",
+        ),
+    },
+};
+
+/// PLY-06: the shortest time between two pizzicato notes on the double bass, quavers at
+/// crotchet = 120.
+pub const DOUBLE_BASS_PIZZICATO: Threshold<Span> = Threshold {
+    rules: &[RuleId::Ply06],
+    value: Span::Millis(250),
+    provenance: Provenance::Estimate {
+        reason: reason!(
+            "Rimsky-Korsakov (",
+            rimsky_korsakov,
+            ") Ch. I, p. 27, says the double basses pluck much more slowly than the violins and \
+                gives no speed; half the violin's",
+        ),
+    },
+};
+
+/// PLY-14: the shortest time between two repeated notes that single tonguing plays,
+/// semiquavers at crotchet = 140; faster repetition needs multiple tonguing.
+pub const SINGLE_TONGUING: Threshold<Span> = Threshold {
+    rules: &[RuleId::Ply14],
+    value: Span::Millis(107),
+    provenance: Provenance::Estimate {
+        reason: reason!(
+            "the Vienna Symphonic Library gives single tonguing on the oboe up to about \
+                crotchet = 140 in semiquavers (",
+            vsl_academy_oboe,
+            ") and on the tenor trombone up to 120 (",
+            vsl_academy_tenor_trombone,
+            "); the faster of the two, 60 000 / (140 x 4) ms, rounded down",
+        ),
+    },
+};
+
+/// PLY-15: the clarinet leaps between notes that start closer than this, a quaver of moderate
+/// time, are rapid.
+pub const RAPID_LEAP: Threshold<Span> = Threshold {
+    rules: &[RuleId::Ply15],
+    value: Span::Millis(250),
+    provenance: Provenance::Estimate {
+        reason: reason!(
+            "Rimsky-Korsakov (",
+            rimsky_korsakov,
+            ") Ch. I, p. 18, calls the clarinet ill adapted to sudden leaps between octaves and \
+                gives no speed; a quaver of moderate time",
+        ),
+    },
+};
+
+/// VOI-12: the longest a string chord of three or four notes lasts when it is played rapidly, a
+/// quaver of moderate time.
+pub const SHORT_CHORD: Threshold<Span> = Threshold {
+    rules: &[RuleId::Voi12],
+    value: Span::Millis(250),
+    provenance: Provenance::Estimate {
+        reason: reason!(
+            "Rimsky-Korsakov (",
+            rimsky_korsakov,
+            ") Ch. III, p. 69, says such chords can only be played rapidly and gives no length; a \
+                quaver of moderate time",
+        ),
+    },
+};
+
+/// The fewest notes in a row that make a doubled line, a run of pizzicato or tongued notes, or a
+/// run of repeated notes: four, a beat of semiquavers.
+pub const RUN_NOTES: Threshold<u8> = Threshold {
+    rules: &[
+        RuleId::Dbl02,
+        RuleId::Dbl03,
+        RuleId::Dbl04,
+        RuleId::Dbl09,
+        RuleId::Ply02,
+        RuleId::Ply06,
+        RuleId::Ply14,
+    ],
+    value: 4,
+    provenance: Provenance::Estimate {
+        reason: reason!(
+            "Rimsky-Korsakov (",
+            rimsky_korsakov,
+            ") speaks of lines doubled, passages and repeated notes without counting their notes; \
+                four notes, a beat of semiquavers",
+        ),
+    },
+};
+
+/// TEX-02: the fewest percussion parts whose playing all at once is worth a finding.
+pub const ALL_PERCUSSION: Threshold<u8> = Threshold {
+    rules: &[RuleId::Tex02],
+    value: 3,
+    provenance: Provenance::Estimate {
+        reason: reason!(
+            "Rimsky-Korsakov (",
+            rimsky_korsakov,
+            ") Ch. IV, p. 118, says the percussion is practically never employed all together; two \
+                parts striking together, such as the timpani and the bass drum, are ordinary",
+        ),
+    },
+};
+
+/// TEX-02: the fewest bars of a piece in which brass and percussion that never rest are worth a
+/// finding.
+pub const UNRESTING_BARS: Threshold<u8> = Threshold {
+    rules: &[RuleId::Tex02],
+    value: 8,
+    provenance: Provenance::Estimate {
+        reason: reason!(
+            "Rimsky-Korsakov (",
+            rimsky_korsakov,
+            ") Ch. IV, p. 118, says the brass are occasionally tacet for long periods and gives \
+                no length; eight bars, a period, below which a group playing throughout is \
+                ordinary",
         ),
     },
 };
