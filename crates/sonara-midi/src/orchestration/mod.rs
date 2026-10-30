@@ -12,7 +12,10 @@ mod id;
 mod instrument;
 mod pitch;
 
-pub use articulation::{Articulation, ArticulationAvailability, Axis, Kind, Mute, Vibrato};
+pub use articulation::{
+    Articulation, ArticulationAvailability, Axis, Kind, Mute, Request, RequestAvailability,
+    RequestError, Vibrato,
+};
 pub use data::INSTRUMENTS;
 pub use ensemble_profile::{EnsembleProfile, Era, EraPlayers, Forms, PlayerRange};
 pub use id::InstrumentType;

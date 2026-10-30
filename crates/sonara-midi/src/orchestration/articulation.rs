@@ -19,6 +19,8 @@
 //!
 //! [`Articulation::ALL`] is append-only: ids are never removed, renamed or moved.
 
+use thiserror::Error;
+
 use super::id::{is_snake_case, same_text};
 
 /// A general musical articulation.
@@ -851,6 +853,95 @@ pub enum ArticulationAvailability {
     NotIdiomatic,
     /// The identifier is not in the vocabulary.
     UnknownArticulation,
+}
+
+/// What a passage asks of an instrument: at most one primary articulation per note, played under
+/// a mute and a vibrato that hold over the passage.
+///
+/// A primary of `None` is the instrument's ordinary sound, ordinario. The fields are private so
+/// that a request never holds a passage state as its primary: [`Request::new`] rejects a mute id
+/// (`con_sordino`, `mute_cup`, …) or a vibrato id (`vibrato_on`, `non_vibrato`) there, because
+/// those are the [`Mute`] and [`Vibrato`] of the request (PRI-04). The default request is the
+/// ordinary sound, open, with the ordinary vibrato.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub struct Request {
+    primary: Option<Articulation>,
+    mute: Mute,
+    vibrato: Vibrato,
+}
+
+impl Request {
+    /// A request for `primary` (`None` for the ordinary sound) under `mute` and `vibrato`.
+    ///
+    /// # Errors
+    /// [`RequestError::NotPrimary`] when `primary` is an id whose [`Articulation::axis`] is not
+    /// [`Axis::Primary`]: a mute or vibrato id, which a request states as its `mute` or `vibrato`
+    /// instead.
+    pub const fn new(
+        primary: Option<Articulation>,
+        mute: Mute,
+        vibrato: Vibrato,
+    ) -> Result<Self, RequestError> {
+        if let Some(articulation) = primary
+            && !matches!(articulation.axis(), Axis::Primary)
+        {
+            return Err(RequestError::NotPrimary(articulation));
+        }
+        Ok(Self {
+            primary,
+            mute,
+            vibrato,
+        })
+    }
+
+    /// The note's articulation, or `None` for the ordinary sound. Never a mute or vibrato id.
+    #[must_use]
+    pub const fn primary(self) -> Option<Articulation> {
+        self.primary
+    }
+
+    /// The mute the passage is played with.
+    #[must_use]
+    pub const fn mute(self) -> Mute {
+        self.mute
+    }
+
+    /// The vibrato the passage is played with.
+    #[must_use]
+    pub const fn vibrato(self) -> Vibrato {
+        self.vibrato
+    }
+}
+
+/// Why a [`Request`] cannot be built.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Error)]
+pub enum RequestError {
+    /// The primary articulation names a passage state, a mute or a vibrato, not a note's own
+    /// articulation.
+    #[error(
+        "articulation `{}` names a passage state, not a note's primary articulation",
+        .0.id()
+    )]
+    NotPrimary(Articulation),
+}
+
+/// Whether an instrument can play each part of a [`Request`], as far as is known
+/// ([`Instrument::request_availability`](super::Instrument::request_availability)).
+///
+/// Each field answers for the id of its part as [`ArticulationAvailability`] does for a single
+/// id. A part at its default, which has no id (the ordinary sound, [`Mute::Open`],
+/// [`Vibrato::Ordinary`]), is [`ArticulationAvailability::Supported`]: playing it needs no
+/// library declaration. A request holds only ids of the vocabulary, so no field is
+/// [`ArticulationAvailability::UnknownArticulation`]. Whether a library recorded the parts
+/// together, such as a muted staccato, is not answered here.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RequestAvailability {
+    /// The availability of the primary articulation.
+    pub primary: ArticulationAvailability,
+    /// The availability of the mute.
+    pub mute: ArticulationAvailability,
+    /// The availability of the vibrato.
+    pub vibrato: ArticulationAvailability,
 }
 
 #[cfg(test)]

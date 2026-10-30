@@ -4,8 +4,8 @@ use sonara_midi::orchestration::{
     Articulation, ArticulationAvailability, Axis, CheckError, Clef, EnsembleProfile, Era,
     EraPlayers, Family, Forms, INSTRUMENTS, Instrument, InstrumentError, InstrumentSpec,
     InstrumentType, Kind, Mute, PitchModel, PitchRange, Pitched, PlayerRange, Provenance,
-    RangeCheck, SoundingPitch, SourcedRange, Transposition, Vibrato, WrittenPitch, instrument,
-    instruments,
+    RangeCheck, Request, RequestAvailability, RequestError, SoundingPitch, SourcedRange,
+    Transposition, Vibrato, WrittenPitch, instrument, instruments,
 };
 
 const ESTIMATE: Provenance = Provenance::Estimate {
@@ -1421,6 +1421,199 @@ fn articulation_availability_needs_a_library_declaration_for_support() {
         get("flute").articulation_availability("col_legno", &[]),
         ArticulationAvailability::NotIdiomatic
     );
+}
+
+/// A request holds one primary articulation and the two passage states; a mute or vibrato id is
+/// never its primary (PRI-04, TST-03).
+#[test]
+fn requests_reject_a_passage_state_as_the_primary() {
+    let request = Request::new(Some(Articulation::Pizzicato), Mute::Generic, Vibrato::Off)
+        .expect("pizzicato is a primary articulation");
+    assert_eq!(request.primary(), Some(Articulation::Pizzicato));
+    assert_eq!(request.mute(), Mute::Generic);
+    assert_eq!(request.vibrato(), Vibrato::Off);
+    // No primary is the ordinary sound; the default request is ordinario, open, ordinary vibrato.
+    let ordinario = Request::new(None, Mute::Open, Vibrato::Ordinary).expect("no primary");
+    assert_eq!(ordinario, Request::default());
+    assert_eq!(
+        (ordinario.primary(), ordinario.mute(), ordinario.vibrato()),
+        (None, Mute::Open, Vibrato::Ordinary)
+    );
+    // A state id is rejected even when the request also states that state.
+    assert_eq!(
+        Request::new(
+            Some(Articulation::ConSordino),
+            Mute::Open,
+            Vibrato::Ordinary
+        ),
+        Err(RequestError::NotPrimary(Articulation::ConSordino))
+    );
+    assert_eq!(
+        Request::new(Some(Articulation::VibratoOn), Mute::Open, Vibrato::On),
+        Err(RequestError::NotPrimary(Articulation::VibratoOn))
+    );
+    assert_eq!(
+        RequestError::NotPrimary(Articulation::MuteCup).to_string(),
+        "articulation `mute_cup` names a passage state, not a note's primary articulation"
+    );
+    // Exactly the eight mute ids and the two vibrato ids are rejected, in vocabulary order.
+    let rejected: Vec<&str> = Articulation::ALL
+        .into_iter()
+        .filter(|&articulation| {
+            Request::new(Some(articulation), Mute::Open, Vibrato::Ordinary).is_err()
+        })
+        .map(Articulation::id)
+        .collect();
+    assert_eq!(
+        rejected,
+        [
+            "con_sordino",
+            "non_vibrato",
+            "palm_mute",
+            "stopped",
+            "vibrato_on",
+            "xylophonic",
+            "mute_bucket",
+            "mute_cup",
+            "mute_harmon",
+            "mute_plunger",
+        ]
+    );
+    // Every other id combines with every mute and every vibrato, and the request keeps them.
+    for primary in Articulation::ALL {
+        for mute in Mute::ALL {
+            for vibrato in Vibrato::ALL {
+                let built = Request::new(Some(primary), mute, vibrato);
+                if rejected.contains(&primary.id()) {
+                    assert_eq!(built, Err(RequestError::NotPrimary(primary)));
+                } else {
+                    let request = built.expect("a primary articulation");
+                    assert_eq!(
+                        (request.primary(), request.mute(), request.vibrato()),
+                        (Some(primary), mute, vibrato)
+                    );
+                }
+            }
+        }
+    }
+}
+
+/// Each part of a request is answered on its own, as a single id would be: only a library
+/// declaration makes a stated part supported, and a part at its default needs none.
+#[test]
+fn request_availability_answers_each_part() {
+    use ArticulationAvailability::{IdiomaticUnverified, NotIdiomatic, Supported};
+    let request = |primary, mute, vibrato| {
+        Request::new(primary, mute, vibrato).expect("the primary is a primary articulation")
+    };
+    let each = |primary, mute, vibrato| RequestAvailability {
+        primary,
+        mute,
+        vibrato,
+    };
+    let trumpet = get("trumpet_c");
+    assert_eq!(
+        trumpet.request_availability(
+            request(Some(Articulation::Sustain), Mute::Cup, Vibrato::Off),
+            &["sustain", "mute_cup", "non_vibrato"],
+        ),
+        each(Supported, Supported, Supported)
+    );
+    // The C trumpet plays staccato, the harmon mute and vibrato, but the library declared none.
+    assert_eq!(
+        trumpet.request_availability(
+            request(Some(Articulation::Staccato), Mute::Harmon, Vibrato::On),
+            &["sustain", "mute_cup"],
+        ),
+        each(
+            IdiomaticUnverified,
+            IdiomaticUnverified,
+            IdiomaticUnverified
+        )
+    );
+    // The horn is stopped, but its record has no vibrato id.
+    assert_eq!(
+        get("horn_f").request_availability(
+            request(Some(Articulation::Sustain), Mute::Stopped, Vibrato::On),
+            &["sustain"],
+        ),
+        each(Supported, IdiomaticUnverified, NotIdiomatic)
+    );
+    // A declared general mute does not answer for a specific one: falling back from the cup mute
+    // to `con_sordino` is a substitution, not availability.
+    assert_eq!(
+        get("violin").request_availability(
+            request(Some(Articulation::Pizzicato), Mute::Cup, Vibrato::Ordinary),
+            &["pizzicato", "con_sordino"],
+        ),
+        each(Supported, NotIdiomatic, Supported)
+    );
+    // A declaration counts even where the instrument does not normally play the id.
+    assert_eq!(
+        get("flute")
+            .request_availability(request(None, Mute::Cup, Vibrato::Ordinary), &["mute_cup"]),
+        each(Supported, Supported, Supported)
+    );
+    // The ordinary sound, open, with the ordinary vibrato, needs no declaration on any record.
+    for instrument in instruments() {
+        assert_eq!(
+            instrument.request_availability(Request::default(), &[]),
+            each(Supported, Supported, Supported),
+            "{}",
+            instrument.id()
+        );
+    }
+}
+
+/// Over every record and every part value, each part of a request answers as
+/// `articulation_availability` answers for the part's id, and never `UnknownArticulation`.
+#[test]
+fn request_availability_agrees_with_the_availability_of_each_id() {
+    let declared = [
+        "pizzicato",
+        "roll",
+        "con_sordino",
+        "mute_harmon",
+        "vibrato_on",
+    ];
+    let single = |instrument: &Instrument, articulation: Option<Articulation>| {
+        articulation.map_or(ArticulationAvailability::Supported, |articulation| {
+            instrument.articulation_availability(articulation.id(), &declared)
+        })
+    };
+    for instrument in instruments() {
+        let id = instrument.id();
+        for primary in Articulation::ALL {
+            let Ok(request) = Request::new(Some(primary), Mute::Open, Vibrato::Ordinary) else {
+                continue;
+            };
+            let answer = instrument.request_availability(request, &declared);
+            assert_eq!(answer.primary, single(instrument, Some(primary)), "{id}");
+            assert_ne!(
+                answer.primary,
+                ArticulationAvailability::UnknownArticulation
+            );
+        }
+        for mute in Mute::ALL {
+            let request = Request::new(None, mute, Vibrato::Ordinary).expect("no primary");
+            let answer = instrument.request_availability(request, &declared);
+            assert_eq!(answer.mute, single(instrument, mute.articulation()), "{id}");
+            assert_ne!(answer.mute, ArticulationAvailability::UnknownArticulation);
+        }
+        for vibrato in Vibrato::ALL {
+            let request = Request::new(None, Mute::Open, vibrato).expect("no primary");
+            let answer = instrument.request_availability(request, &declared);
+            assert_eq!(
+                answer.vibrato,
+                single(instrument, vibrato.articulation()),
+                "{id}"
+            );
+            assert_ne!(
+                answer.vibrato,
+                ArticulationAvailability::UnknownArticulation
+            );
+        }
+    }
 }
 
 /// The articulation vocabulary in its frozen order (TST-05). A choice list built from

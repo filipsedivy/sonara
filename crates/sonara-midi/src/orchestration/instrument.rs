@@ -2,7 +2,7 @@
 
 use thiserror::Error;
 
-use super::articulation::{Articulation, ArticulationAvailability};
+use super::articulation::{Articulation, ArticulationAvailability, Request, RequestAvailability};
 use super::ensemble_profile::{EnsembleProfile, Era};
 use super::id::InstrumentType;
 use super::pitch::{Clef, PitchRange, SoundingPitch, Transposition, WrittenPitch};
@@ -450,10 +450,42 @@ impl Instrument {
         id: &str,
         library_declared: &[&str],
     ) -> ArticulationAvailability {
-        let Some(articulation) = Articulation::from_id(id) else {
-            return ArticulationAvailability::UnknownArticulation;
+        match Articulation::from_id(id) {
+            Some(articulation) => self.availability(articulation, library_declared),
+            None => ArticulationAvailability::UnknownArticulation,
+        }
+    }
+
+    /// Whether the instrument can play each part of `request`: its primary articulation, its
+    /// mute and its vibrato, each answered for its id as [`Instrument::articulation_availability`]
+    /// answers. `library_declared` holds the articulation ids a sample library declared for the
+    /// instrument (empty when none or unverified). A part at its default has no id and is
+    /// [`ArticulationAvailability::Supported`] (see [`RequestAvailability`]).
+    #[must_use]
+    pub fn request_availability(
+        &self,
+        request: Request,
+        library_declared: &[&str],
+    ) -> RequestAvailability {
+        let part = |articulation: Option<Articulation>| match articulation {
+            Some(articulation) => self.availability(articulation, library_declared),
+            None => ArticulationAvailability::Supported,
         };
-        if library_declared.contains(&id) {
+        RequestAvailability {
+            primary: part(request.primary()),
+            mute: part(request.mute().articulation()),
+            vibrato: part(request.vibrato().articulation()),
+        }
+    }
+
+    /// The availability of an articulation of the vocabulary: `Supported` when the library
+    /// declared its id, else whether the instrument idiomatically plays it.
+    fn availability(
+        &self,
+        articulation: Articulation,
+        library_declared: &[&str],
+    ) -> ArticulationAvailability {
+        if library_declared.contains(&articulation.id()) {
             ArticulationAvailability::Supported
         } else if self.spec.articulations.contains(&articulation) {
             ArticulationAvailability::IdiomaticUnverified

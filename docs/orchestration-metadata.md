@@ -134,6 +134,15 @@ joins the records when it is appended to the vocabulary.
 - `IdiomaticUnverified` when the instrument plays it but nothing confirms the library does;
 - `NotIdiomatic`; `UnknownArticulation` for an id outside the vocabulary.
 
+A `Request` states what a passage asks for: one primary articulation (`None` for the ordinary
+sound), a `Mute` and a `Vibrato`. `Request::new` rejects a mute or vibrato id as the primary
+(`RequestError::NotPrimary`), so those always travel as states; `Request::default()` is the
+ordinary sound, open, with the ordinary vibrato. `request_availability(request, library_declared)`
+answers each of the three parts on its own, as `articulation_availability` answers for the part's
+id; a part at its default has no id and is `Supported`. A declared `con_sordino` does not answer
+for a requested cup mute: playing the general mute instead is a substitution, not availability.
+Whether a library recorded the parts together, such as a muted staccato, is not modelled here.
+
 How a library produces an articulation (patch, key switch, controller, note length) is not
 modelled.
 
