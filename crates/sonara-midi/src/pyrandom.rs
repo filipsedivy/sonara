@@ -6,6 +6,10 @@
 //! the absolute seed split into 32-bit words (least significant first), a 53-bit `random()`,
 //! `getrandbits`, the rejection loop of `_randbelow`, `randint`, `choice`, `uniform` and the
 //! Box-Muller `gauss` with its cached second value.
+//!
+//! [`PyRandom::with_key`] seeds the same generator from a whole key array, for streams the
+//! prototype never drew, such as one per part of a performance; [`PyRandom::new`] and its recorded
+//! streams stay as they are (GLD-01).
 
 use rand_mt::Mt;
 
@@ -38,6 +42,23 @@ impl PyRandom {
         };
         Self {
             mt,
+            gauss_next: None,
+        }
+    }
+
+    /// A generator seeded with the key array `key`, through MT19937's `init_by_array` as
+    /// [`PyRandom::new`] seeds it, but with every word of `key` kept.
+    ///
+    /// The stream equals `CPython`'s `random.Random(n)` for the integer `n` whose 32-bit words,
+    /// least significant first, are `key`, when the last word is not zero: `with_key(&[w])` is
+    /// `new(w)`, and `with_key(&[low, high])` is `new(high * 2**32 + low)`. Unlike `new`, a zero
+    /// last word is kept, so `[5, 0]` and `[5]` give different streams, which no integer seed of
+    /// `CPython` reaches. Only the first 624 words (the size of the generator's state) take part,
+    /// as in `rand_mt`'s key seeding; an empty key is allowed and gives one fixed stream.
+    #[must_use]
+    pub fn with_key(key: &[u32]) -> Self {
+        Self {
+            mt: Mt::new_with_key(key.iter().copied()),
             gauss_next: None,
         }
     }
@@ -160,6 +181,76 @@ mod tests {
         assert_eq!(
             PyRandom::new((1 << 40) + 12345).random(),
             0.310_362_222_412_872_26
+        );
+    }
+
+    #[test]
+    fn with_key_of_the_words_new_uses_gives_the_same_stream() {
+        // `new` seeds through the absolute seed's words, so the same words as a key reproduce
+        // its golden streams (GLD-01).
+        let draws = |mut r: PyRandom| -> Vec<f64> { (0..4).map(|_| r.random()).collect() };
+        assert_eq!(PyRandom::with_key(&[42]).random(), 0.639_426_798_457_883_7);
+        assert_eq!(PyRandom::with_key(&[0]).random(), 0.844_421_851_525_048_1);
+        assert_eq!(
+            PyRandom::with_key(&[7, 1]).random(),
+            0.225_508_889_298_931_87
+        );
+        assert_eq!(
+            PyRandom::with_key(&[12_345, 256]).random(),
+            0.310_362_222_412_872_26
+        );
+        for seed in [0, 5, 42, 3, (1 << 32) + 7, (1 << 40) + 12_345] {
+            let bytes = u64::try_from(seed).expect("non-negative").to_le_bytes();
+            let low = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+            let high = u32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]);
+            let key = if high == 0 {
+                vec![low]
+            } else {
+                vec![low, high]
+            };
+            assert_eq!(
+                draws(PyRandom::with_key(&key)),
+                draws(PyRandom::new(seed)),
+                "{seed}"
+            );
+        }
+    }
+
+    #[test]
+    fn with_key_matches_cpython_for_longer_keys() {
+        // `random.Random(1 + (2 << 32) + (3 << 64))` in `CPython`: an integer seed of three words.
+        let mut r = PyRandom::with_key(&[1, 2, 3]);
+        assert_eq!(r.random(), 0.609_861_272_286_728_9);
+        assert_eq!(r.random(), 0.886_697_043_414_685_1);
+        assert_eq!(r.random(), 0.476_336_737_506_627_64);
+    }
+
+    #[test]
+    fn with_key_keeps_a_zero_last_word() {
+        // No integer seed of `CPython` gives the key `[5, 0]`. The values come from the reference
+        // `init_by_array` and `genrand_int32` of `mt19937ar.c` (Matsumoto and Nishimura), whose
+        // port reproduces every `CPython` value above.
+        let mut r = PyRandom::with_key(&[5, 0]);
+        assert_eq!(r.random(), 0.547_148_763_591_428_8);
+        assert_eq!(r.random(), 0.104_582_185_489_400_46);
+        assert_eq!(r.random(), 0.792_109_757_413_725_7);
+        assert_ne!(
+            PyRandom::with_key(&[5, 0]).random(),
+            PyRandom::new(5).random()
+        );
+    }
+
+    #[test]
+    fn with_key_of_an_empty_key_is_one_fixed_stream() {
+        // An empty key skips the key loop of `init_by_array` and keeps only its second mixing
+        // loop; the values come from the reference algorithm run that way.
+        let mut r = PyRandom::with_key(&[]);
+        assert_eq!(r.random(), 0.916_169_590_023_764_7);
+        assert_eq!(r.random(), 0.084_768_587_722_634_96);
+        assert_eq!(r.random(), 0.046_117_891_477_347_13);
+        assert_ne!(
+            PyRandom::with_key(&[]).random(),
+            PyRandom::with_key(&[0]).random()
         );
     }
 
