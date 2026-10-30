@@ -38,6 +38,25 @@ keyboards and the low brass is an estimate. `InstrumentType::ALL` lists the type
 and each family is one block of it. The order is not stored anywhere, so a later type may be
 inserted anywhere in it.
 
+## The record
+
+`instrument(id)` and `InstrumentType::get` return a type's record, an `Instrument`;
+`instruments()` lists every record in score order. A record is keyed by its `InstrumentType`,
+which gives its id and family, and holds the checked `InstrumentSpec` (`Instrument::spec`):
+
+| Field | Holds | Section |
+|---|---|---|
+| `names` | display names in five languages and the score abbreviation | [Names and aliases](#names-and-aliases) |
+| `aliases` | the folded forms a person may write, each with a language and a grammatical number | [Names and aliases](#names-and-aliases) |
+| `category` | the group a single word names, such as the clarinets, or none | [Categories](#categories) |
+| `pitch` | `PitchModel::Pitched` with the transposition and the `playable` and `comfortable` ranges, each a `SourcedRange` (a range with its provenance), or `Unpitched` | [Pitch conventions](#pitch-conventions), [Ranges](#ranges) |
+| `clefs` | the clefs its parts are written in, in order of use | [Clefs](#clefs) |
+| `articulations` | what it idiomatically plays, with `articulations_provenance` | [Articulations](#articulations) |
+| `ensemble` | its forms and typical players in each era | [Ensemble profile](#ensemble-profile) |
+| `keyboard` | how a keyboard makes and stops the sound, or none | [Keyboard mechanics](#keyboard-mechanics) |
+| `facts` | the playability facts that rules read | [Playability facts](#playability-facts) |
+| `gm` | the General MIDI Level 1 voice, exact or substitute | [General MIDI voice](#general-midi-voice) |
+
 ## Names and aliases
 
 Each record has display names in five languages, English, Czech, German, French and Italian, and
@@ -78,7 +97,8 @@ family) in data order: the instruments in score order, then the categories, then
 "cuivres", "legni"). The checks run when the data is built: an alias that is not folded, has fewer
 than three letters, or appears twice in one language of one record is an error
 (`InstrumentError::AliasNotFolded`, `AliasTooShort`, `DuplicateAlias`). Every display name folds
-to an alias of its own record in its own language.
+to an alias of its own record in its own language, and every record and every family but `other`
+has aliases in all five languages.
 
 `resolve(text, languages)` finds the instruments, categories and families a text names. It folds
 the text and reads it word by word; at each word the longest alias that starts there wins ("bass
@@ -176,7 +196,9 @@ cites is written out once, in the dataset's source list
 the edition for a book) and where it was read, a URL or, for a printed book without one, a page.
 A `Cited` value gives each source it rests on in full, followed by what that source states, so
 its text always names a URL or a page; the dataset test checks this. An `Estimate` whose reason
-rests on a source names it in full the same way.
+rests on a source names it in full the same way. The playability facts, the categories' choices,
+the ensemble templates, the rules with their tables and thresholds, and the fallbacks carry a
+provenance of the same kind, described in their sections.
 
 The sources are orchestration handbooks (Berlioz, Rimsky-Korsakov, Forsyth, Widor, Prout), the
 documentation of instrument makers and sample-library makers, specifications, and articles of
@@ -541,7 +563,8 @@ that forgets any of them does not build.
 - inverted or non-MIDI ranges, a comfortable range outside the playable one, and a transposition
   that moves the range outside MIDI;
 - an inverted player range;
-- an empty or blank display name;
+- an empty or blank display name or score abbreviation;
+- an alias that is not folded, has fewer than three letters or is listed twice in one language;
 - an unpitched instrument outside the percussion family (every other family plays definite
   pitches);
 - an articulation listed twice;
@@ -575,7 +598,16 @@ transposition, written range, clefs, forms and articulations with tables written
 independently of the data, every record's GM voice and the orchestral percussion map with
 tables written from the GM1 lists, the keyboard mechanics of the sixteen instruments played
 from a keyboard with a table written from the research, and the playability facts of every
-record with a table written from the sources.
+record with a table written from the sources. Its name tests compare the display names in five
+languages with the sources, check that every stored alias is folded and resolves to its own
+target, that the ambiguous texts are exactly the listed ones, that the forms the planner needs
+are there and that each category chooses as the table above says. Property tests (TST-09) check
+that folding any text gives only lower-case letters, digits and single spaces and changes nothing
+a second time, that an alias written with capitals, diacritics, `ß` and punctuation still names
+its target, and that the mentions in any run of words come left to right without overlap, each
+spelling the words it covers in a language asked for. Its articulation tests pin
+the vocabulary's order, kinds, passage states and parents, and the answers of
+`articulation_availability` and `request_availability`.
 
 An ensemble template is an `EnsembleSpec` checked by `Ensemble::try_new(id, spec)`, which
 rejects:
@@ -634,11 +666,14 @@ neighbours cross a family.
 
 ## Coverage
 
-All 85 types have a record, listed in score order by `INSTRUMENTS` and `instruments()`. The
-records live in one file per family under `crates/sonara-midi/src/orchestration/data/`
-(woodwinds, brass, percussion, plucked, keyboards, voices, strings). A display name is the first
-form of the English name, with a flat spelled `♭` ("Clarinet in B♭"); an alternate in parentheses
-("Timpani (kettledrums)") is not part of it. Range extensions and gaps, alternative tunings and
-techniques outside the vocabulary are not modelled. The thirteen ensemble templates live in
-`data/ensembles.rs`; divisi tracks are not part of a template. The fallback tables live in
+All 85 types have a record, listed in score order by `INSTRUMENTS` and `instruments()`: 17
+woodwinds, 13 brass, 22 percussion (14 of them unpitched), 4 plucked, 15 keyboards, 10 voices
+(six solo voices and four choir sections) and 4 strings. The records live in one file per family
+under `crates/sonara-midi/src/orchestration/data/` (woodwinds, brass, percussion, plucked,
+keyboards, voices, strings); the categories and the words for a whole category or family in
+`data/categories.rs`. A display name is the first form of the English name, with a flat spelled
+`♭` ("Clarinet in B♭"); an alternate in parentheses ("Timpani (kettledrums)") is not part of it.
+Range extensions and gaps, alternative tunings and techniques outside the vocabulary are not
+modelled. The thirteen ensemble templates live in `data/ensembles.rs`; divisi tracks are not part
+of a template. The rules and their tables live in `data/rules.rs`, the fallback tables in
 `data/fallback.rs`.
