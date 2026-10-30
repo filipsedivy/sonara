@@ -11,13 +11,22 @@ and adds no agent tool (CTR-01). Sonara ships no samples and no library.
 |---|---|
 | `id` | `<library id>/<patch path below the library, without .sfz>`, for example `vsco2ce/Strings/Violin Solo`. It holds no absolute path, so it survives moving the library or opening the project on another machine. The sampler's `instrument` parameter offers the IDs of the available presets, and projects store them ([sample-libraries.md](sample-libraries.md)). |
 | `display_name` | The manifest's name, else the file name. |
-| `family` | `strings`, `woodwinds`, `brass`, `percussion`, `keyboards`, `plucked`, `choir` or `other`, with its source: **declared** (manifest), **inferred** (words in the path, such as `Violin`, `Horn`, `Timpani`) or **unknown**. An inferred family is a guess; treat it as one. The family is the orchestration metadata's ([orchestration-metadata.md](orchestration-metadata.md)), so a preset and an instrument type share one family type; a manifest must spell the slug exactly, in lower case. |
+| `family` | `strings`, `woodwinds`, `brass`, `percussion`, `keyboards`, `plucked`, `choir` or `other`, with its source: **declared** (manifest), **inferred** (words in the path, below) or **unknown**. An inferred family is a guess; treat it as one. The family is the orchestration metadata's ([orchestration-metadata.md](orchestration-metadata.md)), so a preset and an instrument type share one family type; a manifest must spell the slug exactly, in lower case. |
 | `articulations` | Only what a manifest declares. Empty means **not verified**, never "none". Keyswitch labels in a patch are not read. |
 | `license` | The licence the library's manifest states. `None` means **unknown**: read the library's own terms. |
 | `availability` | `available` (a regular, non-empty, readable file inside the library), `missing` (listed by the manifest, not on disk) or `invalid` with a reason. |
 | `patch_path` | The `.sfz` file on this machine. |
 
 SFZ patches have no bank or program number, so presets carry none.
+
+An inferred family comes from the English instrument names and aliases of the orchestration
+metadata, read with its `resolve` ([orchestration-metadata.md](orchestration-metadata.md)), so
+`Violin`, `French Horn`, `Vibes` and `Celeste` name their families. A
+run-together name is split at its capitals and digits first (`TubularBells`, `FHornSus`,
+`Horn2`). The file name decides when its words agree on one family, else the nearest folder whose
+words do. A word of two families names none: `Bass` is the double bass or the bass voice, so
+`Strings/Bass.sfz` is strings and a bare `Bass.sfz` is unknown. A word the metadata does not
+list, such as `Drums` or `Chorus`, names nothing.
 
 ## How libraries are found
 
