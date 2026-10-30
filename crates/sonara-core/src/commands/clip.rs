@@ -818,8 +818,7 @@ impl Command for EditNotes {
                     ),
                 ));
             };
-            *n = MidiNote::new(
-                n.id.clone(),
+            *n = n.replaced(
                 e.pitch.unwrap_or_else(|| i64::from(n.pitch)),
                 e.start.unwrap_or(n.start),
                 e.length.unwrap_or(n.length),

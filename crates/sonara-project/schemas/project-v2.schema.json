@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sonara.dev/schemas/project-v2.schema.json",
+  "title": "Sonara project document (project.json), schema version 2",
+  "type": "object",
+  "required": ["format", "schema_version", "id", "name", "settings", "tempo_map", "time_signatures", "tracks", "master"],
+  "properties": {
+    "format": {"const": "sonara.project"},
+    "schema_version": {"const": 2},
+    "id": {"$ref": "#/$defs/id"},
+    "name": {"type": "string", "minLength": 1},
+    "settings": {
+      "type": "object",
+      "required": ["sample_rate"],
+      "properties": {
+        "sample_rate": {"enum": [22050, 32000, 44100, 48000, 88200, 96000, 176400, 192000]},
+        "length_beats": {"type": ["number", "null"], "exclusiveMinimum": 0},
+        "record_subtype": {"type": "string"}
+      }
+    },
+    "tempo_map": {
+      "type": "array", "minItems": 1,
+      "items": {"type": "object", "required": ["beat", "bpm"],
+                "properties": {"beat": {"type": "number", "minimum": 0}, "bpm": {"type": "number", "minimum": 10, "maximum": 999},
+                               "ramp": {"type": "boolean"}}}
+    },
+    "time_signatures": {
+      "type": "array", "minItems": 1,
+      "items": {"type": "object", "required": ["bar", "numerator", "denominator"],
+                "properties": {"bar": {"type": "integer", "minimum": 0}, "numerator": {"type": "integer", "minimum": 1, "maximum": 64},
+                               "denominator": {"enum": [1, 2, 4, 8, 16, 32]}}}
+    },
+    "tracks": {"type": "array", "maxItems": 512, "items": {"$ref": "#/$defs/track"}},
+    "master": {"$ref": "#/$defs/track"},
+    "assets": {"type": "array", "items": {"$ref": "#/$defs/asset"}},
+    "markers": {"type": "array", "items": {"type": "object", "required": ["id", "beat"],
+                "properties": {"id": {"$ref": "#/$defs/id"}, "beat": {"type": "number", "minimum": 0}, "name": {"type": "string"},
+                               "color": {"$ref": "#/$defs/color"}}}},
+    "sections": {"type": "array", "items": {"type": "object", "required": ["id", "name", "start", "length"],
+                 "properties": {"id": {"$ref": "#/$defs/id"}, "name": {"type": "string"}, "start": {"type": "number", "minimum": 0},
+                                "length": {"type": "number", "exclusiveMinimum": 0}, "color": {"$ref": "#/$defs/color"}}}},
+    "transport": {"type": "object"},
+    "metadata": {"type": "object", "additionalProperties": {"type": "string"}},
+    "editor": {"type": "object"}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^(master|[a-z0-9]+_[A-Za-z0-9-]{1,64})$"},
+    "vocabulary_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+    "color": {"type": ["string", "null"], "pattern": "^#[0-9a-fA-F]{6}$"},
+    "device": {
+      "type": "object",
+      "required": ["id", "plugin_id"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "plugin_id": {"type": "string", "minLength": 1}, "name": {"type": "string"},
+        "enabled": {"type": "boolean"},
+        "params": {"type": "object", "additionalProperties": {"type": ["number", "boolean", "string"]}},
+        "sidechain_id": {"anyOf": [{"$ref": "#/$defs/id"}, {"type": "null"}]},
+        "preset": {"type": ["string", "null"]}, "state": {"type": "object"}
+      }
+    },
+    "note": {
+      "type": "object", "required": ["id", "pitch", "start", "length"],
+      "properties": {"id": {"type": "string"}, "pitch": {"type": "integer", "minimum": 0, "maximum": 127},
+                     "start": {"type": "number", "minimum": 0}, "length": {"type": "number", "exclusiveMinimum": 0},
+                     "velocity": {"type": "integer", "minimum": 1, "maximum": 127},
+                     "channel": {"type": "integer", "minimum": 0, "maximum": 15},
+                     "articulation": {"$ref": "#/$defs/vocabulary_id"}}
+    },
+    "part": {
+      "type": "object", "required": ["instrument"],
+      "properties": {"instrument": {"$ref": "#/$defs/vocabulary_id"}, "name": {"type": "string", "minLength": 1},
+                     "players": {"type": "integer", "minimum": 1, "maximum": 128}, "solo": {"type": "boolean"},
+                     "player": {"type": "string", "minLength": 1},
+                     "notation": {"type": "object", "properties": {"transposition": {"type": "integer", "minimum": -36, "maximum": 36},
+                                  "clef": {"enum": ["treble", "treble_8vb", "bass", "alto", "tenor", "percussion", "single_line"]}}}}
+    },
+    "fade": {"type": "object", "properties": {"seconds": {"type": "number", "minimum": 0},
+             "curve": {"enum": ["linear", "equal_power", "exponential", "s_curve"]}}},
+    "clip": {
+      "type": "object", "required": ["type", "id", "start", "length"],
+      "properties": {"type": {"enum": ["audio", "midi"]}, "id": {"$ref": "#/$defs/id"}, "name": {"type": "string"},
+                     "start": {"type": "number", "minimum": 0}, "length": {"type": "number", "exclusiveMinimum": 0},
+                     "muted": {"type": "boolean"}, "color": {"$ref": "#/$defs/color"}},
+      "allOf": [
+        {"if": {"properties": {"type": {"const": "audio"}}},
+         "then": {"required": ["asset_id"], "properties": {"asset_id": {"$ref": "#/$defs/id"},
+                  "source_offset": {"type": "integer", "minimum": 0}, "gain_db": {"type": "number", "minimum": -96, "maximum": 24},
+                  "fade_in": {"$ref": "#/$defs/fade"}, "fade_out": {"$ref": "#/$defs/fade"}}}},
+        {"if": {"properties": {"type": {"const": "midi"}}},
+         "then": {"properties": {"notes": {"type": "array", "items": {"$ref": "#/$defs/note"}},
+                  "controls": {"type": "array"}, "content_offset": {"type": "number", "minimum": 0},
+                  "loop_length": {"type": ["number", "null"], "exclusiveMinimum": 0}}}}
+      ]
+    },
+    "lane": {
+      "type": "object", "required": ["id", "target", "points"],
+      "properties": {"id": {"$ref": "#/$defs/id"}, "enabled": {"type": "boolean"},
+                     "target": {"type": "object", "required": ["param"], "properties": {"device_id": {"type": ["string", "null"]}, "param": {"type": "string"}}},
+                     "points": {"type": "array", "items": {"type": "object", "required": ["beat", "value"],
+                                "properties": {"beat": {"type": "number", "minimum": 0}, "value": {"type": "number"},
+                                               "curve": {"enum": ["linear", "hold", "smooth"]}}}}}
+    },
+    "track": {
+      "type": "object",
+      "required": ["id", "name", "kind"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "name": {"type": "string", "minLength": 1},
+        "kind": {"enum": ["audio", "instrument", "bus", "folder", "master"]},
+        "part": {"$ref": "#/$defs/part"},
+        "color": {"$ref": "#/$defs/color"},
+        "output_id": {"anyOf": [{"$ref": "#/$defs/id"}, {"type": "null"}]},
+        "parent_id": {"anyOf": [{"$ref": "#/$defs/id"}, {"type": "null"}]},
+        "mixer": {"type": "object", "properties": {"volume_db": {"type": "number", "minimum": -144, "maximum": 12},
+                  "pan": {"type": "number", "minimum": -1, "maximum": 1}, "mute": {"type": "boolean"}, "solo": {"type": "boolean"},
+                  "solo_safe": {"type": "boolean"}}},
+        "input": {"type": "object"},
+        "instrument": {"anyOf": [{"$ref": "#/$defs/device"}, {"type": "null"}]},
+        "inserts": {"type": "array", "items": {"$ref": "#/$defs/device"}},
+        "sends": {"type": "array", "items": {"type": "object", "required": ["id", "target_id"],
+                  "properties": {"id": {"$ref": "#/$defs/id"}, "target_id": {"$ref": "#/$defs/id"},
+                                 "level_db": {"type": "number", "minimum": -144, "maximum": 12},
+                                 "pre_fader": {"type": "boolean"}, "enabled": {"type": "boolean"}}}},
+        "automation": {"type": "array", "items": {"$ref": "#/$defs/lane"}},
+        "clips": {"type": "array", "items": {"$ref": "#/$defs/clip"}}
+      }
+    },
+    "asset": {
+      "type": "object",
+      "required": ["id", "kind", "path", "location"],
+      "properties": {"id": {"$ref": "#/$defs/id"}, "kind": {"enum": ["audio", "midi", "impulse"]}, "name": {"type": "string"},
+                     "path": {"type": "string", "minLength": 1}, "location": {"enum": ["embedded", "linked"]},
+                     "size_bytes": {"type": "integer", "minimum": 0}, "sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+                     "sample_rate": {"type": "integer", "minimum": 0}, "channels": {"type": "integer", "minimum": 0},
+                     "frames": {"type": "integer", "minimum": 0}}
+    }
+  }
+}

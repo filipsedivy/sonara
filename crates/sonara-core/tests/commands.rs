@@ -2253,6 +2253,33 @@ fn note_commands() {
     let n = c.note("n_x").expect("exists");
     assert_eq!((n.pitch, n.velocity, n.start), (74, 50, 0.25));
     assert!((c.note("n_0").expect("exists").start - 0.125).abs() < f64::EPSILON);
+    // An edit keeps the note's articulation.
+    let articulated = note("n_art", 60, 1.0, 1.0)
+        .with_articulation(Some("staccato".into()))
+        .expect("an id");
+    fx.run(
+        &AddNotes {
+            clip_id: cid.clone(),
+            notes: vec![articulated],
+        },
+        "Add Notes",
+        json!({"created": ["note:n_art"], "updated": [format!("clip:{cid}")], "flags": ["notes"]}),
+        json!({"note_ids": ["n_art"], "note_count": 10}),
+    );
+    fx.run(
+        &edit(vec![NoteEdit {
+            note_id: "n_art".into(),
+            pitch: Some(62),
+            length: Some(0.5),
+            ..NoteEdit::default()
+        }]),
+        "Edit Notes",
+        json!({"updated": [format!("clip:{cid}"), "note:n_art"], "flags": ["notes"]}),
+        json!({}),
+    );
+    let edited = midi(fx.project(), &cid).note("n_art").expect("exists");
+    assert_eq!((edited.pitch, edited.length), (62, 0.5));
+    assert_eq!(edited.articulation.as_deref(), Some("staccato"));
     fx.fails(
         &edit(vec![NoteEdit {
             note_id: "n_missing".into(),

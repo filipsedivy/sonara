@@ -6,6 +6,10 @@
 //! map and written back after the known keys, so files from newer Sonara versions survive a
 //! round trip.
 //!
+//! A document is written in the lowest schema version that holds it
+//! ([`lowest_schema_version`]): version 1, byte for byte as before, unless a track has a part or
+//! a note has an articulation, which only version 2 can store.
+//!
 //! Reading mirrors the prototype's reader: values are coerced the way Python's `float()`,
 //! `int()` and `bool()` coerce them, and errors carry the JSON path of the failing object
 //! (`tracks/0/clips/1: clip length must be > 0`). Documents are schema-validated before they
@@ -27,6 +31,7 @@ use sonara_core::model::clip::{
 use sonara_core::model::device::{Device, DeviceData, ParamValue, Params};
 use sonara_core::model::markers::{Marker, Section};
 use sonara_core::model::media::{MediaAsset, MediaAssetData, MediaKind, MediaLocation};
+use sonara_core::model::part::{Clef, Notation, Part};
 use sonara_core::model::project::{
     Project, ProjectData, ProjectMetadata, ProjectSettings, TransportSettings,
 };
@@ -40,8 +45,36 @@ use crate::canonical::to_canonical_bytes;
 
 /// The `format` value of a project document.
 pub const FORMAT_ID: &str = "sonara.project";
-/// The schema version this build writes.
-pub const SCHEMA_VERSION: i64 = 1;
+/// The newest schema version: the one this build reads, and migrates older documents to.
+pub const SCHEMA_VERSION: i64 = 2;
+
+/// Whether a track of `project` has a part (schema version 2).
+#[must_use]
+pub fn has_parts(project: &Project) -> bool {
+    project.all_tracks().any(|track| track.part.is_some())
+}
+
+/// Whether a note of `project` has an articulation (schema version 2).
+#[must_use]
+pub fn has_note_articulations(project: &Project) -> bool {
+    project.all_tracks().any(|track| {
+        track
+            .midi_clips()
+            .any(|clip| clip.notes.iter().any(|note| note.articulation.is_some()))
+    })
+}
+
+/// The lowest schema version that can hold `project`, which is the version it is written in:
+/// 2 when a track has a part or a note has an articulation, else 1. A project that uses nothing
+/// of version 2 is written exactly as before it existed (GLD-01).
+#[must_use]
+pub fn lowest_schema_version(project: &Project) -> i64 {
+    if has_parts(project) || has_note_articulations(project) {
+        2
+    } else {
+        1
+    }
+}
 
 // -- writing ------------------------------------------------------------------------------
 
@@ -118,17 +151,50 @@ pub fn lane_to_value(lane: &AutomationLane) -> Value {
     ]))
 }
 
-/// The JSON form of a MIDI note.
+/// The JSON form of a MIDI note. The `articulation` key is written only when the note has one.
 #[must_use]
 pub fn note_to_value(n: &MidiNote) -> Value {
-    Value::Object(object([
+    let mut note = object([
         ("id", n.id.as_str().into()),
         ("pitch", n.pitch.into()),
         ("start", n.start.into()),
         ("length", n.length.into()),
         ("velocity", n.velocity.into()),
         ("channel", n.channel.into()),
-    ]))
+    ]);
+    if let Some(articulation) = &n.articulation {
+        note.insert("articulation".to_owned(), articulation.as_str().into());
+    }
+    Value::Object(note)
+}
+
+/// The JSON form of a part: only the fields it states (the schema has no `null` for them).
+#[must_use]
+pub fn part_to_value(part: &Part) -> Value {
+    let mut out = object([("instrument", part.instrument.as_str().into())]);
+    if let Some(name) = &part.name {
+        out.insert("name".to_owned(), name.as_str().into());
+    }
+    if let Some(players) = part.players {
+        out.insert("players".to_owned(), players.into());
+    }
+    if let Some(solo) = part.solo {
+        out.insert("solo".to_owned(), solo.into());
+    }
+    if let Some(player) = &part.player {
+        out.insert("player".to_owned(), player.as_str().into());
+    }
+    if !part.notation.is_empty() {
+        let mut notation = Map::new();
+        if let Some(semitones) = part.notation.transposition {
+            notation.insert("transposition".to_owned(), semitones.into());
+        }
+        if let Some(clef) = part.notation.clef {
+            notation.insert("clef".to_owned(), clef.as_str().into());
+        }
+        out.insert("notation".to_owned(), Value::Object(notation));
+    }
+    Value::Object(out)
 }
 
 fn fade_to_value(fade: Fade) -> Value {
@@ -196,7 +262,8 @@ pub fn clip_to_value(clip: &Clip) -> Value {
     }
 }
 
-/// The JSON form of a track.
+/// The JSON form of a track. The `part` key follows `kind`, and is written only when the track
+/// has a part.
 #[must_use]
 pub fn track_to_value(t: &Track) -> Value {
     let m = &t.mixer;
@@ -213,46 +280,49 @@ pub fn track_to_value(t: &Track) -> Value {
             ]))
         })
         .collect();
-    with_extra(
-        object([
-            ("id", t.id.as_str().into()),
-            ("name", t.name.as_str().into()),
-            ("kind", t.kind.as_str().into()),
-            ("color", opt_str(t.color.as_deref())),
-            ("output_id", opt_str(t.output_id.as_deref())),
-            ("parent_id", opt_str(t.parent_id.as_deref())),
-            (
-                "mixer",
-                Value::Object(object([
-                    ("volume_db", m.volume_db.into()),
-                    ("pan", m.pan.into()),
-                    ("mute", m.mute.into()),
-                    ("solo", m.solo.into()),
-                    ("solo_safe", m.solo_safe.into()),
-                ])),
-            ),
-            (
-                "input",
-                Value::Object(object([
-                    ("channels", t.input.channels.iter().copied().collect()),
-                    ("armed", t.input.armed.into()),
-                    ("monitor", t.input.monitor.as_str().into()),
-                ])),
-            ),
-            (
-                "instrument",
-                t.instrument.as_ref().map_or(Value::Null, device_to_value),
-            ),
-            ("inserts", t.inserts.iter().map(device_to_value).collect()),
-            ("sends", Value::Array(sends)),
-            (
-                "automation",
-                t.automation.iter().map(lane_to_value).collect(),
-            ),
-            ("clips", t.clips.iter().map(clip_to_value).collect()),
-        ]),
-        &t.extra,
-    )
+    let mut track = object([
+        ("id", t.id.as_str().into()),
+        ("name", t.name.as_str().into()),
+        ("kind", t.kind.as_str().into()),
+    ]);
+    if let Some(part) = &t.part {
+        track.insert("part".to_owned(), part_to_value(part));
+    }
+    track.extend(object([
+        ("color", opt_str(t.color.as_deref())),
+        ("output_id", opt_str(t.output_id.as_deref())),
+        ("parent_id", opt_str(t.parent_id.as_deref())),
+        (
+            "mixer",
+            Value::Object(object([
+                ("volume_db", m.volume_db.into()),
+                ("pan", m.pan.into()),
+                ("mute", m.mute.into()),
+                ("solo", m.solo.into()),
+                ("solo_safe", m.solo_safe.into()),
+            ])),
+        ),
+        (
+            "input",
+            Value::Object(object([
+                ("channels", t.input.channels.iter().copied().collect()),
+                ("armed", t.input.armed.into()),
+                ("monitor", t.input.monitor.as_str().into()),
+            ])),
+        ),
+        (
+            "instrument",
+            t.instrument.as_ref().map_or(Value::Null, device_to_value),
+        ),
+        ("inserts", t.inserts.iter().map(device_to_value).collect()),
+        ("sends", Value::Array(sends)),
+        (
+            "automation",
+            t.automation.iter().map(lane_to_value).collect(),
+        ),
+        ("clips", t.clips.iter().map(clip_to_value).collect()),
+    ]));
+    with_extra(track, &t.extra)
 }
 
 /// The JSON form of a media asset.
@@ -370,7 +440,7 @@ pub fn project_to_value(p: &Project) -> Value {
     with_extra(
         object([
             ("format", FORMAT_ID.into()),
-            ("schema_version", SCHEMA_VERSION.into()),
+            ("schema_version", lowest_schema_version(p).into()),
             ("id", p.id.as_str().into()),
             ("name", p.name.as_str().into()),
             (
@@ -642,7 +712,44 @@ fn note(value: &Value) -> Read<MidiNote> {
     let length = py_float(req(n, "length")?)?;
     let velocity = get_or(n, "velocity", 100, py_int)?;
     let channel = get_or(n, "channel", 0, py_int)?;
-    Ok(MidiNote::new(id, pitch, start, length, velocity, channel)?)
+    let articulation = opt_string(n, "articulation")?;
+    Ok(MidiNote::new(id, pitch, start, length, velocity, channel)?
+        .with_articulation(articulation)?)
+}
+
+/// A part. Unknown keys inside it are not kept, as in the other small value objects.
+fn part(value: &Value) -> Read<Part> {
+    let p = as_object(value)?;
+    let notation = get_map(p, "notation")?;
+    let part = Part {
+        instrument: string(req(p, "instrument")?)?,
+        name: opt_string(p, "name")?,
+        players: opt_int(p, "players")?,
+        solo: p.get("solo").filter(|v| !v.is_null()).map(py_bool),
+        player: opt_string(p, "player")?,
+        notation: Notation {
+            transposition: opt_int(&notation, "transposition")?,
+            clef: match notation.get("clef") {
+                None | Some(Value::Null) => None,
+                Some(clef) => Some(py_enum(clef, "Clef", Clef::parse)?),
+            },
+        },
+    };
+    part.validate()?;
+    Ok(part)
+}
+
+/// `d.get(key)` for an optional integer of type `T`.
+fn opt_int<T: TryFrom<i64>>(d: &JsonMap, key: &str) -> Read<Option<T>> {
+    match d.get(key) {
+        None | Some(Value::Null) => Ok(None),
+        Some(value) => {
+            let number = py_int(value)?;
+            T::try_from(number)
+                .map(Some)
+                .map_err(|_| ReadError::Value(format!("{key} {number} is out of range")))
+        }
+    }
 }
 
 fn section(value: &Value) -> Read<Section> {
@@ -884,10 +991,11 @@ impl Reader {
     }
 
     fn track(&mut self, value: &Value) -> Read<Track> {
-        const KNOWN: [&str; 13] = [
+        const KNOWN: [&str; 14] = [
             "id",
             "name",
             "kind",
+            "part",
             "color",
             "output_id",
             "parent_id",
@@ -950,6 +1058,10 @@ impl Reader {
             py_enum(v, "MonitorMode", MonitorMode::parse)
         })?;
         let input = InputSettings::new(&channels, get_bool(&i, "armed", false), monitor)?;
+        let part = match d.get("part") {
+            None | Some(Value::Null) => None,
+            Some(value) => Some(self.at("part", |_| part(value))?),
+        };
         Ok(Track::new(TrackData {
             id,
             name,
@@ -964,6 +1076,7 @@ impl Reader {
             input,
             parent_id: opt_string(d, "parent_id")?,
             color: opt_string(d, "color")?,
+            part,
             extra: extra(d, &KNOWN),
         })?)
     }

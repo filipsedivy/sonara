@@ -28,7 +28,8 @@ use sonara_core::model::track::{
 use sonara_core::routing;
 use sonara_core::time::{TempoMap, TempoPoint, TimeSignatureMap, TimeSignaturePoint};
 use sonara_project::serializer::{
-    FORMAT_ID, SCHEMA_VERSION, dumps, loads, project_from_value, project_to_value,
+    FORMAT_ID, SCHEMA_VERSION, dumps, loads, lowest_schema_version, project_from_value,
+    project_to_value,
 };
 use sonara_testkit::sha256_hex;
 
@@ -347,7 +348,10 @@ fn serialization_is_deterministic() {
     assert_eq!(dumps(&roundtrip(&rich)), a);
     let doc: Value = serde_json::from_slice(&a).expect("valid JSON");
     assert_eq!(doc["format"], FORMAT_ID);
-    assert_eq!(doc["schema_version"], SCHEMA_VERSION);
+    // No part and no note articulation: the lowest version that holds the project (GLD-01).
+    assert_eq!(doc["schema_version"], 1);
+    assert_eq!(lowest_schema_version(&rich), 1);
+    assert_ne!(lowest_schema_version(&rich), SCHEMA_VERSION);
     // UTF-8, not escaped.
     assert!(a.ends_with(b"\n"));
     assert!(

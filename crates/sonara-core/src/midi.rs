@@ -4,7 +4,7 @@ use std::cmp::Ordering;
 
 use crate::EPSILON;
 use crate::error::{DomainError, Result, require, require_finite};
-use crate::ids::{self, IdGenerator};
+use crate::ids::{self, IdGenerator, is_vocabulary_id};
 use crate::pyfmt::str_repr;
 
 /// A MIDI note in a clip. Positions are in beats relative to the clip start.
@@ -22,6 +22,9 @@ pub struct MidiNote {
     pub velocity: u8,
     /// MIDI channel, 0–15.
     pub channel: u8,
+    /// The articulation the note is played with, an id of the orchestration vocabulary such as
+    /// `staccato` (project schema version 2); `None` is the instrument's ordinary sound.
+    pub articulation: Option<String>,
 }
 
 impl MidiNote {
@@ -59,7 +62,47 @@ impl MidiNote {
             length,
             velocity: u8::try_from(velocity).unwrap_or(1),
             channel: u8::try_from(channel).unwrap_or(0),
+            articulation: None,
         })
+    }
+
+    /// The note played with `articulation` (`None`: the ordinary sound).
+    ///
+    /// # Errors
+    ///
+    /// [`crate::error::ErrorCode::InvalidArgument`] for an articulation that is not a
+    /// vocabulary id ([`ids::is_vocabulary_id`]).
+    pub fn with_articulation(mut self, articulation: Option<String>) -> Result<Self> {
+        if let Some(id) = articulation.as_deref() {
+            require(is_vocabulary_id(id), || {
+                format!(
+                    "note articulation must be an id of lowercase letters, digits and \
+                     underscores, got {}",
+                    str_repr(id)
+                )
+            })?;
+        }
+        self.articulation = articulation;
+        Ok(self)
+    }
+
+    /// A copy with new values, validated like [`MidiNote::new`]; the ID and the articulation are
+    /// kept (the prototype's `dataclasses.replace`).
+    ///
+    /// # Errors
+    ///
+    /// The validation errors of [`MidiNote::new`].
+    pub fn replaced(
+        &self,
+        pitch: i64,
+        start: f64,
+        length: f64,
+        velocity: i64,
+        channel: i64,
+    ) -> Result<Self> {
+        let mut note = Self::new(self.id.clone(), pitch, start, length, velocity, channel)?;
+        note.articulation.clone_from(&self.articulation);
+        Ok(note)
     }
 
     /// A new note with a fresh ID; a negative start is clamped to 0 (the prototype's
@@ -98,8 +141,7 @@ impl MidiNote {
     ///
     /// [`crate::error::ErrorCode::InvalidArgument`] when the new pitch leaves 0–127.
     pub fn moved(&self, delta_beats: f64, delta_pitch: i64) -> Result<Self> {
-        Self::new(
-            self.id.clone(),
+        self.replaced(
             i64::from(self.pitch) + delta_pitch,
             (self.start + delta_beats).max(0.0),
             self.length,
@@ -292,7 +334,9 @@ pub fn parse_note_name(name: &str) -> Result<u8> {
 #[cfg(test)]
 mod tests {
     use super::{ControlKind, MidiNote, note_name, parse_note_name};
+    use crate::error::ErrorCode;
     use crate::ids::SequentialIds;
+    use crate::pyfmt::str_repr;
 
     #[test]
     fn control_kinds_order_like_their_stored_strings() {
@@ -338,5 +382,57 @@ mod tests {
         assert_eq!(err.message, "note pitch must be 0-127, got 128");
         let err = MidiNote::new("n_1", 60, 0.0, 0.0, 100, 0).expect_err("empty note");
         assert_eq!(err.message, "note length must be > 0");
+    }
+
+    #[test]
+    fn articulations_are_vocabulary_ids() {
+        let note = MidiNote::new("n_1", 60, 0.0, 1.0, 100, 0).expect("valid note");
+        assert_eq!(note.articulation, None);
+        let staccato = note
+            .clone()
+            .with_articulation(Some("staccato".to_owned()))
+            .expect("an id");
+        assert_eq!(staccato.articulation.as_deref(), Some("staccato"));
+        assert_eq!(
+            staccato.clone().with_articulation(None).expect("ordinary"),
+            note
+        );
+        for bad in ["", "Staccato", "col legno", "2nd"] {
+            let err = note
+                .clone()
+                .with_articulation(Some(bad.to_owned()))
+                .expect_err(bad);
+            assert_eq!(err.code, ErrorCode::InvalidArgument);
+            assert_eq!(
+                err.message,
+                format!(
+                    "note articulation must be an id of lowercase letters, digits and \
+                     underscores, got {}",
+                    str_repr(bad)
+                )
+            );
+        }
+    }
+
+    #[test]
+    fn edits_keep_the_id_and_the_articulation() {
+        let note = MidiNote::new("n_1", 60, 1.0, 1.0, 100, 0)
+            .expect("valid note")
+            .with_articulation(Some("pizzicato".to_owned()))
+            .expect("an id");
+        let moved = note.moved(-2.0, 3).expect("valid");
+        assert_eq!(
+            (moved.id.as_str(), moved.pitch, moved.start),
+            ("n_1", 63, 0.0)
+        );
+        assert_eq!(moved.articulation.as_deref(), Some("pizzicato"));
+        let replaced = note.replaced(72, 2.0, 0.5, 90, 3).expect("valid");
+        assert_eq!(
+            (replaced.pitch, replaced.velocity, replaced.channel),
+            (72, 90, 3)
+        );
+        assert_eq!(replaced.articulation.as_deref(), Some("pizzicato"));
+        let err = note.replaced(128, 0.0, 1.0, 100, 0).expect_err("pitch");
+        assert_eq!(err.message, "note pitch must be 0-127, got 128");
     }
 }

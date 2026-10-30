@@ -13,6 +13,7 @@ pub mod clip;
 pub mod device;
 pub mod markers;
 pub mod media;
+pub mod part;
 pub mod project;
 pub mod track;
 

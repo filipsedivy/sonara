@@ -1,14 +1,17 @@
 # The `.sonara` project format
 
 - **Container format version:** 1 (`manifest.format_version`)
-- **Document schema version:** 1 (`project.schema_version`)
+- **Document schema version:** 2 (`project.schema_version`). Sonara writes the lowest version a
+  project needs: 1 unless a track has a `part` or a note has an `articulation`.
 
 Machine-readable schemas ship with the package:
 
 - `crates/sonara-project/schemas/project-v1.schema.json`
+- `crates/sonara-project/schemas/project-v2.schema.json`
 - `crates/sonara-project/schemas/manifest-v1.schema.json`
 
-Both are JSON Schema draft 2020-12.
+All are JSON Schema draft 2020-12. Version 2 of the project schema is version 1 plus the
+optional track `part` and the optional note `articulation`.
 
 ## Two layouts, one structure
 
@@ -64,7 +67,8 @@ This lets older Sonara versions reject projects they cannot represent instead of
 dropping data.
 
 Known features: `core`, `audio-clips`, `midi-clips`, `automation`, `sends`, `sidechain`,
-`tempo-ramps`, `linked-media`, `sections`, `folders`.
+`tempo-ramps`, `linked-media`, `sections`, `folders`, `parts` (a track has a `part`) and
+`note-articulations` (a note has an `articulation`).
 
 ## `project.json`
 
@@ -74,7 +78,7 @@ fields:
 
 | Field | Meaning |
 |---|---|
-| `format`, `schema_version` | `"sonara.project"`, `1` |
+| `format`, `schema_version` | `"sonara.project"`, `1` or `2` (the lowest version that holds the project) |
 | `id`, `name` | Stable project ID and display name |
 | `settings` | `sample_rate`, `length_beats` (`null` means the end of the content), `record_subtype` |
 | `tempo_map` | `[{beat, bpm, ramp}]`; the first point is at beat 0. A `ramp` point glides linearly to the next point's tempo. |
@@ -98,13 +102,31 @@ Fades are in seconds. Levels are in dB, and pan runs from −1 to +1.
 `inserts`, `sends` (`id`, `target_id`, `level_db`, `pre_fader`, `enabled`), `automation`
 and `clips`.
 
+**Parts (version 2).** An instrument track may carry a `part`, written right after `kind`: the
+part of a score it plays.
+
+| Field | Meaning |
+|---|---|
+| `instrument` | Required. The instrument type id, such as `violin` or `horn_f` |
+| `name` | The part's printed name, such as `Violins I` or `Horn 3` |
+| `players` | How many players play it, 1–128 |
+| `solo` | `true` for one player, `false` for a section |
+| `player` | The player who plays it when one player doubles several instruments, such as `Flute 2` for a piccolo part |
+| `notation` | Overrides of the instrument's notation: `transposition` (sounding minus written pitch, −36 to 36 semitones) and `clef` (`treble`, `treble_8vb`, `bass`, `alto`, `tenor`, `percussion` or `single_line`) |
+
+Only the fields a part states are written; an absent field means the instrument's default.
+Instrument type and articulation ids are lowercase letters, digits and underscores, starting with
+a letter. The schema checks only that form, so a new id never needs a new schema version.
+
 **Clips.**
 
 - `"type": "audio"`: `asset_id`, `start`, `length`, `source_offset`, `gain_db`, `fade_in`,
   `fade_out` (`{seconds, curve}`), `muted`, `color`.
 - `"type": "midi"`: `start`, `length`, `content_offset`, `loop_length`, `notes`
-  (`{id, pitch, start, length, velocity, channel}`), and `controls`
-  (`{beat, kind: cc|pitch_bend|channel_pressure, number, value, channel}`).
+  (`{id, pitch, start, length, velocity, channel}`, and in version 2 an optional
+  `articulation` id such as `staccato`; no articulation means the instrument's ordinary
+  sound), and `controls` (`{beat, kind: cc|pitch_bend|channel_pressure, number, value,
+  channel}`).
 
 **Devices.** `id`, `plugin_id`, `name`, `enabled`, `params` (values only; ranges and defaults
 come from the plugin's descriptor), `sidechain_id`, `preset`, and `state` (non-parameter
@@ -123,7 +145,7 @@ linked), `size_bytes`, `sha256`, `sample_rate`, `channels`, `frames`, `format`, 
 
 **Forward compatibility.** Unknown keys on project, track, clip, device and asset objects
 are preserved on round-trip through each object's `extra` map. Unknown keys inside small
-value objects (`mixer`, `settings` and similar) are not preserved.
+value objects (`mixer`, `settings`, `part`, notes and similar) are not preserved.
 
 ## Saving
 
@@ -146,7 +168,8 @@ value objects (`mixer`, `settings` and similar) are not preserved.
      next save.
    - **`project.json` damaged or missing.** The newest valid file in `backups/` is used, and
      the result reports `recovered_from`.
-4. Run migrations, then validate against the JSON Schema, then deserialize.
+4. Validate against the JSON Schema of the document's own version, run migrations, then
+   deserialize.
 5. Report missing media (rendered as silence until relinked) and offer a newer autosave.
    Unsaved projects live in scratch workspaces whose autosaves are offered for recovery at
    the next start.
@@ -167,11 +190,26 @@ Extraction rejects all of the following:
 
 `project.schema_version` versions the document. Migrations live in
 `crates/sonara-project/src/migrations.rs` and are pure functions that upgrade a document by one
-version. They run before validation. A document from a newer schema is rejected with
-`UNSUPPORTED`, and is never treated as damaged. Container changes bump `format_version`.
+version. A document is first validated against the schema of its own version, so an old
+document gets exactly the verdict it always got, and then migrated. A document from a newer
+schema is rejected with `UNSUPPORTED`, and is never treated as damaged. Container changes bump
+`format_version`. A missing or non-integer `schema_version` is a `FORMAT_ERROR`.
 
-Schema version 1 is the only version so far, so the migration table is empty. A missing or
-non-integer `schema_version` is a `FORMAT_ERROR`.
+Sonara writes the lowest version that holds a project, so a project that uses nothing of
+version 2 is written exactly as version 1, and older Sonara versions still open it.
+
+**Version 1 to 2.** Version 2 only adds optional keys, so the migration relabels the document.
+Version 1 ignored keys named `part` on tracks and `articulation` on notes; each stays only where
+version 2 accepts it:
+
+- a track's `part` stays when the track is an instrument track and the part is valid; otherwise
+  it is renamed `part_v1`, an unknown key the track keeps;
+- a note's `articulation` stays when it is a valid id; otherwise it is removed, as version 1
+  dropped every unknown note key.
+
+Nothing else is derived, for example from a sampler's instrument type. Opening reports
+`migrated_from_schema` only when a migration changed more than the version number, so an
+unchanged version-1 project opens without a reported migration.
 
 ## Fixtures and contract tests
 

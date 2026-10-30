@@ -3,6 +3,9 @@
 //! IDs look like `trk_8f3k2m9q4x1z`: a short type prefix plus 12 Crockford base-32 characters
 //! (60 random bits). They are never derived from names or positions. Commands receive their IDs
 //! when they are constructed, from an [`IdGenerator`], so applying a command is deterministic.
+//!
+//! [`is_vocabulary_id`] checks the other kind of identifier a project stores: the instrument type
+//! and articulation ids of the orchestration vocabulary, which name things rather than objects.
 
 /// Prefix of project IDs.
 pub const PROJECT: &str = "prj";
@@ -108,6 +111,17 @@ pub fn is_valid_id(value: &str) -> bool {
         && is_alnum(&body.chars().filter(|c| *c != '-').collect::<String>())
 }
 
+/// Whether `value` has the form of an orchestration vocabulary id, such as the instrument type
+/// `horn_f` or the articulation `col_legno`: a lowercase ASCII letter, then lowercase ASCII
+/// letters, digits and underscores (the pattern `^[a-z][a-z0-9_]*$` of the project schema).
+/// Only the form is checked: the vocabulary itself lives outside the domain layer.
+#[must_use]
+pub fn is_vocabulary_id(value: &str) -> bool {
+    let mut chars = value.chars();
+    chars.next().is_some_and(|c| c.is_ascii_lowercase())
+        && chars.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+}
+
 /// Python's `str.isalnum`: non-empty and every character alphanumeric.
 fn is_alnum(text: &str) -> bool {
     !text.is_empty() && text.chars().all(char::is_alphanumeric)
@@ -115,7 +129,7 @@ fn is_alnum(text: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{IdGenerator, RandomIds, SequentialIds, id_prefix, is_valid_id};
+    use super::{IdGenerator, RandomIds, SequentialIds, id_prefix, is_valid_id, is_vocabulary_id};
 
     #[test]
     fn sequential_ids_match_the_prototype() {
@@ -145,5 +159,25 @@ mod tests {
         assert!(!is_valid_id("trk"));
         assert!(!is_valid_id("t-k_abc"));
         assert!(!is_valid_id(&format!("trk_{}", "a".repeat(65))));
+    }
+
+    #[test]
+    fn vocabulary_ids_have_the_schema_form() {
+        for id in [
+            "violin",
+            "horn_f",
+            "col_legno_battuto",
+            "trumpet_c",
+            "a",
+            "x9",
+            "a_",
+        ] {
+            assert!(is_vocabulary_id(id), "{id}");
+        }
+        for id in [
+            "", "Violin", "9violin", "_violin", "horn-f", "horn f", "cello\n", "čelo",
+        ] {
+            assert!(!is_vocabulary_id(id), "{id:?}");
+        }
     }
 }

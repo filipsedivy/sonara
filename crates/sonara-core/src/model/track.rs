@@ -5,6 +5,7 @@ use std::fmt;
 use super::automation::AutomationLane;
 use super::clip::{AudioClip, Clip, MidiClip};
 use super::device::Device;
+use super::part::Part;
 use super::{JsonMap, Valid, Validate, cmp_f64, has_text, validate_color};
 use crate::error::{DomainError, Result, require, require_finite};
 use crate::ids::{self, IdGenerator};
@@ -314,6 +315,8 @@ pub struct TrackData {
     pub parent_id: Option<String>,
     /// `#rrggbb`, or `None` for automatic.
     pub color: Option<String>,
+    /// The part an instrument track plays (project schema version 2).
+    pub part: Option<Part>,
     /// Unknown keys preserved from newer project files.
     pub extra: JsonMap,
 }
@@ -336,6 +339,7 @@ impl TrackData {
             input: InputSettings::default(),
             parent_id: None,
             color: None,
+            part: None,
             extra: JsonMap::new(),
         }
     }
@@ -366,6 +370,12 @@ impl Validate for TrackData {
             require(self.kind == TrackKind::Instrument, || {
                 "only instrument tracks have an instrument".to_owned()
             })?;
+        }
+        if let Some(part) = &self.part {
+            require(self.kind == TrackKind::Instrument, || {
+                "only instrument tracks have a part".to_owned()
+            })?;
+            part.validate()?;
         }
         if self.kind == TrackKind::Master {
             require(self.output_id.is_none(), || {
@@ -613,8 +623,46 @@ pub fn gain_to_db(gain: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::{InputSettings, MonitorMode, Track, TrackKind, clamp_index};
+    use crate::error::ErrorCode;
     use crate::ids::SequentialIds;
     use crate::model::clip::{AudioClip, Clip, MidiClip};
+    use crate::model::part::Part;
+
+    #[test]
+    fn only_instrument_tracks_play_a_valid_part() {
+        let mut ids = SequentialIds::new(0);
+        let violins = Part::new("violin").expect("valid");
+        let track = Track::create(&mut ids, "Violins I", TrackKind::Instrument, |t| {
+            t.part = Some(violins.clone());
+        })
+        .expect("valid");
+        assert_eq!(track.part.as_ref(), Some(&violins));
+        // Edits keep the part.
+        let renamed = track.edit(|t| t.name = "Vln. I".into()).expect("valid");
+        assert_eq!(renamed.part, track.part);
+        for kind in [
+            TrackKind::Audio,
+            TrackKind::Bus,
+            TrackKind::Folder,
+            TrackKind::Master,
+        ] {
+            let err = Track::create(&mut ids, "T", kind, |t| {
+                t.output_id = None;
+                t.part = Some(violins.clone());
+            })
+            .expect_err("no part");
+            assert_eq!(err.code, ErrorCode::InvalidArgument, "{kind}");
+            assert_eq!(err.message, "only instrument tracks have a part", "{kind}");
+        }
+        let err = track
+            .edit(|t| {
+                if let Some(part) = &mut t.part {
+                    part.players = Some(0);
+                }
+            })
+            .expect_err("invalid part");
+        assert_eq!(err.message, "part players must be 1-128, got 0");
+    }
 
     #[test]
     fn tracks_hold_only_their_clip_kind() {

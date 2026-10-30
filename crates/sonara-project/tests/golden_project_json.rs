@@ -1,10 +1,11 @@
 //! Every project document the prototype wrote re-serializes to the same bytes, both as plain
-//! JSON and through the project model.
+//! JSON and through the project model, and opens without a reported migration.
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use sonara_project::canonical::to_canonical_bytes;
+use sonara_project::migrations::upgrade;
 use sonara_project::serializer::{dumps, loads, project_from_value};
 use sonara_testkit::Golden;
 
@@ -88,6 +89,26 @@ fn recorded_documents_round_trip_as_json() {
 fn recorded_documents_round_trip_through_the_model() {
     for (rel, raw) in recorded_documents() {
         let doc = loads(&raw).expect("JSON object");
+        let project = project_from_value(&doc).unwrap_or_else(|err| panic!("{rel}: {err}"));
+        let written = dumps(&project);
+        assert!(
+            written == raw,
+            "{rel}: {}",
+            first_difference(&raw, &written)
+        );
+    }
+}
+
+/// Opening relabels a version-1 document as version 2 without reporting a migration, so
+/// `open_project` keeps answering `migrated_from_schema: null` for every recorded project; written
+/// again, the project is version 1 with the recorded bytes (GLD-01).
+#[test]
+fn recorded_documents_open_without_a_reported_migration() {
+    for (rel, raw) in recorded_documents() {
+        let doc = loads(&raw).expect("JSON object");
+        assert_eq!(doc["schema_version"], 1, "{rel}");
+        let (doc, migrated_from) = upgrade(doc).unwrap_or_else(|err| panic!("{rel}: {err}"));
+        assert_eq!(migrated_from, None, "{rel}");
         let project = project_from_value(&doc).unwrap_or_else(|err| panic!("{rel}: {err}"));
         let written = dumps(&project);
         assert!(

@@ -44,10 +44,10 @@ use zip::write::SimpleFileOptions;
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
 use crate::atomic::{atomic_write_bytes, fsync_dir, hex, link_or_copy, sha256_bytes, sha256_file};
-use crate::migrations::migrate;
+use crate::migrations::upgrade;
 use crate::pyjson::{dumps_compact, dumps_indented, py_str};
 use crate::schema::{Schema, validate_document};
-use crate::serializer::{dumps, loads, project_from_value};
+use crate::serializer::{dumps, has_note_articulations, has_parts, loads, project_from_value};
 
 /// The manifest member.
 pub const MANIFEST: &str = "manifest.json";
@@ -71,7 +71,7 @@ pub const ARCHIVE_MEMBERS: [&str; 6] = [
 /// Top-level names that exist only in bundles, never in archives.
 pub const BUNDLE_ONLY: [&str; 3] = ["backups", ".autosave", "cache"];
 /// The features this build can open (`required_features` in the manifest).
-pub const SUPPORTED_FEATURES: [&str; 10] = [
+pub const SUPPORTED_FEATURES: [&str; 12] = [
     "core",
     "audio-clips",
     "midi-clips",
@@ -82,6 +82,8 @@ pub const SUPPORTED_FEATURES: [&str; 10] = [
     "linked-media",
     "sections",
     "folders",
+    "parts",
+    "note-articulations",
 ];
 /// The most members an archive may have.
 pub const MAX_ARCHIVE_MEMBERS: usize = 100_000;
@@ -326,6 +328,14 @@ pub fn required_features(project: &Project) -> Vec<String> {
     if !project.sections.is_empty() {
         features.insert("sections");
     }
+    // A build that reads schema version 2 but not these would drop them (notes keep no
+    // unknown keys); the features make it refuse the project and name what is missing.
+    if has_parts(project) {
+        features.insert("parts");
+    }
+    if has_note_articulations(project) {
+        features.insert("note-articulations");
+    }
     features.into_iter().map(str::to_owned).collect()
 }
 
@@ -547,22 +557,11 @@ fn member_mode(metadata: &fs::Metadata) -> u32 {
     }
 }
 
-/// The document's project, and the schema version it was migrated from.
+/// The document's project, and the schema version it was migrated from when a migration
+/// changed its content ([`upgrade`]).
 fn decode(raw: &[u8]) -> sonara_core::error::Result<(Project, Option<i64>)> {
-    let doc = loads(raw)?;
-    let original = doc.get("schema_version").and_then(Value::as_i64);
-    let (doc, applied) = migrate(doc)?;
-    let value = Value::Object(doc);
-    validate_document(&value, Schema::Project)?;
-    let Value::Object(doc) = &value else {
-        // `migrate` returns the object it was given.
-        return Err(DomainError::new(
-            ErrorCode::FormatError,
-            "project.json must contain a JSON object",
-        ));
-    };
-    let project = project_from_value(doc)?;
-    Ok((project, original.filter(|_| !applied.is_empty())))
+    let (doc, migrated_from) = upgrade(loads(raw)?)?;
+    Ok((project_from_value(&doc)?, migrated_from))
 }
 
 /// Parses and validates a manifest; the error is the text the "unreadable" warning quotes.

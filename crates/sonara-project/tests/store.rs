@@ -409,7 +409,7 @@ fn a_newer_schema_is_rejected_not_replaced_by_a_backup() {
     assert_eq!(err.code, ErrorCode::Unsupported);
     assert_eq!(
         err.message,
-        "project was saved by a newer Sonara (schema 7); this version reads up to 1"
+        "project was saved by a newer Sonara (schema 7); this version reads up to 2"
     );
     assert_eq!(err.details["schema_version"], 7);
     assert!(target.join(PROJECT).exists());

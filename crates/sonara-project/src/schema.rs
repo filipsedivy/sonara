@@ -1,8 +1,10 @@
 //! JSON Schema validation of `project.json` and `manifest.json` (`validate_document` in
 //! `sonara.persistence.store`).
 //!
-//! The two schemas (`schemas/*.schema.json`, Draft 2020-12) are part of the file-format contract
-//! (CTR-01). They are embedded byte for byte and compiled once.
+//! The schemas (`schemas/*.schema.json`, Draft 2020-12) are part of the file-format contract
+//! (CTR-01): one per project schema version, and the manifest's. They are embedded byte for byte
+//! and compiled once. Version 2 of the project schema is version 1 plus an optional track `part`
+//! and an optional note `articulation`.
 //!
 //! Validation uses the [`jsonschema`] crate (QG-13), built without its HTTP and file resolvers:
 //! the schemas reference only their own `$defs`. The crate reports the same errors as the
@@ -27,26 +29,41 @@ use sonara_core::pyfmt::str_repr;
 
 use crate::pyjson::repr;
 
-/// The project document schema (`project.json`).
+/// The project document schema (`project.json`), version 1.
 pub const PROJECT_SCHEMA_TEXT: &str = include_str!("../schemas/project-v1.schema.json");
+/// The project document schema (`project.json`), version 2.
+pub const PROJECT_V2_SCHEMA_TEXT: &str = include_str!("../schemas/project-v2.schema.json");
 /// The manifest schema (`manifest.json`).
 pub const MANIFEST_SCHEMA_TEXT: &str = include_str!("../schemas/manifest-v1.schema.json");
 
-/// One of the two document schemas of the project format.
+/// One of the document schemas of the project format.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Schema {
     /// `project-v1.schema.json`.
     Project,
+    /// `project-v2.schema.json`.
+    ProjectV2,
     /// `manifest-v1.schema.json`.
     Manifest,
 }
 
 impl Schema {
+    /// The project schema of document version `version`, if there is one.
+    #[must_use]
+    pub const fn project(version: i64) -> Option<Self> {
+        match version {
+            1 => Some(Self::Project),
+            2 => Some(Self::ProjectV2),
+            _ => None,
+        }
+    }
+
     /// The schema's file name, which prefixes validation messages.
     #[must_use]
     pub const fn file_name(self) -> &'static str {
         match self {
             Self::Project => "project-v1.schema.json",
+            Self::ProjectV2 => "project-v2.schema.json",
             Self::Manifest => "manifest-v1.schema.json",
         }
     }
@@ -56,15 +73,18 @@ impl Schema {
     pub const fn text(self) -> &'static str {
         match self {
             Self::Project => PROJECT_SCHEMA_TEXT,
+            Self::ProjectV2 => PROJECT_V2_SCHEMA_TEXT,
             Self::Manifest => MANIFEST_SCHEMA_TEXT,
         }
     }
 
     fn compiled(self) -> &'static Compiled {
         static PROJECT: LazyLock<Compiled> = LazyLock::new(|| Compiled::new(Schema::Project));
+        static PROJECT_V2: LazyLock<Compiled> = LazyLock::new(|| Compiled::new(Schema::ProjectV2));
         static MANIFEST: LazyLock<Compiled> = LazyLock::new(|| Compiled::new(Schema::Manifest));
         match self {
             Self::Project => &PROJECT,
+            Self::ProjectV2 => &PROJECT_V2,
             Self::Manifest => &MANIFEST,
         }
     }
@@ -79,16 +99,38 @@ struct Compiled {
 impl Compiled {
     /// # Panics
     ///
-    /// Never for the embedded schemas: the unit tests compile both.
+    /// Never for the embedded schemas: the unit tests compile all of them.
     fn new(which: Schema) -> Self {
         let schema: Value = serde_json::from_str(which.text())
             .expect("the embedded schema is valid JSON (unit-tested)");
-        let validator = jsonschema::options()
-            .with_draft(Draft::Draft202012)
-            .build(&schema)
-            .expect("the embedded schema is a valid Draft 2020-12 schema (unit-tested)");
-        Self { schema, validator }
+        Self {
+            validator: build(&schema),
+            schema,
+        }
     }
+}
+
+/// # Panics
+///
+/// Never for the embedded schemas and their definitions: the unit tests compile all of them.
+fn build(schema: &Value) -> Validator {
+    jsonschema::options()
+        .with_draft(Draft::Draft202012)
+        .build(schema)
+        .expect("the embedded schema is a valid Draft 2020-12 schema (unit-tested)")
+}
+
+/// Whether `value` is a valid track `part` of the newest project schema (its `$defs/part`).
+#[must_use]
+pub fn is_valid_part(value: &Value) -> bool {
+    static PART: LazyLock<Validator> = LazyLock::new(|| {
+        build(&serde_json::json!({
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$ref": "#/$defs/part",
+            "$defs": Schema::ProjectV2.compiled().schema["$defs"].clone(),
+        }))
+    });
+    PART.is_valid(value)
 }
 
 /// Validates `doc` against `schema`.
@@ -307,7 +349,7 @@ mod tests {
 
     #[test]
     fn embedded_schemas_compile() {
-        for schema in [Schema::Project, Schema::Manifest] {
+        for schema in [Schema::Project, Schema::ProjectV2, Schema::Manifest] {
             let compiled = schema.compiled();
             assert_eq!(
                 compiled.schema["$schema"],

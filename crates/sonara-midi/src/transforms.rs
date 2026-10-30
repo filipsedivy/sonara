@@ -11,10 +11,9 @@ use sonara_core::midi::MidiNote;
 use crate::num::{py_cmp, py_max, py_min, py_mod, py_round, py_round6};
 use crate::pyrandom::PyRandom;
 
-/// `note` with new timing and velocity, validated like a fresh note.
+/// `note` with new timing and velocity, validated like a fresh note; its articulation is kept.
 fn with_timing(note: &MidiNote, start: f64, length: f64, velocity: i64) -> Result<MidiNote> {
-    MidiNote::new(
-        note.id.clone(),
+    note.replaced(
         i64::from(note.pitch),
         start,
         length,
@@ -154,8 +153,7 @@ pub fn transpose(notes: &[MidiNote], semitones: i64) -> Result<Vec<MidiNote>> {
                     note.id
                 )));
             }
-            MidiNote::new(
-                note.id.clone(),
+            note.replaced(
                 pitch,
                 note.start,
                 note.length,
@@ -323,6 +321,41 @@ mod tests {
 
     fn note(id: &str, pitch: i64, start: f64, length: f64, velocity: i64) -> MidiNote {
         MidiNote::new(id, pitch, start, length, velocity, 0).expect("valid note")
+    }
+
+    #[test]
+    fn every_transform_keeps_the_articulation() {
+        let notes: Vec<MidiNote> = [(60, 0.1), (64, 0.1), (67, 1.3)]
+            .into_iter()
+            .enumerate()
+            .map(|(i, (pitch, start))| {
+                note(&format!("n{i}"), pitch, start, 0.5, 100)
+                    .with_articulation(Some("tenuto".to_owned()))
+                    .expect("an id")
+            })
+            .collect();
+        let velocity = VelocityScale {
+            factor: 0.5,
+            offset: 3,
+            ..VelocityScale::default()
+        };
+        let outputs = [
+            quantize(&notes, 0.5, &QuantizeOptions::default()).expect("valid"),
+            humanize(&notes, &HumanizeOptions::default()).expect("valid"),
+            transpose(&notes, 5).expect("valid"),
+            scale_velocity(&notes, &velocity).expect("valid"),
+            offset(&notes, 1.0).expect("valid"),
+            legato(&notes, 0.0).expect("valid"),
+            strum(&notes, 0.1).expect("valid"),
+        ];
+        for out in outputs {
+            assert_eq!(out.len(), notes.len());
+            assert!(
+                out.iter()
+                    .all(|n| n.articulation.as_deref() == Some("tenuto")),
+                "{out:?}"
+            );
+        }
     }
 
     #[test]

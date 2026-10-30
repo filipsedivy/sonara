@@ -191,7 +191,9 @@ fn schema_versions_are_checked() {
     let err = sonara_project::migrations::migrate(missing.as_object().expect("object").clone())
         .expect_err("missing");
     assert_eq!(err.code, ErrorCode::FormatError);
-    assert_eq!(SCHEMA_VERSION, 1);
+    assert_eq!(SCHEMA_VERSION, 2);
+    // The song uses nothing of version 2, so it is written as version 1.
+    assert_eq!(song_document()["schema_version"], 1);
 }
 
 #[test]
