@@ -1,0 +1,118 @@
+# ADR 0011: Orchestral instruments: model, sound mapping and performance
+
+- **Status:** Proposed (2026-10-30)
+- **Research:** [orchestra-research.md](../orchestra-research.md) and [orchestra/](../orchestra/README.md)
+- **Design:** [orchestra-design.md](../orchestra-design.md) and its four layer documents
+- **Amends, if accepted:** [ADR 0010](0010-sample-based-orchestral-instruments.md) decision 4 (the sampler's
+  `instrument` parameter)
+
+## Context
+
+Sonara can play SFZ instruments through `sonara.sampler` (ADR 0010) and has orchestration metadata for 16 instruments,
+with several ranges and all articulation lists marked as estimates (`sonara_midi::orchestration`). It cannot yet compose
+with an orchestra: nothing links a sample preset to an instrument, an agent cannot ask for "horns" and get horns in range,
+the sampler cannot change articulation or dynamics except through key-switch notes, and the interface is the same generic
+device card for every instrument.
+
+The research mapped 85 instruments with sourced, fact-checked cards, ensemble templates, 67 doubling and balance rules,
+the free libraries and their licences, and how the sampler reads them. It found that:
+
+- the sampler diverges from the SFZ format in eleven confirmed places and six more (Q1–Q11, N1–N6 in
+  [sfz-conformance.md](../orchestra/sfz-conformance.md)), so key-switch patches, the free grand pianos and several
+  saxophones play wrongly or not at all;
+- legato is both an engine gap (`trigger=first`/`legato` become attacks) and a sound gap (no free library records
+  transitions); dynamics need controller crossfades, which the sampler ignores, and no agent tool writes MIDI CC;
+- 49 of the 85 ids have a free file known to play; 36 do not.
+
+The constraints that decide the shape are rules: CTR-01 (57 tools, tool schemas and the `.sonara` schema change only by a
+versioned decision; notes have no articulation field; `create_project` has a fixed template enum), GLD-01 (twelve golden
+built-ins; the `orchestral` template is golden-covered by the "Ascension" example), RT-01..RT-05 and RT-10 (the audio
+path), LIC-01 and ADR 0010 (nothing bundled).
+
+## Decision
+
+1. **One instrument model** in `sonara_midi::orchestration`: the 85 ids with the corrections of
+   [model.md](../orchestra/model.md), multilingual aliases, a category with a default member, clefs, a GM voice, an
+   ensemble profile, keyboard mechanics and playability facts, with provenance per value; the ensemble templates and the
+   doubling and balance rules as pure data; one family enum shared with the catalog.
+2. **Articulations:** one primary id per note from a canonical vocabulary of 96 ids in ten kinds (the 15 existing ids
+   keep their spelling; the list only grows at the end); no id means ordinario; mute and vibrato are passage states; an
+   unrecorded combination falls back by dropping the state and says so.
+3. **Phase 1 changes no contract.** Instrument identity is derived, in this order of trust: the user's
+   `instrument_type` sampler parameter, the library's manifest, Sonara's shipped profile, a guess from the track name.
+   Articulation and dynamics reach the library through two new automatable sampler parameters written with the existing
+   `create_automation`: `articulation`, an enum with one frozen, append-only choice list for every preset (`auto`,
+   `ordinario`, then the vocabulary), applied inside the sampler by a table lookup without key-switch notes; and
+   `dynamics`, a ratio to velocity or an absolute controller value depending on the profile (default 1.0, no change).
+   Device parameters are sampled once per block, so a change lands up to one block late and a seek restores the right
+   articulation. The sampler is not a golden built-in, so its descriptor may grow.
+4. **The sampler's `instrument` parameter stores catalog preset ids** (`<library>/<patch path>`, `<library>/@<set>` for
+   an articulation set); absolute paths from older projects are mapped to ids on load. A library that matches a shipped
+   profile takes the profile's id. This amends ADR 0010 decision 4.
+5. **Sampler engine work**, pure Rust and real-time safe, no new dependency, each item with its regression test, following
+   ARIA and sfizz where the SFZ specification is silent: the conformance fixes first (Q1–Q4, Q7, Q11, N1–N3, C8), then velocity and controller crossfades, `amp_veltrack` and
+   `off_mode` (Q6, Q8, Q9), then `trigger=first`/`legato` with an overlap-crossfade legato on sustain samples, then
+   multi-patch articulation sets per device.
+6. **Library profiles:** `sonara-library.json` version 2 maps each preset to an instrument id, solo or section,
+   articulations and how they are reached, dynamics and legato modes, seating and a verdict. Sonara ships profiles (its
+   own data, no samples) for VSCO 2 CE and VCSL v1.2.2-RC. A user's manifest overrides a shipped profile.
+7. **A degradation chain** in `sonara-app` resolves every request from the exact preset down to silence and reports each
+   substitution.
+8. **Ensembles** are data applied through existing commands as one undo step; the GUI offers them, agents reach them
+   through the planner. The golden `orchestral` template stays unchanged.
+9. **Agents:** a generated orchestration reference (at most 24,000 characters, tested for size and drift) in the AI
+   Composer's system prompt; instrument and ensemble requests in the deterministic planner (English and Czech), with
+   staged validation and undo rollback replacing the guarantee that a refusal changes nothing; orchestration findings in
+   `sonara_app::quality`, by rule id. No new tool in phase 1.
+10. **Interface:** a Library browser by family and instrument, family panels, an instrument-aware track header,
+    piano-roll range shading, a written/sounding view, articulation and dynamics lanes, ensembles in New Project, all
+    measured against ADR 0009.
+11. **Phase 2 is a separate, versioned decision (CTR-01):** project schema v2 with an optional track `part` and note
+    `articulation`, written only when a document needs them (the golden version-1 bytes stay valid, GLD-01); a CC-writing
+    tool, an ensemble tool, orchestrate and check tools; and whether to add a GM fallback engine (`rustysynth`). Plugin
+    hosting (M5) reuses the same articulation maps.
+12. **Dependencies:** no new crate enters `Cargo.lock`. New edges to crates the workspace already locks (`serde` and
+    `unicode-normalization` in `sonara-midi`, `strsim` in `sonara-agent`) are allowed and recorded in
+    `docs/dependencies.md` (QG-10).
+
+## Alternatives considered
+
+| Alternative | Why not now |
+|---|---|
+| A per-note articulation field and a CC tool right away | Changes the project schema and the tool schemas (CTR-01) before the model is proven; phase 1 reaches the same sound through sampler parameters |
+| Key-switch notes written into clips as the authoring path | Works under today's contracts, but clutters clips, breaks range checks, depends on per-library key numbers and loses the switch on a seek (C11); kept only for imported MIDI |
+| Replacing the `orchestral` template with a real orchestra | It is golden-covered (Ascension, its golden workflow and a render-load baseline); GLD-01 forbids it |
+| Working around the SFZ divergences in the profiles | Leaves about 75 key-switch files and every free grand piano broken for users without profiles |
+| An FFI engine (sfizz, FluidSynth) | Needs an RT-10 amendment; sfizz is archived; unchanged from ADR 0010 |
+| A GM fallback engine first | Adds a second engine for low-quality voices before the conformance work shows how many ids still lack a free SFZ |
+| Bundling a library | ADR 0010 and LIC-01; shipped profiles give most of the benefit without redistributing samples |
+
+## Consequences
+
+- No contract changes until phase 2. The sampler's descriptor grows (`instrument_type`, `articulation`, `dynamics`), and
+  its `instrument` values change form, which projects that stored absolute paths still accept.
+- The sampler's real-time code grows (crossfades, legato, several banks per device); every addition carries
+  `assert_no_alloc` tests, and memory per device must be measured (HW-01).
+- Track-level articulation cannot give divisi parts different articulations on one track; ensembles place divisi on
+  separate tracks until phase 2.
+- The articulation choice list is frozen once projects store its indices: the vocabulary decisions come before the first
+  release that writes `articulation` automation.
+- The planner's documented guarantee changes from "a refusal changes nothing" to "a failed step is rolled back with
+  undo" (`docs/orchestration.md` must say so when O4 lands).
+- Legato built from sustain samples is not recorded legato. The release notes and the AI Composer's reference must say
+  so; plugin hosting is the route to recorded transitions.
+- Sound quality has not been judged. The first step after the conformance work is a listening test with VSCO 2 CE and
+  VCSL.
+
+## Owner decisions needed to accept this ADR
+
+1. Accept the phase-1 approach (decisions 1–10) with no contract change.
+2. Amend ADR 0010 decision 4 (preset ids).
+3. Ship library profiles for VSCO 2 CE and VCSL; no shipped profile for Sonatina or CC BY libraries.
+4. The articulation vocabulary points: the `col_legno` merge, the invented ids, the ordinario rule, mallet rolls, shape B.
+5. The planner's staged validation with undo rollback; humanization on by default; the AI Composer reference.
+6. The reading of "no new dependency" in decision 12.
+7. Defer phase 2 (schema v2, CC tool, ensemble and orchestration tools, GM fallback) to a later ADR.
+
+The detailed questions, with options and the research's recommendations, are A1–A25 in
+[open-questions.md](../orchestra/open-questions.md).
