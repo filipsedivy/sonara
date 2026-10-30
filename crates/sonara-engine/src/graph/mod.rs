@@ -1118,7 +1118,7 @@ impl Builder<'_> {
             Ok(bank) => {
                 if !bank.ignored_opcodes.is_empty() {
                     self.warnings.push(format!(
-                        "instrument {} uses opcodes the sampler does not play: {}",
+                        "instrument {} uses SFZ features the sampler does not play: {}",
                         str_repr(path),
                         bank.ignored_opcodes.join(", ")
                     ));

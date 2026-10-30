@@ -228,3 +228,28 @@ fn a_patch_with_a_missing_sample_plays_the_rest_and_warns() {
         "the region that loads plays as the same patch without the others"
     );
 }
+
+#[test]
+fn what_the_sampler_does_not_play_is_one_warning() {
+    // Unknown opcodes, unsupported values of supported ones and skipped headers are listed
+    // together; the regions still play.
+    let (dir, _) = patch_dir();
+    let sfz = dir.path().join("legato.sfz");
+    fs::write(
+        &sfz,
+        "<curve> curve_index=7 v000=0\n\
+         <region> sample=tone.wav lokey=36 hikey=36 pitch_keycenter=36 ampeg_release=0.1 \
+         trigger=legato cutoff=500\n",
+    )
+    .expect("write the patch");
+    let audio = render(&[path(&sfz)], None).expect("renders");
+    assert_eq!(
+        audio.stats.warnings,
+        [format!(
+            "instrument {} uses SFZ features the sampler does not play: <curve>, cutoff, \
+             trigger=legato",
+            sonara_core::pyfmt::str_repr(&path(&sfz))
+        )]
+    );
+    assert!(peak(&audio) > 0.01, "the legato region plays as attack");
+}

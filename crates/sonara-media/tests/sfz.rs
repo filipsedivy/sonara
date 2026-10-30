@@ -480,6 +480,100 @@ fn decodes_the_samples_and_reports_what_it_ignores() {
 }
 
 #[test]
+fn unsupported_trigger_values_are_reported() {
+    // Sonatina's legato and timpani roll patches (TST-06): `first`, `legato` and `release_key`
+    // regions play on every key press until the sampler plays those triggers, and the load
+    // warning used to say nothing about it.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<group> lokey=c3 hikey=c5\n\
+         <region> sample=Samples/soft1.wav trigger=first\n\
+         <region> sample=Samples/soft1.wav trigger=legato\n\
+         <region> sample=Samples/soft1.wav trigger=release_key\n\
+         <region> sample=Samples/soft1.wav trigger=release\n\
+         <region> sample=Samples/soft1.wav trigger=attack\n\
+         <region> sample=Samples/soft1.wav trigger=legato\n",
+    );
+    assert_eq!(
+        bank.ignored_opcodes,
+        ["trigger=first", "trigger=legato", "trigger=release_key"]
+    );
+    assert_eq!(
+        bank.regions.iter().map(|r| r.trigger).collect::<Vec<_>>(),
+        [
+            Trigger::Attack,
+            Trigger::Attack,
+            Trigger::Attack,
+            Trigger::Release,
+            Trigger::Attack,
+            Trigger::Attack
+        ],
+        "an unsupported trigger plays as the default, attack"
+    );
+}
+
+#[test]
+fn unsupported_values_and_headers_are_reported() {
+    // Salamander's stand-alone `<curve>` and an unknown loop mode (TST-06) used to be dropped
+    // without a word. The opcodes under a skipped header are not reported one by one.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<control> default_path=Samples/\n\
+         <curve> curve_index=7 v000=0 v127=1\n\
+         <effect> type=lofi bus=main\n\
+         <midi> polyphony=8\n\
+         <sample> name=embedded.wav\n\
+         <group> lokey=c3 hikey=c5\n\
+         <region> sample=soft1.wav loop_mode=loop_forever\n\
+         <region> sample=loud1.wav loopmode=sustain\n\
+         <region> sample=tail.wav loop_mode=no_loop\n\
+         <region> sample=soft2.wav loop_mode=loop_sustain\n",
+    );
+    assert_eq!(
+        bank.ignored_opcodes,
+        [
+            "<curve>",
+            "<effect>",
+            "<midi>",
+            "<sample>",
+            "loop_mode=loop_forever",
+            "loopmode=sustain"
+        ]
+    );
+    assert_eq!(
+        bank.regions.iter().map(|r| r.loop_mode).collect::<Vec<_>>(),
+        [
+            LoopMode::NoLoop,
+            LoopMode::NoLoop,
+            LoopMode::NoLoop,
+            LoopMode::Sustain
+        ],
+        "an unsupported loop mode plays as the default, no_loop"
+    );
+    assert!(
+        bank.regions
+            .iter()
+            .all(|r| (r.key_lo, r.key_hi) == (48, 72)),
+        "the group after the skipped headers is read"
+    );
+}
+
+#[test]
+fn a_misspelt_header_is_reported_and_its_opcodes_skipped() {
+    // TST-03: headers are matched as written, so `<Group>` is not a group: its opcodes do not
+    // reach the region, and the header is reported.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<Group> lokey=c3 hikey=c5 cutoff=500\n<region> sample=Samples/soft1.wav\n",
+    );
+    assert_eq!(bank.ignored_opcodes, ["<Group>"]);
+    assert_eq!((bank.regions[0].key_lo, bank.regions[0].key_hi), (0, 127));
+}
+
+#[test]
 fn a_missing_patch_or_sample_is_a_typed_error() {
     let dir = library();
     let missing = load_sfz(&dir.path().join("nothing.sfz"));

@@ -202,7 +202,10 @@ pub struct SampleBank {
     /// How long the instrument can keep sounding after the last key release, in seconds: the
     /// longest release and the longest release-trigger sample.
     pub tail_seconds: f64,
-    /// SFZ opcodes the patch uses that the sampler does not play, sorted, without duplicates.
+    /// What the patch writes that the sampler does not play, sorted, without duplicates: the
+    /// names of unsupported SFZ opcodes (a numbered family as one entry, `locc*`), the values of
+    /// supported opcodes it plays as if they were absent (`trigger=legato`), and the headers
+    /// whose opcodes are skipped (`<curve>`).
     pub ignored_opcodes: Vec<String>,
     /// The regions the loader left out and why, one note per sample they name, in the order the
     /// patch first names it: a sample file that does not exist, or a generator the sampler does

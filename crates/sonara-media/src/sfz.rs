@@ -12,7 +12,13 @@
 //! `sw_default`, `sw_last`, `trigger`, `group`, `off_by`, `loop_mode`, `loop_start`, `loop_end`,
 //! `offset`, `end`, `tune`, `transpose`, `volume`, `ampeg_attack`, `ampeg_release`, and the
 //! `#define`/`#include` directives. Every other opcode is recorded in
-//! [`SampleBank::ignored_opcodes`] and has no effect.
+//! [`SampleBank::ignored_opcodes`] and has no effect. So is a value of `trigger` other than
+//! `attack` and `release`, or of `loop_mode` other than `no_loop`, `one_shot`, `loop_continuous`
+//! and `loop_sustain`, as `trigger=legato`: the region plays as if the opcode were absent, so a
+//! `first`, `legato` or `release_key` region plays on every key press. A header other than
+//! `<control>`, `<global>`, `<master>`, `<group>` and `<region>` (`<curve>`, `<effect>`,
+//! `<midi>`, `<sample>`) is recorded as written, and the opcodes after it are skipped up to the
+//! next of those headers.
 //!
 //! **Regions no key starts.** A `key`, `lokey` or `hikey` of -1 means "no key" (SFZ 2), and a
 //! region with a controller trigger (`on_loccN`/`on_hiccN`, or their `hdcc` forms, other than
@@ -106,6 +112,7 @@ pub fn load_sfz(path: &Path) -> Result<SampleBank, MediaError> {
         let region = loader.region(dir, opcodes, path)?;
         bank.regions.extend(region);
     }
+    ignored.append(&mut loader.ignored);
     let notes = loader.notes();
     if bank.regions.is_empty() {
         let message = if notes.is_empty() {
@@ -373,7 +380,11 @@ fn parse(text: &str) -> Parsed {
                     open_scope = 3;
                 }
                 "<region>" => region = Some(Opcodes::new()),
-                _ => in_other = true,
+                _ => {
+                    // Its opcodes are skipped; the header is reported once, not each of them.
+                    in_other = true;
+                    ignored.push(token.to_owned());
+                }
             }
             continue;
         }
@@ -536,6 +547,8 @@ struct Loader {
     generators: HashMap<String, usize>,
     /// What the regions left out name, in the order the patch first names it.
     skipped: Vec<Skipped>,
+    /// The values of supported opcodes that the sampler does not play, as `name=value`.
+    ignored: Vec<String>,
     bytes: usize,
 }
 
@@ -630,21 +643,16 @@ impl Loader {
         region.tune_cents = num("tune").unwrap_or(0.0) + num("transpose").unwrap_or(0.0) * 100.0;
         region.attack = num("ampeg_attack").unwrap_or(0.0).max(0.0);
         region.release = num("ampeg_release").unwrap_or(0.0).max(0.0);
-        region.trigger = match opcodes.get("trigger").map(String::as_str) {
-            Some("release") => Trigger::Release,
-            _ => Trigger::Attack,
-        };
+        region.trigger = self
+            .value(opcodes, &["trigger"], parse_trigger)
+            .unwrap_or_default();
         region.offset = to_usize(int("offset"), 0).min(frames);
         region.end = int("end")
             .map_or(frames, |e| to_usize(Some(e), 0) + 1)
             .min(frames);
-        let mode = opcodes.get("loop_mode").or_else(|| opcodes.get("loopmode"));
-        region.loop_mode = match mode.map(String::as_str) {
-            Some("one_shot") => LoopMode::OneShot,
-            Some("loop_continuous") => LoopMode::Continuous,
-            Some("loop_sustain") => LoopMode::Sustain,
-            _ => LoopMode::NoLoop,
-        };
+        region.loop_mode = self
+            .value(opcodes, &["loop_mode", "loopmode"], parse_loop_mode)
+            .unwrap_or_default();
         let loop_start = int("loop_start").or_else(|| int("loopstart"));
         let loop_end = int("loop_end").or_else(|| int("loopend"));
         region.loop_start = to_usize(loop_start, 0);
@@ -652,6 +660,25 @@ impl Loader {
             .map_or(region.end, |e| to_usize(Some(e), 0) + 1)
             .min(region.end);
         Ok(Some(region))
+    }
+
+    /// The value of the first of the opcodes `names` that the region writes, as `parse` reads
+    /// it. A value that `parse` does not know is recorded as `name=value` in the ignored
+    /// opcodes and gives `None`, so the region plays as if the opcode were absent.
+    fn value<T>(
+        &mut self,
+        opcodes: &Opcodes,
+        names: &[&str],
+        parse: fn(&str) -> Option<T>,
+    ) -> Option<T> {
+        let (name, value) = names
+            .iter()
+            .find_map(|name| Some((*name, opcodes.get(*name)?.trim())))?;
+        let parsed = parse(value);
+        if parsed.is_none() {
+            self.ignored.push(format!("{name}={value}"));
+        }
+        parsed
     }
 
     /// The index of the sample of the generator `name`: the shared silent sample for
@@ -783,6 +810,26 @@ impl Loader {
             channels,
             data,
         })
+    }
+}
+
+/// The trigger a `trigger` value names; `None` for a value the sampler does not play.
+fn parse_trigger(value: &str) -> Option<Trigger> {
+    match value {
+        "attack" => Some(Trigger::Attack),
+        "release" => Some(Trigger::Release),
+        _ => None,
+    }
+}
+
+/// The loop mode a `loop_mode` value names; `None` for a value the sampler does not play.
+fn parse_loop_mode(value: &str) -> Option<LoopMode> {
+    match value {
+        "no_loop" => Some(LoopMode::NoLoop),
+        "one_shot" => Some(LoopMode::OneShot),
+        "loop_continuous" => Some(LoopMode::Continuous),
+        "loop_sustain" => Some(LoopMode::Sustain),
+        _ => None,
     }
 }
 
