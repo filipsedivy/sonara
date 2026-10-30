@@ -473,6 +473,15 @@ The doubling tables hold what the doubling and masking rules read:
   bassoons, with the auxiliary instruments in their branches; `rank` gives an instrument's branch
   and `None` for the saxophones, which the order does not place.
 
+The function table says who carries a line. `Role` names what a line does in the texture
+(`melody`, `counter_melody`, `harmony`, `bass`, `rhythm`, `colour`, `pedal`), the input the rules
+call the role. `CARRIERS` holds, for a melody in each register band and for a bass, the
+instruments that carry it in the order a writer reaches for them (the strings first, then the
+woodwinds, the brass and the others, after Rimsky-Korsakov's ranking) and the instruments that
+only colour it, such as the glockenspiel accenting a high melody or the timpani on a bass;
+`carriers(role, band)` finds the row and gives `None` for a function and band the table has no
+row for. The rows cite Rimsky-Korsakov's chapters on melody and on the bass.
+
 `DynamicBand` groups the notated dynamics as the sources compare them: `Soft` (pp, p), `Medium`
 (mp, mf) and `Loud` (f, ff); where mp falls is an estimate.
 
@@ -643,15 +652,16 @@ doubling with fewer than two members, a member counted with no players, no spaci
 twice or of no octaves, or a prevailing member it does not have; a woodwind order with an empty
 branch, an instrument of another family or one twice; a weight row with no weight or one that is
 not a positive finite number; a register factor that is not; low-interval limits that do not run
-from one semitone upward without a gap; a combination of fewer than two members; and blank texts
-or provenance. A compile-time check runs it on every shipped row and keeps an instrument's
-registers from overlapping. `crates/sonara-midi/tests/rules.rs` compares the
+from one semitone upward without a gap; a combination of fewer than two members; a row of the
+function table with no band or carrier, or one listed twice; and blank texts or provenance. A
+compile-time check runs it on every shipped row, keeps an instrument's registers from overlapping
+and gives a function at most one row per band. `crates/sonara-midi/tests/rules.rs` compares the
 codes, grades and thresholds with tables written from the sources, checks that every rule is
 traceable and that an estimated threshold backs no error, compares the named unisons with the
 pairs and leaders Rimsky-Korsakov gives, checks that octave doublings list their members from the
 top in woodwind order and that a played articulation is one its instruments list, compares the
-weights of every instrument, the register factors and the low-interval limits with tables written
-from the sources, checks that every sustaining instrument has a weight, that registers lie inside
+weights of every instrument, the register factors, the low-interval limits and the function table
+with tables written from the sources, checks that every sustaining instrument has a weight, that registers lie inside
 the playable range and that the bands cover MIDI, and rejects a fixture breaking each check.
 
 A fallback row has a `check` that rejects a neighbour that is the instrument itself or listed
@@ -677,5 +687,5 @@ keyboards, voices, strings); the categories and the words for a whole category o
 `♭` ("Clarinet in B♭"); an alternate in parentheses ("Timpani (kettledrums)") is not part of it.
 Range extensions and gaps, alternative tunings and techniques outside the vocabulary are not
 modelled. The thirteen ensemble templates live in `data/ensembles.rs`; divisi tracks are not part
-of a template. The rules and their tables live in `data/rules.rs`, the fallback tables in
-`data/fallback.rs`.
+of a template. The rules and their tables live in `data/rules.rs`, the function table in
+`data/functions.rs`, the fallback tables in `data/fallback.rs`.

@@ -11,6 +11,8 @@
 //!   register changes the weight, and [`RegisterBand`] the bands that say which notes lie near
 //!   each other.
 //! - [`LOW_INTERVAL_LIMITS`] gives the lowest note at which each interval stays clear.
+//! - [`CARRIERS`], the function table, names the instruments that carry a melody or a bass in
+//!   each register band ([`Role`], [`carriers`]).
 //! - Named thresholds, such as [`SUSTAINED_HIGH_BRASS`], hold the numbers the checks compare
 //!   with, each with its own provenance and the rules that use it.
 //!
@@ -32,6 +34,7 @@ use super::id::InstrumentType;
 use super::instrument::{Family, Provenance, is_stated};
 use super::pitch::{PitchRange, SoundingPitch};
 
+pub use super::data::functions::CARRIERS;
 pub use super::data::rules::{
     BASS_SPACING, CHARACTERISTIC_COLOUR_SHARE, DO_NOT_DOUBLE, DYNAMIC_STEP, FEWEST_FIRST_VIOLINS,
     HEAVY_PERCUSSION, LOUD_DIVISI, LOW_DISSONANCE, LOW_INTERVAL_LIMITS, MANY_NOTE_SLUR,
@@ -635,6 +638,59 @@ pub enum RuleInput {
     TimpaniTuning,
 }
 
+/// What a line does in the texture: the functions the rules read ([`RuleInput::Role`]) and the
+/// function table ([`CARRIERS`]) names carriers for.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum Role {
+    /// The main tune (`melody`).
+    Melody,
+    /// A second, independent tune against the melody (`counter_melody`).
+    CounterMelody,
+    /// Chords that support the melody (`harmony`).
+    Harmony,
+    /// The lowest line of the harmony (`bass`).
+    Bass,
+    /// Repeated notes, ostinato or another rhythmic figure (`rhythm`).
+    Rhythm,
+    /// Ornament and colour, typically from instruments of little sustaining power (`colour`).
+    Colour,
+    /// A note held or repeated under changing harmony (`pedal`).
+    Pedal,
+}
+
+impl Role {
+    /// Every role, in the order the orchestration rules list them.
+    pub const ALL: [Self; 7] = [
+        Self::Melody,
+        Self::CounterMelody,
+        Self::Harmony,
+        Self::Bass,
+        Self::Rhythm,
+        Self::Colour,
+        Self::Pedal,
+    ];
+
+    /// The stable slug, such as `counter_melody`.
+    #[must_use]
+    pub const fn slug(self) -> &'static str {
+        match self {
+            Self::Melody => "melody",
+            Self::CounterMelody => "counter_melody",
+            Self::Harmony => "harmony",
+            Self::Bass => "bass",
+            Self::Rhythm => "rhythm",
+            Self::Colour => "colour",
+            Self::Pedal => "pedal",
+        }
+    }
+
+    /// The role with slug `slug`, or `None`. The match is exact.
+    #[must_use]
+    pub fn from_slug(slug: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|role| role.slug() == slug)
+    }
+}
+
 /// The values of a rule, checked by [`Rule::try_new`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RuleSpec {
@@ -690,6 +746,10 @@ pub enum RuleError {
     /// The low-interval limits do not list intervals from a second upward, each once and in order.
     #[error("the low-interval limits are out of order")]
     InvalidLimits,
+    /// A row of the function table names no band or no carrying instrument, or a band or an
+    /// instrument twice.
+    #[error("a row of the function table is invalid")]
+    InvalidCarriers,
 }
 
 /// A rule of the catalogue: what it checks, the inputs it needs, how serious a finding is and
@@ -1171,6 +1231,86 @@ impl WoodwindOrder {
         }
         Ok(())
     }
+}
+
+/// Who usually carries a function in some register bands: one row of the function table
+/// ([`CARRIERS`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Carriers {
+    /// The function.
+    pub role: Role,
+    /// The register bands of the line, from the lowest, each listed once; a function has at most
+    /// one row per band.
+    pub bands: &'static [RegisterBand],
+    /// The instruments that carry the function in these bands, in the order a writer reaches for
+    /// them: the strings first, then the woodwinds, the brass and the others, which tire the ear
+    /// sooner; each family in the order its source gives.
+    pub instruments: &'static [InstrumentType],
+    /// The instruments that add colour to the function, accenting or doubling it, rather than
+    /// carry it on their own; empty when none.
+    pub colours: &'static [InstrumentType],
+    /// Where the row comes from.
+    pub provenance: Provenance,
+}
+
+impl Carriers {
+    /// Whether the row covers `band`.
+    #[must_use]
+    pub fn covers(&self, band: RegisterBand) -> bool {
+        self.bands.contains(&band)
+    }
+
+    /// Checks the row.
+    ///
+    /// # Errors
+    /// [`RuleError::InvalidCarriers`] when the row names no band or no carrying instrument, or a
+    /// band or an instrument twice (across [`Carriers::instruments`] and
+    /// [`Carriers::colours`]); [`RuleError::EmptyProvenance`].
+    pub const fn check(&self) -> Result<(), RuleError> {
+        if self.bands.is_empty() || self.instruments.is_empty() {
+            return Err(RuleError::InvalidCarriers);
+        }
+        let mut i = 0;
+        while i < self.bands.len() {
+            let mut j = i + 1;
+            while j < self.bands.len() {
+                if self.bands[i] as u8 == self.bands[j] as u8 {
+                    return Err(RuleError::InvalidCarriers);
+                }
+                j += 1;
+            }
+            i += 1;
+        }
+        let mut seen = [false; InstrumentType::ALL.len()];
+        let lists = [self.instruments, self.colours];
+        let mut l = 0;
+        while l < lists.len() {
+            let list = lists[l];
+            let mut i = 0;
+            while i < list.len() {
+                let instrument = list[i] as usize;
+                if seen[instrument] {
+                    return Err(RuleError::InvalidCarriers);
+                }
+                seen[instrument] = true;
+                i += 1;
+            }
+            l += 1;
+        }
+        if !is_stated(self.provenance) {
+            return Err(RuleError::EmptyProvenance);
+        }
+        Ok(())
+    }
+}
+
+/// The row of the function table ([`CARRIERS`]) for `role` in `band`, or `None` when the table
+/// has no row for them.
+#[must_use]
+pub fn carriers(role: Role, band: RegisterBand) -> Option<&'static Carriers> {
+    CARRIERS
+        .iter()
+        .find(|row| row.role == role && row.covers(band))
 }
 
 /// How strongly a line sounds against the others at each dynamic band.

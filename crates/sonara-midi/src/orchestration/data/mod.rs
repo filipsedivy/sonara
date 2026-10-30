@@ -42,6 +42,7 @@ mod brass;
 mod categories;
 mod ensembles;
 pub(super) mod fallback;
+pub(super) mod functions;
 mod keyboards;
 mod percussion;
 mod plucked;

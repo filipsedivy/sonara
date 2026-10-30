@@ -26,6 +26,7 @@ use thiserror::Error;
 
 use crate::orchestration::{Articulation, Instrument, PitchRange, is_snake_case};
 
+pub use crate::orchestration::rules::Role;
 pub use seed::Seed;
 
 /// The most bytes a [`PartId`] holds.
@@ -82,59 +83,6 @@ impl PartId {
 impl fmt::Display for PartId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.0)
-    }
-}
-
-/// What a part does in the texture: the functions the orchestration rules read
-/// ([`RuleInput::Role`](crate::orchestration::rules::RuleInput::Role)).
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub enum Role {
-    /// The main tune (`melody`).
-    Melody,
-    /// A second, independent tune against the melody (`counter_melody`).
-    CounterMelody,
-    /// Chords that support the melody (`harmony`).
-    Harmony,
-    /// The lowest line of the harmony (`bass`).
-    Bass,
-    /// Repeated notes, ostinato or another rhythmic figure (`rhythm`).
-    Rhythm,
-    /// Ornament and colour, typically from instruments of little sustaining power (`colour`).
-    Colour,
-    /// A note held or repeated under changing harmony (`pedal`).
-    Pedal,
-}
-
-impl Role {
-    /// Every role, in the order the orchestration rules list them.
-    pub const ALL: [Self; 7] = [
-        Self::Melody,
-        Self::CounterMelody,
-        Self::Harmony,
-        Self::Bass,
-        Self::Rhythm,
-        Self::Colour,
-        Self::Pedal,
-    ];
-
-    /// The stable slug, such as `counter_melody`.
-    #[must_use]
-    pub const fn slug(self) -> &'static str {
-        match self {
-            Self::Melody => "melody",
-            Self::CounterMelody => "counter_melody",
-            Self::Harmony => "harmony",
-            Self::Bass => "bass",
-            Self::Rhythm => "rhythm",
-            Self::Colour => "colour",
-            Self::Pedal => "pedal",
-        }
-    }
-
-    /// The role with slug `slug`, or `None`. The match is exact.
-    #[must_use]
-    pub fn from_slug(slug: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|role| role.slug() == slug)
     }
 }
 

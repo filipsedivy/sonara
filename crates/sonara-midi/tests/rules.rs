@@ -8,8 +8,8 @@ use sonara_midi::orchestration::rules::{
     section_weight, weight_row,
 };
 use sonara_midi::orchestration::rules::{
-    Avoid, DO_NOT_DOUBLE, Forces, Member, NAMED_DOUBLINGS, NamedDoubling, Playing, Prevails,
-    Selector, Spacing, WOODWIND_ORDER, WoodwindOrder,
+    Avoid, CARRIERS, Carriers, DO_NOT_DOUBLE, Forces, Member, NAMED_DOUBLINGS, NamedDoubling,
+    Playing, Prevails, Role, Selector, Spacing, WOODWIND_ORDER, WoodwindOrder, carriers,
 };
 use sonara_midi::orchestration::rules::{
     BASS_SPACING, CHARACTERISTIC_COLOUR_SHARE, DynamicBand, FEWEST_FIRST_VIOLINS, LOUD_DIVISI,
@@ -1618,4 +1618,198 @@ fn limit_and_combination_validators_reject_each_broken_table() {
     for (row, error) in broken {
         assert_eq!(row.check(), Err(error), "{row:?}");
     }
+}
+
+/// A row of the function table as the test writes it: role, bands, carriers and colours.
+type ExpectedCarriers = (
+    Role,
+    &'static [RegisterBand],
+    &'static [InstrumentType],
+    &'static [InstrumentType],
+);
+
+#[test]
+fn the_function_table_names_the_handbook_carriers() {
+    // TST-10: the melody and bass rows written out from Rimsky-Korsakov, Ch. II and III, in the
+    // order a writer reaches for them: strings, woodwinds, brass, then the colours.
+    use InstrumentType::{
+        BassClarinet, Bassoon, Celesta, Cello, ClarinetA, ClarinetBb, ClarinetEb, Contrabassoon,
+        DoubleBass, EnglishHorn, Euphonium, Flute, Glockenspiel, Harp, HornF, Oboe, Piccolo,
+        Timpani, TromboneBass, TromboneTenor, TrumpetBb, TrumpetC, Tuba, Viola, Violin, Xylophone,
+    };
+    use RegisterBand::{Alto, Bass, High, Soprano, Sub, Tenor, Top};
+    let expected: [ExpectedCarriers; 5] = [
+        (
+            Role::Melody,
+            &[High, Top],
+            &[Violin, Piccolo, Flute, ClarinetEb, TrumpetC, TrumpetBb],
+            &[Glockenspiel, Xylophone, Celesta],
+        ),
+        (
+            Role::Melody,
+            &[Alto, Soprano],
+            &[
+                Violin,
+                Flute,
+                Oboe,
+                ClarinetBb,
+                ClarinetA,
+                EnglishHorn,
+                HornF,
+                TrumpetBb,
+                TrumpetC,
+            ],
+            &[],
+        ),
+        (
+            Role::Melody,
+            &[Tenor],
+            &[
+                Cello,
+                Viola,
+                Bassoon,
+                BassClarinet,
+                EnglishHorn,
+                ClarinetBb,
+                ClarinetA,
+                HornF,
+                TromboneTenor,
+                Euphonium,
+            ],
+            &[],
+        ),
+        (
+            Role::Melody,
+            &[Sub, Bass],
+            &[
+                Cello,
+                DoubleBass,
+                Bassoon,
+                Contrabassoon,
+                Tuba,
+                TromboneBass,
+            ],
+            &[],
+        ),
+        (
+            Role::Bass,
+            &[Sub, Bass],
+            &[
+                Cello,
+                DoubleBass,
+                Bassoon,
+                Contrabassoon,
+                BassClarinet,
+                Tuba,
+                TromboneBass,
+            ],
+            &[Timpani, Harp],
+        ),
+    ];
+    assert_eq!(CARRIERS.len(), expected.len());
+    for (row, (role, bands, instruments, colours)) in CARRIERS.iter().zip(expected) {
+        assert_eq!(row.role, role);
+        assert_eq!(row.bands, bands, "{role:?}");
+        assert_eq!(row.instruments, instruments, "{role:?} {bands:?}");
+        assert_eq!(row.colours, colours, "{role:?} {bands:?}");
+    }
+}
+
+#[test]
+fn every_function_row_is_valid_traceable_and_ordered_by_family() {
+    let rank = |family: Family| match family {
+        Family::Strings => 0,
+        Family::Woodwinds => 1,
+        Family::Brass => 2,
+        _ => 3,
+    };
+    for row in &CARRIERS {
+        assert_eq!(row.check(), Ok(()), "{row:?}");
+        assert!(is_traceable(row.provenance), "{row:?}");
+        // The strings come first, then the woodwinds, the brass and the others.
+        assert!(
+            row.instruments
+                .is_sorted_by_key(|instrument| rank(instrument.family())),
+            "{:?} {:?}",
+            row.role,
+            row.bands
+        );
+        // A carrier of a pitched line is pitched.
+        for instrument in row.instruments.iter().chain(row.colours) {
+            assert!(
+                matches!(instrument.get().pitch(), PitchModel::Pitched(_)),
+                "{instrument:?}"
+            );
+        }
+    }
+}
+
+#[test]
+fn the_melody_has_a_row_in_every_band_and_the_bass_only_low() {
+    for band in RegisterBand::ALL {
+        let melody = carriers(Role::Melody, band).expect("every band has melody carriers");
+        assert!(melody.covers(band));
+        assert_eq!(melody.role, Role::Melody);
+    }
+    // The first carrier of a melody is a violin from the alto band up, a cello below it.
+    assert_eq!(
+        carriers(Role::Melody, RegisterBand::Soprano).map(|row| row.instruments[0]),
+        Some(InstrumentType::Violin)
+    );
+    assert_eq!(
+        carriers(Role::Melody, RegisterBand::Tenor).map(|row| row.instruments[0]),
+        Some(InstrumentType::Cello)
+    );
+    assert!(carriers(Role::Bass, RegisterBand::Bass).is_some());
+    assert!(carriers(Role::Bass, RegisterBand::Sub).is_some());
+    // TST-03: a function and band without a row give `None`, never another row.
+    assert_eq!(carriers(Role::Bass, RegisterBand::Tenor), None);
+    assert_eq!(carriers(Role::Harmony, RegisterBand::Alto), None);
+}
+
+#[test]
+fn carriers_validator_rejects_each_broken_row() {
+    // TST-03: one fixture per failing check.
+    let row = Carriers {
+        role: Role::Melody,
+        bands: &[RegisterBand::Alto, RegisterBand::Soprano],
+        instruments: &[InstrumentType::Violin, InstrumentType::Flute],
+        colours: &[InstrumentType::Celesta],
+        provenance: FIXTURE,
+    };
+    assert_eq!(row.check(), Ok(()));
+    let broken = [
+        Carriers { bands: &[], ..row },
+        Carriers {
+            bands: &[RegisterBand::Alto, RegisterBand::Alto],
+            ..row
+        },
+        Carriers {
+            instruments: &[],
+            ..row
+        },
+        Carriers {
+            instruments: &[InstrumentType::Violin, InstrumentType::Violin],
+            ..row
+        },
+        Carriers {
+            colours: &[InstrumentType::Flute],
+            ..row
+        },
+    ];
+    for broken in broken {
+        assert_eq!(
+            broken.check(),
+            Err(RuleError::InvalidCarriers),
+            "{broken:?}"
+        );
+    }
+    assert_eq!(
+        Carriers {
+            provenance: Provenance::Estimate { reason: "" },
+            ..row
+        }
+        .check(),
+        Err(RuleError::EmptyProvenance)
+    );
 }
