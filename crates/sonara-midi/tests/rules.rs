@@ -1785,6 +1785,10 @@ fn carriers_validator_rejects_each_broken_row() {
             ..row
         },
         Carriers {
+            bands: &[RegisterBand::Soprano, RegisterBand::Alto],
+            ..row
+        },
+        Carriers {
             instruments: &[],
             ..row
         },

@@ -1298,8 +1298,18 @@ proptest! {
             written.push(pitch);
         }
         let tutti = romantic(&[Family::Woodwinds, Family::Brass, Family::Strings]);
-        let Ok(result) = melody_doublings(&melody(&written), &tutti, density, &mut ids()) else {
-            return Ok(());
+        let result = match melody_doublings(&melody(&written), &tutti, density, &mut ids()) {
+            Ok(result) => result,
+            Err(error) => {
+                // TST-03: the only refusal is a melody no part holds inside its range.
+                prop_assert_eq!(error, VoicingError::NoCarrier);
+                let fits = |carrier: &Carrier| {
+                    let range = comfortable(carrier.instrument);
+                    written.iter().all(|&p| holds(range, p))
+                };
+                prop_assert!(!tutti.iter().any(fits));
+                return Ok(());
+            }
         };
         prop_assert_eq!(pitches(&result.voiced, result.carrier.as_str()), written.clone());
         let mut lines: Vec<(InstrumentType, i8)> = Vec::new();

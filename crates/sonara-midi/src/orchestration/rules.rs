@@ -1263,21 +1263,18 @@ impl Carriers {
     /// Checks the row.
     ///
     /// # Errors
-    /// [`RuleError::InvalidCarriers`] when the row names no band or no carrying instrument, or a
-    /// band or an instrument twice (across [`Carriers::instruments`] and
-    /// [`Carriers::colours`]); [`RuleError::EmptyProvenance`].
+    /// [`RuleError::InvalidCarriers`] when the row names no band or no carrying instrument, its
+    /// bands do not rise from the lowest without repeating one, or it names an instrument twice
+    /// (across [`Carriers::instruments`] and [`Carriers::colours`]);
+    /// [`RuleError::EmptyProvenance`].
     pub const fn check(&self) -> Result<(), RuleError> {
         if self.bands.is_empty() || self.instruments.is_empty() {
             return Err(RuleError::InvalidCarriers);
         }
-        let mut i = 0;
+        let mut i = 1;
         while i < self.bands.len() {
-            let mut j = i + 1;
-            while j < self.bands.len() {
-                if self.bands[i] as u8 == self.bands[j] as u8 {
-                    return Err(RuleError::InvalidCarriers);
-                }
-                j += 1;
+            if self.bands[i - 1] as u8 >= self.bands[i] as u8 {
+                return Err(RuleError::InvalidCarriers);
             }
             i += 1;
         }

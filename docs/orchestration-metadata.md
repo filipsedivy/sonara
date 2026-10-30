@@ -480,7 +480,8 @@ instruments that carry it in the order a writer reaches for them (the strings fi
 woodwinds, the brass and the others, after Rimsky-Korsakov's ranking) and the instruments that
 only colour it, such as the glockenspiel accenting a high melody or the timpani on a bass;
 `carriers(role, band)` finds the row and gives `None` for a function and band the table has no
-row for. The rows cite Rimsky-Korsakov's chapters on melody and on the bass.
+row for. The rows cite Rimsky-Korsakov's chapters on melody and on the bass, and Forsyth for the
+timpani on the bass.
 
 `DynamicBand` groups the notated dynamics as the sources compare them: `Soft` (pp, p), `Medium`
 (mp, mf) and `Loud` (f, ff); where mp falls is an estimate.
@@ -653,7 +654,8 @@ twice or of no octaves, or a prevailing member it does not have; a woodwind orde
 branch, an instrument of another family or one twice; a weight row with no weight or one that is
 not a positive finite number; a register factor that is not; low-interval limits that do not run
 from one semitone upward without a gap; a combination of fewer than two members; a row of the
-function table with no band or carrier, or one listed twice; and blank texts or provenance. A
+function table with no band or carrier, bands that do not rise from the lowest, or an instrument
+listed twice; and blank texts or provenance. A
 compile-time check runs it on every shipped row, keeps an instrument's registers from overlapping
 and gives a function at most one row per band. `crates/sonara-midi/tests/rules.rs` compares the
 codes, grades and thresholds with tables written from the sources, checks that every rule is
