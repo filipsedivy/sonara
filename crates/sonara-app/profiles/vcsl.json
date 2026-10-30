@@ -2,10 +2,1439 @@
   "version": 2,
   "id": "vcsl",
   "name": "Versilian Community Sample Library",
-  "source": { "url": "https://github.com/sgossner/VCSL", "revision": "tag v1.2.2-RC" },
-  "detect": [
-    "Aerophones/Reed Aerophones/Tenor Saxophone - Keyswitch.sfz",
-    "Idiophones/Struck Idiophones/Triangles.sfz",
-    "Membranophones/Struck Membranophones/Timpani 1 - Keyswitch.sfz"
+  "license": "CC0 1.0",
+  "source": {"url": "https://github.com/sgossner/VCSL", "revision": "tag v1.2.2-RC"},
+  "detect": ["Aerophones/Reed Aerophones/Tenor Saxophone - Keyswitch.sfz", "Idiophones/Struck Idiophones/Triangles.sfz", "Membranophones/Struck Membranophones/Timpani 1 - Keyswitch.sfz"],
+  "profile": {"checked": "2026-10-30", "method": "code_reading"},
+  "instruments": [
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Ball Whistle.sfz",
+      "family": "other",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Baroque Alto Recorder - Keyswitch.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Baroque Alto Recorder - Staccato.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Baroque Alto Recorder - SusVib.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Baroque Alto Recorder - Sustain.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Baroque Bass Recorder - Keyswitch.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Baroque Bass Recorder - Staccato.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Baroque Bass Recorder - SusVib.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Baroque Bass Recorder - Sustain.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Baroque Soprano Recorder - Keyswitch.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Baroque Soprano Recorder - Staccato.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Baroque Soprano Recorder - Sustain.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Baroque Tenor Recorder - Keyswitch.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Baroque Tenor Recorder - Staccato.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Baroque Tenor Recorder - SusVib.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Baroque Tenor Recorder - Sustain.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Ocarina, Small - Keyswitch.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Ocarina, Small - Staccato.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Ocarina, Small - Sustain.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Ocarina, Typical - Keyswitch.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Ocarina, Typical - Sus.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Ocarina, Typical - SusVib.sfz",
+      "family": "woodwinds",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Pipe Organ - Keyswitch.sfz",
+      "instrument": "organ_pipe",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "keyswitch", "key": 100, "label": "Loud", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Pipe Organ - Loud Pedal.sfz",
+      "instrument": "organ_pipe",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Pipe Organ - Loud.sfz",
+      "instrument": "organ_pipe",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Pipe Organ - Quiet Pedal.sfz",
+      "instrument": "organ_pipe",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Pipe Organ - Quiet.sfz",
+      "instrument": "organ_pipe",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Renaissance Organ - 4'+8'.sfz",
+      "instrument": "organ_pipe",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Renaissance Organ - 4'.sfz",
+      "instrument": "organ_pipe",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Renaissance Organ - 8'.sfz",
+      "instrument": "organ_pipe",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Renaissance Organ - Full.sfz",
+      "instrument": "organ_pipe",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Renaissance Organ - Keyswitch.sfz",
+      "instrument": "organ_pipe",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "keyswitch", "key": 94, "label": "8'", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "partly", "lost": ["keys 93 to 96 switch registrations although they lie inside the organ's manual compass, so a note there changes the registration and does not sound; the patch has no samples above F6 (89)"]}
+    },
+    {
+      "path": "Aerophones/Edge-blown Aerophones/Train Whistle, Toy.sfz",
+      "family": "other",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Free Aerophones/Harmonica-Hohner-Special20-C - Keyswitch.sfz",
+      "family": "other",
+      "verdict": {"state": "partly", "lost": ["ampeg_decay and ampeg_sustain: the samples that set them ring for their full length instead of fading out"]}
+    },
+    {
+      "path": "Aerophones/Free Aerophones/Harmonica-Hohner-Special20-C - Normal.sfz",
+      "family": "other",
+      "verdict": {"state": "partly", "lost": ["ampeg_decay and ampeg_sustain: the samples that set them ring for their full length instead of fading out"]}
+    },
+    {
+      "path": "Aerophones/Free Aerophones/Harmonica-Hohner-Special20-C - Soft.sfz",
+      "family": "other",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Free Aerophones/Harmonica-Hohner-Special20-C - Vib.sfz",
+      "family": "other",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Free Aerophones/Harmonica-Hohner-Special20-F - Accented.sfz",
+      "family": "other",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Free Aerophones/Harmonica-Hohner-Special20-F - HandVib.sfz",
+      "family": "other",
+      "verdict": {"state": "partly", "lost": ["ampeg_decay and ampeg_sustain: the samples that set them ring for their full length instead of fading out"]}
+    },
+    {
+      "path": "Aerophones/Free Aerophones/Harmonica-Hohner-Special20-F - Keyswitch.sfz",
+      "family": "other",
+      "verdict": {"state": "partly", "lost": ["ampeg_decay and ampeg_sustain: the samples that set them ring for their full length instead of fading out"]}
+    },
+    {
+      "path": "Aerophones/Free Aerophones/Harmonica-Hohner-Special20-F - Normal.sfz",
+      "family": "other",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Free Aerophones/Harmonica-Hohner-Special20-F - Stac.sfz",
+      "family": "other",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Free Aerophones/Harmonica-Hohner-Special20-F - Vib.sfz",
+      "family": "other",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Free Aerophones/Harmonica-Hohner-Super64 - Accented.sfz",
+      "family": "other",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Free Aerophones/Harmonica-Hohner-Super64 - Keyswitch.sfz",
+      "family": "other",
+      "verdict": {"state": "partly", "lost": ["ampeg_decay and ampeg_sustain: the samples that set them ring for their full length instead of fading out"]}
+    },
+    {
+      "path": "Aerophones/Free Aerophones/Harmonica-Hohner-Super64 - Normal.sfz",
+      "family": "other",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Free Aerophones/Harmonica-Hohner-Super64 - Vib.sfz",
+      "family": "other",
+      "verdict": {"state": "partly", "lost": ["ampeg_decay and ampeg_sustain: the samples that set them ring for their full length instead of fading out"]}
+    },
+    {
+      "path": "Aerophones/Free Aerophones/Siren.sfz",
+      "family": "other",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Lip Aerophones/Didgeridoo.sfz",
+      "family": "other",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Reed Aerophones/Saxello - Keyswitch.sfz",
+      "instrument": "saxophone_soprano",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "keyswitch", "key": 48, "label": "Vibrato", "default": true},
+        {"id": "sustain", "via": "keyswitch", "key": 49, "vibrato": "non_vibrato", "label": "Non-Vibrato"},
+        {"id": "staccato", "via": "keyswitch", "key": 50, "label": "Staccato"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Reed Aerophones/Saxello - Non-Vibrato.sfz",
+      "instrument": "saxophone_soprano",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "vibrato": "non_vibrato", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Reed Aerophones/Saxello - Staccato.sfz",
+      "instrument": "saxophone_soprano",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "staccato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Reed Aerophones/Saxello - Vibrato.sfz",
+      "instrument": "saxophone_soprano",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "set": "saxello",
+      "name": "Saxello",
+      "instrument": "saxophone_soprano",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "path": "Aerophones/Reed Aerophones/Saxello - Vibrato.sfz", "default": true},
+        {"id": "sustain", "via": "patch", "path": "Aerophones/Reed Aerophones/Saxello - Non-Vibrato.sfz", "vibrato": "non_vibrato"},
+        {"id": "staccato", "via": "patch", "path": "Aerophones/Reed Aerophones/Saxello - Staccato.sfz"}
+      ],
+      "dynamics": {"via": "velocity"}
+    },
+    {
+      "path": "Aerophones/Reed Aerophones/Tenor Saxophone - Keyswitch.sfz",
+      "instrument": "saxophone_tenor",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "keyswitch", "key": 36, "label": "Vibrato", "default": true},
+        {"id": "sustain", "via": "keyswitch", "key": 37, "vibrato": "non_vibrato", "label": "Non-Vibrato"},
+        {"id": "staccato", "via": "keyswitch", "key": 38, "label": "Staccato"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Reed Aerophones/Tenor Saxophone - Non-Vibrato.sfz",
+      "instrument": "saxophone_tenor",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "vibrato": "non_vibrato", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Reed Aerophones/Tenor Saxophone - Staccato.sfz",
+      "instrument": "saxophone_tenor",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "staccato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Aerophones/Reed Aerophones/Tenor Saxophone - Vibrato.sfz",
+      "instrument": "saxophone_tenor",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "set": "tenor-saxophone",
+      "name": "Tenor Saxophone",
+      "instrument": "saxophone_tenor",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "path": "Aerophones/Reed Aerophones/Tenor Saxophone - Vibrato.sfz", "default": true},
+        {"id": "sustain", "via": "patch", "path": "Aerophones/Reed Aerophones/Tenor Saxophone - Non-Vibrato.sfz", "vibrato": "non_vibrato"},
+        {"id": "staccato", "via": "patch", "path": "Aerophones/Reed Aerophones/Tenor Saxophone - Staccato.sfz"}
+      ],
+      "dynamics": {"via": "velocity"}
+    },
+    {
+      "path": "Chordophones/Composite Chordophones/Concert Harp.sfz",
+      "instrument": "harp",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Chordophones/Composite Chordophones/Folk Harp.sfz",
+      "family": "plucked",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Chordophones/Composite Chordophones/Strumstick.sfz",
+      "family": "plucked",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Chordophones/Zithers/Dan Tranh - FX.sfz",
+      "family": "plucked",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Chordophones/Zithers/Dan Tranh - Gliss.sfz",
+      "family": "plucked",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Chordophones/Zithers/Dan Tranh - Keyswitch.sfz",
+      "family": "plucked",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Chordophones/Zithers/Dan Tranh - Normal.sfz",
+      "family": "plucked",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Chordophones/Zithers/Dan Tranh - Tremolo.sfz",
+      "family": "plucked",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Chordophones/Zithers/Dan Tranh - Vibrato.sfz",
+      "family": "plucked",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Chordophones/Zithers/Grand Piano, Kawai - Legacy.sfz",
+      "instrument": "piano_studio_grand",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "partly", "lost": ["rt_decay: release samples do not get quieter the longer a key was held"]}
+    },
+    {
+      "path": "Chordophones/Zithers/Grand Piano, Kawai.sfz",
+      "instrument": "piano_studio_grand",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "partly", "lost": ["ampeg_decay and ampeg_sustain: the samples that set them ring for their full length instead of fading out", "rt_decay: release samples do not get quieter the longer a key was held"]}
+    },
+    {
+      "path": "Chordophones/Zithers/Grand Piano, Steinway B.sfz",
+      "instrument": "piano_studio_grand",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "partly", "lost": ["locc64 and hicc64: the samples meant for the sustain pedal up and those for it down sound together"]}
+    },
+    {
+      "path": "Chordophones/Zithers/Harpsichord, English - Keyswitch.sfz",
+      "instrument": "harpsichord",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "keyswitch", "key": 95, "label": "Normal", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Chordophones/Zithers/Harpsichord, English - Lute.sfz",
+      "instrument": "harpsichord",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Chordophones/Zithers/Harpsichord, English - Normal.sfz",
+      "instrument": "harpsichord",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Chordophones/Zithers/Harpsichord, Flemish - 4'.sfz",
+      "instrument": "harpsichord",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Chordophones/Zithers/Harpsichord, Flemish - 8'.sfz",
+      "instrument": "harpsichord",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "partly", "lost": ["ampeg_decay and ampeg_sustain: the samples that set them ring for their full length instead of fading out"]}
+    },
+    {
+      "path": "Chordophones/Zithers/Harpsichord, Flemish - Full.sfz",
+      "instrument": "harpsichord",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "partly", "lost": ["ampeg_decay and ampeg_sustain: the samples that set them ring for their full length instead of fading out"]}
+    },
+    {
+      "path": "Chordophones/Zithers/Harpsichord, Flemish - Keyswitch.sfz",
+      "instrument": "harpsichord",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "keyswitch", "key": 95, "label": "8'", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "partly", "lost": ["ampeg_decay and ampeg_sustain: the samples that set them ring for their full length instead of fading out"]}
+    },
+    {
+      "path": "Chordophones/Zithers/Harpsichord, French.sfz",
+      "instrument": "harpsichord",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Chordophones/Zithers/Harpsichord, Italian.sfz",
+      "instrument": "harpsichord",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Chordophones/Zithers/Harpsichord, Unk.sfz",
+      "instrument": "harpsichord",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "partly", "lost": ["ampeg_decay and ampeg_sustain: the samples that set them ring for their full length instead of fading out"]}
+    },
+    {
+      "path": "Chordophones/Zithers/Psaltery, Bowed and Plucked - Keyswitch.sfz",
+      "family": "plucked",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Chordophones/Zithers/Psaltery, Bowed and Plucked - LongBow.sfz",
+      "family": "plucked",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Chordophones/Zithers/Psaltery, Bowed and Plucked - Pluck.sfz",
+      "family": "plucked",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Chordophones/Zithers/Psaltery, Bowed and Plucked - Spiccato.sfz",
+      "family": "plucked",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Chordophones/Zithers/Upright Piano, Knight.sfz",
+      "instrument": "piano_upright",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "partly", "lost": ["on_locc64 and on_hicc64: the pedal noises never play", "rt_decay: release samples do not get quieter the longer a key was held"]}
+    },
+    {
+      "path": "Chordophones/Zithers/Upright Piano, Yamaha.sfz",
+      "instrument": "piano_upright",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Electrophones/TX81Z - Clavisynth.sfz",
+      "family": "keyboards",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Electrophones/TX81Z - FM Piano.sfz",
+      "family": "keyboards",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Electrophones/TX81Z - Keyswitch.sfz",
+      "family": "keyboards",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Electrophones/TX81Z - Piano 1.sfz",
+      "family": "keyboards",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Friction Idiophones/Wine Glasses - Fast.sfz",
+      "family": "other",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Friction Idiophones/Wine Glasses - Keyswitch.sfz",
+      "family": "other",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Friction Idiophones/Wine Glasses - Slow.sfz",
+      "family": "other",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Plucked Idiophones/Kalimba, Kenya.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Plucked Idiophones/Kalimba, Tanzania.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Plucked Idiophones/Mbira Mavembe (Gandanga), Zimbabwe, Low G.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Plucked Idiophones/Mbira dzaVadzimu Nyamaropa, Zimbabwe, Low B.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Plucked Idiophones/Nyunga Nyunga, Mozambique, Low F.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Agogo Bells.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Anvil.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Balafon - Hard Mallet.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Balafon - Keyswitch.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Balafon - Soft Mallet.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Balafon - Traditional Mallet.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Bell Tree - Individual.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Bell Tree - Keyswitch.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Bell Tree - Legacy.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Bell Tree - Stroke.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Brake Drum.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Cabasa.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Cajon.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Claps.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Clash Cymbals 1.sfz",
+      "instrument": "clash_cymbals",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60], "instrument": "clash_cymbals", "name": "Crash"},
+        {"keys": [61, 62], "instrument": "clash_cymbals", "articulation": "choke", "name": "Short crashes"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Clash Cymbals 2.sfz",
+      "instrument": "clash_cymbals",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60], "instrument": "clash_cymbals", "name": "Crash"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Claves.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Cowbells.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Finger Cymbals.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Flexatone.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Glockenspiel.sfz",
+      "instrument": "glockenspiel",
+      "ensemble": {"kind": "solo"},
+      "key_offset": -12,
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Gong 1.sfz",
+      "instrument": "tam_tam",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60, 61], "instrument": "tam_tam", "name": "Gong"},
+        {"keys": [62], "instrument": "tam_tam", "articulation": "scrape", "name": "Gong scrape"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Gong 2.sfz",
+      "instrument": "tam_tam",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60, 61, 62, 63, 64], "instrument": "tam_tam", "name": "Gong, full and light strokes"},
+        {"keys": [65], "instrument": "tam_tam", "articulation": "scrape", "name": "Gong scrape"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Guiro - Keyswitch.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Guiro - Legacy.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Guiro.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Hand Bells, Nepalese.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Hand Chimes.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Hi-Hat Cymbal.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Marimba.sfz",
+      "instrument": "marimba",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Mark Trees.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Ratchet.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Shaker - Legacy.sfz",
+      "instrument": "shaker",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60, 61], "instrument": "shaker", "name": "Shakes"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Shaker, Large.sfz",
+      "instrument": "shaker",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [61, 62], "instrument": "shaker", "name": "Shakes, down and up"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Shaker, Small.sfz",
+      "instrument": "shaker",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [62, 63, 64, 65, 66, 67], "instrument": "shaker", "name": "Shakes, down and up"},
+        {"keys": [60], "instrument": "shaker", "articulation": "roll", "name": "Fast roll"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Slapstick.sfz",
+      "instrument": "whip",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60, 61], "instrument": "whip", "name": "Slapstick"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Sleigh Bells.sfz",
+      "instrument": "sleigh_bells",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60, 62, 63], "instrument": "sleigh_bells", "name": "Sleigh bells"},
+        {"keys": [61, 64], "instrument": "sleigh_bells", "articulation": "shake_stroke", "name": "Sleigh bells shake"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Slit Drum.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Suspended Cymbal 1.sfz",
+      "instrument": "suspended_cymbal",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [68], "instrument": "suspended_cymbal", "name": "Hit"},
+        {"keys": [71], "instrument": "suspended_cymbal", "articulation": "roll", "name": "Roll"},
+        {"keys": [64, 65, 66, 67], "instrument": "suspended_cymbal", "articulation": "crescendo_swell", "name": "Crescendos"},
+        {"keys": [60, 61, 62, 63], "instrument": "suspended_cymbal", "articulation": "bowed", "name": "Bowed"},
+        {"keys": [72], "instrument": "suspended_cymbal", "articulation": "scrape", "name": "Scrape"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Suspended Cymbal 2.sfz",
+      "instrument": "suspended_cymbal",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [66], "instrument": "suspended_cymbal", "name": "Hit"},
+        {"keys": [69], "instrument": "suspended_cymbal", "articulation": "roll", "name": "Roll"},
+        {"keys": [63, 64, 65], "instrument": "suspended_cymbal", "articulation": "crescendo_swell", "name": "Crescendos"},
+        {"keys": [60, 61, 62], "instrument": "suspended_cymbal", "articulation": "bowed", "name": "Bowed"},
+        {"keys": [70], "instrument": "suspended_cymbal", "articulation": "scrape", "name": "Scrape"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Tambourine 1.sfz",
+      "instrument": "tambourine",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60], "instrument": "tambourine", "name": "Hit"},
+        {"keys": [61], "instrument": "tambourine", "articulation": "roll", "name": "Roll"},
+        {"keys": [62], "instrument": "tambourine", "articulation": "shake_stroke", "name": "Shake"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Tambourine 2.sfz",
+      "instrument": "tambourine",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60], "instrument": "tambourine", "name": "Hit"},
+        {"keys": [61], "instrument": "tambourine", "articulation": "roll", "name": "Roll"},
+        {"keys": [62], "instrument": "tambourine", "articulation": "shake_stroke", "name": "Shake"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Tambourine 3 - Legacy.sfz",
+      "instrument": "tambourine",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60, 61], "instrument": "tambourine", "name": "Strokes, down and up"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Tambourine 4 - Legacy.sfz",
+      "instrument": "tambourine",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60], "instrument": "tambourine", "name": "Hit"},
+        {"keys": [61, 62], "instrument": "tambourine", "articulation": "roll", "name": "Rolls, fast and slow"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Tambourine 5 - Legacy.sfz",
+      "instrument": "tambourine",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60], "instrument": "tambourine", "name": "Hit"},
+        {"keys": [61], "instrument": "tambourine", "articulation": "roll", "name": "Roll"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Triangles.sfz",
+      "instrument": "triangle",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60, 65, 69], "instrument": "triangle", "name": "Hits, three triangles"},
+        {"keys": [63, 68, 72], "instrument": "triangle", "articulation": "roll", "name": "Rolls, three triangles"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Tubular Bells 1.sfz",
+      "instrument": "tubular_bells",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Tubular Bells 2.sfz",
+      "instrument": "tubular_bells",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Tubular Bells 3 - Legacy.sfz",
+      "instrument": "tubular_bells",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Tubular Glockenspiel.sfz",
+      "family": "percussion",
+      "verdict": {"state": "partly", "lost": ["ampeg_decay and ampeg_sustain: the samples that set them ring for their full length instead of fading out"]}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Vibraphone - Bowed.sfz",
+      "instrument": "vibraphone",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "bowed", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Vibraphone - Hard Mallets.sfz",
+      "instrument": "vibraphone",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Vibraphone - Keyswitch.sfz",
+      "instrument": "vibraphone",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "bowed", "via": "keyswitch", "key": 36, "label": "Bowed"},
+        {"id": "ordinario", "via": "keyswitch", "key": 38, "label": "Soft Mallets", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Vibraphone - Soft Mallets.sfz",
+      "instrument": "vibraphone",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "set": "vibraphone",
+      "name": "Vibraphone",
+      "instrument": "vibraphone",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "path": "Idiophones/Struck Idiophones/Vibraphone - Soft Mallets.sfz", "default": true},
+        {"id": "bowed", "via": "patch", "path": "Idiophones/Struck Idiophones/Vibraphone - Bowed.sfz"}
+      ],
+      "dynamics": {"via": "velocity"}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Vibraslap.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Woodblock.sfz",
+      "instrument": "wood_block",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60, 61, 62], "instrument": "wood_block", "name": "Clicks"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Xylophone - Hard Mallets.sfz",
+      "instrument": "xylophone",
+      "ensemble": {"kind": "solo"},
+      "key_offset": -12,
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Xylophone - Keyswitch.sfz",
+      "instrument": "xylophone",
+      "ensemble": {"kind": "solo"},
+      "key_offset": -12,
+      "articulations": [
+        {"id": "ordinario", "via": "keyswitch", "key": 48, "label": "Hard Mallets", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "partly", "lost": ["keys 48 to 51 switch mallets, and with the octave offset the sounding notes C4 to D#4 (60 to 63) land on them, so a note there changes the mallets and does not sound; the patch has no samples below the sounding G4 (67)"]}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Xylophone - Medium Mallets.sfz",
+      "instrument": "xylophone",
+      "ensemble": {"kind": "solo"},
+      "key_offset": -12,
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Idiophones/Struck Idiophones/Xylophone - Soft Mallets.sfz",
+      "instrument": "xylophone",
+      "ensemble": {"kind": "solo"},
+      "key_offset": -12,
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Other Membranophones/Ocean Drum.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Bass Drum 1.sfz",
+      "instrument": "bass_drum",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60], "instrument": "bass_drum", "name": "Hit"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Bass Drum 2.sfz",
+      "instrument": "bass_drum",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [62], "instrument": "bass_drum", "name": "Hit"},
+        {"keys": [63, 64], "instrument": "bass_drum", "articulation": "roll", "name": "Rolls, slow and fast"},
+        {"keys": [60, 61], "instrument": "bass_drum", "articulation": "crescendo_swell", "name": "Crescendo rolls"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Bass Drum 3 - Legacy.sfz",
+      "instrument": "bass_drum",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60], "instrument": "bass_drum", "name": "Hit"},
+        {"keys": [62, 63, 64, 65, 66], "instrument": "bass_drum", "articulation": "roll", "name": "Rolls"},
+        {"keys": [61], "instrument": "bass_drum", "articulation": "dead_stroke", "name": "Muted hit"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Bongos.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Conga.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Darbuka.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Frame Drum.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Legacy Snares - Keyswitch.sfz",
+      "instrument": "snare_drum",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "keyswitch", "key": 48, "label": "drum1", "default": true}
+      ],
+      "keymap": [
+        {"keys": [60], "instrument": "snare_drum", "name": "Hit"},
+        {"keys": [65], "instrument": "snare_drum", "articulation": "snares_off", "name": "Hit, snares off"},
+        {"keys": [66], "instrument": "snare_drum", "articulation": "rim", "name": "Rim"},
+        {"keys": [67], "instrument": "snare_drum", "articulation": "rimshot", "name": "Rimshot"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Legacy Snares - OldSnare.sfz",
+      "instrument": "snare_drum",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60], "instrument": "snare_drum", "name": "Hit"},
+        {"keys": [61], "instrument": "snare_drum", "articulation": "rim", "name": "Rim"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Legacy Snares - drum1.sfz",
+      "instrument": "snare_drum",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60], "instrument": "snare_drum", "name": "Hit"},
+        {"keys": [65], "instrument": "snare_drum", "articulation": "snares_off", "name": "Hit, snares off"},
+        {"keys": [66], "instrument": "snare_drum", "articulation": "rim", "name": "Rim"},
+        {"keys": [67], "instrument": "snare_drum", "articulation": "rimshot", "name": "Rimshot"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Legacy Snares - drum2.sfz",
+      "instrument": "snare_drum",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [61], "instrument": "snare_drum", "name": "Hit"},
+        {"keys": [63], "instrument": "snare_drum", "articulation": "snares_off", "name": "Hit, snares off"},
+        {"keys": [65], "instrument": "snare_drum", "articulation": "rimshot", "name": "Rimshot"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Legacy Snares - drum3_marching.sfz",
+      "instrument": "snare_drum",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60], "instrument": "snare_drum", "name": "Hit"},
+        {"keys": [62], "instrument": "snare_drum", "articulation": "rimshot", "name": "Rimshot"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Legacy Toms.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Snare Drum, Modern 1.sfz",
+      "instrument": "snare_drum",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [61], "instrument": "snare_drum", "name": "Hit"},
+        {"keys": [63], "instrument": "snare_drum", "articulation": "roll", "name": "Roll"},
+        {"keys": [60], "instrument": "snare_drum", "articulation": "snares_off", "name": "Hit, snares off"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Snare Drum, Modern 2.sfz",
+      "instrument": "snare_drum",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [61], "instrument": "snare_drum", "name": "Hit"},
+        {"keys": [64], "instrument": "snare_drum", "articulation": "roll", "name": "Roll"},
+        {"keys": [60], "instrument": "snare_drum", "articulation": "snares_off", "name": "Hit, snares off"},
+        {"keys": [62], "instrument": "snare_drum", "articulation": "rim", "name": "Cross-stick"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Snare Drum, Modern 3.sfz",
+      "instrument": "snare_drum",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [60], "instrument": "snare_drum", "name": "Hit"},
+        {"keys": [63], "instrument": "snare_drum", "articulation": "roll", "name": "Roll"},
+        {"keys": [61], "instrument": "snare_drum", "articulation": "rim", "name": "Cross-stick"},
+        {"keys": [62], "instrument": "snare_drum", "articulation": "rimshot", "name": "Rimshot"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Snare Drum, Rope Tension.sfz",
+      "instrument": "snare_drum",
+      "ensemble": {"kind": "solo"},
+      "keymap": [
+        {"keys": [62, 64], "instrument": "snare_drum", "name": "Hits, high and low tuning"},
+        {"keys": [63], "instrument": "snare_drum", "articulation": "snares_off", "name": "Hit, snares off"},
+        {"keys": [60], "instrument": "snare_drum", "articulation": "rim", "name": "Side stick"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Timpani 1 - Hit.sfz",
+      "instrument": "timpani",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Timpani 1 - Keyswitch.sfz",
+      "instrument": "timpani",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "keyswitch", "key": 36, "label": "Hit", "default": true},
+        {"id": "roll", "via": "keyswitch", "key": 37, "label": "Roll"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "partly", "lost": ["keys 36 and 37 (C2 and C#2) switch between hit and roll although they lie inside the timpani's range, so a note there changes the articulation; the timpani-1 set plays the separate patches instead"]}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Timpani 1 - Roll.sfz",
+      "instrument": "timpani",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "roll", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "set": "timpani-1",
+      "name": "Timpani 1",
+      "instrument": "timpani",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "path": "Membranophones/Struck Membranophones/Timpani 1 - Hit.sfz", "default": true},
+        {"id": "roll", "via": "patch", "path": "Membranophones/Struck Membranophones/Timpani 1 - Roll.sfz"}
+      ],
+      "dynamics": {"via": "velocity"}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Timpani 2 - All Samples.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Timpani 2 - Keyswitch.sfz",
+      "instrument": "timpani",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "keyswitch", "key": 95, "label": "Scale", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Timpani 2 - Scale.sfz",
+      "instrument": "timpani",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Tom 1.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    },
+    {
+      "path": "Membranophones/Struck Membranophones/Tom 2.sfz",
+      "family": "percussion",
+      "verdict": {"state": "as_is", "lost": []}
+    }
   ]
 }

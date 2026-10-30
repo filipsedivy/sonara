@@ -9,8 +9,8 @@ use std::path::{Path, PathBuf};
 use serde_json::json;
 use sonara_app::instruments::{
     Availability, CatalogError, FamilyClaim, InstalledInstruments, InstrumentCatalog,
-    InstrumentFamily, LibraryId, LibraryIssue, MANIFEST_FILE, MediaPatchLoader, PatchLoadError,
-    PatchLoader,
+    InstrumentFamily, InstrumentPreset, LibraryId, LibraryIssue, MANIFEST_FILE, MediaPatchLoader,
+    PatchLoadError, PatchLoader,
 };
 use sonara_app::settings::Settings;
 use sonara_media::InstrumentSource;
@@ -72,13 +72,13 @@ fn a_scan_without_a_manifest_infers_and_never_declares() {
 #[test]
 fn a_manifest_declares_metadata_and_reports_missing_patches() {
     let dir = tempfile::tempdir().expect("tempdir");
-    let root = dir.path().join("vsco");
+    let root = dir.path().join("orchestra");
     patch(&root.join("Strings/Violin.sfz"));
     patch(&root.join("Percussion/Timpani.sfz"));
     manifest(
         &root,
         &json!({
-            "version": 1, "id": "vsco2ce", "name": "VSCO 2 CE", "license": "CC0 1.0",
+            "version": 1, "id": "my-orchestra", "name": "My Orchestra", "license": "CC0 1.0",
             "instruments": [
                 {"path": "strings/violin.sfz", "name": "Solo Violin", "family": "strings",
                  "articulations": ["sustain", "pizzicato"]},
@@ -94,9 +94,9 @@ fn a_manifest_declares_metadata_and_reports_missing_patches() {
     assert_eq!(
         preset_ids(&catalog),
         [
-            "vsco2ce/Percussion/Timpani",
-            "vsco2ce/Strings/Violin",
-            "vsco2ce/Winds/Flute"
+            "my-orchestra/Percussion/Timpani",
+            "my-orchestra/Strings/Violin",
+            "my-orchestra/Winds/Flute"
         ]
     );
     let by_name = |name: &str| {
@@ -107,7 +107,7 @@ fn a_manifest_declares_metadata_and_reports_missing_patches() {
             .unwrap_or_else(|| panic!("{name}"))
     };
     let violin = by_name("Solo Violin");
-    assert_eq!(violin.id.as_str(), "vsco2ce/Strings/Violin");
+    assert_eq!(violin.id.as_str(), "my-orchestra/Strings/Violin");
     assert_eq!(
         violin.family,
         FamilyClaim::Declared(InstrumentFamily::Strings)
@@ -129,7 +129,7 @@ fn a_manifest_declares_metadata_and_reports_missing_patches() {
     assert_eq!(timpani.articulations.len(), 0);
 
     let library = &catalog.libraries()[0];
-    assert_eq!(library.name, "VSCO 2 CE");
+    assert_eq!(library.name, "My Orchestra");
     assert!(library.has_manifest);
     assert_eq!(catalog.available().count(), 2);
     assert!(matches!(
@@ -740,14 +740,22 @@ fn a_detected_library_keeps_its_profile_id() {
         "vsco2ce/Tuba-KS",
         "vsco2ce/ViolinEns-KS",
     ];
-    assert_eq!(preset_ids(&catalog), ids);
+    assert_eq!(available_ids(&catalog), ids);
     let library = &catalog.libraries()[0];
     assert_eq!(library.id.as_str(), "vsco2ce");
     assert_eq!(library.name, "VSCO 2 Community Edition");
     assert!(!library.has_manifest);
     assert!(catalog.issues().is_empty(), "{:?}", catalog.issues());
-    // The profile gives the identity only: the presets claim no licence or articulations.
-    let horn = &catalog.presets()[0];
+    // The profile lists the 75 patches of the library's branch `SFZ`: those not on disk are
+    // missing, so the user sees what a partial copy lacks.
+    assert_eq!(catalog.presets().len(), 75);
+    let flute = preset(&catalog, "vsco2ce/FluteSusVib");
+    assert_eq!(flute.availability, Availability::Missing);
+    assert_eq!(flute.display_name, "Flute, sustain vibrato");
+    // The profile names the presets, but what it claims is Sonara's word, never the library's:
+    // the presets declare no licence, articulations or family.
+    let horn = preset(&catalog, "vsco2ce/FHornSus");
+    assert_eq!(horn.display_name, "Horn, sustain");
     assert_eq!(horn.license, None);
     assert_eq!(horn.articulations, Vec::<String>::new());
     assert!(!matches!(horn.family, FamilyClaim::Declared(_)));
@@ -755,7 +763,21 @@ fn a_detected_library_keeps_its_profile_id() {
     let after = dir.path().join("Samples/vsco");
     fs::create_dir_all(after.parent().expect("a parent")).expect("mkdir");
     fs::rename(&before, &after).expect("rename");
-    assert_eq!(preset_ids(&InstrumentCatalog::discover(&[after])), ids);
+    assert_eq!(available_ids(&InstrumentCatalog::discover(&[after])), ids);
+}
+
+/// The IDs of the presets that can be played, sorted.
+fn available_ids(catalog: &InstrumentCatalog) -> Vec<&str> {
+    catalog.available().map(|p| p.id.as_str()).collect()
+}
+
+/// The preset with ID `id`.
+fn preset<'a>(catalog: &'a InstrumentCatalog, id: &str) -> &'a InstrumentPreset {
+    catalog
+        .presets()
+        .iter()
+        .find(|p| p.id.as_str() == id)
+        .unwrap_or_else(|| panic!("no preset {id}"))
 }
 
 #[test]
@@ -826,11 +848,80 @@ fn a_manifest_that_declares_a_shipped_id_is_that_library() {
     let library = &catalog.libraries()[0];
     assert_eq!(library.id.as_str(), "vsco2ce");
     assert_eq!(library.name, "VSCO 2 Community Edition");
-    assert_eq!(preset_ids(&catalog), ["vsco2ce/Tuba-KS"]);
+    assert_eq!(available_ids(&catalog), ["vsco2ce/Tuba-KS"]);
+    assert_eq!(
+        preset(&catalog, "vsco2ce/Tuba-KS").display_name,
+        "Tuba, key switches"
+    );
+    assert_eq!(catalog.presets().len(), 75, "the profile's patches");
     // `null` clears the profile's name, so the library is shown by its ID.
     manifest(&root, &json!({"version": 2, "id": "vsco2ce", "name": null}));
     let catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
     assert_eq!(catalog.libraries()[0].name, "vsco2ce");
+}
+
+#[test]
+fn a_manifest_in_a_detected_library_overrides_the_profile() {
+    // A VSCO 2 CE checkout found by its files, with a manifest of its own that declares no ID:
+    // the manifest's claims lie over the shipped profile's, field by field.
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path().join("VSCO-2-CE");
+    library(&root, &VSCO_DETECT);
+    library(&root, &["FHornSus.sfz", "Extra/Celesta.sfz"]);
+    manifest(
+        &root,
+        &json!({"version": 2, "license": "CC0 1.0", "instruments": [
+            {"path": "Tuba-KS.sfz", "name": "My Tuba", "family": "brass",
+             "articulations": [{"id": "staccato", "via": "keyswitch", "key": 85}]},
+            {"path": "fhornsus.sfz", "name": null},
+            {"path": "Extra/Celesta.sfz", "name": "Celesta"}
+        ]}),
+    );
+    let catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
+    let library = &catalog.libraries()[0];
+    assert_eq!(
+        library.id.as_str(),
+        "vsco2ce",
+        "detected; the manifest has no ID"
+    );
+    assert_eq!(library.name, "VSCO 2 Community Edition");
+    assert_eq!(library.license.as_deref(), Some("CC0 1.0"));
+    assert!(catalog.issues().is_empty(), "{:?}", catalog.issues());
+
+    // A field the manifest writes replaces the profile's; its articulation list replaces the
+    // profile's whole, and what it declares is shown as declared.
+    let tuba = preset(&catalog, "vsco2ce/Tuba-KS");
+    assert_eq!(tuba.display_name, "My Tuba");
+    assert_eq!(tuba.family, FamilyClaim::Declared(InstrumentFamily::Brass));
+    assert_eq!(tuba.articulations, ["staccato"]);
+    assert_eq!(tuba.license.as_deref(), Some("CC0 1.0"));
+    // `null` clears the profile's name, so the file name shows; the manifest's spelling of the
+    // path matches the profile's entry ignoring case.
+    assert_eq!(
+        preset(&catalog, "vsco2ce/FHornSus").display_name,
+        "FHornSus"
+    );
+    // A field the manifest leaves out keeps the profile's.
+    assert_eq!(
+        preset(&catalog, "vsco2ce/ViolinEns-KS").display_name,
+        "Violin Section, key switches"
+    );
+    // An entry only in the manifest is added to the profile's 75.
+    assert_eq!(
+        preset(&catalog, "vsco2ce/Extra/Celesta").display_name,
+        "Celesta"
+    );
+    assert_eq!(catalog.presets().len(), 76);
+    assert_eq!(
+        available_ids(&catalog),
+        [
+            "vsco2ce/Extra/Celesta",
+            "vsco2ce/FHornSus",
+            "vsco2ce/GM-StylePerc",
+            "vsco2ce/Tuba-KS",
+            "vsco2ce/ViolinEns-KS",
+        ]
+    );
 }
 
 #[test]
@@ -887,7 +978,9 @@ fn installed_instruments_are_the_playable_presets_by_id() {
     let dir = tempfile::tempdir().expect("tempdir");
     let (one, vsco) = two_libraries(dir.path());
     let catalog = InstrumentCatalog::discover(&[one, vsco]);
-    assert_eq!(catalog.presets().len(), 7, "the catalog lists all of them");
+    // The catalog lists all of them: three of `Lib One` (one missing), and the 75 patches the
+    // VSCO 2 CE profile names (72 of them missing) and the empty patch the scan finds.
+    assert_eq!(catalog.presets().len(), 79, "the catalog lists all of them");
     let installed = InstalledInstruments::from_catalog(&catalog);
     assert_eq!(
         installed.ids(),
@@ -1025,10 +1118,15 @@ fn a_detected_library_groups_its_presets_under_the_profile_name() {
             ("lib-one", vec!["Horn", "Violin"]),
             (
                 "VSCO 2 Community Edition",
-                vec!["GM-StylePerc", "Tuba-KS", "ViolinEns-KS"]
+                vec![
+                    "GM-Style Percussion",
+                    "Tuba, key switches",
+                    "Violin Section, key switches"
+                ]
             ),
         ],
-        "a manifest without a name shows the ID; the profile names a detected checkout"
+        "a manifest without a name shows the ID; the profile names a detected checkout and its \
+         presets"
     );
 }
 

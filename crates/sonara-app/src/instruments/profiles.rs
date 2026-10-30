@@ -3,8 +3,17 @@
 //!
 //! The profiles live in `crates/sonara-app/profiles/` as library manifests of version 2 and are
 //! embedded in the binary, so nothing is read at run time and the tests pin them. Each is read
-//! with the manifest reader ([`super::manifest`]), and every claim it makes is marked as the
-//! profile's ([`ClaimSource::Profile`]), never as the library's own.
+//! with the manifest reader ([`super::manifest`]) the first time a profile is needed, and every
+//! claim it makes is marked as the profile's ([`ClaimSource::Profile`]), never as the library's
+//! own.
+//!
+//! Two profiles ship: VSCO 2 Community Edition (branch `SFZ`) and the Versilian Community Sample
+//! Library (tag `v1.2.2-RC`), both CC0. Each lists every patch of its revision with the instrument
+//! type it plays, solo or section, how each articulation is reached (a key switch, or the whole
+//! patch), what drives dynamics, a key offset for patches keyed an octave below sounding pitch, a
+//! key map for percussion patches with one sound per key, and a verdict on how the sampler plays
+//! it; and it groups an instrument's single-articulation patches into multi-patch sets. Patches of
+//! instruments the orchestration metadata does not know claim only a family.
 //!
 //! **Identity.** A profile names the library `id`, its `name`, and the `detect` paths that
 //! recognize a copy of the library. A library whose manifest declares no `id` (or that has no
@@ -151,6 +160,9 @@ pub(crate) fn merge(
         (None, None) => LibraryClaims::default(),
     }
 }
+
+#[cfg(test)]
+mod shipped_tests;
 
 #[cfg(test)]
 mod tests {

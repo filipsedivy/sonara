@@ -2,6 +2,1059 @@
   "version": 2,
   "id": "vsco2ce",
   "name": "VSCO 2 Community Edition",
-  "source": { "url": "https://github.com/sgossner/VSCO-2-CE", "revision": "branch SFZ" },
-  "detect": ["ViolinEns-KS.sfz", "Tuba-KS.sfz", "GM-StylePerc.sfz"]
+  "license": "CC0 1.0",
+  "source": {"url": "https://github.com/sgossner/VSCO-2-CE", "revision": "branch SFZ"},
+  "detect": ["ViolinEns-KS.sfz", "Tuba-KS.sfz", "GM-StylePerc.sfz"],
+  "profile": {"checked": "2026-10-30", "method": "code_reading"},
+  "instruments": [
+    {
+      "path": "PiccoloSus.sfz",
+      "name": "Piccolo, sustain",
+      "instrument": "piccolo",
+      "ensemble": {"kind": "solo"},
+      "key_offset": -12,
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "PiccoloStac.sfz",
+      "name": "Piccolo, staccato",
+      "instrument": "piccolo",
+      "ensemble": {"kind": "solo"},
+      "key_offset": -12,
+      "articulations": [
+        {"id": "staccato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "set": "piccolo",
+      "name": "Piccolo",
+      "instrument": "piccolo",
+      "ensemble": {"kind": "solo"},
+      "key_offset": -12,
+      "articulations": [
+        {"id": "sustain", "via": "patch", "path": "PiccoloSus.sfz", "default": true},
+        {"id": "staccato", "via": "patch", "path": "PiccoloStac.sfz"}
+      ],
+      "dynamics": {"via": "velocity"}
+    },
+    {
+      "path": "Flute-KS.sfz",
+      "name": "Flute, key switches",
+      "instrument": "flute",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "keyswitch", "key": 36, "vibrato": "non_vibrato", "label": "Sustain Non-Vibrato", "default": true},
+        {"id": "sustain", "via": "keyswitch", "key": 37, "label": "Sustain Vibrato"},
+        {"id": "sustain", "via": "keyswitch", "key": 38, "vibrato": "vibrato_on", "label": "Expression Vibrato"},
+        {"id": "staccato", "via": "keyswitch", "key": 39, "label": "Staccato"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "FluteSusNV.sfz",
+      "name": "Flute, sustain non-vibrato",
+      "instrument": "flute",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "vibrato": "non_vibrato", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "FluteSusVib.sfz",
+      "name": "Flute, sustain vibrato",
+      "instrument": "flute",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "FluteExpVib.sfz",
+      "name": "Flute, expression vibrato",
+      "instrument": "flute",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "vibrato": "vibrato_on", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "FluteStac.sfz",
+      "name": "Flute, staccato",
+      "instrument": "flute",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "staccato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "set": "flute",
+      "name": "Flute",
+      "instrument": "flute",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "path": "FluteSusNV.sfz", "vibrato": "non_vibrato", "default": true},
+        {"id": "sustain", "via": "patch", "path": "FluteSusVib.sfz"},
+        {"id": "sustain", "via": "patch", "path": "FluteExpVib.sfz", "vibrato": "vibrato_on"},
+        {"id": "staccato", "via": "patch", "path": "FluteStac.sfz"}
+      ],
+      "dynamics": {"via": "velocity"}
+    },
+    {
+      "path": "OboeSusVib.sfz",
+      "name": "Oboe, sustain vibrato",
+      "instrument": "oboe",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "OboeSusNV.sfz",
+      "name": "Oboe, sustain non-vibrato",
+      "instrument": "oboe",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "vibrato": "non_vibrato", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "OboeStac.sfz",
+      "name": "Oboe, staccato",
+      "instrument": "oboe",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "staccato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "set": "oboe",
+      "name": "Oboe",
+      "instrument": "oboe",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "path": "OboeSusVib.sfz", "default": true},
+        {"id": "sustain", "via": "patch", "path": "OboeSusNV.sfz", "vibrato": "non_vibrato"},
+        {"id": "staccato", "via": "patch", "path": "OboeStac.sfz"}
+      ],
+      "dynamics": {"via": "velocity"}
+    },
+    {
+      "path": "Clarinet-KS.sfz",
+      "name": "Clarinet, key switches",
+      "instrument": "clarinet_bb",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "keyswitch", "key": 36, "label": "Sustain Long", "default": true},
+        {"id": "staccato", "via": "keyswitch", "key": 37, "label": "Staccato"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "ClarinetSus.sfz",
+      "name": "Clarinet, sustain",
+      "instrument": "clarinet_bb",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "ClarinetStac.sfz",
+      "name": "Clarinet, staccato",
+      "instrument": "clarinet_bb",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "staccato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "set": "clarinet",
+      "name": "Clarinet",
+      "instrument": "clarinet_bb",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "path": "ClarinetSus.sfz", "default": true},
+        {"id": "staccato", "via": "patch", "path": "ClarinetStac.sfz"}
+      ],
+      "dynamics": {"via": "velocity"}
+    },
+    {
+      "path": "BassoonSus.sfz",
+      "name": "Bassoon, sustain",
+      "instrument": "bassoon",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "BassoonVib.sfz",
+      "name": "Bassoon, sustain vibrato",
+      "instrument": "bassoon",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "vibrato": "vibrato_on", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "BassoonStac.sfz",
+      "name": "Bassoon, staccato",
+      "instrument": "bassoon",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "staccato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "set": "bassoon",
+      "name": "Bassoon",
+      "instrument": "bassoon",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "path": "BassoonSus.sfz", "default": true},
+        {"id": "sustain", "via": "patch", "path": "BassoonVib.sfz", "vibrato": "vibrato_on"},
+        {"id": "staccato", "via": "patch", "path": "BassoonStac.sfz"}
+      ],
+      "dynamics": {"via": "velocity"}
+    },
+    {
+      "path": "FHornSus.sfz",
+      "name": "Horn, sustain",
+      "instrument": "horn_f",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "FHornStac.sfz",
+      "name": "Horn, staccato",
+      "instrument": "horn_f",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "staccato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "FHornMute.sfz",
+      "name": "Horn, muted sustain",
+      "instrument": "horn_f",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "mute": "con_sordino", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "set": "horn",
+      "name": "Horn",
+      "instrument": "horn_f",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "path": "FHornSus.sfz", "default": true},
+        {"id": "staccato", "via": "patch", "path": "FHornStac.sfz"},
+        {"id": "sustain", "via": "patch", "path": "FHornMute.sfz", "mute": "con_sordino"}
+      ],
+      "dynamics": {"via": "velocity"}
+    },
+    {
+      "path": "TrumpetSus.sfz",
+      "name": "Trumpet, sustain",
+      "instrument": "trumpet_bb",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "TrumpetSusVib.sfz",
+      "name": "Trumpet, sustain vibrato",
+      "instrument": "trumpet_bb",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "vibrato": "vibrato_on", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "TrumpetStac.sfz",
+      "name": "Trumpet, staccato",
+      "instrument": "trumpet_bb",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "staccato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "TrumpetStraightMuteSus.sfz",
+      "name": "Trumpet, straight mute sustain",
+      "instrument": "trumpet_bb",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "mute": "con_sordino", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "TrumpetHarmonMuteSus.sfz",
+      "name": "Trumpet, harmon mute sustain",
+      "instrument": "trumpet_bb",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "mute": "mute_harmon", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "set": "trumpet",
+      "name": "Trumpet",
+      "instrument": "trumpet_bb",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "path": "TrumpetSus.sfz", "default": true},
+        {"id": "sustain", "via": "patch", "path": "TrumpetSusVib.sfz", "vibrato": "vibrato_on"},
+        {"id": "staccato", "via": "patch", "path": "TrumpetStac.sfz"},
+        {"id": "sustain", "via": "patch", "path": "TrumpetStraightMuteSus.sfz", "mute": "con_sordino"},
+        {"id": "sustain", "via": "patch", "path": "TrumpetHarmonMuteSus.sfz", "mute": "mute_harmon"}
+      ],
+      "dynamics": {"via": "velocity"}
+    },
+    {
+      "path": "TromboneSus.sfz",
+      "name": "Trombone, sustain",
+      "instrument": "trombone_tenor",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "TromboneVib.sfz",
+      "name": "Trombone, sustain vibrato",
+      "instrument": "trombone_tenor",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "vibrato": "vibrato_on", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "TromboneStac.sfz",
+      "name": "Trombone, staccato",
+      "instrument": "trombone_tenor",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "staccato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "set": "trombone",
+      "name": "Trombone",
+      "instrument": "trombone_tenor",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "path": "TromboneSus.sfz", "default": true},
+        {"id": "sustain", "via": "patch", "path": "TromboneVib.sfz", "vibrato": "vibrato_on"},
+        {"id": "staccato", "via": "patch", "path": "TromboneStac.sfz"}
+      ],
+      "dynamics": {"via": "velocity"}
+    },
+    {
+      "path": "Tuba-KS.sfz",
+      "name": "Tuba, key switches",
+      "instrument": "tuba",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "keyswitch", "key": 84, "label": "Sustain", "default": true},
+        {"id": "staccato", "via": "keyswitch", "key": 85, "label": "Staccato"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "TubaSus.sfz",
+      "name": "Tuba, sustain",
+      "instrument": "tuba",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "TubaStac.sfz",
+      "name": "Tuba, staccato",
+      "instrument": "tuba",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "staccato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "set": "tuba",
+      "name": "Tuba",
+      "instrument": "tuba",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "path": "TubaSus.sfz", "default": true},
+        {"id": "staccato", "via": "patch", "path": "TubaStac.sfz"}
+      ],
+      "dynamics": {"via": "velocity"}
+    },
+    {
+      "path": "Timpani.sfz",
+      "name": "Timpani, hits",
+      "instrument": "timpani",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "TimpaniRolls.sfz",
+      "name": "Timpani, rolls",
+      "instrument": "timpani",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "roll", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "set": "timpani",
+      "name": "Timpani",
+      "instrument": "timpani",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "path": "Timpani.sfz", "default": true},
+        {"id": "roll", "via": "patch", "path": "TimpaniRolls.sfz"}
+      ],
+      "dynamics": {"via": "velocity"}
+    },
+    {
+      "path": "GM-StylePerc.sfz",
+      "name": "GM-Style Percussion",
+      "family": "percussion",
+      "keymap": [
+        {"keys": [36], "instrument": "bass_drum", "name": "Bass drum"},
+        {"keys": [38], "instrument": "snare_drum", "name": "Snare drum"},
+        {"keys": [39], "instrument": "snare_drum", "articulation": "roll", "name": "Snare drum roll"},
+        {"keys": [40], "instrument": "snare_drum", "articulation": "snares_off", "name": "Snare drum, snares off"},
+        {"keys": [42], "instrument": "tam_tam", "articulation": "scrape", "name": "Gong scrape"},
+        {"keys": [46], "instrument": "tam_tam", "name": "Gong"},
+        {"keys": [47, 48, 50], "instrument": "suspended_cymbal", "articulation": "crescendo_swell", "name": "Suspended cymbal crescendos (short, medium, long)"},
+        {"keys": [49], "instrument": "clash_cymbals", "name": "Crash cymbals"},
+        {"keys": [51, 59], "instrument": "suspended_cymbal", "name": "Suspended cymbal hits"},
+        {"keys": [53], "instrument": "tambourine", "articulation": "shake_stroke", "name": "Tambourine shake"},
+        {"keys": [54], "instrument": "tambourine", "name": "Tambourine"},
+        {"keys": [55], "instrument": "tambourine", "articulation": "roll", "name": "Tambourine roll"},
+        {"keys": [79, 81], "instrument": "triangle", "name": "Triangles"},
+        {"keys": [82], "instrument": "sleigh_bells", "name": "Sleigh bells"},
+        {"keys": [101, 102, 103, 104], "instrument": "suspended_cymbal", "articulation": "bowed", "name": "Bowed suspended cymbal"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "Glockenspiel.sfz",
+      "name": "Glockenspiel",
+      "instrument": "glockenspiel",
+      "ensemble": {"kind": "solo"},
+      "key_offset": -12,
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "Xylophone.sfz",
+      "name": "Xylophone",
+      "instrument": "xylophone",
+      "ensemble": {"kind": "solo"},
+      "key_offset": -12,
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "Marimba.sfz",
+      "name": "Marimba",
+      "instrument": "marimba",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "TubularBells.sfz",
+      "name": "Tubular Bells",
+      "instrument": "tubular_bells",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "Harp.sfz",
+      "name": "Harp",
+      "instrument": "harp",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "UprightPiano.sfz",
+      "name": "Upright Piano",
+      "instrument": "piano_upright",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "VSUpright1.sfz",
+      "name": "VS Upright No. 1",
+      "instrument": "piano_upright",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "OrganLoud.sfz",
+      "name": "Organ, loud",
+      "instrument": "organ_pipe",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "OrganQuiet.sfz",
+      "name": "Organ, quiet",
+      "instrument": "organ_pipe",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "OrganLoudPedal.sfz",
+      "name": "Organ pedals, loud",
+      "instrument": "organ_pipe",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "OrganQuietPedal.sfz",
+      "name": "Organ pedals, quiet",
+      "instrument": "organ_pipe",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "ordinario", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "SViolin-KS.sfz",
+      "name": "Solo Violin, key switches",
+      "instrument": "violin",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "keyswitch", "key": 36, "label": "Sustain Vibrato", "default": true},
+        {"id": "tremolo", "via": "keyswitch", "key": 37, "label": "Tremolo"},
+        {"id": "spiccato", "via": "keyswitch", "key": 38, "label": "Spiccato"},
+        {"id": "pizzicato", "via": "keyswitch", "key": 39, "label": "Pizzicato"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "SViolinVib.sfz",
+      "name": "Solo Violin, sustain vibrato",
+      "instrument": "violin",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "SViolinVib-Quiet.sfz",
+      "name": "Solo Violin, sustain vibrato (quiet)",
+      "instrument": "violin",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "SViolinTrem.sfz",
+      "name": "Solo Violin, tremolo",
+      "instrument": "violin",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "tremolo", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "SViolinSpic.sfz",
+      "name": "Solo Violin, spiccato",
+      "instrument": "violin",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "spiccato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "SViolinPizz.sfz",
+      "name": "Solo Violin, pizzicato",
+      "instrument": "violin",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "pizzicato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "set": "violin-solo",
+      "name": "Solo Violin",
+      "instrument": "violin",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "path": "SViolinVib.sfz", "default": true},
+        {"id": "tremolo", "via": "patch", "path": "SViolinTrem.sfz"},
+        {"id": "spiccato", "via": "patch", "path": "SViolinSpic.sfz"},
+        {"id": "pizzicato", "via": "patch", "path": "SViolinPizz.sfz"}
+      ],
+      "dynamics": {"via": "velocity"}
+    },
+    {
+      "path": "ViolinEns-KS.sfz",
+      "name": "Violin Section, key switches",
+      "instrument": "violin",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "sustain", "via": "keyswitch", "key": 36, "label": "Sustain Vibrato", "default": true},
+        {"id": "tremolo", "via": "keyswitch", "key": 37, "label": "Tremolo"},
+        {"id": "spiccato", "via": "keyswitch", "key": 38, "label": "Spiccato"},
+        {"id": "pizzicato", "via": "keyswitch", "key": 39, "label": "Pizzicato"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "ViolinEnsSusVib.sfz",
+      "name": "Violin Section, sustain vibrato",
+      "instrument": "violin",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "ViolinEnsSusVib-Quiet.sfz",
+      "name": "Violin Section, sustain vibrato (quiet)",
+      "instrument": "violin",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "ViolinEnsTrem.sfz",
+      "name": "Violin Section, tremolo",
+      "instrument": "violin",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "tremolo", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "ViolinEnsSpic.sfz",
+      "name": "Violin Section, spiccato",
+      "instrument": "violin",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "spiccato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "ViolinEnsPizz.sfz",
+      "name": "Violin Section, pizzicato",
+      "instrument": "violin",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "pizzicato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "set": "violin-section",
+      "name": "Violin Section",
+      "instrument": "violin",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "path": "ViolinEnsSusVib.sfz", "default": true},
+        {"id": "tremolo", "via": "patch", "path": "ViolinEnsTrem.sfz"},
+        {"id": "spiccato", "via": "patch", "path": "ViolinEnsSpic.sfz"},
+        {"id": "pizzicato", "via": "patch", "path": "ViolinEnsPizz.sfz"}
+      ],
+      "dynamics": {"via": "velocity"}
+    },
+    {
+      "path": "ViolaEns-KS.sfz",
+      "name": "Viola Section, key switches",
+      "instrument": "viola",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "sustain", "via": "keyswitch", "key": 36, "label": "Sustain", "default": true},
+        {"id": "tremolo", "via": "keyswitch", "key": 37, "label": "Tremolo"},
+        {"id": "spiccato", "via": "keyswitch", "key": 38, "label": "Spiccato"},
+        {"id": "pizzicato", "via": "keyswitch", "key": 39, "label": "Pizzicato"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "ViolaEnsSusVib.sfz",
+      "name": "Viola Section, sustain vibrato",
+      "instrument": "viola",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "ViolaEnsSusVib-Quiet.sfz",
+      "name": "Viola Section, sustain vibrato (quiet)",
+      "instrument": "viola",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "ViolaEnsTrem.sfz",
+      "name": "Viola Section, tremolo",
+      "instrument": "viola",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "tremolo", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "ViolaEnsSpic.sfz",
+      "name": "Viola Section, spiccato",
+      "instrument": "viola",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "spiccato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "ViolaEnsPizz.sfz",
+      "name": "Viola Section, pizzicato",
+      "instrument": "viola",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "pizzicato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "set": "viola-section",
+      "name": "Viola Section",
+      "instrument": "viola",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "path": "ViolaEnsSusVib.sfz", "default": true},
+        {"id": "tremolo", "via": "patch", "path": "ViolaEnsTrem.sfz"},
+        {"id": "spiccato", "via": "patch", "path": "ViolaEnsSpic.sfz"},
+        {"id": "pizzicato", "via": "patch", "path": "ViolaEnsPizz.sfz"}
+      ],
+      "dynamics": {"via": "velocity"}
+    },
+    {
+      "path": "CelloEns-KS.sfz",
+      "name": "Cello Section, key switches",
+      "instrument": "cello",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "sustain", "via": "keyswitch", "key": 84, "label": "Sustain Vibrato", "default": true},
+        {"id": "tremolo", "via": "keyswitch", "key": 85, "label": "Tremolo"},
+        {"id": "spiccato", "via": "keyswitch", "key": 86, "label": "Spiccato"},
+        {"id": "pizzicato", "via": "keyswitch", "key": 87, "label": "Pizzicato"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "partly", "lost": ["ampeg_dynamic", "keys 84 to 87 (C6 to D#6) switch articulations although they lie inside the cello's range, so a note there changes the articulation and does not sound"]}
+    },
+    {
+      "path": "CelloEnsSusVib.sfz",
+      "name": "Cello Section, sustain vibrato",
+      "instrument": "cello",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "CelloEnsSusVib-Quiet.sfz",
+      "name": "Cello Section, sustain vibrato (quiet)",
+      "instrument": "cello",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "CelloEnsTrem.sfz",
+      "name": "Cello Section, tremolo",
+      "instrument": "cello",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "tremolo", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "CelloEnsSpic.sfz",
+      "name": "Cello Section, spiccato",
+      "instrument": "cello",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "spiccato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "CelloEnsPizz.sfz",
+      "name": "Cello Section, pizzicato",
+      "instrument": "cello",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "pizzicato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "set": "cello-section",
+      "name": "Cello Section",
+      "instrument": "cello",
+      "ensemble": {"kind": "section"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "path": "CelloEnsSusVib.sfz", "default": true},
+        {"id": "tremolo", "via": "patch", "path": "CelloEnsTrem.sfz"},
+        {"id": "spiccato", "via": "patch", "path": "CelloEnsSpic.sfz"},
+        {"id": "pizzicato", "via": "patch", "path": "CelloEnsPizz.sfz"}
+      ],
+      "dynamics": {"via": "velocity"}
+    },
+    {
+      "path": "Contrabass-KS.sfz",
+      "name": "Double Bass, key switches",
+      "instrument": "double_bass",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "keyswitch", "key": 84, "vibrato": "non_vibrato", "label": "Sustain Non-Vibrato", "default": true},
+        {"id": "sustain", "via": "keyswitch", "key": 85, "label": "Sustain Vibrato"},
+        {"id": "tremolo", "via": "keyswitch", "key": 86, "label": "Tremolo"},
+        {"id": "spiccato", "via": "keyswitch", "key": 87, "label": "Spiccato"},
+        {"id": "pizzicato", "via": "keyswitch", "key": 88, "label": "Pizzicato"}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "ContrabassSusNV.sfz",
+      "name": "Double Bass, sustain non-vibrato",
+      "instrument": "double_bass",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "vibrato": "non_vibrato", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "ContrabassSusVB.sfz",
+      "name": "Double Bass, sustain vibrato",
+      "instrument": "double_bass",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "ContrabassSusVB-Quiet.sfz",
+      "name": "Double Bass, sustain vibrato (quiet)",
+      "instrument": "double_bass",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "ContrabassTrem.sfz",
+      "name": "Double Bass, tremolo",
+      "instrument": "double_bass",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "tremolo", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "ContrabassSpic.sfz",
+      "name": "Double Bass, spiccato",
+      "instrument": "double_bass",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "spiccato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "path": "ContrabassPizz.sfz",
+      "name": "Double Bass, pizzicato",
+      "instrument": "double_bass",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "pizzicato", "via": "patch", "default": true}
+      ],
+      "dynamics": {"via": "velocity"},
+      "verdict": {"state": "as_is", "lost": ["ampeg_dynamic"]}
+    },
+    {
+      "set": "double-bass",
+      "name": "Double Bass",
+      "instrument": "double_bass",
+      "ensemble": {"kind": "solo"},
+      "articulations": [
+        {"id": "sustain", "via": "patch", "path": "ContrabassSusNV.sfz", "vibrato": "non_vibrato", "default": true},
+        {"id": "sustain", "via": "patch", "path": "ContrabassSusVB.sfz"},
+        {"id": "tremolo", "via": "patch", "path": "ContrabassTrem.sfz"},
+        {"id": "spiccato", "via": "patch", "path": "ContrabassSpic.sfz"},
+        {"id": "pizzicato", "via": "patch", "path": "ContrabassPizz.sfz"}
+      ],
+      "dynamics": {"via": "velocity"}
+    }
+  ]
 }

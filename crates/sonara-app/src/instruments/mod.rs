@@ -26,8 +26,10 @@
 //! - a **library profile** Sonara ships (VSCO 2 CE, VCSL), in the shape of a version 2
 //!   manifest: a library whose manifest declares no `id` and that holds every file the profile
 //!   names to detect it takes the profile's `id` and name, so its preset IDs do not change when
-//!   its folder is renamed. The profile's claims lie below the manifest's, which overrides them
-//!   field by field, and are never shown as declared;
+//!   its folder is renamed. The profile lists every patch of the library's revision with a name
+//!   and what it plays, so a patch it lists that is not on disk shows as missing. The profile's
+//!   claims lie below the manifest's, which overrides them field by field, and are never shown
+//!   as declared;
 //! - a **scan** for `.sfz` files, which finds every patch whether or not the manifest knows it.
 //!   A patch the manifest does not list gets a name from its file name and a family *inferred*
 //!   from the words of its path ([`InstrumentFamily`]), marked as inferred. Articulations are
