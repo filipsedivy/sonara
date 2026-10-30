@@ -566,6 +566,37 @@ fn unsupported_values_and_headers_are_reported() {
 }
 
 #[test]
+fn amp_veltrack_is_read_with_its_scope_and_kept_in_range() {
+    // Organ and harpsichord patches set `amp_veltrack=0` so velocity leaves the level alone; the
+    // opcode used to be ignored. Values outside -100 to 100 are read as the nearest end, and one
+    // that is not a number as the default. The velocity curve opcodes stay unsupported.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<control> default_path=Samples/\n\
+         <group> amp_veltrack=0 lokey=c3 hikey=c5\n\
+         <region> sample=soft1.wav\n\
+         <region> sample=soft1.wav amp_veltrack=-40.5\n\
+         <region> sample=soft1.wav amp_veltrack=-150\n\
+         <region> sample=soft1.wav amp_veltrack=250\n\
+         <region> sample=soft1.wav amp_veltrack=nan\n\
+         <group> amp_velcurve_064=1 amp_veltrack_oncc1=20\n\
+         <region> sample=soft1.wav\n",
+    );
+    assert_eq!(
+        bank.regions
+            .iter()
+            .map(|r| r.amp_veltrack)
+            .collect::<Vec<_>>(),
+        [0.0, -40.5, -100.0, 100.0, 100.0, 100.0]
+    );
+    assert_eq!(
+        bank.ignored_opcodes,
+        ["amp_velcurve_*", "amp_veltrack_oncc*"]
+    );
+}
+
+#[test]
 fn a_misspelt_header_is_reported_and_its_opcodes_skipped() {
     // TST-03: headers are matched as written, so `<Group>` is not a group: its opcodes do not
     // reach the region, and the header is reported.

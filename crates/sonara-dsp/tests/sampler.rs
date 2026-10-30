@@ -133,6 +133,134 @@ fn velocity_layers_select_their_sample() {
     );
 }
 
+/// The gain of `amp_veltrack` `percent` at `velocity`, written out from the SFZ format and the
+/// reference player sfizz: `1 - t (1 - v²)` for `t >= 0`, `|t| (1 - v²)` below.
+fn tracked(percent: f64, velocity: u8) -> f64 {
+    let (t, v2) = (percent / 100.0, gain(velocity));
+    if t >= 0.0 {
+        1.0 - t * (1.0 - v2)
+    } else {
+        -t * (1.0 - v2)
+    }
+}
+
+/// A region on sample 0 with `amp_veltrack` `percent`.
+fn tracking(percent: f64) -> Region {
+    Region {
+        amp_veltrack: percent,
+        ..region(0)
+    }
+}
+
+#[test]
+fn velocity_tracking_matches_the_aria_measurements() {
+    // The gains ARIA plays at 25, 50, 75 and 100 % for velocities 127, 96, 64, 32 and 1, in dB,
+    // as sfizz's tests record them (0.1 dB is their margin).
+    let measured = [
+        (25.0, [0.0, -1.0, -1.8, -2.3, -2.5]),
+        (50.0, [0.0, -2.1, -4.1, -5.5, -6.0]),
+        (75.0, [0.0, -3.4, -7.2, -10.5, -12.0]),
+        (100.0, [0.0, -4.9, -12.0, -24.0, -84.1]),
+    ];
+    for (percent, db) in measured {
+        for (velocity, expected) in [127, 96, 64, 32, 1].into_iter().zip(db) {
+            let got = 20.0 * tracking(percent).velocity_gain(velocity).log10();
+            assert!(
+                (got - expected).abs() <= 0.1,
+                "{percent} % at {velocity}: {got} dB, not {expected}"
+            );
+        }
+    }
+}
+
+#[test]
+fn velocity_tracking_follows_the_sfz_formula() {
+    for percent in [-100.0, -50.0, -25.0, 0.0, 25.0, 60.0, 100.0] {
+        for velocity in [1, 32, 64, 100, 127] {
+            close(
+                tracking(percent).velocity_gain(velocity),
+                tracked(percent, velocity),
+            );
+        }
+    }
+    // The ends: 100 % is the curve v², 0 % ignores the velocity, -100 % silences velocity 127
+    // and leaves the softest notes at full gain (as sfizz's tests pin them).
+    assert_eq!(tracking(100.0).velocity_gain(64), gain(64));
+    assert_eq!(
+        Region::default().velocity_gain(64),
+        gain(64),
+        "100 % is the default"
+    );
+    assert_eq!(tracking(0.0).velocity_gain(1), 1.0);
+    assert_eq!(tracking(-100.0).velocity_gain(127), 0.0);
+    assert_eq!(tracking(-100.0).velocity_gain(0), 1.0);
+    // Out of range or not a number: the nearest end, or the default.
+    assert_eq!(tracking(250.0).velocity_gain(64), gain(64));
+    assert_eq!(tracking(-250.0).velocity_gain(127), 0.0);
+    assert_eq!(tracking(f64::NAN).velocity_gain(64), gain(64));
+}
+
+#[test]
+fn amp_veltrack_zero_ignores_velocity() {
+    // An organ or harpsichord region (`amp_veltrack=0`) sounds the same at every velocity.
+    let bank = SampleBank {
+        samples: vec![constant(0.5)],
+        regions: vec![tracking(0.0)],
+        ..SampleBank::default()
+    };
+    for velocity in [1, 40, 127] {
+        let mut processor = sampler(bank.clone());
+        let out = run(&mut *processor, &[event(EventKind::NoteOn, 60, velocity)]);
+        close(level(&out), 0.5);
+    }
+}
+
+#[test]
+fn partial_velocity_tracking_scales_the_voice() {
+    for (percent, velocity) in [(50.0, 64), (-50.0, 64), (-100.0, 20)] {
+        let bank = SampleBank {
+            samples: vec![constant(0.5)],
+            regions: vec![tracking(percent)],
+            ..SampleBank::default()
+        };
+        let mut processor = sampler(bank);
+        let out = run(&mut *processor, &[event(EventKind::NoteOn, 60, velocity)]);
+        close(level(&out), 0.5 * tracked(percent, velocity));
+    }
+}
+
+#[test]
+fn a_region_tracked_to_silence_starts_no_voice_but_chokes_its_group() {
+    // At -100 %, velocity 127 gives zero gain: no voice starts, but the press still switches off
+    // the exclusive group it belongs to.
+    let bank = SampleBank {
+        samples: vec![constant(0.5), constant(0.25)],
+        regions: vec![
+            Region {
+                key_lo: 50,
+                key_hi: 50,
+                off_by: 1,
+                ..region(0)
+            },
+            Region {
+                key_lo: 60,
+                key_hi: 60,
+                group: 1,
+                ..tracking(-100.0)
+            },
+        ],
+        ..SampleBank::default()
+    };
+    let mut processor = sampler(bank);
+    close(
+        level(&run(&mut *processor, &[event(EventKind::NoteOn, 50, 127)])),
+        0.5,
+    );
+    let out = run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    close(level(&out), 0.0);
+    assert_eq!(processor.report().entries(), [("voices", 0.0)]);
+}
+
 #[test]
 fn round_robin_alternates_between_positions() {
     let rr = |sample, position| Region {

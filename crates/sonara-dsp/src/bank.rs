@@ -77,6 +77,9 @@ pub struct Region {
     pub tune_cents: f64,
     /// Region volume in dB.
     pub volume_db: f64,
+    /// How much the gain follows the note's velocity, in percent (SFZ `amp_veltrack`, -100 to
+    /// 100, default 100); see [`Region::velocity_gain`].
+    pub amp_veltrack: f64,
     /// What starts the region.
     pub trigger: Trigger,
     /// Round-robin length (SFZ `seq_length`); 1 means no round robin.
@@ -121,6 +124,7 @@ impl Default for Region {
             pitch_keycenter: 60,
             tune_cents: 0.0,
             volume_db: 0.0,
+            amp_veltrack: 100.0,
             trigger: Trigger::Attack,
             seq_length: 1,
             seq_position: 1,
@@ -136,6 +140,34 @@ impl Default for Region {
             end: 0,
             attack: 0.0,
             release: 0.0,
+        }
+    }
+}
+
+impl Region {
+    /// The gain a note of `velocity` (1 to 127) gives the region, from 0 to 1, before its
+    /// volume.
+    ///
+    /// Velocity tracking (`amp_veltrack`) follows the SFZ format and the reference player
+    /// sfizz: with `v = velocity / 127` and `t = amp_veltrack / 100`, the gain is
+    /// `1 - t * (1 - v²)` for `t >= 0`, so 100 % is the curve `v²` and 0 % ignores the velocity,
+    /// and `|t| * (1 - v²)` for `t < 0`, so -100 % makes velocity 127 silent and the softest notes
+    /// loudest. A value outside -100 to 100 counts as the nearest end, and one that is not a
+    /// number as 100.
+    #[must_use]
+    pub fn velocity_gain(&self, velocity: u8) -> f64 {
+        let v = f64::from(velocity.min(127)) / 127.0;
+        let curve = v * v;
+        let track = if self.amp_veltrack.is_nan() {
+            1.0
+        } else {
+            (self.amp_veltrack / 100.0).clamp(-1.0, 1.0)
+        };
+        if track >= 0.0 {
+            // `(1 - t) + t * v²` is `1 - t * (1 - v²)`; at 100 % it is exactly `v²`.
+            (1.0 - track) + track * curve
+        } else {
+            -track * (1.0 - curve)
         }
     }
 }

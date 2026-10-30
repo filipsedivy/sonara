@@ -10,8 +10,8 @@
 //! **Supported opcodes:** `sample`, `default_path`, `key`, `lokey`, `hikey`, `pitch_keycenter`,
 //! `lovel`, `hivel`, `lorand`, `hirand`, `seq_length`, `seq_position`, `sw_lokey`, `sw_hikey`,
 //! `sw_default`, `sw_last`, `trigger`, `group`, `off_by`, `loop_mode`, `loop_start`, `loop_end`,
-//! `offset`, `end`, `tune`, `transpose`, `volume`, `ampeg_attack`, `ampeg_release`, and the
-//! `#define`/`#include` directives. Every other opcode is recorded in
+//! `offset`, `end`, `tune`, `transpose`, `volume`, `amp_veltrack`, `ampeg_attack`,
+//! `ampeg_release`, and the `#define`/`#include` directives. Every other opcode is recorded in
 //! [`SampleBank::ignored_opcodes`] and has no effect. So is a value of `trigger` other than
 //! `attack` and `release`, or of `loop_mode` other than `no_loop`, `one_shot`, `loop_continuous`
 //! and `loop_sustain`, as `trigger=legato`: the region plays as if the opcode were absent, so a
@@ -50,6 +50,11 @@
 //! ranges switch only on their own keys. The default switch is the last valid `sw_default` in
 //! the file, at any level, as the reference player sfizz reads it: a later header that does not
 //! repeat it (VSCO 2 CE's key-switch patches start a new `<control>` and `<group>`) keeps it.
+//!
+//! **Velocity.** `amp_veltrack` sets how much a region's gain follows the velocity
+//! ([`Region::velocity_gain`]); a value outside -100 to 100 is read as the nearest end, and one
+//! that is not a number as the default 100. `amp_velcurve_N` and the `amp_veltrack_onccN`
+//! modulation are not supported.
 //!
 //! **Samples a region cannot play.** `sample=*silence` is a region that plays nothing; its note
 //! still switches off the exclusive group it belongs to, which is what patches write it for. The
@@ -558,6 +563,7 @@ const SUPPORTED: &[&str] = &[
     "tune",
     "transpose",
     "volume",
+    "amp_veltrack",
     "ampeg_attack",
     "ampeg_release",
 ];
@@ -927,6 +933,9 @@ impl Loader {
         region.group = to_u32(int("group"), 0);
         region.off_by = to_u32(int("off_by"), 0);
         region.volume_db = num("volume").unwrap_or(0.0);
+        region.amp_veltrack = num("amp_veltrack")
+            .filter(|v| v.is_finite())
+            .map_or(100.0, |v| v.clamp(-100.0, 100.0));
         region.tune_cents = num("tune").unwrap_or(0.0) + num("transpose").unwrap_or(0.0) * 100.0;
         region.attack = num("ampeg_attack").unwrap_or(0.0).max(0.0);
         region.release = num("ampeg_release").unwrap_or(0.0).max(0.0);

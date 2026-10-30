@@ -8,6 +8,9 @@
 //!   range, keyswitch, random range and round-robin position match. A press of one of the
 //!   patch's keyswitch keys makes it the active switch; the patch's default switch is active
 //!   until then, also when the patch has no keyswitch keys.
+//! - **Velocity.** A region's gain follows the note's velocity as its `amp_veltrack` says: the
+//!   curve `(velocity / 127)²` at the default 100 %, constant at 0 %, inverted below 0
+//!   ([`Region::velocity_gain`]). A region that a note would start at zero gain starts no voice.
 //! - **Round robin.** `seq_length`/`seq_position` follow one counter that advances on each
 //!   key press that matched a round-robin region. `lorand`/`hirand` use a fixed-seed generator,
 //!   so a render is deterministic (TST-04).
@@ -88,7 +91,7 @@ struct Voice {
     pos: f64,
     /// Source frames per output frame, before pitch bend.
     step: f64,
-    /// Region gain times velocity gain.
+    /// Region gain times the gain the note's velocity gives the region.
     gain: f64,
     level: f64,
     attack_step: f64,
@@ -400,8 +403,12 @@ impl Sampler {
         let cents = (f64::from(event.pitch) - f64::from(region.pitch_keycenter)) * 100.0
             + region.tune_cents;
         let step = f64::from(sample.rate) / rate * (cents / 1200.0).exp2();
-        let velocity = f64::from(event.velocity) / 127.0;
-        let gain = db_to_amp(region.volume_db) * velocity * velocity;
+        let gain = db_to_amp(region.volume_db) * region.velocity_gain(event.velocity);
+        if gain.is_nan() || gain <= 0.0 {
+            // A voice that would stay silent is not started. A key press has already switched
+            // off the region's exclusive group and counted its round robin (`note_on`).
+            return;
+        }
         let attack = region.attack.max(MIN_ATTACK);
         self.clock = self.clock.wrapping_add(1);
         let voice = Voice {

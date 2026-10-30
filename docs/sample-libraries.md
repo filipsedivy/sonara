@@ -85,7 +85,10 @@ If `sonara.sampler` is not listed, no configured directory holds a `.sfz` file.
 
 Velocity layers, round robin (`seq_length`/`seq_position`, `lorand`/`hirand`), keyswitches
 (`sw_*`), release samples (`trigger=release`), exclusive groups (`group`/`off_by`), loops,
-attack and release times, tuning and volume. MIDI: notes, sustain pedal (CC 64), volume (CC 7),
+attack and release times, tuning and volume. A region's level follows the velocity as its
+`amp_veltrack` says: at the default 100 % the gain is `(velocity / 127)²`, at 0 % (organs,
+harpsichords) every velocity plays at full level, and below 0 the response is inverted, as the
+SFZ format and sfizz define it. MIDI: notes, sustain pedal (CC 64), volume (CC 7),
 expression (CC 11), pitch bend (±2 semitones) and all notes off. Parameters: volume, pan,
 release scale, instrument, and instrument type, articulation and dynamics (below).
 
