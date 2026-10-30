@@ -10,6 +10,7 @@ import {
   composerEnabled,
   emptyView,
   logOf,
+  money,
   moveTarget,
   phase,
   promptLength,
@@ -19,6 +20,8 @@ import {
   resync,
   runningTask,
   selectedProvider,
+  taskOutcomeText,
+  tokensText,
   withProviders,
 } from "../../src/lib/chat/model";
 
@@ -254,4 +257,16 @@ test("a command's rejection keeps its code, anything else is unknown", () => {
   expect(chatError(new Error("boom"))).toEqual({ code: "UNKNOWN", message: "boom" });
   expect(chatError("plain")).toEqual({ code: "UNKNOWN", message: "plain" });
   expect(chatError({ message: "no code" })).toEqual({ code: "UNKNOWN", message: "no code" });
+});
+
+test("the footer words money, tokens and the outcome of a task", () => {
+  expect(money(0.12)).toBe("$0.1200");
+  expect(money(2.5)).toBe("$2.50");
+  expect(tokensText({ input_tokens: 10, output_tokens: 20 })).toBe("10 in, 20 out");
+  expect(tokensText({ input_tokens: null, output_tokens: 5 })).toBe("0 in, 5 out");
+  expect(tokensText({ input_tokens: null, output_tokens: null })).toBe("—");
+  expect(taskOutcomeText(task(1, "done"))).toBe("Finished");
+  expect(taskOutcomeText(task(1, "failed", { error: "not logged in" }))).toBe("Did not finish: not logged in");
+  expect(taskOutcomeText(task(1, "failed"))).toBe("Did not finish");
+  expect(taskOutcomeText(task(1, "cancelled"))).toBe("Stopped by you");
 });

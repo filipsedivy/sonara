@@ -5,10 +5,14 @@
 // change, the next `changed` event shows it.
 
 import { emptyLog, reduce, type RunLog } from "../composer/model";
-import type { ChatEvent, ChatSnapshot, ChatState, ProviderStatus, TaskId, TaskView } from "./api";
+import type { ChatEvent, ChatSnapshot, ChatState, ProviderStatus, TaskId, TaskResult, TaskView } from "./api";
 
 /** The longest prompt, in characters (the backend refuses more with PROMPT_TOO_LONG). */
 export const MAX_PROMPT_CHARS = 16_000;
+
+/** What the Beta badge says (the contract's wording). */
+export const BETA_EXPLANATION =
+  "Experimental feature: behaviour may change. The agent edits your project. Undo works step by step.";
 
 export interface ChatView {
   /** Null until the first snapshot. */
@@ -156,5 +160,34 @@ export function availabilityText(status: ProviderStatus): string {
       return `Too old (needs ${status.min_version} or newer)`;
     case "unsupported":
       return "Not supported";
+  }
+}
+
+// -- the footer of a task ---------------------------------------------------------------------
+
+/** `usd` as dollars, to four decimals below one dollar. */
+export function money(usd: number): string {
+  return `$${usd.toFixed(usd < 1 ? 4 : 2)}`;
+}
+
+/** The tokens a run used, `—` when it reported none. */
+export function tokensText(result: Pick<TaskResult, "input_tokens" | "output_tokens">): string {
+  if (result.input_tokens === null && result.output_tokens === null) return "—";
+  return `${result.input_tokens ?? 0} in, ${result.output_tokens ?? 0} out`;
+}
+
+/** What a finished task says of itself: the words of its state, with the reason of a failure. */
+export function taskOutcomeText(task: TaskView): string {
+  switch (task.state) {
+    case "done":
+      return "Finished";
+    case "failed":
+      return task.error ? `Did not finish: ${task.error}` : "Did not finish";
+    case "cancelled":
+      return "Stopped by you";
+    case "running":
+      return "Working…";
+    case "queued":
+      return "Waiting";
   }
 }
