@@ -17,6 +17,7 @@
 //! Nothing here runs on a real-time thread (RT-01).
 
 mod seed;
+pub mod voicing;
 
 use std::fmt;
 
