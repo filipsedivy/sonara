@@ -11,6 +11,14 @@
 //! - [`brass_chorale`]: trumpets on top, trombones below and the bass on the lowest trombone with
 //!   the tuba an octave under it; horns join only in unison pairs, so no single horn holds a part
 //!   against trumpets or trombones (BAL-02).
+//! - [`strings_divisi`]: string chords on the sections, every upper section divided the same
+//!   way when the notes outnumber them (VOI-10), at most two ways (VOI-11, VOI-12), never in
+//!   octaves (DBL-05, DBL-06), the second violins with the violas before the first violins, the
+//!   double basses an octave under the cellos and never without them (DBL-08).
+//! - [`woodwind_pairs`]: the pairs superposed in the natural order, or interlocked for a
+//!   background; concords within a colour and discords between two (VOI-05), no weak register
+//!   next to a strong one (VOI-06), never three colours in three parts or four in close position
+//!   (VOI-01, VOI-02), never a pair enclosed in one colour (VOI-03).
 //! - [`fit_register`]: moves a harmony line by octaves into the comfortable range (RNG-01,
 //!   RNG-02); a melody is never moved silently, the caller asks instead.
 //!
@@ -27,6 +35,8 @@
 mod brass;
 mod layout;
 mod register;
+mod strings;
+mod woodwinds;
 
 use std::collections::BTreeSet;
 
@@ -42,6 +52,8 @@ use crate::orchestration::{InstrumentType, Part, PitchModel, PitchRange};
 
 pub use brass::{brass_chorale, horns};
 pub use register::{RegisterFit, fit_register};
+pub use strings::strings_divisi;
+pub use woodwinds::{WindLayout, WindOptions, woodwind_pairs};
 
 /// The velocity a helper writes unless told otherwise, the MIDI generators' default.
 pub const DEFAULT_VELOCITY: u8 = 80;
@@ -93,6 +105,21 @@ pub enum VoicingError {
         /// The voices the parts form.
         formed: usize,
     },
+    /// More voices are asked for than the parts can hold.
+    #[error("the parts given hold at most {most} voices, {asked} asked")]
+    TooManyVoices {
+        /// The voices asked for.
+        asked: usize,
+        /// The most voices the parts hold.
+        most: usize,
+    },
+    /// Interlocking needs exactly two pairs: two players each of two instruments.
+    #[error("interlocking needs two pairs, two players each of two instruments")]
+    NotTwoPairs,
+    /// The parts given cannot voice a chord without breaking the rule: a three-part woodwind
+    /// chord in three colours (VOI-01).
+    #[error("the parts given would break {}", .0.code())]
+    Breaks(RuleId),
     /// A note could not be made from the input; the source says why.
     #[error("a note cannot be written")]
     Note(#[from] DomainError),
@@ -176,6 +203,13 @@ pub enum Remark {
         /// The chord's start in beats.
         start: f64,
     },
+    /// The string section divides `ways` ways, as every other upper section does (VOI-10).
+    Divided {
+        /// The section's part.
+        part: PartId,
+        /// How many notes it plays at once.
+        ways: u8,
+    },
 }
 
 impl Remark {
@@ -185,6 +219,7 @@ impl Remark {
         match self {
             Self::Tacet { rule, .. } => *rule,
             Self::Unvoiced { .. } => None,
+            Self::Divided { .. } => Some(RuleId::Voi10),
         }
     }
 }
@@ -507,7 +542,7 @@ struct ChordRules<'a> {
     velocity: u8,
 }
 
-/// Whether every two notes that the members of `groups` sound for the voices `pitches` clear their
+/// Whether every two notes the members of `groups` sound for the voices `pitches` clear their
 /// low-interval limits (SPC-01, SPC-02), octave doublings included.
 fn members_clear(groups: &[VoiceGroup], pitches: &[i64]) -> bool {
     let mut sounding: Vec<i64> = groups

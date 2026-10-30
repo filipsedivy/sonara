@@ -11,8 +11,8 @@ use sonara_midi::orchestration::{
     Family, InstrumentType, Part, PitchModel, PitchRange, ensemble, instrument, instruments,
 };
 use sonara_midi::performance::voicing::{
-    Carrier, ChordOptions, DEFAULT_VELOCITY, RegisterFit, Remark, Voiced, VoicingError,
-    brass_chorale, fit_register, horns,
+    Carrier, ChordOptions, DEFAULT_VELOCITY, RegisterFit, Remark, Voiced, VoicingError, WindLayout,
+    WindOptions, brass_chorale, fit_register, horns, strings_divisi, woodwind_pairs,
 };
 use sonara_midi::performance::{PartId, PerformanceError, Role};
 use sonara_midi::theory::parse_chord;
@@ -645,21 +645,31 @@ proptest! {
     }
 
     #[test]
-    fn brass_and_horns_stay_comfortable_and_clear_the_limits(
+    fn every_family_stays_comfortable_and_clears_the_limits(
         symbols in prop::collection::vec(0_usize..SYMBOLS.len(), 1..8),
+        layout in prop::sample::select(vec![WindLayout::Superposed, WindLayout::Interlocked]),
     ) {
         // TST-09: any progression keeps every note in its part's comfortable range and every
-        // two notes sounding together clear their low limits.
+        // two notes sounding together clear their low limits, in every family.
         let progression: Vec<&str> = symbols.iter().map(|&i| SYMBOLS[i]).collect();
         let chords = bars(&progression);
         let brass = romantic_brass();
+        let strings = romantic_strings();
+        let mut winds = pair("oboe", InstrumentType::Oboe).to_vec();
+        winds.extend(pair("clarinet", InstrumentType::ClarinetBb));
+        let mut given = brass.clone();
+        given.extend(strings.iter().cloned());
+        given.extend(winds.iter().cloned());
         for voiced in [
             brass_chorale(&chords, &brass, ChordOptions::default(), &mut ids()),
             horns(&chords, &four_horns(), None, ChordOptions::default(), &mut ids()),
+            strings_divisi(&chords, &strings, 7, ChordOptions::default(), &mut ids()),
+            strings_divisi(&chords, &strings, 4, ChordOptions::default(), &mut ids()),
+            woodwind_pairs(&chords, &winds, upper_options(layout), &mut ids()),
         ] {
-            let voiced = voiced.expect("the brass voice any chord");
+            let voiced = voiced.expect("a family voices any chord");
             for notes in &voiced.parts {
-                let carrier = brass
+                let carrier = given
                     .iter()
                     .find(|c| c.part == notes.part)
                     .expect("every part was given");
@@ -701,5 +711,301 @@ fn a_template_part_becomes_a_carrier_under_its_slug() {
     assert_eq!(
         Carrier::try_from(&named),
         Err(PerformanceError::InvalidPartId("Horn 3".to_owned()))
+    );
+}
+
+/// The five string sections of the Romantic orchestra template, in score order.
+fn romantic_strings() -> Vec<Carrier> {
+    let romantic = ensemble("romantic_orchestra").expect("the Romantic orchestra exists");
+    romantic
+        .parts()
+        .iter()
+        .filter(|template| template.instrument.family() == Family::Strings)
+        .map(|template| Carrier::try_from(template).expect("a template slug is a part id"))
+        .collect()
+}
+
+/// The notes of `slug` sounding at `beat`, from the lowest.
+fn chord_of(voiced: &Voiced, slug: &str, beat: f64) -> Vec<i64> {
+    let mut pitches: Vec<i64> = voiced
+        .notes(slug)
+        .unwrap_or_else(|| panic!("{slug} is a part of the result"))
+        .iter()
+        .filter(|note| note.start <= beat && beat < note.end())
+        .map(|note| i64::from(note.pitch))
+        .collect();
+    pitches.sort_unstable();
+    pitches
+}
+
+#[test]
+fn strings_divide_every_upper_section_alike() {
+    // TST-10: Rimsky-Korsakov, Ch. III, String harmony, p. 70: for six or seven parts every upper
+    // section divides the same way, the cellos take the bass and the double basses double it an
+    // octave below.
+    let strings = romantic_strings();
+    let chords = bars(&THEME);
+    let voiced = strings_divisi(&chords, &strings, 7, ChordOptions::default(), &mut ids())
+        .expect("the strings voice the theme");
+    let divided: Vec<(&str, u8)> = voiced
+        .remarks
+        .iter()
+        .map(|remark| match remark {
+            Remark::Divided { part, ways } => (part.as_str(), *ways),
+            other => panic!("unexpected {other:?}"),
+        })
+        .collect();
+    assert_eq!(divided, [("violas", 2), ("violins_2", 2), ("violins_1", 2)]);
+    assert!(
+        voiced
+            .remarks
+            .iter()
+            .all(|r| r.rule() == Some(RuleId::Voi10))
+    );
+    for (slot, symbol) in chords.iter().zip(THEME) {
+        let beat = slot.start;
+        let [v1, v2, va] = ["violins_1", "violins_2", "violas"].map(|s| chord_of(&voiced, s, beat));
+        let (vc, cb) = (
+            chord_of(&voiced, "cellos", beat),
+            chord_of(&voiced, "basses", beat),
+        );
+        for halves in [&v1, &v2, &va] {
+            assert_eq!(halves.len(), 2, "{symbol}");
+            // The halves of a section never lie a unison or an octave apart (DBL-05, DBL-06).
+            assert_ne!((halves[1] - halves[0]) % 12, 0, "{symbol} {halves:?}");
+        }
+        assert!(v1[0] > v2[1] && v2[0] > va[1] && va[0] > vc[0], "{symbol}");
+        let root = parse_chord(symbol).expect("a valid chord").root;
+        assert_eq!(vc[0].rem_euclid(12), root);
+        assert_eq!(cb, [vc[0] - 12]);
+    }
+    let doubling = voiced
+        .doublings()
+        .find(|d| d.part.as_str() == "basses")
+        .expect("the basses double the cellos");
+    assert_eq!((doubling.of.as_str(), doubling.octaves), ("cellos", -1));
+    assert!(doubling.named.is_some_and(|row| row.builds_bass));
+}
+
+#[test]
+fn four_string_parts_need_no_divisi_and_fewer_notes_spare_the_first_violins() {
+    let strings = romantic_strings();
+    let chords = bars(&["C", "F", "G7", "C"]);
+    let voiced = strings_divisi(&chords, &strings, 4, ChordOptions::default(), &mut ids())
+        .expect("the strings voice the chords");
+    assert!(voiced.remarks.is_empty(), "{:?}", voiced.remarks);
+    for slug in ["violins_1", "violins_2", "violas", "cellos", "basses"] {
+        assert_eq!(pitches(&voiced, slug).len(), 4, "{slug}");
+    }
+    // Two upper notes go to the second violins with the violas (Rimsky-Korsakov, Ch. I, p. 7);
+    // the first violins stay free for a melody.
+    let voiced = strings_divisi(&chords, &strings, 3, ChordOptions::default(), &mut ids())
+        .expect("the strings voice the chords");
+    assert_eq!(pitches(&voiced, "violins_1"), Vec::<i64>::new());
+    assert_eq!(pitches(&voiced, "violins_2").len(), 4);
+    assert_eq!(pitches(&voiced, "violas").len(), 4);
+    assert_eq!(
+        voiced.remarks,
+        [Remark::Tacet {
+            part: part("violins_1"),
+            rule: None
+        }]
+    );
+}
+
+#[test]
+fn double_basses_never_play_without_cellos() {
+    // DBL-08: without cellos the violas take the bass and the double basses rest.
+    let strings = [
+        carrier("violins_1", InstrumentType::Violin),
+        carrier("violas", InstrumentType::Viola),
+        carrier("basses", InstrumentType::DoubleBass),
+    ];
+    let chords = bars(&["C", "G"]);
+    let voiced = strings_divisi(&chords, &strings, 3, ChordOptions::default(), &mut ids())
+        .expect("the strings voice the chords");
+    let violas = pitches(&voiced, "violas");
+    assert_eq!(
+        violas.iter().map(|p| p.rem_euclid(12)).collect::<Vec<_>>(),
+        [0, 7]
+    );
+    assert_eq!(
+        voiced.remarks.last(),
+        Some(&Remark::Tacet {
+            part: part("basses"),
+            rule: Some(RuleId::Dbl08)
+        })
+    );
+    // Without the bass the cellos join the upper sections and the basses rest.
+    let voiced = strings_divisi(
+        &chords,
+        &romantic_strings(),
+        4,
+        ChordOptions {
+            carries_bass: false,
+            ..ChordOptions::default()
+        },
+        &mut ids(),
+    )
+    .expect("the strings voice the chords");
+    assert_eq!(pitches(&voiced, "cellos").len(), 2);
+    assert_eq!(
+        voiced.remarks,
+        [Remark::Tacet {
+            part: part("basses"),
+            rule: None
+        }]
+    );
+}
+
+#[test]
+fn strings_reject_what_they_cannot_voice() {
+    // TST-03.
+    let chords = bars(&["C"]);
+    let options = ChordOptions::default();
+    assert_eq!(
+        strings_divisi(&chords, &romantic_strings(), 0, options, &mut ids()),
+        Err(VoicingError::TooFewVoices {
+            needed: 1,
+            formed: 0
+        })
+    );
+    let two = [
+        carrier("violins_1", InstrumentType::Violin),
+        carrier("cellos", InstrumentType::Cello),
+    ];
+    assert_eq!(
+        strings_divisi(&chords, &two, 4, options, &mut ids()),
+        Err(VoicingError::TooManyVoices { asked: 4, most: 3 })
+    );
+    let with_flute = [
+        carrier("violins_1", InstrumentType::Violin),
+        carrier("flute_1", InstrumentType::Flute),
+    ];
+    assert!(matches!(
+        strings_divisi(&chords, &with_flute, 2, options, &mut ids()),
+        Err(VoicingError::WrongInstrument { .. })
+    ));
+}
+
+fn pair(name: &str, instrument: InstrumentType) -> [Carrier; 2] {
+    [
+        carrier(&format!("{name}_1"), instrument),
+        carrier(&format!("{name}_2"), instrument),
+    ]
+}
+
+/// Chords over a bass the strings carry.
+fn upper_options(layout: WindLayout) -> WindOptions {
+    WindOptions {
+        chord: ChordOptions {
+            carries_bass: false,
+            ..ChordOptions::default()
+        },
+        layout,
+        ..WindOptions::default()
+    }
+}
+
+#[test]
+fn woodwind_pairs_superpose_in_the_natural_order() {
+    // TST-10: Rimsky-Korsakov, Ch. III, Wood-wind harmony: the pairs stacked in the natural
+    // order, each pair's two players a concord apart (VOI-05).
+    let mut winds = pair("clarinet", InstrumentType::ClarinetBb).to_vec();
+    winds.extend(pair("oboe", InstrumentType::Oboe));
+    let chords = bars(&THEME);
+    let voiced = woodwind_pairs(
+        &chords,
+        &winds,
+        upper_options(WindLayout::Superposed),
+        &mut ids(),
+    )
+    .expect("the woodwinds voice the theme");
+    assert!(voiced.remarks.is_empty(), "{:?}", voiced.remarks);
+    let [o1, o2, c1, c2] =
+        ["oboe_1", "oboe_2", "clarinet_1", "clarinet_2"].map(|slug| pitches(&voiced, slug));
+    for chord in 0..THEME.len() {
+        assert!(o1[chord] > o2[chord] && o2[chord] > c1[chord] && c1[chord] > c2[chord]);
+        for (upper, lower) in [(o1[chord], o2[chord]), (c1[chord], c2[chord])] {
+            assert!([0, 3, 4, 8, 9].contains(&((upper - lower) % 12)), "{chord}");
+        }
+    }
+}
+
+#[test]
+fn woodwind_pairs_interlock_oboes_and_clarinets_for_a_background() {
+    // TST-10: Forsyth, p. 262: 1st oboe, 1st clarinet, 2nd oboe, 2nd clarinet, the way the two
+    // pairs of horns interlock.
+    let mut winds = pair("oboe", InstrumentType::Oboe).to_vec();
+    winds.extend(pair("clarinet", InstrumentType::ClarinetBb));
+    let chords = bars(&THEME);
+    let voiced = woodwind_pairs(
+        &chords,
+        &winds,
+        upper_options(WindLayout::Interlocked),
+        &mut ids(),
+    )
+    .expect("the woodwinds voice the theme");
+    let [o1, o2, c1, c2] =
+        ["oboe_1", "oboe_2", "clarinet_1", "clarinet_2"].map(|slug| pitches(&voiced, slug));
+    for chord in 0..THEME.len() {
+        assert!(o1[chord] > c1[chord] && c1[chord] > o2[chord] && o2[chord] > c2[chord]);
+        for (upper, lower) in [(o1[chord], o2[chord]), (c1[chord], c2[chord])] {
+            assert!([0, 3, 4, 8, 9].contains(&((upper - lower) % 12)), "{chord}");
+        }
+    }
+}
+
+#[test]
+fn four_colours_are_never_close_and_three_need_a_pair() {
+    // VOI-02: flute, oboe, clarinet and bassoon in one chord lie wider than an octave.
+    let winds = [
+        carrier("flute_1", InstrumentType::Flute),
+        carrier("oboe_1", InstrumentType::Oboe),
+        carrier("clarinet_1", InstrumentType::ClarinetBb),
+        carrier("bassoon_1", InstrumentType::Bassoon),
+    ];
+    let chords = bars(&["C", "Am", "F", "G"]);
+    let voiced = woodwind_pairs(&chords, &winds, WindOptions::default(), &mut ids())
+        .expect("the woodwinds voice the chords");
+    for slot in &chords {
+        let sounding: Vec<i64> = sounding_at(&voiced, slot.start)
+            .into_iter()
+            .map(|(_, p)| p)
+            .collect();
+        let span = sounding.iter().max().unwrap() - sounding.iter().min().unwrap();
+        assert!(span > 12, "{sounding:?}");
+    }
+    // TST-03, VOI-01: three players of three colours.
+    assert_eq!(
+        woodwind_pairs(&chords, &winds[..3], WindOptions::default(), &mut ids()),
+        Err(VoicingError::Breaks(RuleId::Voi01))
+    );
+    assert_eq!(
+        VoicingError::Breaks(RuleId::Voi01).to_string(),
+        "the parts given would break VOI-01"
+    );
+    // Interlocking needs two pairs.
+    assert_eq!(
+        woodwind_pairs(
+            &chords,
+            &winds,
+            upper_options(WindLayout::Interlocked),
+            &mut ids()
+        ),
+        Err(VoicingError::NotTwoPairs)
+    );
+    // A saxophone has no place in the natural order.
+    let sax = [carrier("alto_sax", InstrumentType::SaxophoneAlto)];
+    assert!(matches!(
+        woodwind_pairs(&chords, &sax, WindOptions::default(), &mut ids()),
+        Err(VoicingError::WrongInstrument { .. })
+    ));
+    assert_eq!(
+        woodwind_pairs(&chords, &[], WindOptions::default(), &mut ids()),
+        Err(VoicingError::TooFewVoices {
+            needed: 1,
+            formed: 0
+        })
     );
 }
