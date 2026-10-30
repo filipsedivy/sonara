@@ -5,6 +5,12 @@
 //! them ([`Carrier`]s) and its options, and returns the notes of every part ([`Voiced`]) with the
 //! doublings it wrote and what it could not do ([`Remark`]):
 //!
+//! - [`melody_doublings`]: picks the part that carries a melody from the function table
+//!   ([`CARRIERS`](crate::orchestration::rules::CARRIERS)) for the melody's register band, then
+//!   doubles it with a doubling the rules name, by density: none, one in unison or at the octave,
+//!   or the three groups in unison. It never writes a doubling the rules warn against (DBL-02,
+//!   DBL-03, DBL-04, DBL-09), doubles a melody in an extreme register at the octave (RNG-04) and
+//!   supports a double-bass melody with cellos or a bassoon (DBL-08).
 //! - [`horns`]: the horns in close harmony, ordered from the top 1, 3, 2, 4 (VOI-07), each player
 //!   moving as little as the chords allow (PLY-13), the bass doubled by a bassoon when one is
 //!   given.
@@ -34,6 +40,7 @@
 
 mod brass;
 mod layout;
+mod melody;
 mod register;
 mod strings;
 mod woodwinds;
@@ -51,6 +58,7 @@ use crate::orchestration::rules::{NAMED_DOUBLINGS, NamedDoubling, Playing, RuleI
 use crate::orchestration::{InstrumentType, Part, PitchModel, PitchRange};
 
 pub use brass::{brass_chorale, horns};
+pub use melody::{MelodyDoubling, melody_doublings};
 pub use register::{RegisterFit, fit_register};
 pub use strings::strings_divisi;
 pub use woodwinds::{WindLayout, WindOptions, woodwind_pairs};
@@ -120,6 +128,13 @@ pub enum VoicingError {
     /// chord in three colours (VOI-01).
     #[error("the parts given would break {}", .0.code())]
     Breaks(RuleId),
+    /// A melody has no notes.
+    #[error("the melody has no notes")]
+    EmptyMelody,
+    /// No part given can play the melody as written inside its comfortable range; the melody is
+    /// never moved to fit (see [`fit_register`]).
+    #[error("no part given plays the melody inside its comfortable range")]
+    NoCarrier,
     /// A note could not be made from the input; the source says why.
     #[error("a note cannot be written")]
     Note(#[from] DomainError),
@@ -210,6 +225,19 @@ pub enum Remark {
         /// How many notes it plays at once.
         ways: u8,
     },
+    /// No doubling of the density asked for fits the parts given, so a thinner one was written.
+    Thinned {
+        /// The density asked for.
+        asked: Density,
+        /// The density written.
+        written: Density,
+    },
+    /// The melody wants a doubling that no part given can play: an octave doubling of a melody in
+    /// an extreme register (RNG-04), or cellos or a bassoon under a double-bass melody (DBL-08).
+    Undoubled {
+        /// The rule that wants the doubling.
+        rule: RuleId,
+    },
 }
 
 impl Remark {
@@ -218,8 +246,9 @@ impl Remark {
     pub const fn rule(&self) -> Option<RuleId> {
         match self {
             Self::Tacet { rule, .. } => *rule,
-            Self::Unvoiced { .. } => None,
+            Self::Unvoiced { .. } | Self::Thinned { .. } => None,
             Self::Divided { .. } => Some(RuleId::Voi10),
+            Self::Undoubled { rule } => Some(*rule),
         }
     }
 }
@@ -256,6 +285,19 @@ impl Voiced {
             })
         })
     }
+}
+
+/// How thickly a melody is doubled, from one colour to the unison of the three groups.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum Density {
+    /// One colour: the part that carries the melody alone.
+    Thin,
+    /// One doubling the rules name, in unison or at the octave; sections of a doubling
+    /// instrument play together, such as the first and second violins.
+    #[default]
+    Medium,
+    /// The unison of strings, woodwinds and brass that a melody takes in a tutti.
+    Full,
 }
 
 /// How a family helper writes its chords.
@@ -445,6 +487,23 @@ impl<'a> Score<'a> {
                 named,
             });
         }
+    }
+
+    /// Records that the part at `part` doubles the part at `of`, `octaves` above it, as the
+    /// named doubling `named`.
+    fn double_as(
+        &mut self,
+        part: usize,
+        of: usize,
+        octaves: i8,
+        named: Option<&'static NamedDoubling>,
+    ) {
+        self.doublings.push(DoublingAt {
+            part,
+            of,
+            octaves,
+            named,
+        });
     }
 
     /// Names the rule that keeps the part at `place` silent if it ends up with no notes.

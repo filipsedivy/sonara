@@ -5,14 +5,15 @@ use sonara_core::ids::SequentialIds;
 use sonara_core::midi::MidiNote;
 use sonara_midi::generators::ChordSlot;
 use sonara_midi::orchestration::rules::{
-    LOW_DISSONANCE, LOW_INTERVAL_LIMITS, Limit, NamedDoubling, RuleId, Spacing,
+    LOW_DISSONANCE, LOW_INTERVAL_LIMITS, Limit, NamedDoubling, RuleId, Spacing, WOODWIND_ORDER,
 };
 use sonara_midi::orchestration::{
     Family, InstrumentType, Part, PitchModel, PitchRange, ensemble, instrument, instruments,
 };
 use sonara_midi::performance::voicing::{
-    Carrier, ChordOptions, DEFAULT_VELOCITY, RegisterFit, Remark, Voiced, VoicingError, WindLayout,
-    WindOptions, brass_chorale, fit_register, horns, strings_divisi, woodwind_pairs,
+    Carrier, ChordOptions, DEFAULT_VELOCITY, Density, MelodyDoubling, RegisterFit, Remark, Voiced,
+    VoicingError, WindLayout, WindOptions, brass_chorale, fit_register, horns, melody_doublings,
+    strings_divisi, woodwind_pairs,
 };
 use sonara_midi::performance::{PartId, PerformanceError, Role};
 use sonara_midi::theory::parse_chord;
@@ -1008,4 +1009,323 @@ fn four_colours_are_never_close_and_three_need_a_pair() {
             formed: 0
         })
     );
+}
+
+/// A melody of `pitches`, one beat each, played legato at velocity 90 on channel 1.
+fn melody(pitches: &[i64]) -> Vec<MidiNote> {
+    pitches
+        .iter()
+        .zip(0_u32..)
+        .map(|(&pitch, index)| {
+            MidiNote::new(format!("m_{index}"), pitch, f64::from(index), 1.0, 90, 1)
+                .expect("a valid note")
+                .with_articulation(Some("legato".to_owned()))
+                .expect("a vocabulary id")
+        })
+        .collect()
+}
+
+/// A theme between A4 and A5 (MIDI 69-81).
+const THEME_MELODY: [i64; 8] = [69, 74, 77, 76, 74, 81, 79, 77];
+
+/// The parts of the Romantic orchestra whose family is one of `families`, in score order.
+fn romantic(families: &[Family]) -> Vec<Carrier> {
+    let romantic = ensemble("romantic_orchestra").expect("the Romantic orchestra exists");
+    romantic
+        .parts()
+        .iter()
+        .filter(|template| families.contains(&template.instrument.family()))
+        .map(|template| Carrier::try_from(template).expect("a template slug is a part id"))
+        .collect()
+}
+
+/// The octaves each doubling part plays above the carrier, sorted by part.
+fn octaves(result: &MelodyDoubling) -> Vec<(String, i8)> {
+    let mut lines: Vec<(String, i8)> = result
+        .voiced
+        .doublings()
+        .map(|d| {
+            assert_eq!(*d.of, result.carrier);
+            assert_eq!(d.named, result.doubling);
+            (d.part.to_string(), d.octaves)
+        })
+        .collect();
+    lines.sort();
+    lines
+}
+
+#[test]
+fn strings_double_a_middle_melody_in_unison_and_at_the_octave() {
+    // TST-10: Rimsky-Korsakov, Ch. II, p. 43: first and second violins in unison over violas and
+    // cellos in unison an octave lower, for a melody in the middle range; the double basses rest.
+    let theme = melody(&THEME_MELODY);
+    let result = melody_doublings(&theme, &romantic_strings(), Density::Medium, &mut ids())
+        .expect("the strings double the melody");
+    assert_eq!(result.carrier.as_str(), "violins_1");
+    assert_eq!(result.density, Density::Medium);
+    let row = result.doubling.expect("a named doubling");
+    assert_eq!(row.spacings, [Spacing::Octaves(1)]);
+    assert_eq!(row.members[0].selector.ids(), [InstrumentType::Violin]);
+    assert_eq!(
+        row.members[1].selector.ids(),
+        [InstrumentType::Viola, InstrumentType::Cello]
+    );
+    assert_eq!(
+        octaves(&result),
+        [
+            ("cellos".to_owned(), -1),
+            ("violas".to_owned(), -1),
+            ("violins_2".to_owned(), 0)
+        ]
+    );
+    let voiced = &result.voiced;
+    assert_eq!(pitches(voiced, "violins_1"), THEME_MELODY);
+    assert_eq!(pitches(voiced, "violins_2"), THEME_MELODY);
+    let lower: Vec<i64> = THEME_MELODY.iter().map(|p| p - 12).collect();
+    assert_eq!(pitches(voiced, "violas"), lower);
+    assert_eq!(pitches(voiced, "cellos"), lower);
+    assert_eq!(
+        voiced.remarks,
+        [Remark::Tacet {
+            part: part("basses"),
+            rule: None
+        }]
+    );
+    // Each line keeps the melody's timing, velocity, channel and articulation under fresh ids.
+    for (note, written) in voiced
+        .notes("violas")
+        .expect("the violas play")
+        .iter()
+        .zip(&theme)
+    {
+        assert_ne!(note.id, written.id);
+        assert_eq!(
+            (note.start, note.length, note.velocity, note.channel),
+            (
+                written.start,
+                written.length,
+                written.velocity,
+                written.channel
+            )
+        );
+        assert_eq!(note.articulation.as_deref(), Some("legato"));
+    }
+}
+
+#[test]
+fn a_thin_melody_is_one_colour_and_a_full_one_the_three_groups() {
+    let theme = melody(&THEME_MELODY);
+    let thin = melody_doublings(&theme, &romantic_strings(), Density::Thin, &mut ids())
+        .expect("the strings carry the melody");
+    assert_eq!(thin.doubling, None);
+    assert_eq!(thin.density, Density::Thin);
+    assert_eq!(octaves(&thin), Vec::<(String, i8)>::new());
+    assert_eq!(pitches(&thin.voiced, "violins_1"), THEME_MELODY);
+    assert_eq!(thin.voiced.remarks.len(), 4);
+    // TST-10: Rimsky-Korsakov, Ch. II, p. 61: violins, a woodwind and a trumpet in unison, the
+    // most natural tutti melody of the three groups.
+    let tutti = romantic(&[Family::Woodwinds, Family::Brass, Family::Strings]);
+    let full = melody_doublings(&theme, &tutti, Density::Full, &mut ids())
+        .expect("the tutti doubles the melody");
+    assert_eq!(full.carrier.as_str(), "violins_1");
+    assert_eq!(full.density, Density::Full);
+    let row = full.doubling.expect("a named doubling");
+    assert_eq!(row.spacings, [Spacing::Unison]);
+    let families: Vec<Family> = row
+        .members
+        .iter()
+        .map(|member| member.selector.ids()[0].family())
+        .collect();
+    assert_eq!(
+        families,
+        [Family::Strings, Family::Woodwinds, Family::Brass]
+    );
+    let lines = octaves(&full);
+    assert!(lines.iter().all(|(_, octave)| *octave == 0), "{lines:?}");
+    for slug in ["violins_2", "flute_1", "trumpet_1"] {
+        assert!(
+            lines.iter().any(|(part, _)| part == slug),
+            "{slug}: {lines:?}"
+        );
+    }
+    // Without woodwinds and brass the strings fall back to their own doubling, and say so.
+    let strings_only = melody_doublings(&theme, &romantic_strings(), Density::Full, &mut ids())
+        .expect("the strings double the melody");
+    assert_eq!(strings_only.density, Density::Medium);
+    assert_eq!(
+        strings_only.voiced.remarks.first(),
+        Some(&Remark::Thinned {
+            asked: Density::Full,
+            written: Density::Medium
+        })
+    );
+}
+
+#[test]
+fn a_high_violin_melody_is_doubled_an_octave_below_even_thin() {
+    // RNG-04: above MIDI 90 a violin melody wants the octave below, here the second violins.
+    let high = melody(&[86, 90, 93, 91]);
+    let violins = [
+        carrier("violins_1", InstrumentType::Violin),
+        carrier("violins_2", InstrumentType::Violin),
+    ];
+    let result = melody_doublings(&high, &violins, Density::Thin, &mut ids())
+        .expect("the violins double the melody");
+    assert_eq!(result.density, Density::Thin);
+    assert_eq!(octaves(&result), [("violins_2".to_owned(), -1)]);
+    assert_eq!(result.voiced.remarks, []);
+    // A single violin part cannot give it, and the result says so.
+    let alone = melody_doublings(&high, &violins[..1], Density::Thin, &mut ids())
+        .expect("the violins carry the melody");
+    assert_eq!(
+        alone.voiced.remarks,
+        [Remark::Undoubled {
+            rule: RuleId::Rng04
+        }]
+    );
+    assert_eq!(alone.voiced.remarks[0].rule(), Some(RuleId::Rng04));
+}
+
+#[test]
+fn a_double_bass_melody_is_supported_by_a_bassoon() {
+    // DBL-08: no double-bass phrase without cellos or bassoons (Rimsky-Korsakov, Ch. II, p. 38).
+    let low = melody(&[43, 45, 47, 50]);
+    let parts = [
+        carrier("basses", InstrumentType::DoubleBass),
+        carrier("bassoon_1", InstrumentType::Bassoon),
+    ];
+    let result = melody_doublings(&low, &parts, Density::Thin, &mut ids())
+        .expect("the basses carry the melody");
+    assert_eq!(result.carrier.as_str(), "basses");
+    assert_eq!(octaves(&result), [("bassoon_1".to_owned(), 0)]);
+    let alone = melody_doublings(&low, &parts[..1], Density::Medium, &mut ids())
+        .expect("the basses carry the melody");
+    assert_eq!(
+        alone.voiced.remarks,
+        [
+            Remark::Thinned {
+                asked: Density::Medium,
+                written: Density::Thin
+            },
+            Remark::Undoubled {
+                rule: RuleId::Dbl08
+            }
+        ]
+    );
+}
+
+#[test]
+fn strings_and_brass_never_share_a_unison_without_woodwind() {
+    // DBL-09: violins and a trumpet in unison stay apart; with only them the violins play alone.
+    let parts = [
+        carrier("violins_1", InstrumentType::Violin),
+        carrier("trumpet_1", InstrumentType::TrumpetBb),
+    ];
+    let result = melody_doublings(&melody(&THEME_MELODY), &parts, Density::Medium, &mut ids())
+        .expect("the violins carry the melody");
+    assert_eq!(result.doubling, None);
+    assert_eq!(result.density, Density::Thin);
+    assert_eq!(pitches(&result.voiced, "trumpet_1"), Vec::<i64>::new());
+}
+
+#[test]
+fn the_function_table_chooses_the_carrier() {
+    // A tenor melody goes to the cellos before the violas; a soprano melody to the violins
+    // before an instrument the table does not list for it, which carries only when alone.
+    let tenor = melody(&[50, 53, 57, 55]);
+    let parts = [
+        carrier("violas", InstrumentType::Viola),
+        carrier("cellos", InstrumentType::Cello),
+    ];
+    let result = melody_doublings(&tenor, &parts, Density::Thin, &mut ids())
+        .expect("the strings carry the melody");
+    assert_eq!(result.carrier.as_str(), "cellos");
+    let soprano = melody(&THEME_MELODY);
+    let parts = [
+        carrier("harp", InstrumentType::Harp),
+        carrier("violins_1", InstrumentType::Violin),
+    ];
+    let result = melody_doublings(&soprano, &parts, Density::Thin, &mut ids())
+        .expect("the violins carry the melody");
+    assert_eq!(result.carrier.as_str(), "violins_1");
+    let result = melody_doublings(&soprano, &parts[..1], Density::Thin, &mut ids())
+        .expect("the harp carries the melody");
+    assert_eq!(result.carrier.as_str(), "harp");
+}
+
+#[test]
+fn melody_doublings_reject_what_they_cannot_double() {
+    // TST-03.
+    assert_eq!(
+        melody_doublings(&[], &romantic_strings(), Density::Medium, &mut ids()),
+        Err(VoicingError::EmptyMelody)
+    );
+    assert_eq!(
+        melody_doublings(
+            &melody(&[100, 104]),
+            &romantic_strings(),
+            Density::Medium,
+            &mut ids()
+        ),
+        Err(VoicingError::NoCarrier)
+    );
+    let twice = [
+        carrier("violins_1", InstrumentType::Violin),
+        carrier("violins_1", InstrumentType::Violin),
+    ];
+    assert_eq!(
+        melody_doublings(&melody(&THEME_MELODY), &twice, Density::Medium, &mut ids()),
+        Err(VoicingError::DuplicatePart(part("violins_1")))
+    );
+}
+
+proptest! {
+    #[test]
+    fn a_doubled_melody_stays_comfortable_and_keeps_the_rules(
+        start in 36_i64..=90,
+        steps in prop::collection::vec(-4_i64..=4, 1..10),
+        density in prop::sample::select(vec![Density::Thin, Density::Medium, Density::Full]),
+    ) {
+        // TST-09: the carrier plays the melody as written, every line moves by whole octaves
+        // inside its part's comfortable range, and no doubling breaks the woodwind order
+        // (DBL-02) or sets strings and brass in unison without woodwind (DBL-09).
+        let mut pitch = start;
+        let mut written = vec![pitch];
+        for step in steps {
+            pitch = (pitch + step).clamp(0, 127);
+            written.push(pitch);
+        }
+        let tutti = romantic(&[Family::Woodwinds, Family::Brass, Family::Strings]);
+        let Ok(result) = melody_doublings(&melody(&written), &tutti, density, &mut ids()) else {
+            return Ok(());
+        };
+        prop_assert_eq!(pitches(&result.voiced, result.carrier.as_str()), written.clone());
+        let mut lines: Vec<(InstrumentType, i8)> = Vec::new();
+        for doubling in result.voiced.doublings() {
+            let carrier = tutti.iter().find(|c| c.part == *doubling.part).expect("a given part");
+            let played = pitches(&result.voiced, doubling.part.as_str());
+            let shift = i64::from(doubling.octaves) * 12;
+            let expected: Vec<i64> = written.iter().map(|p| p + shift).collect();
+            prop_assert_eq!(&played, &expected);
+            let range = comfortable(carrier.instrument);
+            prop_assert!(played.iter().all(|&p| holds(range, p)));
+            lines.push((carrier.instrument, doubling.octaves));
+        }
+        let main = tutti.iter().find(|c| c.part == result.carrier).expect("a given part");
+        lines.push((main.instrument, 0));
+        for &(upper, high) in &lines {
+            for &(lower, low) in &lines {
+                let winds = upper.family() == Family::Woodwinds && lower.family() == Family::Woodwinds;
+                if high > low && winds {
+                    prop_assert!(
+                        WOODWIND_ORDER.rank(upper)
+                            <= WOODWIND_ORDER.rank(lower)
+                    );
+                }
+                if high == low && upper.family() == Family::Strings && lower.family() == Family::Brass {
+                    prop_assert!(lines.iter().any(|&(other, at)| at == high && other.family() == Family::Woodwinds));
+                }
+            }
+        }
+    }
 }
