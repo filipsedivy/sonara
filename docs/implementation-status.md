@@ -9,7 +9,8 @@ This file records what Sonara can actually do.
 | **planned** | Designed but not implemented |
 | **unsupported** | Out of scope for now |
 
-_Last updated: 2026-10-24 · version 0.1.0 · Rust workspace and Tauri desktop application;
+_Last updated: 2026-10-30 · version 0.1.13 and the unreleased changes · Rust workspace and Tauri
+desktop application;
 behaviour checked against the recorded golden data in `golden/`_
 
 ## Milestones
@@ -99,11 +100,11 @@ These need hardware or a person and are never CI gates (HW-01). Their results be
 | MIDI recording | done | Armed instrument tracks record into a MIDI clip; timing is mapped through the output-latency estimate |
 | MIDI output to external devices | partial | The output port API exists; tracks cannot route to external outputs yet |
 | Instruments and presets | done | Poly Synth (13 presets), Drum Kit (5 kits) |
-| Sample-based instruments (SFZ sampler) | partial | `sonara.sampler`: velocity layers, round robin, keyswitches, release samples, exclusive groups, loops, sustain pedal, CC 7/11, bend. Offered only when `sample_libraries` in the settings holds `.sfz` patches; no samples are bundled. No CC-driven layers or crossfades, no legato, no streaming (whole samples in RAM); a graph rebuild restarts sounding notes. Tested with generated fixtures only: not listened to, not exercised in the GUI, no performance numbers (see [sample-libraries.md](sample-libraries.md)) |
-| Instrument catalog (`sonara_app::instruments`) | partial | The presets of the installed sample libraries with stable IDs, declared or inferred family, declared articulations, licence note and availability (available, missing, invalid); optional `sonara-library.json` manifest; on-request deep check of a patch. A library-level API only: no agent tool, CLI command or GUI uses it yet, and the plugin registry is unchanged. SFZ only (no bank or program). Tested with generated fixtures (see [instrument-catalog.md](instrument-catalog.md)) |
+| Sample-based instruments (SFZ sampler) | partial | `sonara.sampler`: velocity layers, round robin, keyswitches (read from every region), release samples (also when the sustain pedal lifts), exclusive groups, loops, sustain pedal, CC 7/11, bend. Offered only when `sample_libraries` in the settings holds `.sfz` patches; no samples are bundled. The `instrument` choices are preset IDs (`<library id>/<patch path>`); a project that stores an older absolute path below a configured library still plays it. A missing sample or a generator drops only its region. The device editor lists the presets by name, grouped by library. No CC-driven layers or crossfades, no legato, no streaming (whole samples in RAM); a graph rebuild restarts sounding notes. Tested with generated fixtures only: not listened to with a real library, no performance numbers (see [sample-libraries.md](sample-libraries.md)) |
+| Instrument catalog (`sonara_app::instruments`) | partial | The presets of the installed sample libraries with stable IDs, declared or inferred family, declared articulations, licence note and availability (available, missing, invalid); optional `sonara-library.json` manifest; on-request deep check of a patch. VSCO 2 CE and VCSL are recognized without a manifest (`vsco2ce`, `vcsl`). The sampler's `instrument` choices and the device editor's grouped list come from it; no agent tool or CLI command lists it yet. SFZ only (no bank or program). Tested with generated fixtures (see [instrument-catalog.md](instrument-catalog.md)) |
 | Chords, scales, arpeggiator, humanize, swing | done | `sonara-midi` and `generate_midi` |
 | Programmatic MIDI generation | done | |
-| Orchestral ranges, transposition and articulation metadata | partial | `sonara_midi::orchestration`: 16 instruments; several ranges and all articulation lists are estimates; library-independent; no tool or GUI uses it yet ([orchestration-metadata.md](orchestration-metadata.md)) |
+| Orchestral ranges, transposition and articulation metadata | partial | `sonara_midi::orchestration`: 85 instrument types in score order, each with cited or estimated ranges, transposition, clefs, articulations, an ensemble profile, a General MIDI voice, keyboard mechanics and playability facts; names in five languages with aliases; articulation vocabulary, ensemble templates, orchestration rules, fallback data. Library-independent; no agent tool or GUI uses it yet ([orchestration-metadata.md](orchestration-metadata.md)) |
 | Song form generator | partial | Library API (`sonara_midi::form`, SON-P10): templates, roles, bar lengths, one-step apply, single-section regeneration. The role and levels are not saved in the project; no agent tool or GUI yet. See `docs/song-form.md` |
 | Localized regeneration | partial | Library API (`sonara_midi::regenerate`, SON-P11): region and section targets, validated patch, one-step undoable apply, stale-plan rejection. Needs a real `RegionGenerator`; none ships. No agent tool or GUI yet. See `docs/regeneration.md` |
 | Reference audio analysis | partial | Library API (`sonara_media::reference`, SON-P15): tempo with confidence, energy windows, energy segmentation, limitations; `analyze_reference_file` imports through the media decoder. Constant tempo only; no agent tool or GUI yet. See `docs/reference-analysis.md` |
@@ -163,6 +164,7 @@ These need hardware or a person and are never CI gates (HW-01). Their results be
 | Manifest, integrity hashes, required features | done | |
 | Atomic save, interrupted-save recovery, backups | done | |
 | Schema validation, unknown-field preservation | done | |
+| Schema version 2: track parts, note articulations | partial | Read, validated, migrated from version 1 and written at the lowest version a project needs; unknown ids are kept and reported as warnings. No tool or GUI sets them yet ([project-format.md](project-format.md)) |
 | Linked and embedded media, streaming large media | done | Decode cache with positional reads |
 | Safe extraction | done | |
 

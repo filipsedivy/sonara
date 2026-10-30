@@ -8,6 +8,55 @@ break the API. The project format is versioned independently, see
 
 ## [Unreleased]
 
+### Added
+
+- **Orchestration metadata for 85 instruments (`sonara_midi::orchestration`):** every instrument of
+  the orchestra, the voices and the keyboards has a record, keyed by a typed instrument type in
+  score order. A record holds the sounding playable and comfortable ranges with their sources
+  written out in full, the transposition and clefs, the idiomatic articulations, an ensemble
+  profile, the General MIDI voice (exact or a named substitute), the mechanics of keyboard
+  instruments and playability facts. Names in English, Czech, German, French and Italian, with
+  aliases and the Czech inflected forms, find the instruments a text names. The module also holds
+  an articulation vocabulary with passage states and refinements (mute, vibrato), ensemble
+  templates, a catalogue of orchestration rules with doubling, weight and register tables, and the
+  neighbours and articulation substitutes to fall back on when no sound is installed. Library API
+  only: no agent tool or GUI uses it yet. See
+  [docs/orchestration-metadata.md](docs/orchestration-metadata.md).
+- **Project schema version 2:** an instrument track may carry a `part` (the instrument type, the
+  printed name, players, solo or section, the player who doubles it, notation overrides), and a
+  MIDI note an `articulation`. Sonara writes the lowest version a project needs, so a project
+  without parts or articulations is still written as version 1 and older versions open it. The
+  required features are `parts` and `note-articulations`. An id Sonara does not know stays in the
+  project and is reported as a warning when it opens. No tool or GUI sets them yet. See
+  [docs/project-format.md](docs/project-format.md).
+
+### Changed
+
+- **Sampler instruments are preset IDs.** The Sonara Sampler's `instrument` parameter offers
+  `<library id>/<patch path>` preset IDs instead of absolute patch paths, so a project names the
+  same instrument on every machine. A project that stored a path below a configured library still
+  plays it, as that preset, and is not rewritten when it opens. VSCO 2 CE and VCSL are recognized
+  without a manifest and get the IDs `vsco2ce` and `vcsl`. No tool schema changes. See
+  [docs/sample-libraries.md](docs/sample-libraries.md).
+- **Device editor:** the sampler's Instrument combo lists the presets by name, grouped by library.
+  An instrument that is not installed shows as `Not installed: <name>`.
+
+### Fixed
+
+- **SFZ playback:**
+  - keyswitch keys are read from every region and the last `sw_default` wins, so keyswitched
+    patches such as VSCO 2 CE's no longer stay silent;
+  - a `<control>` header resets only the control scope;
+  - `#include` and `#define` are read wherever a token starts in a line, defines are expanded in
+    include paths, and includes resolve against the main file's folder;
+  - a region with a key of −1 or a controller trigger no longer plays from the keys;
+  - a missing sample or a generator such as `*silence` drops only its region instead of the whole
+    patch, and unsupported trigger and loop mode values and skipped headers are reported;
+  - release samples start when the sustain pedal lifts, for keys released while it was down;
+  - the library scan skips folders named `includes`, which hold fragments, not instruments.
+- **`sonara_media::sfz::inspect`** reports a patch's structure from the sample headers, without
+  decoding the samples.
+
 ## [0.1.13] — 2026-10-30
 
 ### Added
