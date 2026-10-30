@@ -535,7 +535,7 @@ const _: () = {
 };
 
 /// Whether `id` is non-empty and holds only `a-z`, `0-9` and `_`.
-const fn is_snake_case(id: &str) -> bool {
+pub(super) const fn is_snake_case(id: &str) -> bool {
     let bytes = id.as_bytes();
     if bytes.is_empty() {
         return false;
@@ -552,7 +552,7 @@ const fn is_snake_case(id: &str) -> bool {
 }
 
 /// Byte equality of two strings, usable in a `const` context.
-const fn same_text(a: &str, b: &str) -> bool {
+pub(super) const fn same_text(a: &str, b: &str) -> bool {
     let (a, b) = (a.as_bytes(), b.as_bytes());
     if a.len() != b.len() {
         return false;

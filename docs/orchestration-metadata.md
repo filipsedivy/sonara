@@ -90,9 +90,31 @@ Estimates: cello and double bass upper limits, horn in F, glockenspiel and xylop
 
 ## Articulations
 
-`Articulation` is a vocabulary of 15 stable ids (`sustain`, `pizzicato`, `col_legno`, …), spelled
-like the catalog manifest's. `Instrument::articulations` lists what the instrument idiomatically
-plays. `articulation_availability(id, library_declared)` returns:
+`Articulation` is a vocabulary of 77 ids (`sustain`, `pizzicato`, `trill_half`, `mute_cup`, …),
+spelled like the catalog manifest's; `from_id` accepts only an exact id. Each id has a one-sentence
+`description()` and a `kind()`, one of ten: long note, short note, ornament, transition, effect,
+timbre modifier, mute, dynamic shape, keyboard control and vocal.
+
+- **Order.** `Articulation::ALL` is append-only, because a choice list built from it is automated
+  by index: an id is never removed, renamed or moved, and a new id goes at the end. The 15 original
+  ids come first (`is_stable()`), then 47 established technique terms and 15 newer terms that at
+  least one sample library records, each group alphabetical. Other terms are added later, at the
+  end.
+- **Ordinario.** No id means the instrument's ordinary sound; there is no `ordinario` id, and
+  `sustain` is the long, held note.
+- **Passage states.** The eight mute ids (`con_sordino`, `mute_cup`, `mute_harmon`,
+  `mute_plunger`, `mute_bucket`, `stopped`, `palm_mute`, `xylophonic`) and the two vibrato ids
+  (`vibrato_on`, `non_vibrato`) name a `Mute` or a `Vibrato` that holds over a passage (`axis()`),
+  not a note's primary articulation. `Mute::Open` and `Vibrato::Ordinary` are the defaults and have
+  no id.
+- **Refinements.** `parent()` names the general id that a specific one refines (`trill_half` →
+  `trill`, `mute_cup` → `con_sordino`, `col_legno_battuto` → `col_legno`), so a library without the
+  refinement can play the parent. The original ids refine nothing.
+- **Rolls.** A mallet instrument's roll is `tremolo`; the timpani, drums, cymbals and other
+  unpitched percussion roll with `roll`.
+
+`Instrument::articulations` lists what the instrument idiomatically plays.
+`articulation_availability(id, library_declared)` returns:
 
 - `Supported` only when the library declared the id (`library_declared`, passed in);
 - `IdiomaticUnverified` when the instrument plays it but nothing confirms the library does;
@@ -135,9 +157,10 @@ articulation provenance are empty, so a record that forgets either does not buil
 
 A record is keyed by its `InstrumentType`, so its id cannot be malformed. The shipped data is
 built with the panicking `new` in a `static`, so invalid data is a compile error.
-Compile-time checks also hold the identity together: every type id is unique lower-case
-`snake_case`, `InstrumentType::ALL` lists every type once in declaration order, each family is one
-block of the score order, and `INSTRUMENTS` lists at most one record per type, in score order.
+Compile-time checks also hold the identity together: every type id and every articulation id is
+unique lower-case `snake_case`, `InstrumentType::ALL` and `Articulation::ALL` list every variant
+once in declaration order, every articulation has a description, each family is one block of the
+score order, and `INSTRUMENTS` lists at most one record per type, in score order.
 `crates/sonara-midi/tests/orchestration.rs` also checks the type ids against an independently
 written list, provenance, the score-order conventions above, that every record rebuilds from its
 spec, and that a fixture breaking each check is rejected.

@@ -1,10 +1,11 @@
 //! Contract tests of the orchestration metadata through its public API (SON-P06).
 
 use sonara_midi::orchestration::{
-    Articulation, ArticulationAvailability, CheckError, Clef, EnsembleProfile, Era, EraPlayers,
-    Family, Forms, INSTRUMENTS, Instrument, InstrumentError, InstrumentSpec, InstrumentType,
-    PitchModel, PitchRange, Pitched, PlayerRange, Provenance, RangeCheck, SoundingPitch,
-    SourcedRange, Transposition, WrittenPitch, instrument, instruments,
+    Articulation, ArticulationAvailability, Axis, CheckError, Clef, EnsembleProfile, Era,
+    EraPlayers, Family, Forms, INSTRUMENTS, Instrument, InstrumentError, InstrumentSpec,
+    InstrumentType, Kind, Mute, PitchModel, PitchRange, Pitched, PlayerRange, Provenance,
+    RangeCheck, SoundingPitch, SourcedRange, Transposition, Vibrato, WrittenPitch, instrument,
+    instruments,
 };
 
 const ESTIMATE: Provenance = Provenance::Estimate {
@@ -1152,4 +1153,423 @@ fn articulation_availability_needs_a_library_declaration_for_support() {
         get("flute").articulation_availability("col_legno", &[]),
         ArticulationAvailability::NotIdiomatic
     );
+}
+
+/// The articulation vocabulary in its frozen order (TST-05). A choice list built from
+/// `Articulation::ALL` is automated by index, so this list only ever grows at the end: an id is
+/// never removed, renamed or moved.
+const ARTICULATION_ORDER: [&str; 77] = [
+    // The fifteen original ids, in their original order.
+    "sustain",
+    "legato",
+    "staccato",
+    "spiccato",
+    "tenuto",
+    "marcato",
+    "pizzicato",
+    "tremolo",
+    "trill",
+    "col_legno",
+    "harmonics",
+    "sul_ponticello",
+    "con_sordino",
+    "flutter_tongue",
+    "roll",
+    // The established technique terms, alphabetical.
+    "accent",
+    "air_tone",
+    "bartok_pizzicato",
+    "bisbigliando",
+    "choke",
+    "col_legno_battuto",
+    "col_legno_tratto",
+    "crescendo_swell",
+    "cuivre",
+    "damped",
+    "dead_stroke",
+    "doit",
+    "drag",
+    "fall",
+    "falsetto",
+    "flam",
+    "flautando",
+    "fortepiano",
+    "glissando",
+    "growl",
+    "half_valve",
+    "harmonics_artificial",
+    "harmonics_natural",
+    "humming",
+    "key_click",
+    "let_ring",
+    "multiphonic",
+    "non_vibrato",
+    "palm_mute",
+    "portamento",
+    "portato",
+    "pres_de_la_table",
+    "rim",
+    "rimshot",
+    "rip",
+    "sforzando",
+    "shake",
+    "slap_tongue",
+    "staccatissimo",
+    "stopped",
+    "sul_tasto",
+    "tremolo_measured",
+    "trill_half",
+    "trill_whole",
+    "vibrato_on",
+    "vowel",
+    "xylophonic",
+    // The newer terms that at least one sample library records, alphabetical.
+    "bells_up",
+    "bowed",
+    "multi_tongue",
+    "mute_bucket",
+    "mute_cup",
+    "mute_harmon",
+    "mute_plunger",
+    "scoop",
+    "scrape",
+    "shake_stroke",
+    "snares_off",
+    "su_una_corda",
+    "text",
+    "wah_wah",
+    "whisper",
+];
+
+#[test]
+fn articulation_vocabulary_keeps_its_frozen_order() {
+    let ids: Vec<&str> = Articulation::ALL.iter().map(|a| a.id()).collect();
+    assert_eq!(ids, ARTICULATION_ORDER);
+    // The groups after the original fifteen are each in strict alphabetical (byte) order.
+    let (original, added) = ARTICULATION_ORDER.split_at(15);
+    let (established, recorded) = added.split_at(47);
+    for group in [established, recorded] {
+        assert!(group.windows(2).all(|pair| pair[0] < pair[1]), "{group:?}");
+    }
+    // Exactly the original fifteen are the stable ids, and they never refine another id.
+    for (position, articulation) in Articulation::ALL.into_iter().enumerate() {
+        assert_eq!(
+            articulation.is_stable(),
+            position < original.len(),
+            "{}",
+            articulation.id()
+        );
+        if articulation.is_stable() {
+            assert_eq!(articulation.parent(), None, "{}", articulation.id());
+        }
+    }
+}
+
+#[test]
+fn articulation_lookup_is_strict() {
+    for articulation in Articulation::ALL {
+        assert_eq!(Articulation::from_id(articulation.id()), Some(articulation));
+    }
+    // No id names the ordinary sound: that is the absence of an articulation.
+    assert_eq!(Articulation::from_id("ordinario"), None);
+    // Display names, abbreviations and other spellings are not ids.
+    for text in [
+        "Col legno",
+        "pizz.",
+        "multitongue",
+        "muted_string",
+        "pitch_bend",
+    ] {
+        assert_eq!(Articulation::from_id(text), None, "{text}");
+    }
+    // Terms that no sample library records are not in the vocabulary yet.
+    for text in ["fingered_tremolo", "detache", "rute", "cluster"] {
+        assert_eq!(Articulation::from_id(text), None, "{text}");
+    }
+    // The struck col legno keeps an id of its own beside the general one, which it refines.
+    assert_eq!(
+        Articulation::from_id("col_legno_battuto"),
+        Some(Articulation::ColLegnoBattuto)
+    );
+    assert_eq!(
+        Articulation::ColLegnoBattuto.parent(),
+        Some(Articulation::ColLegno)
+    );
+}
+
+/// The members of each articulation kind, in the order of `Articulation::ALL`.
+const ARTICULATION_KINDS: [(Kind, &[&str]); 10] = [
+    (
+        Kind::LongNote,
+        &[
+            "sustain",
+            "tremolo",
+            "flutter_tongue",
+            "roll",
+            "bisbigliando",
+            "tremolo_measured",
+        ],
+    ),
+    (
+        Kind::ShortNote,
+        &[
+            "staccato",
+            "spiccato",
+            "tenuto",
+            "pizzicato",
+            "bartok_pizzicato",
+            "choke",
+            "dead_stroke",
+            "portato",
+            "staccatissimo",
+            "multi_tongue",
+            "shake_stroke",
+        ],
+    ),
+    (
+        Kind::Ornament,
+        &[
+            "trill",
+            "drag",
+            "flam",
+            "shake",
+            "trill_half",
+            "trill_whole",
+        ],
+    ),
+    (
+        Kind::Transition,
+        &[
+            "legato",
+            "doit",
+            "fall",
+            "glissando",
+            "half_valve",
+            "portamento",
+            "rip",
+            "scoop",
+        ],
+    ),
+    (
+        Kind::Effect,
+        &[
+            "col_legno",
+            "harmonics",
+            "air_tone",
+            "col_legno_battuto",
+            "col_legno_tratto",
+            "growl",
+            "harmonics_artificial",
+            "harmonics_natural",
+            "key_click",
+            "multiphonic",
+            "rim",
+            "rimshot",
+            "slap_tongue",
+            "bowed",
+            "scrape",
+            "wah_wah",
+        ],
+    ),
+    (
+        Kind::TimbreModifier,
+        &[
+            "sul_ponticello",
+            "cuivre",
+            "flautando",
+            "non_vibrato",
+            "pres_de_la_table",
+            "sul_tasto",
+            "vibrato_on",
+            "bells_up",
+            "snares_off",
+            "su_una_corda",
+        ],
+    ),
+    (
+        Kind::Mute,
+        &[
+            "con_sordino",
+            "palm_mute",
+            "stopped",
+            "xylophonic",
+            "mute_bucket",
+            "mute_cup",
+            "mute_harmon",
+            "mute_plunger",
+        ],
+    ),
+    (
+        Kind::DynamicShape,
+        &[
+            "marcato",
+            "accent",
+            "crescendo_swell",
+            "fortepiano",
+            "sforzando",
+        ],
+    ),
+    (Kind::KeyboardControl, &["damped", "let_ring"]),
+    (
+        Kind::Vocal,
+        &["falsetto", "humming", "vowel", "text", "whisper"],
+    ),
+];
+
+#[test]
+fn every_articulation_has_one_kind_and_a_description() {
+    let mut counted = 0;
+    for (kind, expected) in ARTICULATION_KINDS {
+        let members: Vec<&str> = Articulation::ALL
+            .into_iter()
+            .filter(|articulation| articulation.kind() == kind)
+            .map(Articulation::id)
+            .collect();
+        assert_eq!(members, expected, "{kind:?}");
+        counted += members.len();
+    }
+    assert_eq!(counted, Articulation::ALL.len());
+    // Every articulation has a one-sentence description.
+    for articulation in Articulation::ALL {
+        let description = articulation.description();
+        assert_eq!(description.trim(), description, "{}", articulation.id());
+        assert!(
+            description.starts_with(char::is_uppercase) && description.ends_with('.'),
+            "{}: {description}",
+            articulation.id()
+        );
+    }
+}
+
+#[test]
+fn mute_and_vibrato_ids_name_passage_states_one_to_one() {
+    // State to id: every state but the default is named by an id on its own axis.
+    for mute in Mute::ALL {
+        match mute.articulation() {
+            None => assert_eq!(mute, Mute::Open),
+            Some(articulation) => assert_eq!(articulation.axis(), Axis::Mute(mute), "{mute:?}"),
+        }
+    }
+    for vibrato in Vibrato::ALL {
+        match vibrato.articulation() {
+            None => assert_eq!(vibrato, Vibrato::Ordinary),
+            Some(articulation) => {
+                assert_eq!(articulation.axis(), Axis::Vibrato(vibrato), "{vibrato:?}");
+            }
+        }
+    }
+    assert_eq!(Mute::default(), Mute::Open);
+    assert_eq!(Vibrato::default(), Vibrato::Ordinary);
+    // Id to state: the states map back, and the mute kind is exactly the mute axis.
+    let mut mute_ids = Vec::new();
+    let mut vibrato_ids = Vec::new();
+    for articulation in Articulation::ALL {
+        let id = articulation.id();
+        match articulation.axis() {
+            Axis::Primary => assert_ne!(articulation.kind(), Kind::Mute, "{id}"),
+            Axis::Mute(mute) => {
+                assert_eq!(mute.articulation(), Some(articulation), "{id}");
+                assert_eq!(articulation.kind(), Kind::Mute, "{id}");
+                mute_ids.push(id);
+            }
+            Axis::Vibrato(vibrato) => {
+                assert_eq!(vibrato.articulation(), Some(articulation), "{id}");
+                vibrato_ids.push(id);
+            }
+        }
+    }
+    assert_eq!(
+        mute_ids,
+        [
+            "con_sordino",
+            "palm_mute",
+            "stopped",
+            "xylophonic",
+            "mute_bucket",
+            "mute_cup",
+            "mute_harmon",
+            "mute_plunger"
+        ]
+    );
+    assert_eq!(vibrato_ids, ["non_vibrato", "vibrato_on"]);
+    assert_eq!(Mute::ALL.len(), mute_ids.len() + 1);
+    assert_eq!(Vibrato::ALL.len(), vibrato_ids.len() + 1);
+}
+
+#[test]
+fn refinements_fall_back_to_a_general_parent() {
+    let parents: Vec<(&str, &str)> = Articulation::ALL
+        .into_iter()
+        .filter_map(|child| child.parent().map(|parent| (child.id(), parent.id())))
+        .collect();
+    assert_eq!(
+        parents,
+        [
+            ("accent", "marcato"),
+            ("bartok_pizzicato", "pizzicato"),
+            ("choke", "damped"),
+            ("col_legno_battuto", "col_legno"),
+            ("flautando", "sul_tasto"),
+            ("harmonics_artificial", "harmonics"),
+            ("harmonics_natural", "harmonics"),
+            ("shake", "trill"),
+            ("staccatissimo", "staccato"),
+            ("stopped", "con_sordino"),
+            ("tremolo_measured", "tremolo"),
+            ("trill_half", "trill"),
+            ("trill_whole", "trill"),
+            ("xylophonic", "palm_mute"),
+            ("mute_bucket", "con_sordino"),
+            ("mute_cup", "con_sordino"),
+            ("mute_harmon", "con_sordino"),
+            ("mute_plunger", "con_sordino"),
+        ]
+    );
+    for articulation in Articulation::ALL {
+        // A parent chain is acyclic and ends at an id without a parent.
+        let mut chain = vec![articulation];
+        let mut current = articulation;
+        while let Some(parent) = current.parent() {
+            assert!(!chain.contains(&parent), "{chain:?}");
+            chain.push(parent);
+            current = parent;
+        }
+        // A refinement stays on its parent's axis: a mute refines a mute, a primary id a primary
+        // id.
+        if let Some(parent) = articulation.parent() {
+            assert_eq!(
+                std::mem::discriminant(&articulation.axis()),
+                std::mem::discriminant(&parent.axis()),
+                "{}",
+                articulation.id()
+            );
+        }
+    }
+}
+
+#[test]
+fn percussion_rolls_follow_the_vocabulary() {
+    // A mallet instrument's roll is `tremolo`; the timpani and unpitched percussion roll with
+    // `roll`.
+    for instrument in instruments() {
+        if instrument.family() != Family::Percussion {
+            continue;
+        }
+        let articulations = instrument.articulations();
+        let drum = instrument.instrument_type() == InstrumentType::Timpani
+            || matches!(instrument.pitch(), PitchModel::Unpitched);
+        if drum {
+            assert!(
+                !articulations.contains(&Articulation::Tremolo),
+                "{}",
+                instrument.id()
+            );
+        } else {
+            assert!(
+                !articulations.contains(&Articulation::Roll),
+                "{}",
+                instrument.id()
+            );
+        }
+    }
 }
