@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tick } from "svelte";
-  import { duration, sonaraMissing, stepCounts, type Entry } from "../composer/model";
+  import { duration, sonaraMissing, stepCounts, type Entry } from "./runlog";
   import type { TaskView } from "./api";
   import { logOf, money, taskOutcomeText, tokensText, type ChatView } from "./model";
 

@@ -5,7 +5,7 @@
 
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { ComposerEvent } from "../composer/api";
+import type { RunEvent } from "./events";
 
 /** A task's id: a private counter of the chat, never a project id. */
 export type TaskId = number;
@@ -66,7 +66,7 @@ export interface ChatState {
 /** The events of one task so far (bounded, text coalesced). */
 export interface TaskLog {
   task_id: TaskId;
-  events: ComposerEvent[];
+  events: RunEvent[];
 }
 
 export interface ChatSnapshot {
@@ -77,7 +77,7 @@ export interface ChatSnapshot {
 /** `chat-event`: a change of the state, or one normalised event of a task's run. */
 export type ChatEvent =
   | { kind: "changed"; state: ChatState }
-  | { kind: "run"; task_id: TaskId; generation: number; event: ComposerEvent };
+  | { kind: "run"; task_id: TaskId; generation: number; event: RunEvent };
 
 /** The codes a chat command rejects with. */
 export type ChatErrorCode =

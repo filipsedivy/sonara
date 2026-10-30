@@ -1,10 +1,10 @@
 // What the AI Chat window shows: the state the backend sends (the queue and the thread), a log
-// per task built from the run events with the composer's reducer, and the providers. Pure
+// per task built from the run events with the run log's reducer, and the providers. Pure
 // functions over an immutable view (the store keeps it), so that the generation rule, the resync
 // and the rules of the buttons are testable. The backend is the truth: nothing here predicts a
 // change, the next `changed` event shows it.
 
-import { emptyLog, reduce, type RunLog } from "../composer/model";
+import { emptyLog, reduce, type RunLog } from "./runlog";
 import type { ChatEvent, ChatSnapshot, ChatState, ProviderStatus, TaskId, TaskResult, TaskView } from "./api";
 
 /** The longest prompt, in characters (the backend refuses more with PROMPT_TOO_LONG). */

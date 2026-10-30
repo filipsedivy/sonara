@@ -40,7 +40,6 @@ interface MockState {
   answers: Responses;
   emit: (event: string, payload: unknown) => void;
   sendChannel: (bytes: number[]) => void;
-  sendChannelMessage: (message: unknown) => void;
 }
 
 declare global {
@@ -61,12 +60,6 @@ export async function mockTauri(page: Page, responses: Responses, label = "main"
       answers,
       emit(event, payload) {
         for (const id of listeners.get(event) ?? []) callbacks.get(id)?.({ event, id, payload });
-      },
-      sendChannelMessage(message) {
-        for (const channel of channels) {
-          callbacks.get(channel.id)?.({ index: channel.next, message });
-          channel.next += 1;
-        }
       },
       sendChannel(bytes) {
         for (const channel of channels) {
@@ -135,11 +128,6 @@ export async function answer(page: Page, cmd: string, value: unknown): Promise<v
 export async function sendChannel(page: Page, hex: string): Promise<void> {
   const bytes = hex.match(/../g)?.map((pair) => parseInt(pair, 16)) ?? [];
   await page.evaluate((data) => window.__sonaraMock.sendChannel(data), bytes);
-}
-
-/** Sends the JSON `message` to every channel the page handed to a command (a composer event). */
-export async function sendChannelMessage(page: Page, message: unknown): Promise<void> {
-  await page.evaluate((data) => window.__sonaraMock.sendChannelMessage(data), message);
 }
 
 /** The events the page sent to the other windows (`emit`): `[event, payload]`. */
