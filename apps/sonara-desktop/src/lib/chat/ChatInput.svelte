@@ -77,7 +77,15 @@
   textarea {
     resize: none;
     min-height: 54px;
+    padding: 4px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bar);
+    color: var(--text);
     font: inherit;
+  }
+  textarea::placeholder {
+    color: var(--text-dim);
   }
   textarea:focus-visible {
     outline: 2px solid var(--accent);

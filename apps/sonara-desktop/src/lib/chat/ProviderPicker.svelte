@@ -23,8 +23,13 @@
 
   async function change(event: Event, id: ProviderId) {
     const input = event.currentTarget as HTMLInputElement;
-    // The backend decides: when it refuses, the radio goes back to the thread's provider.
-    if (!(await onselect(id))) input.checked = selected === id;
+    // The backend decides: when it refuses, the group goes back to the thread's provider (the
+    // click unchecked the radio that was).
+    if (await onselect(id)) return;
+    const group = input.closest("fieldset");
+    for (const radio of group?.querySelectorAll<HTMLInputElement>("input[type=radio]") ?? []) {
+      radio.checked = radio.value === selected;
+    }
   }
 </script>
 

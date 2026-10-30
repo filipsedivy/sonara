@@ -56,7 +56,27 @@
     if (!(await onmove(id, direction))) focusAfter = null;
   }
 
+  /** Removes `task` and gives the focus to the task beside it, which the list shows next. */
+  async function remove(task: TaskView) {
+    const at = queued.findIndex((candidate) => candidate.id === task.id);
+    const neighbour = queued[at + 1] ?? queued[at - 1];
+    focusAfter = neighbour ? { id: neighbour.id, part: "item" } : null;
+    if (!(await onremove(task.id))) focusAfter = null;
+  }
+
   function itemKey(event: KeyboardEvent, task: TaskView) {
+    // Without full keyboard access WebKit's Tab reaches only the tasks, not their buttons, so the
+    // focused task answers to the keys too: Enter edits it, Delete removes it.
+    if (event.target === event.currentTarget && !event.altKey && !event.metaKey && !event.ctrlKey && !event.shiftKey) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        startEdit(task);
+      } else if (event.key === "Delete" || event.key === "Backspace") {
+        event.preventDefault();
+        void remove(task);
+      }
+      return;
+    }
     if (!event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) return;
     if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
     // Not while the task's own text is being edited: the textarea has its own arrows.
@@ -154,7 +174,7 @@
               <span class="text" title={task.prompt}>{excerpt(task.prompt)}</span>
               <span class="actions">
                 <button type="button" onclick={() => startEdit(task)}>Edit</button>
-                <button type="button" onclick={() => void onremove(task.id)}>Remove</button>
+                <button type="button" onclick={() => void remove(task)}>Remove</button>
                 <button
                   type="button"
                   data-move="up"
@@ -251,17 +271,21 @@
     justify-content: flex-end;
     gap: 6px;
   }
+  /* On the task's own panel, whose contrast with the dim text is under 4.5:1 in the dark theme. */
   .note {
     margin-right: auto;
-    color: var(--text-dim);
     font-size: 12px;
   }
   .note.over {
-    color: var(--text);
     font-weight: 700;
   }
   textarea {
     resize: vertical;
+    padding: 4px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bar);
+    color: var(--text);
     font: inherit;
   }
   button {
