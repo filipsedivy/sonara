@@ -129,7 +129,9 @@ impl Harness {
         let status = provider.detect();
         let located = status.located.expect("the fake codex is ready");
         let workspace = Workspace::create(&self.discovery()).expect("a workspace");
-        let cwd = workspace.cwd();
+        // Resolved now (TST-04): the workspace is removed when the run ends, and macOS reports
+        // its temp directory through the `/private` symlink.
+        let cwd = fs::canonicalize(workspace.cwd()).expect("the workspace exists");
         let turn = Turn {
             prompt: prompt.to_owned(),
             transcript: String::new(),
@@ -205,7 +207,7 @@ fn the_fake_is_ready_and_the_provider_runs_it_with_the_chat_command_line() {
     assert_eq!(h.file("stdin-1.txt"), "chat what is dorian?");
     assert_eq!(
         h.file("cwd-1.txt").trim(),
-        fs::canonicalize(&cwd).unwrap_or(cwd).display().to_string(),
+        cwd.display().to_string(),
         "it ran in the empty workspace"
     );
 
