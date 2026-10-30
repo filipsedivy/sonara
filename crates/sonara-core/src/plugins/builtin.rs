@@ -2,7 +2,8 @@
 //!
 //! The helpers mirror the prototype's `fp`, `ip`, `bp`, `ep` and `preset`, so that each
 //! descriptor reads like its Python source. Keyword arguments with defaults become the chained
-//! setters `log()`, `desc()` and `not_automatable()`.
+//! setters `log()`, `desc()` and `not_automatable()`. The sampler, which the prototype did not
+//! have, also uses `automatable()` for an enum that automation may switch.
 
 use crate::model::device::{ParamValue, Params};
 
@@ -111,6 +112,15 @@ impl ParamSpec {
     fn not_automatable(self) -> Self {
         Self {
             automatable: false,
+            ..self
+        }
+    }
+
+    /// `automatable=True`, for an enum: [`ep`] makes enums not automatable, as the prototype's
+    /// are. An automation lane of an enum stores choice indices.
+    fn automatable(self) -> Self {
+        Self {
+            automatable: true,
             ..self
         }
     }
@@ -754,9 +764,38 @@ fn drums() -> PluginDescriptor {
 /// The ID of the sample player.
 pub const SAMPLER_ID: &str = "sonara.sampler";
 
-/// The descriptor of `sonara.sampler`, Sonara's own SFZ sample player (ADR 0010), for the
-/// installed instruments `presets`, in the order given; the first is the default. `None` when
-/// there are none: a sampler without an instrument has nothing to offer.
+/// The first choice and the default of the sampler's `instrument_type` and `articulation`:
+/// nothing is forced, so the preset's own identity and the patch's own articulations apply.
+pub const SAMPLER_AUTO: &str = "auto";
+
+/// The second choice of the sampler's `articulation`: the instrument's ordinary sound. The
+/// articulation vocabulary has no id for it, because a note without an articulation is played
+/// ordinario.
+pub const SAMPLER_ORDINARIO: &str = "ordinario";
+
+/// The choices of the sampler's enum parameters, which the application builds from its
+/// instrument catalog and the orchestration metadata, so that this crate needs neither.
+///
+/// One descriptor serves every sampler device, whatever preset it plays, so the lists are the
+/// same for all of them. Projects store a choice as its string, and an automation lane as choice
+/// indices, so the `articulation` list is frozen and only ever grows at its end.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct SamplerChoices {
+    /// The IDs of the installed presets, the choices of `instrument`, in the order offered; the
+    /// first is the default.
+    pub presets: Vec<String>,
+    /// The instrument type IDs that follow [`SAMPLER_AUTO`] in `instrument_type`, in score
+    /// order. An ID is never renamed or removed, because projects store it.
+    pub instrument_types: Vec<String>,
+    /// The articulation IDs that follow [`SAMPLER_AUTO`] and [`SAMPLER_ORDINARIO`] in
+    /// `articulation`, in the vocabulary's frozen order: append-only, because lanes store the
+    /// index of a choice.
+    pub articulations: Vec<String>,
+}
+
+/// The descriptor of `sonara.sampler`, Sonara's own SFZ sample player (ADR 0010), with the
+/// enum choices of `choices`. `None` when it offers no preset: a sampler without an instrument
+/// has nothing to offer.
 ///
 /// The application passes the IDs of the playable presets of its instrument catalog,
 /// `<library id>/<patch path below the library, without .sfz>`, which hold no absolute path and
@@ -764,15 +803,29 @@ pub const SAMPLER_ID: &str = "sonara.sampler";
 /// patch's path instead; the application maps such a path to its preset when it reads the
 /// value.
 ///
+/// The parameters, in slot order: `volume`, `pan`, `release_scale` and `instrument` as before,
+/// then `instrument_type` ([`SAMPLER_AUTO`] and the given instrument type IDs; not automatable),
+/// `articulation` ([`SAMPLER_AUTO`], [`SAMPLER_ORDINARIO`] and the given articulation IDs;
+/// automatable) and `dynamics` (0 to 1, default 1; automatable). New parameters go at the end,
+/// so a slot never changes its index.
+///
 /// It is deliberately not in [`builtin_registry`]: that catalog reproduces the prototype and
 /// is pinned by `golden/plugins/catalog.json` (GLD-01). The application registers this
 /// descriptor next to it when a sample library is configured. The instrument is the enum
 /// parameter `instrument`, so the existing tools (`list_plugins`, `set_instrument`) choose it
 /// and the project stores it with the other parameters (CTR-01: no new tool, no schema change).
 #[must_use]
-pub fn sampler_descriptor(presets: &[String]) -> Option<PluginDescriptor> {
-    let first = presets.first()?;
-    let choices: Vec<&str> = presets.iter().map(String::as_str).collect();
+pub fn sampler_descriptor(choices: &SamplerChoices) -> Option<PluginDescriptor> {
+    let first = choices.presets.first()?;
+    let presets: Vec<&str> = choices.presets.iter().map(String::as_str).collect();
+    let instrument_types: Vec<&str> = [SAMPLER_AUTO]
+        .into_iter()
+        .chain(choices.instrument_types.iter().map(String::as_str))
+        .collect();
+    let articulations: Vec<&str> = [SAMPLER_AUTO, SAMPLER_ORDINARIO]
+        .into_iter()
+        .chain(choices.articulations.iter().map(String::as_str))
+        .collect();
     Some(PluginDescriptor {
         tags: strings(&[
             "sampler",
@@ -791,9 +844,32 @@ pub fn sampler_descriptor(presets: &[String]) -> Option<PluginDescriptor> {
                 fp("volume", "Volume", 0.0, -36.0, 12.0, "dB"),
                 fp("pan", "Pan", 0.0, -1.0, 1.0, ""),
                 fp("release_scale", "Release", 1.0, 0.1, 4.0, "x").log(),
-                ep("instrument", "Instrument", first, &choices).desc(
+                ep("instrument", "Instrument", first, &presets).desc(
                     "The SFZ instrument to play: the ID of a preset in an installed sample \
                      library, <library id>/<patch path without .sfz>",
+                ),
+                ep(
+                    "instrument_type",
+                    "Instrument Type",
+                    SAMPLER_AUTO,
+                    &instrument_types,
+                )
+                .desc(
+                    "The acoustic instrument the preset plays, such as horn_f: auto takes it \
+                     from the instrument catalog; set it for a preset whose library does not \
+                     say. It names the instrument and does not change the sound",
+                ),
+                ep("articulation", "Articulation", SAMPLER_AUTO, &articulations)
+                    .automatable()
+                    .desc(
+                        "The articulation new notes play: auto keeps the patch's own default \
+                         and the keyswitch notes in clips; ordinario is the instrument's \
+                         ordinary sound; any other choice is an articulation ID such as \
+                         staccato",
+                    ),
+                fp("dynamics", "Dynamics", 1.0, 0.0, 1.0, "").desc(
+                    "How loud the notes play, from 0 to 1: 1 plays them as written, lower \
+                     values softer",
                 ),
             ],
             concat!(
@@ -845,9 +921,10 @@ pub fn builtin_registry() -> PluginRegistry {
 mod tests {
     use std::collections::HashSet;
 
-    use super::{builtin_descriptors, builtin_registry, sampler_descriptor};
+    use super::{SamplerChoices, builtin_descriptors, builtin_registry, sampler_descriptor};
+    use crate::error::ErrorCode;
     use crate::model::device::ParamValue;
-    use crate::plugins::PluginKind;
+    use crate::plugins::{ParamKind, PluginKind};
 
     /// Typed equality: `Int(1)` and `Float(1.0)` differ.
     fn same(a: &ParamValue, b: &ParamValue) -> bool {
@@ -870,14 +947,31 @@ mod tests {
         }
     }
 
+    /// The sampler's choices: `presets`, and two instrument types and three articulations.
+    fn choices(presets: &[&str]) -> SamplerChoices {
+        SamplerChoices {
+            presets: presets.iter().map(|&p| p.to_owned()).collect(),
+            instrument_types: vec!["horn_f".to_owned(), "violin".to_owned()],
+            articulations: vec![
+                "sustain".to_owned(),
+                "legato".to_owned(),
+                "staccato".to_owned(),
+            ],
+        }
+    }
+
     #[test]
     fn the_sampler_offers_the_given_presets_and_plays_the_first_by_default() {
-        assert!(sampler_descriptor(&[]).is_none(), "nothing to play");
-        let presets = [
-            "vsco2ce/Tuba-KS".to_owned(),
-            "vcsl/Idiophones/Triangles".to_owned(),
-        ];
-        let sampler = sampler_descriptor(&presets).expect("presets");
+        assert!(
+            sampler_descriptor(&choices(&[])).is_none(),
+            "nothing to play"
+        );
+        assert!(
+            sampler_descriptor(&SamplerChoices::default()).is_none(),
+            "nothing to play"
+        );
+        let presets = ["vsco2ce/Tuba-KS", "vcsl/Idiophones/Triangles"];
+        let sampler = sampler_descriptor(&choices(&presets)).expect("presets");
         sampler.validate().expect("a valid descriptor");
         assert_eq!(sampler.kind, PluginKind::Instrument);
         let instrument = sampler.param("instrument").expect("the parameter");
@@ -897,6 +991,84 @@ mod tests {
             !builtin_registry().contains(&sampler.id),
             "never a golden built-in"
         );
+    }
+
+    #[test]
+    fn the_sampler_appends_instrument_type_articulation_and_dynamics() {
+        let sampler = sampler_descriptor(&choices(&["lib/Horn"])).expect("a preset");
+        sampler.validate().expect("a valid descriptor");
+        // The processor reads its slots by index, so the order is part of the layout: new
+        // parameters go at the end.
+        let ids: Vec<&str> = sampler.params.iter().map(|p| p.id.as_str()).collect();
+        assert_eq!(
+            ids,
+            [
+                "volume",
+                "pan",
+                "release_scale",
+                "instrument",
+                "instrument_type",
+                "articulation",
+                "dynamics"
+            ]
+        );
+        for spec in &sampler.params {
+            let coerced = spec.coerce_param(&spec.default).expect("the default fits");
+            assert!(same(&coerced, &spec.default), "{}", spec.id);
+        }
+
+        let instrument_type = sampler.param("instrument_type").expect("the parameter");
+        assert_eq!(instrument_type.kind, ParamKind::Enum);
+        assert_eq!(instrument_type.choices, ["auto", "horn_f", "violin"]);
+        assert!(same(
+            &instrument_type.default,
+            &ParamValue::Str("auto".into())
+        ));
+        assert!(!instrument_type.automatable, "it names the instrument");
+
+        let articulation = sampler.param("articulation").expect("the parameter");
+        assert_eq!(articulation.kind, ParamKind::Enum);
+        assert_eq!(
+            articulation.choices,
+            ["auto", "ordinario", "sustain", "legato", "staccato"]
+        );
+        assert!(same(&articulation.default, &ParamValue::Str("auto".into())));
+        assert!(articulation.automatable, "a lane switches it");
+        assert!(same(
+            &articulation
+                .coerce(&serde_json::json!(4))
+                .expect("an index"),
+            &ParamValue::Str("staccato".into())
+        ));
+        let unknown = articulation
+            .coerce(&serde_json::json!("col_legno"))
+            .expect_err("not a choice here");
+        assert_eq!(unknown.code, ErrorCode::InvalidArgument);
+
+        let dynamics = sampler.param("dynamics").expect("the parameter");
+        assert_eq!(dynamics.kind, ParamKind::Float);
+        assert_eq!((dynamics.minimum, dynamics.maximum), (Some(0.0), Some(1.0)));
+        assert!(same(&dynamics.default, &ParamValue::Float(1.0)));
+        assert!(dynamics.automatable);
+        assert!(dynamics.coerce(&serde_json::json!(1.5)).is_err());
+    }
+
+    #[test]
+    fn only_the_sampler_has_an_automatable_enum() {
+        // Automation applies an enum lane once per block; no golden descriptor has one, so that
+        // path cannot move a golden render (GLD-01).
+        let automatable_enums = |d: &crate::plugins::PluginDescriptor| {
+            d.params
+                .iter()
+                .filter(|p| p.kind == ParamKind::Enum && p.automatable)
+                .map(|p| p.id.clone())
+                .collect::<Vec<_>>()
+        };
+        for d in builtin_descriptors() {
+            assert!(automatable_enums(&d).is_empty(), "{}", d.id);
+        }
+        let sampler = sampler_descriptor(&choices(&["lib/Horn"])).expect("a preset");
+        assert_eq!(automatable_enums(&sampler), ["articulation"]);
     }
 
     #[test]

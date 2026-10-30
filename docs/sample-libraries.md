@@ -87,7 +87,7 @@ Velocity layers, round robin (`seq_length`/`seq_position`, `lorand`/`hirand`), k
 (`sw_*`), release samples (`trigger=release`), exclusive groups (`group`/`off_by`), loops,
 attack and release times, tuning and volume. MIDI: notes, sustain pedal (CC 64), volume (CC 7),
 expression (CC 11), pitch bend (±2 semitones) and all notes off. Parameters: volume, pan,
-release scale, instrument.
+release scale, instrument, and instrument type, articulation and dynamics (below).
 
 Release samples start when the key is released; for a key released while the sustain pedal is
 down, they start when the pedal lifts, at the velocity the key was pressed with and with the
@@ -110,6 +110,24 @@ A region whose sample file is missing, or that names a generator other than `*si
 missing file or generator and how many regions it left out. `sample=*silence` is a region that
 plays nothing but still cuts off its exclusive group. A patch fails to load only when no region
 is left; a sample file that is there but cannot be decoded still fails it.
+
+## Instrument type, articulation and dynamics
+
+- **`instrument_type`**: `auto` (the default) or an instrument type ID such as `horn_f` or
+  `violin`, in score order. It names the instrument a preset plays, for a preset whose library
+  does not say; it does not change the sound. It cannot be automated.
+- **`articulation`**: `auto` (the default), `ordinario`, then the articulation IDs (`sustain`,
+  `legato`, `staccato`, ...) in a fixed order. It can be automated. An automation lane stores
+  the position of a choice, so the list never changes its order: new articulations are added at
+  its end.
+- **`dynamics`**: 0 to 1, default 1. It can be automated.
+
+Every sampler device offers the same lists, whatever preset it plays. **The sampler stores these
+values but does not play them yet**: a track sounds the same whatever they are set to.
+
+A project saved by a newer version of Sonara can hold an instrument type or an articulation that
+this version does not know. It opens unchanged, and the device plays as `auto`; the render warns
+`articulation '…' of '…' is unknown to this version of Sonara; it plays as 'auto'`.
 
 ## Memory
 

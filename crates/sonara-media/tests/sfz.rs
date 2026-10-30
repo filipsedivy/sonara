@@ -7,7 +7,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use sonara_core::model::device::Params;
-use sonara_core::plugins::sampler_descriptor;
+use sonara_core::plugins::{SamplerChoices, sampler_descriptor};
 use sonara_dsp::bank::{Keyswitches, LoopMode, SampleBank, Trigger};
 use sonara_dsp::processor::{BlockContext, DeviceState, EventKind, InstrumentEvent, ProcessSpec};
 use sonara_dsp::processors::{create, param_slots};
@@ -427,7 +427,11 @@ fn salamander_pedal_noises_do_not_sound_on_a_note() {
         sample_bank: Some(Arc::new(bank)),
         ..DeviceState::default()
     });
-    let descriptor = sampler_descriptor(&["/library/piano.sfz".to_owned()]).expect("a patch");
+    let descriptor = sampler_descriptor(&SamplerChoices {
+        presets: vec!["/library/piano.sfz".to_owned()],
+        ..SamplerChoices::default()
+    })
+    .expect("a patch");
     sampler.set_params(&param_slots(&descriptor, &Params::new()).expect("defaults"));
     let mut buffer = vec![[0.0; 2]; 2_048];
     let note_on = InstrumentEvent {
@@ -750,7 +754,11 @@ fn play(bank: SampleBank, blocks: &[&[u8]]) -> (Vec<[f64; 2]>, f64) {
         sample_bank: Some(Arc::new(bank)),
         ..DeviceState::default()
     });
-    let descriptor = sampler_descriptor(&["/library/patch.sfz".to_owned()]).expect("a patch");
+    let descriptor = sampler_descriptor(&SamplerChoices {
+        presets: vec!["/library/patch.sfz".to_owned()],
+        ..SamplerChoices::default()
+    })
+    .expect("a patch");
     sampler.set_params(&param_slots(&descriptor, &Params::new()).expect("defaults"));
     let mut buffer = vec![[0.0; 2]; 2_048];
     for (block, keys) in blocks.iter().enumerate() {

@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 use assert_no_alloc::{AllocDisabler, assert_no_alloc};
 use sonara_core::model::device::Params;
-use sonara_core::plugins::sampler_descriptor;
+use sonara_core::plugins::{SamplerChoices, sampler_descriptor};
 use sonara_dsp::bank::{Keyswitches, LoopMode, Region, Sample, SampleBank, Trigger};
 use sonara_dsp::processor::{
     BlockContext, DeviceState, EventKind, InstrumentEvent, ProcessSpec, Processor,
@@ -20,7 +20,11 @@ use sonara_dsp::processors::{create, param_slots};
 static ALLOCATOR: AllocDisabler = AllocDisabler;
 
 fn descriptor() -> sonara_core::plugins::PluginDescriptor {
-    sampler_descriptor(&["/library/violin.sfz".to_owned()]).expect("one patch")
+    sampler_descriptor(&SamplerChoices {
+        presets: vec!["/library/violin.sfz".to_owned()],
+        ..SamplerChoices::default()
+    })
+    .expect("one patch")
 }
 
 const RATE: u32 = 48_000;

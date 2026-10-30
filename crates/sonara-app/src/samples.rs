@@ -13,13 +13,19 @@
 //! holds no region of its own, or names its samples relative to the patch that includes it, so
 //! it cannot be played alone. The scan does not enter a folder named `includes` (in any case),
 //! so the fragments are neither presets nor choices of the sampler's `instrument` parameter.
+//!
+//! **The sampler's other enum parameters** take their choices from the orchestration metadata:
+//! `instrument_type` offers `auto` and every [`InstrumentType`] in score order, `articulation`
+//! offers `auto`, `ordinario` and the articulation vocabulary in its frozen order
+//! ([`Articulation::ALL`]). Every sampler device shares these lists, whatever preset it plays.
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use sonara_core::plugins::{
-    PluginDescriptor, PluginRegistry, builtin_registry, sampler_descriptor,
+    PluginDescriptor, PluginRegistry, SamplerChoices, builtin_registry, sampler_descriptor,
 };
+use sonara_midi::orchestration::{Articulation, InstrumentType};
 
 use crate::settings::Settings;
 
@@ -104,10 +110,26 @@ fn walk(dir: &Path, depth: usize, found: &mut Vec<String>) {
 #[must_use]
 pub fn registry_for(presets: &[String]) -> PluginRegistry {
     let mut registry = builtin_registry();
-    if let Some(descriptor) = sampler_descriptor(presets) {
+    if let Some(descriptor) = sampler_descriptor(&sampler_choices(presets)) {
         register(&mut registry, descriptor);
     }
     registry
+}
+
+/// The sampler's choices: `presets` for `instrument`, every instrument type in score order for
+/// `instrument_type`, and the articulation vocabulary in its frozen order for `articulation`.
+fn sampler_choices(presets: &[String]) -> SamplerChoices {
+    SamplerChoices {
+        presets: presets.to_vec(),
+        instrument_types: InstrumentType::ALL
+            .iter()
+            .map(|instrument_type| instrument_type.id().to_owned())
+            .collect(),
+        articulations: Articulation::ALL
+            .iter()
+            .map(|articulation| articulation.id().to_owned())
+            .collect(),
+    }
 }
 
 fn register(registry: &mut PluginRegistry, descriptor: PluginDescriptor) {
@@ -122,8 +144,11 @@ fn register(registry: &mut PluginRegistry, descriptor: PluginDescriptor) {
 mod tests {
     use std::fs;
 
+    use std::collections::HashSet;
+
     use serde_json::json;
-    use sonara_core::plugins::PluginKind;
+    use sonara_core::plugins::{ParamKind, PluginDescriptor, PluginKind};
+    use sonara_midi::orchestration::{Articulation, InstrumentType};
 
     use super::{LIBRARIES_KEY, registry_for, scan_patches};
     use crate::instruments::InstalledInstruments;
@@ -254,5 +279,112 @@ mod tests {
             "the preset IDs, sorted, never a path"
         );
         assert_eq!(registry.all(None).len(), 13);
+    }
+
+    /// The sampler of a registry with one installed preset.
+    fn sampler() -> PluginDescriptor {
+        registry_for(&["lib/Brass/Horn".to_owned()])
+            .find("sonara.sampler")
+            .expect("registered")
+            .clone()
+    }
+
+    /// The first choices of `articulation`, as released (TST-05). An automation lane stores
+    /// the index of a choice, so none of these ever moves; a new articulation is appended at
+    /// the end of the list.
+    const RELEASED_ARTICULATIONS: [&str; 17] = [
+        "auto",
+        "ordinario",
+        "sustain",
+        "legato",
+        "staccato",
+        "spiccato",
+        "tenuto",
+        "marcato",
+        "pizzicato",
+        "tremolo",
+        "trill",
+        "col_legno",
+        "harmonics",
+        "sul_ponticello",
+        "con_sordino",
+        "flutter_tongue",
+        "roll",
+    ];
+
+    #[test]
+    fn the_articulation_choices_are_auto_ordinario_and_the_frozen_vocabulary() {
+        let sampler = sampler();
+        let articulation = sampler.param("articulation").expect("the parameter");
+        assert_eq!(articulation.kind, ParamKind::Enum);
+        assert!(articulation.automatable);
+        assert_eq!(
+            articulation.choices.get(..RELEASED_ARTICULATIONS.len()),
+            Some(&RELEASED_ARTICULATIONS.map(str::to_owned)[..])
+        );
+        // After `auto` and `ordinario`, the vocabulary in its own frozen order, so choice
+        // `i + 2` is articulation `i` of every later version too.
+        let expected: Vec<&str> = ["auto", "ordinario"]
+            .into_iter()
+            .chain(Articulation::ALL.iter().map(|a| a.id()))
+            .collect();
+        assert_eq!(articulation.choices, expected);
+        assert_eq!(articulation.choices.len(), 79);
+        let distinct: HashSet<&String> = articulation.choices.iter().collect();
+        assert_eq!(
+            distinct.len(),
+            articulation.choices.len(),
+            "no choice twice"
+        );
+    }
+
+    #[test]
+    fn the_instrument_type_choices_are_auto_and_every_type_in_score_order() {
+        let sampler = sampler();
+        let instrument_type = sampler.param("instrument_type").expect("the parameter");
+        assert_eq!(instrument_type.kind, ParamKind::Enum);
+        assert!(!instrument_type.automatable, "projects store it as text");
+        let (auto, types) = instrument_type.choices.split_first().expect("choices");
+        assert_eq!(auto, "auto");
+        assert_eq!(types.len(), 85);
+        // Every choice after `auto` names an instrument type, and they follow score order.
+        let parsed: Vec<InstrumentType> = types
+            .iter()
+            .map(|id| InstrumentType::from_id(id).unwrap_or_else(|| panic!("{id}")))
+            .collect();
+        assert_eq!(parsed, InstrumentType::ALL);
+        assert!(
+            parsed.windows(2).all(|pair| pair[0] < pair[1]),
+            "score order"
+        );
+        for released in [
+            "piccolo",
+            "horn_f",
+            "timpani",
+            "harp",
+            "choir_bass",
+            "double_bass",
+        ] {
+            assert!(types.iter().any(|id| id == released), "{released}");
+        }
+    }
+
+    #[test]
+    fn every_sampler_device_shares_the_lists_whatever_it_offers() {
+        let one = sampler();
+        let other = registry_for(&["lib/Strings/Violin".to_owned(), "lib/Keys/Piano".to_owned()])
+            .find("sonara.sampler")
+            .expect("registered")
+            .clone();
+        for id in ["instrument_type", "articulation"] {
+            assert_eq!(
+                one.param(id).expect("the parameter").choices,
+                other.param(id).expect("the parameter").choices,
+                "{id}"
+            );
+        }
+        let dynamics = one.param("dynamics").expect("the parameter");
+        assert_eq!(dynamics.kind, ParamKind::Float);
+        assert!(dynamics.automatable);
     }
 }

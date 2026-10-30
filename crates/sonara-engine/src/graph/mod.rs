@@ -52,7 +52,7 @@ use sonara_core::ids::MASTER_ID;
 use sonara_core::model::device::{Device, ParamValue};
 use sonara_core::model::project::Project;
 use sonara_core::model::track::{Track, TrackKind, db_to_gain};
-use sonara_core::plugins::{PluginDescriptor, PluginRegistry, SAMPLER_ID};
+use sonara_core::plugins::{ParamKind, PluginDescriptor, PluginRegistry, SAMPLER_ID};
 use sonara_core::pyfmt::str_repr;
 use sonara_core::routing;
 use sonara_dsp::filters::{DelayLine, SmoothedValue};
@@ -1068,6 +1068,11 @@ impl Builder<'_> {
     /// was never set plays the descriptor's default. A value that names nothing offered here
     /// (the project was made elsewhere, or the library moved) still renders, with a warning and
     /// silence from that device, instead of failing on the choice (ADR 0010).
+    ///
+    /// The sampler's other enum parameters (`instrument_type`, `articulation`) are soft too: a
+    /// stored text that is not one of their choices, such as an ID that a newer version of
+    /// Sonara added, plays as the parameter's default, `auto`, with a warning. A value that is
+    /// not text still fails, as any invalid value does.
     fn sampler_params(
         &mut self,
         descriptor: &PluginDescriptor,
@@ -1110,6 +1115,27 @@ impl Builder<'_> {
                 .and_then(|name| self.media.resolve_instrument(name))
                 .filter(|source| offered(source)),
         };
+        for spec in descriptor
+            .params
+            .iter()
+            .filter(|spec| spec.kind == ParamKind::Enum && spec.id != "instrument")
+        {
+            let unknown = params
+                .get(&spec.id)
+                .and_then(text)
+                .filter(|&choice| !spec.choices.iter().any(|offered| offered == choice))
+                .map(str::to_owned);
+            if let Some(choice) = unknown {
+                self.warnings.push(format!(
+                    "{} {} of {} is unknown to this version of Sonara; it plays as {}",
+                    spec.id,
+                    str_repr(&choice),
+                    str_repr(&device.name),
+                    str_repr(text(&spec.default).unwrap_or_default())
+                ));
+                params.shift_remove(&spec.id);
+            }
+        }
         let slots = param_slots(descriptor, &params).map_err(|source| EngineError::Params {
             device: device.id.clone(),
             source,

@@ -7,7 +7,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use serde_json::{Value, json};
-use sonara_core::plugins::{builtin_registry, sampler_descriptor};
+use sonara_core::plugins::{SamplerChoices, builtin_registry, sampler_descriptor};
 use sonara_engine::{OfflineRenderer, RenderRequest, RenderedAudio, Tail};
 use sonara_media::{InstrumentSource, MediaProvider};
 use sonara_project::serializer::{loads, project_from_value};
@@ -73,6 +73,27 @@ fn render_with(
     instrument: Option<&str>,
     media: &MediaProvider,
 ) -> Result<RenderedAudio, sonara_engine::EngineError> {
+    let params = instrument.map_or_else(|| json!({}), |name| json!({"instrument": name}));
+    render_params(installed, &params, media)
+}
+
+/// The sampler's choices: the `installed` presets, two instrument types and two articulations,
+/// as a stand-in for the application's lists.
+fn choices(installed: &[String]) -> SamplerChoices {
+    SamplerChoices {
+        presets: installed.to_vec(),
+        instrument_types: vec!["horn_f".to_owned(), "violin".to_owned()],
+        articulations: vec!["sustain".to_owned(), "staccato".to_owned()],
+    }
+}
+
+/// The base project with the kick track's drum kit replaced by the sampler, which offers the
+/// `installed` choices and stores `params`.
+fn render_params(
+    installed: &[String],
+    params: &Value,
+    media: &MediaProvider,
+) -> Result<RenderedAudio, sonara_engine::EngineError> {
     let golden = Golden::open().expect("golden data is available (set SONARA_GOLDEN)");
     let bytes = golden
         .bytes("workflows/sidechain_preview/final.project.json")
@@ -83,13 +104,12 @@ fn render_with(
         .and_then(Value::as_array_mut)
         .and_then(|tracks| tracks.iter_mut().find(|t| t["id"] == KICK))
         .expect("the kick track");
-    let params = instrument.map_or_else(|| json!({}), |name| json!({"instrument": name}));
     track["instrument"] = json!({"id": "dev_000000000004", "plugin_id": "sonara.sampler",
         "name": "Sonara Sampler", "enabled": true, "params": params, "sidechain_id": null,
         "preset": null, "state": {}});
     let project = project_from_value(&data).expect("the edited project loads");
     let mut registry = builtin_registry();
-    if let Some(descriptor) = sampler_descriptor(installed) {
+    if let Some(descriptor) = sampler_descriptor(&choices(installed)) {
         registry.register(descriptor).expect("registers once");
     }
     OfflineRenderer::new(&registry, media).render(
@@ -352,4 +372,78 @@ fn a_resolved_preset_that_is_not_offered_is_not_installed() {
         ["instrument 'lib/tone' of 'Sonara Sampler' is not installed; it plays silence"]
     );
     assert_eq!(audio.data, render(&[], None).expect("renders").data);
+}
+
+#[test]
+fn an_unknown_instrument_type_or_articulation_plays_as_auto_with_a_warning() {
+    // TST-03: a project saved by a newer version of Sonara can store a choice that this one
+    // does not offer. The device plays as `auto` with a warning instead of failing the build
+    // (ADR 0010).
+    let (_dir, sfz) = patch_dir();
+    let installed = [path(&sfz)];
+    let auto = render_params(
+        &installed,
+        &json!({"instrument_type": "auto", "articulation": "auto"}),
+        &no_media(),
+    )
+    .expect("renders");
+    assert!(auto.stats.warnings.is_empty(), "{:?}", auto.stats.warnings);
+    assert!(peak(&auto) > 0.01, "the patch is audible");
+
+    let newer = render_params(
+        &installed,
+        &json!({"instrument_type": "ophicleide", "articulation": "col_legno"}),
+        &no_media(),
+    )
+    .expect("renders instead of failing");
+    assert_eq!(
+        newer.stats.warnings,
+        [
+            "instrument_type 'ophicleide' of 'Sonara Sampler' is unknown to this version of \
+             Sonara; it plays as 'auto'",
+            "articulation 'col_legno' of 'Sonara Sampler' is unknown to this version of \
+             Sonara; it plays as 'auto'"
+        ]
+    );
+    assert_eq!(newer.data, auto.data, "it plays exactly as auto");
+}
+
+#[test]
+fn offered_choices_and_dynamics_play_without_a_warning() {
+    // A stored choice, given by its text or its index, is kept: nothing falls back.
+    let (_dir, sfz) = patch_dir();
+    let installed = [path(&sfz)];
+    for params in [
+        json!({"instrument_type": "violin", "articulation": "staccato", "dynamics": 0.5}),
+        json!({"instrument_type": 1, "articulation": 1, "dynamics": 0.0}),
+    ] {
+        let audio = render_params(&installed, &params, &no_media()).expect("renders");
+        assert!(
+            audio.stats.warnings.is_empty(),
+            "{params}: {:?}",
+            audio.stats.warnings
+        );
+    }
+}
+
+#[test]
+fn a_stored_choice_that_is_not_text_still_fails_the_build() {
+    // Only an unknown text is read as a choice of a newer version; any other invalid value
+    // fails as it does for every device.
+    let (_dir, sfz) = patch_dir();
+    let installed = [path(&sfz)];
+    for params in [
+        json!({"articulation": true}),
+        json!({"articulation": 99}),
+        json!({"instrument_type": 2.5}),
+    ] {
+        let error = render_params(&installed, &params, &no_media()).expect_err("an invalid value");
+        assert!(
+            matches!(
+                &error,
+                sonara_engine::EngineError::Params { device, .. } if device == "dev_000000000004"
+            ),
+            "{params}: {error}"
+        );
+    }
 }
