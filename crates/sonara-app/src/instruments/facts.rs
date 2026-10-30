@@ -126,7 +126,7 @@ impl PatchFacts {
                 VerdictState::Not,
                 format!(
                     "its samples take {} MiB decoded, more than the {} MiB a patch may take",
-                    self.decoded_bytes >> 20,
+                    self.decoded_bytes.div_ceil(1 << 20),
                     MAX_BANK_BYTES >> 20
                 ),
             ));

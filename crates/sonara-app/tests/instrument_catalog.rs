@@ -808,7 +808,7 @@ fn the_media_loader_survives_hostile_patches() {
     fs::write(root.join("BadWav.sfz"), "<region> sample=bad.wav key=60\n").expect("write");
     fs::write(root.join("bad.wav"), b"RIFF not really a wave file").expect("write");
 
-    let mut catalog = InstrumentCatalog::discover(&[root]);
+    let mut catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
     let ids: Vec<_> = catalog.presets().iter().map(|p| p.id.clone()).collect();
     assert_eq!(ids.len(), 4);
     for id in &ids {
@@ -821,6 +821,46 @@ fn the_media_loader_survives_hostile_patches() {
             "{id}: {verdict:?}"
         );
     }
+    // What the structural check could read is recorded, and lowers the verdict to `not`; a
+    // patch it cannot read records no facts.
+    let checked = |name: &str| {
+        let preset = catalog
+            .presets()
+            .iter()
+            .find(|preset| preset.display_name == name)
+            .unwrap_or_else(|| panic!("{name}"));
+        (preset.facts.clone(), preset.effective_verdict())
+    };
+    assert_eq!(checked("Garbage"), (None, None));
+    assert_eq!(checked("Loop"), (None, None), "the include is too deep");
+    let (facts, verdict) = checked("NoRegion");
+    assert_eq!(
+        facts.map(|facts| (facts.regions, facts.loadable)),
+        Some((0, false))
+    );
+    assert_eq!(
+        verdict,
+        Some(Verdict {
+            state: VerdictState::Not,
+            lost: vec!["the patch has no region".to_owned()]
+        })
+    );
+    let (facts, verdict) = checked("BadWav");
+    let facts = facts.expect("inspected");
+    assert_eq!(
+        (facts.regions, facts.playable_regions, facts.loadable),
+        (1, 0, false)
+    );
+    assert_eq!(facts.unreadable_samples, [dir.path().join("lib/bad.wav")]);
+    let verdict = verdict.expect("lowered by the facts");
+    assert_eq!(verdict.state, VerdictState::Not);
+    assert_eq!(
+        verdict.lost[..2],
+        [
+            "no region of the patch can play",
+            "the patch does not load while a sample file cannot be read"
+        ]
+    );
 }
 
 /// The files that identify a VSCO 2 CE checkout (branch `SFZ`), as Sonara's profile lists them.

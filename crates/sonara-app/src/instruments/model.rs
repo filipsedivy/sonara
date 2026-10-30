@@ -574,11 +574,9 @@ mod tests {
                     loadable: false,
                     ..sound_facts()
                 },
-                format!(
-                    "its samples take {} MiB decoded, more than the {} MiB a patch may take",
-                    MAX_BANK_BYTES >> 20,
-                    MAX_BANK_BYTES >> 20
-                ),
+                // One byte over the 3 GiB cap is a started MiB over it.
+                "its samples take 3073 MiB decoded, more than the 3072 MiB a patch may take"
+                    .to_owned(),
             ),
         ];
         for (facts, reason) in not_loading {
