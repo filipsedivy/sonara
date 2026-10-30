@@ -1,39 +1,39 @@
 # Orchestral instruments: implementation plan
 
-_Status: proposed (2026-10-30). Merges the implementation tables of the four layer designs into one backlog. The decisions behind it are in [../orchestra-design.md](../orchestra-design.md) and [ADR 0011](../decisions/0011-orchestral-instruments-and-performance.md); nothing is implemented._
+_Status: accepted with ADR 0011 (2026-10-30). Merges the implementation tables of the four layer designs into one backlog. The decisions behind it are in [../orchestra-design.md](../orchestra-design.md) and [ADR 0011](../decisions/0011-orchestral-instruments-and-performance.md); nothing is implemented yet._
 
 ## How to read it
 
-- 111 work items: IM (layer [a](design/instrument-model.md), the instrument model), SS (layer [b](design/sound-source.md), the sound source), PF (layer [c](design/performance.md), the performance layer), UI (layer [d](design/ui.md), the interface). Each item's detail, tests and risks are in its layer.
+- 113 work items: IM (layer [a](design/instrument-model.md), the instrument model), SS (layer [b](design/sound-source.md), the sound source), PF (layer [c](design/performance.md), the performance layer and agents), UI (layer [d](design/ui.md), the interface). Each item's detail, tests and risks are in its layer; SS-36 and PF-23 were added when the owner accepted phase 2.
 - Sizes are the layers' relative estimates (S small, M medium, L large); no calendar time is attached. IM-17 and PF-8 are placeholders merged into SS-14 and SS-35.
-- Milestones O1–O5 change no contract; O6 is a separate, versioned decision (CTR-01). An item never depends on an item of a later milestone (checked when this table was built).
-- **Owner gate**: the decisions that must be taken before a milestone starts (ids from [open-questions.md](open-questions.md), and P/U from the layers). The rest of the plan does not wait for them.
-- Every milestone ends with `scripts/dev.sh rust` and `scripts/dev.sh frontend` passing, the changelog and status table updated (DOC-01), and its own done criteria below.
+- **The owner accepted phase 2 together with phase 1 on 2026-10-30:** project schema v2 (a track `part` and a note `articulation`), per-note articulation in the agent API, and a tool that writes MIDI CC. These items moved out of O6 into the milestones that need them. They are versioned changes (CTR-01): project schema 2 with a lowest-version writer, and agent API 1.1 (additive) with golden-delta tests (PF-23).
+- **Owner gate**: what is decided and what is still open before a milestone starts (ids from [open-questions.md](open-questions.md), and P/U from the layers). Items that do not touch an open question do not wait for it.
+- No item depends on an item of a later milestone (checked when this table was built). Every milestone ends with `scripts/dev.sh rust` and `scripts/dev.sh frontend` passing, the changelog and status table updated (DOC-01), and its own done criteria below.
 
 ## The first audible result
 
-The product sentence ("strings play a legato melody, horns and timpani underneath") runs end to end for the first time through the Orchestrate… field (PF-15). That needs **34 items** (O1 12, O2 5, O3 9, O4 7, O5 1), not the whole backlog: the rest of O5 (the Library browser, family panels, lanes) and all of O6 can follow.
+The product sentence ("strings play a legato melody, horns and timpani underneath") runs end to end for the first time through the Orchestrate… field (PF-15). That needs **34 items** (O1 12, O2 5, O3 9, O4 7, O5 1), not the whole backlog: the rest of O5 (the Library browser, family panels, lanes) can follow. At that point the planner writes articulations as the sampler's `articulation` state; once PF-18 and PF-21 land in the same O4 it writes them per note and writes dynamics as CC.
 
 Longest dependency chain to it, weighted S = 1, M = 2, L = 4 (weight 32):
 
 IM-1 (M) → IM-2 (M) → IM-5 (L) → IM-8 (L) → IM-9 (M) → IM-18 (S) → SS-13 (M) → SS-26 (M) → SS-15 (M) → SS-16 (M) → PF-2 (M) → PF-7 (L) → PF-13 (M) → PF-15 (S)
 
-The model (IM-1 … IM-18) is the long pole. Five O2 items are in the set (SS-01 key switches, SS-06 missing samples and reporting, SS-08 include fragments, SS-09 the structural check, SS-10 preset ids), but none is on the longest chain, so the conformance work runs beside the model; the other O2 fixes (includes and defines, `-1` keys, release on pedal up) make the free libraries worth hearing and belong in the same release. What it sounds like, and what it does not (recorded legato, swells in timbre), is in [design/performance.md](design/performance.md) section 12.
+The model (IM-1 … IM-18) is the long pole. 5 O2 items are in the set, none on the longest chain, so the conformance work runs beside the model; the other O2 fixes make the free libraries worth hearing and belong in the same release. What it sounds like, and what it does not (recorded legato, swells in timbre), is in [design/performance.md](design/performance.md) section 12.
 
 ## Owner gates
 
-| Milestone | Decide before it starts |
+| Milestone | Decided, and still open |
 |---|---|
-| O1 | A11 (GM numbers), A12–A16 (articulation vocabulary: it freezes once projects store choice indices), A18–A23 (range semantics, notation, ids, controls, the data.rs corrections), the dependency reading of ADR 0011 decision 12 |
-| O2 | ADR 0011 accepted; A5 (preset ids, the ADR 0010 amendment); A8 (fix the SFZ divergences, ARIA/sfizz where the specification is silent) |
-| O3 | A3 (articulations through the sampler parameter), A4 (dynamics through the sampler parameter), A6 and A17 (which library profiles ship), A9 (overlap legato, after the listening check B2), A24 |
-| O4 | P1 (staged planner validation with undo rollback replaces "a refusal changes nothing"), P2 (humanization on by default), P3 (the AI Composer reference on every turn) |
-| O5 | U1 (the GUI edits CC 64 and CC 11 before any agent tool), U2 (an allow-list of library download pages) |
-| O6 | a new, versioned ADR under CTR-01: A1 (track `part`), A3 option b (note `articulation`), A4 option a (a CC tool), A7 (ensemble and orchestrate tools), A10 (a GM engine) |
+| O1 | decided: shape B with mute and vibrato as passage states (A16), no id = ordinario (A14), `col_legno_battuto` kept apart from `col_legno` (A12). Open: A11 (GM numbers), A13 (the invented ids and candidate merges), A15 (mallet rolls), A18–A23 (range semantics, notation, ids, controls, the data.rs corrections) |
+| O2 | decided: ADR 0011 accepted, so the SFZ fixes follow ARIA and sfizz where the specification is silent (decision 5, A8); preset ids amend ADR 0010 (A5); schema v2 with a track `part` and a note `articulation` (A1, A3 option b) |
+| O3 | decided: articulation per note plus the sampler's `articulation` state (A3), dynamics in clips as CC through the CC tool plus the sampler's `dynamics` trim (A4), profiles for VSCO 2 CE and VCSL only, none for Sonatina or CC BY libraries (A6, A17). Open: A9 (overlap legato, after the listening check B2), A24 |
+| O4 | decided with ADR 0011 decision 9: staged planner validation with undo rollback (P1), the AI Composer reference (P3). Open: P2 (humanization on by default) |
+| O5 | decided with ADR 0011 decision 10: the GUI edits CC 64 and CC 11 (U1). Open: U2 (download-page allow-list) |
+| O6 | open: A7 (ensemble, orchestrate and check tools), A10 (a GM engine); plugin hosting (M5) |
 
 ## O1. Instrument model
 
-17 items (S 5, M 8, L 4), in dependency order. **Owner gate:** A11 (GM numbers), A12–A16 (articulation vocabulary: it freezes once projects store choice indices), A18–A23 (range semantics, notation, ids, controls, the data.rs corrections), the dependency reading of ADR 0011 decision 12.
+17 items (S 5, M 8, L 4), in dependency order. **Owner gate:** decided: shape B with mute and vibrato as passage states (A16), no id = ordinario (A14), `col_legno_battuto` kept apart from `col_legno` (A12). Open: A11 (GM numbers), A13 (the invented ids and candidate merges), A15 (mallet rolls), A18–A23 (range semantics, notation, ids, controls, the data.rs corrections).
 
 | # | Item | Layer | Crate / module | Size | Depends on |
 |---|---|---|---|---|---|
@@ -57,16 +57,17 @@ The model (IM-1 … IM-18) is the long pole. Five O2 items are in the set (SS-01
 
 **Done when:**
 
-- `crates/sonara-midi/tests/orchestration.rs` checks every invariant of the 85 ids (unique ids and aliases or marked ambiguous, written = sounding − transposition, comfortable inside playable, provenance on every value, every ensemble part and rule names an existing id) (TST-07); invalid data fails to compile
+- `crates/sonara-midi/tests/orchestration.rs` checks every invariant of the 85 ids (unique ids, aliases unique or marked ambiguous, written = sounding − transposition, comfortable inside playable, provenance on every value, every ensemble part and rule names an existing id) (TST-07); invalid data fails to compile
 - the 14 corrections of [model.md](model.md) are in the data; `docs/orchestration-metadata.md` describes the new record, and model.md is retired
-- `scripts/dev.sh rust` passes; no golden file changes (GLD-01)
+- no golden file changes (GLD-01)
 
-## O2. Sampler conformance and preset ids
+## O2. Sampler conformance, preset ids and project schema v2
 
-12 items (S 8, M 4, L 0), in dependency order. **Owner gate:** ADR 0011 accepted; A5 (preset ids, the ADR 0010 amendment); A8 (fix the SFZ divergences, ARIA/sfizz where the specification is silent).
+13 items (S 8, M 4, L 1), in dependency order. **Owner gate:** decided: ADR 0011 accepted, so the SFZ fixes follow ARIA and sfizz where the specification is silent (decision 5, A8); preset ids amend ADR 0010 (A5); schema v2 with a track `part` and a note `articulation` (A1, A3 option b).
 
 | # | Item | Layer | Crate / module | Size | Depends on |
 |---|---|---|---|---|---|
+| IM-19 | Schema v2 `part` and note `articulation`: `project-v2.schema.json`, relabel migration, `migrated_from` only for content changes, features, lowest-version writer; dataset check in the app *(moved from O6: phase 2 accepted on 2026-10-30)* | [a](design/instrument-model.md) | sonara-project `schemas`, `migrations`, `serializer`, `store`; sonara-core `model`, `midi`; sonara-app load path | L | A1, A16, CTR-01 |
 | SS-01 | Q1 and N4: switch key set (union), last `sw_default` | [b](design/sound-source.md) | `sonara-media::sfz`, `sonara-dsp::{bank, processors::sampler}` | S | — |
 | SS-02 | Q11: `<control>` resets the control scope only | [b](design/sound-source.md) | `sonara-media::sfz` | S | — |
 | SS-03 | Q2: directives anywhere in a line | [b](design/sound-source.md) | `sonara-media::sfz` | M | — |
@@ -83,13 +84,13 @@ The model (IM-1 … IM-18) is the long pole. Five O2 items are in the set (SS-01
 **Done when:**
 
 - every Q/N fix has the regression test named in [sfz-conformance.md](sfz-conformance.md) section D, passing, with `assert_no_alloc` on the real-time paths (RT-02..RT-05)
-- a project that stores an absolute path still opens and plays; preset ids survive a renamed folder for profiled libraries
-- the human render check B1 confirms the fixed verdicts (VSCO key-switch patches, Sonatina key switches, Salamander, Splendid); `docs/sample-libraries.md` drops the divergences that are fixed
-- ADR 0010 carries the amendment; `scripts/dev.sh rust` passes
+- a project that stores an absolute path still opens and plays; preset ids survive a renamed folder for profiled libraries; ADR 0010 carries the amendment
+- schema v2: migration tests, `project-v2.schema.json`, and the guarantees that an unchanged v1 project saves byte-identical and opens with `migrated_from_schema: null` (golden coverage step 164); `docs/project-format.md` describes v2 and its required features
+- the human render check B1 confirms the fixed verdicts; `docs/sample-libraries.md` drops the divergences that are fixed
 
 ## O3. Sound mapping and expression
 
-25 items (S 9, M 12, L 2), in dependency order. **Owner gate:** A3 (articulations through the sampler parameter), A4 (dynamics through the sampler parameter), A6 and A17 (which library profiles ship), A9 (overlap legato, after the listening check B2), A24.
+26 items (S 9, M 13, L 2), in dependency order. **Owner gate:** decided: articulation per note plus the sampler's `articulation` state (A3), dynamics in clips as CC through the CC tool plus the sampler's `dynamics` trim (A4), profiles for VSCO 2 CE and VCSL only, none for Sonatina or CC BY libraries (A6, A17). Open: A9 (overlap legato, after the listening check B2), A24.
 
 | # | Item | Layer | Crate / module | Size | Depends on |
 |---|---|---|---|---|---|
@@ -116,19 +117,20 @@ The model (IM-1 … IM-18) is the long pole. Five O2 items are in the set (SS-01
 | SS-33 | Event-accurate enum automation for samplers (optional) | [b](design/sound-source.md) | `sonara-engine::graph::process`, `sonara-dsp::processor` | M | SS-16 |
 | SS-34 | `mute` and `vibrato` parameters (optional, 5.7) | [b](design/sound-source.md) | `sonara-core::plugins::builtin`, `sonara-app::instruments::compile`, `sonara-dsp::processors::sampler` | M | SS-15, SS-16; owner (A16) |
 | SS-35 | Decoded facts at `verify`: onset per articulation (`attack_ms`) and longest unlooped sample (`max_hold_s`) into `PatchFacts`; the profile's `attack_ms` override (absorbs layer c's PF-8) | [b](design/sound-source.md) | `sonara-media::sfz` (`PatchReport`), `sonara-app::instruments::{verify, model}` | M | SS-09, SS-13 |
+| SS-36 | Per-note articulation in the engine and the sampler: a note's `articulation` travels with its note-on event, and the sampler applies that note's compiled switch at the note, sample-accurately, over the track's `articulation` state *(added with the phase-2 decision)* | [b](design/sound-source.md) | `sonara-engine::schedule`, `sonara-dsp::processors::sampler` | M | IM-19, SS-15, SS-16 |
 | PF-8 | (Moved to layer (b)'s SS-35, which measures onsets and the longest unlooped sample at `verify`; kept for traceability) | [c](design/performance.md) | – | – | – |
 | PF-9 | Catalog → `SoundCaps` adapter and the planner's catalog seam | [c](design/performance.md) | `sonara-app` `instruments`; `sonara-agent` `orchestration` | S | SS-09, SS-13, SS-35 |
 
 **Done when:**
 
 - profile validation and merge tests; the degradation chain has a test per step with its user message (TST-03)
-- sampler tests for `articulation` and `dynamics` in every mode, a seek and a loop wrap restoring the articulation (C11), overlap legato, and articulation sets, all inside `assert_no_alloc`
-- memory per profile measured and recorded in `docs/audio-engine.md` (HW-01); the listening check B2 for legato and swells
+- sampler tests for per-note articulation (a note's switch wins over the track state, at the note's frame), the `articulation` and `dynamics` parameters, a seek and a loop wrap restoring the articulation, CC crossfades, overlap legato and articulation sets, all inside `assert_no_alloc`
+- memory per profile measured and recorded in `docs/audio-engine.md` (HW-01); the listening check B2
 - `docs/instrument-catalog.md` and `docs/sample-libraries.md` describe profiles and the new parameters
 
-## O4. Performance layer and agents
+## O4. Performance layer, agents and agent API 1.1
 
-15 items (S 4, M 8, L 3), in dependency order. **Owner gate:** P1 (staged planner validation with undo rollback replaces "a refusal changes nothing"), P2 (humanization on by default), P3 (the AI Composer reference on every turn).
+18 items (S 4, M 11, L 3), in dependency order. **Owner gate:** decided with ADR 0011 decision 9: staged planner validation with undo rollback (P1), the AI Composer reference (P3). Open: P2 (humanization on by default).
 
 | # | Item | Layer | Crate / module | Size | Depends on |
 |---|---|---|---|---|---|
@@ -147,16 +149,20 @@ The model (IM-1 … IM-18) is the long pole. Five O2 items are in the set (SS-01
 | PF-20 | Ensemble plan service (spine S9): parts in score order, family folders, sources through the chain, pan unless in situ, family buses; one plan for the GUI's `Transaction` and the planner's steps | [c](design/performance.md) | `sonara-app` `ensembles` | M | IM-13, SS-26 |
 | PF-13 | `Orchestration` → steps (tracks, instrument, clips, lanes, routing, pan) | [c](design/performance.md) | `sonara-agent` `orchestration::ensemble` | M | PF-7, PF-9, PF-12, PF-20, SS-26 |
 | PF-16 | Docs (DOC-01) | [c](design/performance.md) | `docs/` | S | PF-1-PF-14, PF-20 |
+| PF-23 | Agent API 1.1: the additive tool changes (`NoteInput.articulation`, a `part` argument on `create_track`, the CC-writing tool) with tests that pin 1.1 as golden `tools.json` 1.0 plus exactly the recorded additions, and the same for `mcp-tools-list.json` and the IPC `hello`; golden files are not re-recorded (GLD-01) *(added with the phase-2 decision)* | [c](design/performance.md) | `sonara-agent::contract`, `crates/sonara-agent/tests` | M | IM-19 |
+| PF-18 | Per-note articulation: `NoteInput.articulation` and a `part` argument on `create_track` (golden `tools.json`), per-note inference output *(moved from O6: phase 2 accepted on 2026-10-30)* | [c](design/performance.md) | `performance::articulate`; `sonara-agent` contract | M | IM-19; owner (A1, A3 b, A16); PF-23 |
+| PF-21 | CC-writing tool and CC output of `perform()`; controller events in looping clips *(moved from O6: phase 2 accepted on 2026-10-30)* | [c](design/performance.md) | `sonara-agent` contract; `performance::dynamics`; `sonara-engine` `schedule` | M | owner (A4 a); PF-23 |
 
 **Done when:**
 
-- determinism tests for every performance function with fixed seeds (TST-04); a test per shipped rule id with its oracle (TST-10)
-- the walkthrough of [design/performance.md](design/performance.md) section 12 as an integration test against the null backend (TST-02): 3 reads, the planned writes, the report
-- the AI Composer reference passes its size and drift tests; `docs/orchestration.md` and `docs/ai-composer.md` describe the new behaviour and the changed guarantee (P1)
+- determinism tests with fixed seeds (TST-04); a test per shipped rule id with its oracle (TST-10)
+- agent API 1.1: the golden-delta tests pass; every new error path of the changed tools has a test (TST-03); `docs/agent-api.md` is regenerated
+- the walkthrough of [design/performance.md](design/performance.md) section 12 as an integration test against the null backend (TST-02), writing per-note articulations and CC once PF-18 and PF-21 are in
+- the AI Composer reference passes its size and drift tests; `docs/orchestration.md` and `docs/ai-composer.md` describe the new behaviour and the changed planner guarantee
 
 ## O5. Interface
 
-32 items (S 13, M 17, L 2), in dependency order. **Owner gate:** U1 (the GUI edits CC 64 and CC 11 before any agent tool), U2 (an allow-list of library download pages).
+33 items (S 13, M 17, L 3), in dependency order. **Owner gate:** decided with ADR 0011 decision 10: the GUI edits CC 64 and CC 11 (U1). Open: U2 (download-page allow-list).
 
 | # | Item | Layer | Crate / module | Size | Depends on |
 |---|---|---|---|---|---|
@@ -192,31 +198,26 @@ The model (IM-1 … IM-18) is the long pole. Five O2 items are in the set (SS-01
 | UI-30 | ARIA layers for lanes and pads; a11y e2e checkpoints | [d](design/ui.md) | desktop `pianoroll/`, `bench/e2e-a11y.ts` | M | UI-17, UI-22 |
 | UI-31 | Bench fixture library and orchestral scenarios in all perf:signoff parts | [d](design/ui.md) | desktop `scripts/bench-timeline.mjs`, `src/lib/bench/` | M | UI-22-UI-24, UI-11 |
 | UI-32 | Docs (DOC-01) | [d](design/ui.md) | `CHANGELOG.md`, `docs/` | S | all |
+| UI-33 | Phase 2: per-note articulation in the roll, note inspector, part editing in the Inspector *(moved from O6: phase 2 accepted on 2026-10-30)* | [d](design/ui.md) | desktop `pianoroll/`, `inspector/`; sonara-app `view`, `edit` | L | IM-19, PF-18 (A1, A3 b) |
 
 **Done when:**
 
 - page and unit tests for every new view; `pnpm run perf:signoff` meets ADR 0009 (timeline p95 ≤ 7 ms, meters ≥ 58 fps with p99 ≤ 50 ms, piano roll ≤ 2 display frames with 2,000 notes)
 - VoiceOver labels for the new controls; the menu oracle (GLD-01) unchanged except by decision
-- `scripts/dev.sh frontend` passes
 
-## O6. Contract v2 (separate, versioned decision)
+## O6. Open decisions and plugin hosting
 
-10 items (S 2, M 4, L 4), in dependency order. **Owner gate:** a new, versioned ADR under CTR-01: A1 (track `part`), A3 option b (note `articulation`), A4 option a (a CC tool), A7 (ensemble and orchestrate tools), A10 (a GM engine).
+6 items (S 2, M 2, L 2), in dependency order. **Owner gate:** open: A7 (ensemble, orchestrate and check tools), A10 (a GM engine); plugin hosting (M5).
 
 | # | Item | Layer | Crate / module | Size | Depends on |
 |---|---|---|---|---|---|
-| IM-19 | Schema v2 `part` and note `articulation`: `project-v2.schema.json`, relabel migration, `migrated_from` only for content changes, features, lowest-version writer; dataset check in the app | [a](design/instrument-model.md) | sonara-project `schemas`, `migrations`, `serializer`, `store`; sonara-core `model`, `midi`; sonara-app load path | L | A1, A16, CTR-01 |
 | SS-30 | GM review spike and decision record | [b](design/sound-source.md) | none (spike) | S | SS-01..SS-12 |
 | SS-31 | `sonara.gm` engine, if accepted | [b](design/sound-source.md) | `sonara-dsp::processors::gm`, `sonara-media::soundfont`, `sonara-core::plugins::builtin`, `sonara-app::samples` | L | SS-30; owner (A10) |
 | SS-32 | Articulation translator for hosted instruments | [b](design/sound-source.md) | `sonara-engine::articulation` | M | M5 host |
-| PF-18 | Per-note articulation: `NoteInput.articulation` and a `part` argument on `create_track` (golden `tools.json`), per-note inference output | [c](design/performance.md) | `performance::articulate`; `sonara-agent` contract | M | IM-19; owner (A1, A3 b, A16) |
 | PF-19 | `orchestrate` and `check_orchestration` tools, golden contract update | [c](design/performance.md) | `sonara-agent` contract | L | owner (S10) |
-| PF-21 | CC-writing tool and CC output of `perform()`; controller events in looping clips | [c](design/performance.md) | `sonara-agent` contract; `performance::dynamics`; `sonara-engine` `schedule` | M | owner (A4 a) |
 | PF-22 | Ensemble tool or a wider `create_project` enum | [c](design/performance.md) | `sonara-agent` contract | M | PF-20; owner (A7 c) |
-| UI-33 | Phase 2: per-note articulation in the roll, note inspector, part editing in the Inspector | [d](design/ui.md) | desktop `pianoroll/`, `inspector/`; sonara-app `view`, `edit` | L | IM-19, PF-18 (A1, A3 b) |
 | UI-34 | GM sources in the Library | [d](design/ui.md) | sonara-app `browser` | S | A10 |
 
 **Done when:**
 
-- the versioned ADR is accepted; schema v2 migration tests, including that an unchanged v1 project still opens without a reported migration and saves byte-identical (GLD-01)
-- the golden tool and schema contracts change only as that ADR records (CTR-01)
+- each open decision is recorded before its items start; tool additions follow the API 1.1 pattern of PF-23
