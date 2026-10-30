@@ -154,6 +154,33 @@ Conversion: S1 identifies keys by their number on an 88-key keyboard with the no
 | Effects chain | External pedals and amps in practice: drive or tube amp, phaser (1970s), chorus | Apple chain: Drive first, then EQ, Phaser, Tremolo, Chorus; "Chorus is the most commonly used effect on electric piano sounds" | [Cited S3] |
 | Apple Vintage Electric Piano CCs | n/a | CC1 Volume (as listed), 12 Model, 13 Decay, 14 Release, 15 Tine Bell, 16 Damper Noise, 17 Stereo Width, 18 Treble, 19 Bass, 20 Drive Gain, 21 Drive Tone, 22-24 Phaser Rate/Color/Stereo, 25-27 Tremolo Rate/Intensity/Stereo, 28 Chorus Intensity | [Cited S3 pp. 705-706] |
 
+What a composer writes differently for the Rhodes piano:
+
+- **Pedalling.** The sustain pedal lifts the dampers (CC64 in MIDI) [Cited S2, S13, S17] and is marked as for the piano
+  ("Ped." and a release sign) [Estimate: piano notation practice; no opened source prints a Rhodes part]. Notes ring long,
+  longer than on a Wurlitzer [Cited S8, S13], so a held pedal blurs changing harmony as on a piano [Estimate: follows from
+  the long decay]. A pedalled glissando over the whole keyboard works; Apple's model allows 88 voices for it [Cited S3].
+- **No soft pedal and no resonant halo.** Compared with the concert grand there is no una corda, so "una corda / tre corde"
+  marks have no meaning [Estimate: no opened source describes a second pedal]; and the pedal adds little sympathetic
+  ringing, because each note is a separate tine and tone bar with no shared soundboard [Estimate: no source read describes
+  sympathetic ringing on the Rhodes].
+- **Dynamics change the colour.** The action is velocity-sensitive [Cited S3]: soft playing is mellow and bell-like, hard
+  playing adds "bark" [Cited S8, S12, S13, S20], so a forte asks for a different sound as well as a louder one; high notes
+  change timbre less with velocity [Cited S20]. The weak pickup signal needs amplification [Cited S3], so the level against
+  an orchestra is set at the amplifier or in the mix [Estimate: follows from the amplified signal; no source discusses
+  orchestral balance].
+- **Register and voicing.** Keep the part within E1-E7 (28-100), the span of the 73-key pianos [Cited S1, S12], so that it
+  plays on every full-size Rhodes; the grand's A0-D#1 and F7-C8 exist only on the 88-key models [Cited S1, S13; the
+  comparison, and that the span fits both models, is arithmetic]. S12 hears a "low-end fart" in the bass [Cited S12], so low chords are best kept open
+  [Estimate: general keyboard voicing practice; no source states it].
+- **Texture and idiom.** Chord comping, ballad accompaniment and solo lines with bell tone are the usual roles [Estimate:
+  from the repertoire in section 7]; in a band the Rhodes tends to blend in rather than stand out [Cited S7].
+- **Effects are written into the part.** The Suitcase tremolo (labelled "vibrato"), phaser and chorus belong to the sound
+  [Cited S3, S8, S13]; write them as text at the start of a passage, for example "Suitcase tremolo, slow", not as
+  articulations [Estimate: lead-sheet and session practice; no opened source prints such a part].
+- **Notation.** At pitch on a grand staff, headed "Rhodes" or "E. Pno.", often with chord symbols in band parts [Estimate:
+  keyboard and lead-sheet practice; no opened source prints a Rhodes part].
+
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
 | Articulation id | Played as | Library implementation | Provenance |
@@ -161,7 +188,7 @@ Conversion: S1 identifies keys by their number on an 88-key keyboard with the no
 | `sustain` | Key held, or sustain pedal | All references: note length plus CC64. jRhodes3d: full-length unlooped samples; jRhodes3c: looped | [Cited S20, S21; Estimate for "all references"] |
 | `legato` | Finger legato (overlapping keys) | No legato transition samples or scripts in jRhodes or the Apple and Arturia models: overlapping notes simply both sound | [Estimate: no legato mode is listed in S3, S8 or S20] |
 | `staccato`, `tenuto`, `marcato` | Note length and velocity | Note length; velocity layers (jRhodes 5 layers with velocity crossfades `xfin_*`/`xfout_*`; Scarbee RSP '73 12 layers) | [Cited S20, S12 for layers; Estimate for the articulation mapping] |
-| `trill` | Fingered | Notes | [Estimate] |
+| `trill` | Fingered | Notes | [Estimate: general keyboard practice; no source read lists articulations for the Rhodes] |
 | `glissando` (proposed) | White-key glissando, usually with the pedal down | Notes; Apple's 88-voice limit is meant to allow it | [Cited S3] |
 
 - Key-off: the damper's "thwong" (S12) is a release sample in Scarbee RSP '73 ("release samples ... at the same 12 dynamic levels as the sustains") and a Damper Noise level in Apple and Arturia [Cited S12, S3, S8].
@@ -302,7 +329,7 @@ Conversion: S1 identifies keys by their number on an 88-key keyboard with the no
 | 106P pupil piano | 44 | n/a | not found | not stored | [Cited S14 for the key count] |
 
 - Transposition 0, grand staff [Estimate: notated as a piano; no source states a transposition].
-- Register: the 200A is "sweet and vibraphone-like" when played gently in any register; bark grows with velocity [Cited S7]. A register-by-register account was not found [Estimate].
+- Register: the 200A is "sweet and vibraphone-like" when played gently in any register; bark grows with velocity [Cited S7]. A register-by-register account was not found [Estimate: no opened source describes the colour register by register].
 
 ### 4. Dynamics by register, colour by register, agility, breath/bow/physical limits
 
@@ -326,6 +353,26 @@ Conversion: S1 identifies keys by their number on an 88-key keyboard with the no
 | External chain | Guitar amp, PA | Arturia adds a guitar amp simulator and a Leslie, plus wah, auto-wah, phaser, chorus pedals | [Cited S7] |
 | Apple Vintage Electric Piano | n/a | Wurlitzer models in the same plug-in as the Rhodes; same CC table as in the Rhodes card | [Cited S3] |
 
+What a composer writes differently for the Wurlitzer electronic piano:
+
+- **Range.** 64 keys, A1-C7 (33-96) [Cited S6, S7, S14]: compared with the concert grand the bottom octave and the top
+  octave are missing [Cited S7, S14], so a piano part has to be folded into this span [Estimate: follows from the range].
+- **Pedalling and sustain.** The sustain pedal lifts the dampers "as in a conventional piano" [Cited S6] and is marked as
+  for the piano [Estimate: piano notation practice; no opened source prints a Wurlitzer part]. The tone dies sooner than a
+  Rhodes's [Cited S8, S13], so long held chords fade early [Estimate: follows from the shorter decay], and the pedal
+  mechanism itself is audible [Cited S7]. Write no una corda marks [Estimate: no opened source describes a second pedal].
+- **Dynamics change the colour.** The action is velocity-sensitive [Cited S5]: gentle playing is "sweet and
+  vibraphone-like", hard playing gives the "bark" [Cited S7, S14], so dynamics are also colour marks. The overall level
+  comes from the Volume knob or, in Arturia's model, a volume pedal on CC7 [Cited S7].
+- **Tremolo has one speed.** The built-in "vibrato" is a tremolo whose oscillator is preset to 5.75 Hz [Cited S6]; the
+  knob sets only its depth [Cited S6, S14, S3, S7, as in the controls table]. A part can ask for tremolo on or off and for
+  more or less depth, not for a speed [Estimate: follows from the fixed rate].
+- **Texture and idiom.** It stays clear and distinctive beside guitar, bass and drums, where a Rhodes blends in, and it can
+  take over a rhythm-guitar part [Cited S7]; rhythmic comping and soul and pop ballad accompaniment are the usual roles
+  [Estimate: from the repertoire in section 7].
+- **Notation.** At pitch on a grand staff, headed "Wurlitzer", "Wurli." or "E. Pno." [Estimate: lead-sheet practice; no
+  opened source prints an abbreviation].
+
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
 | Articulation id | Played as | Library implementation | Provenance |
@@ -333,14 +380,14 @@ Conversion: S1 identifies keys by their number on an 88-key keyboard with the no
 | `sustain` | Key held or CC64 | Note length plus CC64; pedal noise modelled (Arturia Sustain Pedal Noise) | [Cited S7] |
 | `legato` | Overlapping keys | No legato mode in Arturia Wurlitzer V or Apple | [Estimate: none is listed in S7 or S3] |
 | `staccato`, `tenuto`, `marcato` | Length and velocity | Velocity curve editing (S7 "Velocity Curve"); Dynamics parameter compresses pp-ff range "without any distortion" | [Cited S7; Estimate for the mapping] |
-| `trill` | Fingered | Notes | [Estimate] |
+| `trill` | Fingered | Notes | [Estimate: general keyboard practice; no source read lists articulations for the Wurlitzer] |
 | `glissando` (proposed) | Keyboard glissando, usually with the pedal down | Notes; Apple's 88-voice limit, which covers its Wurlitzer models, is meant to allow it | [Cited S3] |
 
 - Modelled parameters of Arturia Wurlitzer V: Vibrato Rate, Pickup Distance (closer = more distortion and a wider soft-loud timbre difference), Pickup Axis, Impedance (sustain length), Dynamics, Octave Stretch, Hammer Hardness, Hammer Noise, Note Off Noise, Sustain Pedal Noise, Velocity Curve [Cited S7].
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One instrument and player [Estimate].
+- One instrument and player [Estimate: band and studio practice; no source states a player count].
 - In tone and attack the Wurlitzer suits an amplified, guitar-based rock band better and can even take over a rhythm-guitar part, while the Rhodes is more of a solo instrument [Cited S7].
 
 ### 7. Role in the orchestra and typical doublings
@@ -484,6 +531,30 @@ Conversion: S1 identifies keys by their number on an 88-key keyboard with the no
 | Castle Bar | mid-1970s add-on bar that bends the pitch like a guitar tremolo arm | pitch bend | [Cited S15] |
 | Effects | Wah or auto-wah, phaser, chorus in practice | Apple: Compressor, Distortion, Modulation (Phaser/Flanger/Chorus), Wah (8 modes), any order; Arturia: stomp-box effects, tube amp with tremolo, spring reverb, wah on a pedal | [Cited S15, S3, S9] |
 
+What a composer writes differently for the Clavinet:
+
+- **No sustain pedal.** A note sounds only while its key is held, and the wool winding mutes it at once on release [Cited
+  S10, S3]; the D6 has no sustain pedal [Cited S10]. Written durations are therefore exact and the part carries no pedal
+  marks; sustained harmony goes to another instrument [Cited S10 for the sustain limit; Estimate: arranging practice, no
+  source states it].
+- **Touch and articulation.** Each key is struck decisively and kept down; careless playing sounds weak [Cited S10]. For
+  staccato the manual asks for "more or less Portato" [Cited S10]. Pressure on a held key raises its pitch slightly [Cited
+  S3], and worn hammer pads can click on release [Cited S3].
+- **Dynamics.** Touch sets the level "just as on a piano" [Cited S10, S3]. The optional foot swell is a volume pedal (CC11
+  in Apple's model) [Cited S10, S3], which can shape swells and fades on held notes [Estimate: follows from a volume pedal;
+  no source describes its use].
+- **Registration instead of pedalling.** Colour is set by switches: four tone tabs (Brilliant, Treble, Medium, Soft), the
+  two pickup switches, and the mute slider for "a dull, dry sound" [Cited S10, S9, S15, S3]. The part names the setting in
+  words at the start of a passage, for example "Treble tab, muted" [Estimate: no opened source prints a Clavinet part].
+- **Register.** 60 keys, F1-E6 (29-88) [Cited S10, S15]: the top lies 20 semitones below the concert grand's C8 and the
+  bottom 8 semitones above its A0 [Estimate: arithmetic on the card's range and the grand's A0-C8]. Wound bass strings and
+  unwound treble strings differ, with an audible timbre jump between them [Cited S3].
+- **Texture and idiom.** Short percussive riffs and comping are the funk idiom ("Superstition", *Head Hunters*) [Cited S3,
+  S15 for the repertoire; Estimate for the description of the figures], often through a wah or auto-wah [Cited S15]; doubling the bass or guitar riff is common
+  [Estimate: no source read describes doublings].
+- **Notation.** At pitch on a grand staff, headed "Clav." or "Clavinet" [Estimate: lead-sheet practice; no opened source
+  prints an abbreviation].
+
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
 | Articulation id | Played as | Library implementation | Provenance |
@@ -493,7 +564,7 @@ Conversion: S1 identifies keys by their number on an 88-key keyboard with the no
 | `portato` (proposed) | as above | Note length | [Cited S10] |
 | `damped` (proposed) | Mute slider down: dull, dry, quick decay | Apple: Damper slider via CC, velocity or aftertouch; Arturia: Mute bar mapped to a button | [Cited S10, S3, S9] |
 | `legato` | Overlapping keys | Apple Voices "Legato" mode retriggers only pitch when notes overlap (mono) | [Cited S3] |
-| `marcato`, `trill` | Velocity; fingering | Notes and velocity | [Estimate] |
+| `marcato`, `trill` | Velocity; fingering | Notes and velocity | [Estimate: keyboard practice; no source read lists these for the Clavinet] |
 
 - Key-off click: Apple Click parameters (Intensity, Random, Velocity, release-velocity mode with "Auto" sensing of release velocity); Arturia Key Release Noise [Cited S3, S9].
 - Modelled parameters: Apple Brilliance, Decay, String Release, Damping, Stiffness/Inharmonicity, Tension Mod, Pitch Fall, Excite Shape, 14 models (Belltone, Classic I and II, Dulcitone, Funktone, Harpsitone I and II, Mellotone, Plectratone I and II, Sitartone, Vintage I and II, Woodtone); Arturia Harmonic Profile, String Resonance, Release Time, Hammer Hardness, Hammer Noise, Pickup Noise, Dynamics [Cited S3, S9].
@@ -544,8 +615,8 @@ Conversion: S1 identifies keys by their number on an 88-key keyboard with the no
 
 | Topic | Values found | Recommendation |
 |---|---|---|
-| Rhodes range model | 73-key E1-E7 (28-100) vs 88-key A0-C8 (21-108) [Cited S1, S12] | Store playable 21-108 and comfortable 28-100; the `keyboard` object follows the playable range (88 keys). Owner to confirm that "comfortable" may encode "fits the 73-key model" [Estimate] |
-| Date of the 88-key Rhodes | 1971 [Cited S13], 1972 [Cited S2], 1973 [Cited S3] | Prefer 1971-72 (two sources, S2 a specialist site) [Estimate] |
+| Rhodes range model | 73-key E1-E7 (28-100) vs 88-key A0-C8 (21-108) [Cited S1, S12] | Store playable 21-108 and comfortable 28-100; the `keyboard` object follows the playable range (88 keys). Owner to confirm that "comfortable" may encode "fits the 73-key model" [Estimate: modelling choice; no source defines a comfortable Rhodes range] |
+| Date of the 88-key Rhodes | 1971 [Cited S13], 1972 [Cited S2], 1973 [Cited S3] | Prefer 1971-72 (two sources, S2 a specialist site) [Estimate: judgement on source weight; two of the three sources put it in 1971-72] |
 | Neoprene hammer tips | from 1969 [Cited S8]; early 1971 [Cited S2, S13] | Prefer early 1971 [Estimate: two agreeing sources] |
 | Rhodes Mk II | 1978 [Cited S3]; late 1979 [Cited S13] | Unresolved; not stored |
 | Suitcase / Stage naming | Suitcase name from 1969 [Cited S2]; Mk I Suitcase and Stage 1970 [Cited S13] | Not stored |
@@ -554,16 +625,16 @@ Conversion: S1 identifies keys by their number on an 88-key keyboard with the no
 | Wurlitzer tremolo rate | 5.75 Hz [Cited S6, service manual]; 5.5 Hz [Cited S3]; about 6.34 Hz [Cited S7] | Use 5.75 Hz (manufacturer's manual); the rate is fixed, only depth is a control |
 | Wurlitzer pickup voltage | 160-170 V DC [Cited S6]; 150 V [Cited S3]; 170 V [Cited S14] | Use 160-170 V (primary) |
 | Wurlitzer 200A dates | 1974-1983 [Cited S14]; "production started in 1972" [Cited S7] | Unresolved |
-| First Wurlitzer electronic piano | 1954 [Cited S14]; "first manufactured in the early 1960s" [Cited S3 p. 705, S5] | Prefer 1954 (S14 lists the 1950s models 100-120 by name; Apple's sentence is a marketing aside) [Estimate]; not stored |
+| First Wurlitzer electronic piano | 1954 [Cited S14]; "first manufactured in the early 1960s" [Cited S3 p. 705, S5] | Prefer 1954 (S14 lists the 1950s models 100-120 by name; Apple's sentence is a marketing aside) [Estimate: judgement on source weight; no source settles the disagreement]; not stored |
 | Apple's tremolo wording | Legacy Electric Piano "Tremolo ... (wobbling pitch)" [Cited S3 p. 712] vs Vintage Electric Piano tremolo = amplitude [Cited S3 p. 700] and S8 | Tremolo is amplitude modulation; the Rhodes and Wurlitzer "vibrato" labels are tremolo [Cited S8, S13, S14] |
-| GM for the Wurlitzer | GM 5 "usually a Rhodes or Wurlitzer"; GM 6 "usually a Yamaha DX7 e. piano 1 preset" [Cited S16] | Map the Wurlitzer to GM 5, not 6 [Estimate]; a GM synth may still use 6 for a Wurlitzer-like sound |
+| GM for the Wurlitzer | GM 5 "usually a Rhodes or Wurlitzer"; GM 6 "usually a Yamaha DX7 e. piano 1 preset" [Cited S16] | Map the Wurlitzer to GM 5, not 6 [Estimate: inferred from S16's descriptions of GM 5 and GM 6]; a GM synth may still use 6 for a Wurlitzer-like sound |
 | GM 8 spelling | "Clavi" [Cited S18] vs "Clavinet" [Cited S16] | Use the spec's "Clavi" |
 | D6 manual tab count | AB, CD plus "the other four registers", yet "One of the four tabs must be depressed" [Cited S10] | Four tone tabs plus two pickup tabs, as S9 and S15 describe [Cited S9, S15] |
 | jRhodes licence | 3d `LICENSE` CC BY-NC 4.0; 3c `LICENSE` CC BY-NC-SA 4.0 linking the BY-NC deed; 3d `.sfz` header "CC-SA-BY" [Cited S20, S21] | Treat as non-commercial: user-installed only, never bundled (LIC-01 and the bundling rule in S25) |
 | Sonara sampler and jRhodes3d | FLAC, note names and velocity layers are supported; crossfades, LFO tremolo, half pedal and curves would be ignored [Cited S25, S20] | Test a load and render before recommending it [Estimate: untested] |
 | Catalog family | `family.rs` keywords lack "rhodes", "wurlitzer", "clavinet", "clav" [Cited S25] | Add them (or "epiano") so such patches are classed `keyboards`; a code change outside this research |
-| Free Wurlitzer and Clavinet samples | Wurlitzer: Greg Sullivan's EP200 (sfzinstruments), CC BY 3.0 Unported per `LICENSE` and README but `NOASSERTION` in GitHub's repository record [Cited S31]; Clavinet: none found in VCSL, VSCO 2 CE, FreePats or the visible sfzinstruments page [Cited S22, S23, S24, S26] | Wurlitzer: settle the licence disagreement before relying on CC BY 3.0, keep the attribution, test a load [Estimate]; Clavinet: search further (only 10 of 76 sfzinstruments repositories were visible) |
-| Effects as part of the instrument | Tremolo, phaser, chorus, drive, wah and the Clavinet mute are controls, not articulation ids | A control vocabulary (effect state per track) may be needed beside the 15 articulation ids [Estimate] |
+| Free Wurlitzer and Clavinet samples | Wurlitzer: Greg Sullivan's EP200 (sfzinstruments), CC BY 3.0 Unported per `LICENSE` and README but `NOASSERTION` in GitHub's repository record [Cited S31]; Clavinet: none found in VCSL, VSCO 2 CE, FreePats or the visible sfzinstruments page [Cited S22, S23, S24, S26] | Wurlitzer: settle the licence disagreement before relying on CC BY 3.0, keep the attribution, test a load [Estimate: design judgement; the licence records disagree and no load was tested]; Clavinet: search further (only 10 of 76 sfzinstruments repositories were visible) |
+| Effects as part of the instrument | Tremolo, phaser, chorus, drive, wah and the Clavinet mute are controls, not articulation ids | A control vocabulary (effect state per track) may be needed beside the 15 articulation ids [Estimate: design judgement; no source defines such a control vocabulary] |
 | 54-key Rhodes and 44-key Wurlitzer 106P ranges | key counts only [Cited S13, S14] | Not stored |
 
 ## Fact-check log
@@ -688,3 +759,6 @@ _Consistency review of 2026-10-30. No source was re-researched; no json value ch
   licence caveat (CC BY 3.0 Unported in `LICENSE` and README, `NOASSERTION` in GitHub's record), the patch's
   coverage and the opcodes Sonara supports or ignores (`sfz.rs`, S25). VCSL, VSCO 2 CE and FreePats still hold no
   Wurlitzer; the Clavinet gap is unchanged.
+- Gave every bare Estimate tag its reason (11 tags).
+- Added a "What a composer writes differently" block at the end of section 4 for the Rhodes piano, the Wurlitzer
+  electronic piano and the Clavinet, from the card's existing sources (no new source).

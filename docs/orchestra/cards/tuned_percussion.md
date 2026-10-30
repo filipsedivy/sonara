@@ -44,6 +44,7 @@ Transposition = sounding minus written, in semitones._
 | S38 | VCSL (Versilian Community Sample Library): repository metadata (licence CC0-1.0) and file tree | https://github.com/sgossner/VCSL | library maker | Yes (GitHub API) |
 | S39 | sfzformat.com, `lokey` opcode page | https://sfzformat.com/opcodes/lokey/ | spec | Yes |
 | S40 | Sonara repository (local checkout): `crates/sonara-midi/src/orchestration/{data.rs, articulation.rs}`, `crates/sonara-midi/tests/orchestration.rs`, `crates/sonara-midi/src/gm.rs`, `crates/sonara-app/src/instruments/family.rs`, `crates/sonara-media/src/sfz.rs`, `docs/orchestration-metadata.md`, `docs/sample-libraries.md`, `docs/orchestral-audio-engine-research.md` §5 | local | other | Yes |
+| S41 | Joey Brink, "Composing for Carillon" (Rockefeller Memorial Chapel, University of Chicago; dated 2017-12-19, first published by New Music USA) | https://rockefeller.uchicago.edu/2017/12/19/composing-for-carillon | other (carillonneur's composing guide) | Yes (raw page text, downloaded with curl) |
 | N1 | VSL Academy, old URL `/en/Timpani/Range` | https://www.vsl.co.at/en/Timpani/Range | library maker | No: HTTP 502. Not cited |
 | N2 | Adams Universal timpani manual (PDF with the "scalar range chart") | https://connect.eurosoft.net/ReisserCloud2/AdamsUniversal2.pdf | manufacturer | Downloaded, but the pages are images and could not be rendered here. Not cited |
 | N3 | The MIDI Association, "General MIDI Level 1" page | https://midi.org/general-midi-level-1 | spec | Opened: summary only, no program table. Not cited for a number (S21 is used instead) |
@@ -106,15 +107,15 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
 
 | Drum (diameter) | Yamaha TP-8300R range | MIDI (octaves inferred) | VSL Academy drum | VSL MIDI |
 |---|---|---|---|---|
-| 32 in (81 cm) | "D-B♭" [Cited S14] | 38-46 (D2-B♭2) [Estimate: octave placement] | D drum, 75-80 cm: "C2, D2 - H2, C3" [Cited S5] | 38-47; extremes 36 and 48 |
-| 29 in (74 cm) | "F-d♭" [Cited S14] | 41-49 (F2-D♭3) [Estimate] | G drum, 65-70 cm: "E2, F2 - D3, E3" [Cited S5] | 41-50; extremes 40 and 52 |
-| 27 in (69 cm) | "A♭-e" [Cited S14] | 44-52 (A♭2-E3) [Estimate] | (no matching class) | |
-| 26 in (66 cm) | "A-f" [Cited S14] | 45-53 (A2-F3) [Estimate] | C drum, 60-65 cm: "Ab2, Bb2 - G3, Ab3" [Cited S5] | 46-55; extremes 44 and 56 |
-| 24 in (61 cm) | "b-g" [Cited S14] | 47-55 (B2-G3) [Estimate] | F drum, 55-60 cm: "C3 - G#3" [Cited S5] | 48-56 |
-| 23 in (58 cm) | "c-a♭" [Cited S14] | 48-56 (C3-A♭3) [Estimate] | A drum, 50-60 cm: "C3, D3 - Bb3, C#4" [Cited S5] | 50-58; extremes 48 and 61 |
-| 20 in (51 cm) | "e-c" [Cited S14] | 52-60 (E3-C4) [Estimate] | B drum, 45-50 cm: "G3 - C4" [Cited S5] | 55-60 |
+| 32 in (81 cm) | "D-B♭" [Cited S14] | 38-46 (D2-B♭2) [Estimate: octave placement inferred from the size order; see the note below the table] | D drum, 75-80 cm: "C2, D2 - H2, C3" [Cited S5] | 38-47; extremes 36 and 48 |
+| 29 in (74 cm) | "F-d♭" [Cited S14] | 41-49 (F2-D♭3) [Estimate: octave placement inferred from the size order; see the note below the table] | G drum, 65-70 cm: "E2, F2 - D3, E3" [Cited S5] | 41-50; extremes 40 and 52 |
+| 27 in (69 cm) | "A♭-e" [Cited S14] | 44-52 (A♭2-E3) [Estimate: octave placement inferred from the size order; see the note below the table] | (no matching class) | |
+| 26 in (66 cm) | "A-f" [Cited S14] | 45-53 (A2-F3) [Estimate: octave placement inferred from the size order; see the note below the table] | C drum, 60-65 cm: "Ab2, Bb2 - G3, Ab3" [Cited S5] | 46-55; extremes 44 and 56 |
+| 24 in (61 cm) | "b-g" [Cited S14] | 47-55 (B2-G3) [Estimate: octave placement inferred from the size order; see the note below the table] | F drum, 55-60 cm: "C3 - G#3" [Cited S5] | 48-56 |
+| 23 in (58 cm) | "c-a♭" [Cited S14] | 48-56 (C3-A♭3) [Estimate: octave placement inferred from the size order; see the note below the table] | A drum, 50-60 cm: "C3, D3 - Bb3, C#4" [Cited S5] | 50-58; extremes 48 and 61 |
+| 20 in (51 cm) | "e-c" [Cited S14] | 52-60 (E3-C4) [Estimate: octave placement inferred from the size order; see the note below the table] | B drum, 45-50 cm: "G3 - C4" [Cited S5] | 55-60 |
 
-- **How the Yamaha letters were read.** They mix capitals and lower case without octave marks: "b-g" for 24 in cannot be B3-G4. So they are read as pitch classes, and the octaves follow from size order [Estimate].
+- **How the Yamaha letters were read.** They mix capitals and lower case without octave marks: "b-g" for 24 in cannot be B3-G4. So they are read as pitch classes, and the octaves follow from size order [Estimate: inferred from the minor-sixth spans and the size order; S14 prints no octave marks].
   - Fact-check note: five of the seven entries ("D-B♭", "F-d♭", "A♭-e", "A-f", "c-a♭") read directly as Helmholtz notation (capital = the C2 octave, lower case = the C3 octave) and give exactly the MIDI numbers in the table [Cited S14 for the letters; the Helmholtz reading is an Estimate]. Only "e-c" (top c' without its prime) and "b-g" (lower-case b for B2) need the pitch-class reading. This supports the octave placement.
   - Every model spans exactly a minor sixth (8 semitones), which fits VSL's "about a sixth" per drum [Cited S5].
   - The ends of the scale fit too: a 20-inch drum reaches C4 and a 33-inch drum reaches C2 [Cited S23].
@@ -306,7 +307,7 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
 | Technique | Vocabulary id | Source | Library implementation (read) |
 |---|---|---|---|
 | Single stroke (short by nature) | `staccato` | [Cited S6] | VSCO: one velocity layer, 8 samples [Cited S36] |
-| Accent | `marcato` | [Estimate] | velocity |
+| Accent | `marcato` | [Estimate: general notation; no source names it for the xylophone] | velocity |
 | Roll / tremolo, also chord tremolo | `tremolo` | [Cited S6] | VSL: static rolls, and dynamic rolls of 0.5/1/3 s selected by CC1 [Cited S13] |
 | Glissando (diatonic, pentatonic, parallel) | `glissando` (new) | [Cited S2, S6] | VSL: glissandos C4-G♯6 [Cited S13] |
 | Dead stroke | `dead_stroke` (new) | [Cited S6] | none seen |
@@ -336,7 +337,7 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
 
 ### 8. Variants and related instruments (when a player changes instrument)
 
-- **Xylorimba and bass xylophone:** not researched [Estimate].
+- **Xylorimba and bass xylophone:** not researched [Estimate: no source was opened for these two variants].
 - **Marimba:** has softer bars and the same layout, and is played with softer mallets [Cited S4, S7].
 - **Col legno strings:** an orchestral substitute sound [Cited S1].
 
@@ -363,7 +364,7 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
 | Sonatina SO `Percussion/Xylophone.sfz` | CC Sampling Plus 1.0 | keys 43-82; uses `fil_type`, `cutoff`, `ampeg_decay` and `ampeg_sustain` | [Cited S37] |
 | VSL Synchron Percussion I | commercial | Adams Artist Alpha C4-C8; wood, leather and bow; rolls; glissandos | [Cited S13] |
 
-- **Mapping octaves.** VSCO maps the xylophone to 55-96 and SSO to 43-82 [Cited S36, S37]. Both lie 1-2 octaves below the sounding instrument (60-108). Whether the samples sit at written pitch or the names use another octave convention cannot be settled from the files [Estimate].
+- **Mapping octaves.** VSCO maps the xylophone to 55-96 and SSO to 43-82 [Cited S36, S37]. Both lie 1-2 octaves below the sounding instrument (60-108). Whether the samples sit at written pitch or the names use another octave convention cannot be settled from the files [Estimate: comparison of the S36 and S37 key maps with S6's range; neither library states its octave convention].
 - Sonara ignores SSO's filter and decay opcodes [Cited S40: they are not in the supported list].
 
 ## marimba: Marimba
@@ -436,7 +437,7 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
 - Mainly a solo and ensemble instrument, with an orchestral role growing since the mid-20th century [Cited S7].
-- One player [Estimate].
+- One player [Estimate: no opened source gives a player count].
 
 ### 7. Role in the orchestra and typical doublings
 
@@ -538,7 +539,7 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
 | Italian | vibrafono | [Cited S34] |
 | German | Vibraphon | [Cited S34] |
 | French | vibraphone | [Cited S34] |
-| Score | "Vib." | [Estimate] |
+| Score | "Vib." | [Estimate: common publishing practice, no opened source prints it] |
 
 ### 2. Sound production
 
@@ -560,7 +561,7 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
 | 4 octaves | C3-C7 | 48-96 | Yamaha YV-4110 "C28-C76" [Cited S17] |
 
 - Written at pitch, treble clef, one staff [Cited S8]. S26 confirms concert pitch ("generally a non-transposing instrument") but names no clef [Cited S26].
-- **Disagreement:** Hugill gives "F3 to F5 (notated at pitch)" [Cited S4]. That is two octaves; every other source gives F3-F6 [Cited S8, S17, S26]. S4 is treated as a slip [Estimate].
+- **Disagreement:** Hugill gives "F3 to F5 (notated at pitch)" [Cited S4]. That is two octaves; every other source gives F3-F6 [Cited S8, S17, S26]. S4 is treated as a slip [Estimate: judgement; three sources (S8, S17, S26) agree on F3-F6].
 - The low register "cannot assert itself very well" [Cited S8].
 
 ### 4. Dynamics by register, colour by register, agility, breath/bow/physical limits
@@ -592,7 +593,7 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One player [Estimate].
+- One player [Estimate: no opened source gives a player count].
 - It plays harmonic and solo roles, especially in smaller ensembles [Cited S8].
 
 ### 7. Role in the orchestra and typical doublings
@@ -603,7 +604,7 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
 ### 8. Variants and related instruments (when a player changes instrument)
 
 - Electronic vibraphones, for example the Deagan ElectraVibe of 1970 [Cited S26].
-- Mallet changes between vibraphone, glockenspiel and marimba are common in film setups [Estimate].
+- Mallet changes between vibraphone, glockenspiel and marimba are common in film setups [Estimate: general percussion practice; no opened source states it].
 
 ### 9. General MIDI and existing Sonara metadata
 
@@ -618,7 +619,7 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
 | Sonatina SO `Percussion/Vibraphone.sfz` | CC Sampling Plus 1.0 | keys 48-89; LFO vibrato on CC21, a high-pass filter, sustain pedal | [Cited S37] |
 | VSCO 2 CE | CC0 1.0 | no vibraphone SFZ in the `SFZ` branch | [Cited S36] |
 
-- VCSL's file names start at "A2" (`Vibes_soft_A2_…`), below the instrument's F3 [Cited S38, S8]. The names therefore use another octave convention [Estimate].
+- VCSL's file names start at "A2" (`Vibes_soft_A2_…`), below the instrument's F3 [Cited S38, S8]. The names therefore use another octave convention [Estimate: inferred from S38's file names against S8's lowest note, F3].
 
 ## glockenspiel: Glockenspiel
 
@@ -635,7 +636,7 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
 | Italian | campanelli; Forsyth: "Campanetta" | [Cited S1, S2, S27] |
 | German | Glockenspiel | [Cited S27, S34] |
 | French | jeu de timbres; also "carillon" | [Cited S2, S27] |
-| Score | "Glock." | [Estimate] |
+| Score | "Glock." | [Estimate: common publishing practice, no opened source prints it] |
 
 - The Czech collision is resolved in the carillon card. Default: Czech "zvonkohra" in an orchestral context means this instrument [Estimate: S33 describes the orchestral zvonkohra as 2-3 octaves of flat metal plates struck with mallets or keyboard hammers].
 
@@ -691,12 +692,12 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
 | Trill | `trill` | [Cited S9] | none seen |
 | Glissando | `glissando` (new) | [Cited S9] | VSL: glissandos C4-D♯6 (keys), high/mid/low/full, slow/fast, up/down [Cited S13] |
 | Bowed | `bowed` (new) | [Cited S13] | VSL "Bowed" [Cited S13] |
-| Accent | `marcato` | [Estimate] | velocity |
+| Accent | `marcato` | [Estimate: general notation; no source names it for the glockenspiel] | velocity |
 | Beater (metal, plastic, bow) | control | [Cited S13] | VSL: separate patches [Cited S13] |
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One percussionist [Estimate].
+- One percussionist [Estimate: no opened source gives a player count].
 - "Solos are fairly rare, though very effective and noticeable" [Cited S9].
 
 ### 7. Role in the orchestra and typical doublings
@@ -762,7 +763,7 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
 | Italian | campane tubolari; Forsyth: campane | [Cited S2, S34] |
 | German | Röhrenglocken; Forsyth: Glocken | [Cited S2, S34] |
 | French | cloches (tubulaires); the fr Wikipedia title is "Carillon tubulaire" | [Cited S2, S34] |
-| Score | "Tub. B." or "Chimes" | [Estimate] |
+| Score | "Tub. B." or "Chimes" | [Estimate: common publishing practice, no opened source prints the abbreviation] |
 
 - English Wikipedia has no Czech interlanguage link for this article [Cited S34].
 - Score parts usually say "Campane" or "Glocken" [Estimate: from S2's name list].
@@ -821,7 +822,7 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One percussionist [Estimate].
+- One percussionist [Estimate: no opened source gives a player count].
 
 ### 7. Role in the orchestra and typical doublings
 
@@ -873,8 +874,8 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
 | Czech | krotaly | [Cited S34] |
 | Italian | crotali | [Cited S34] |
 | German | Crotales (also "antike Zimbeln") | "Crotales" [Cited S34]; "antike Zimbeln" [Estimate: not seen in an opened source] |
-| French | crotales (also "cymbales antiques") | "Crotales" [Cited S34]; "cymbales antiques" [Estimate] |
-| Score | "Crot." | [Estimate] |
+| French | crotales (also "cymbales antiques") | "Crotales" [Cited S34]; "cymbales antiques" [Estimate: general orchestral usage; not seen in an opened source] |
+| Score | "Crot." | [Estimate: common publishing practice, no opened source prints it] |
 
 ### 2. Sound production
 
@@ -899,12 +900,12 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
 |---|---|---|---|
 | Struck with hard mallet | `let_ring` (new) / default | [Cited S4, S29] | SSO: pp and ff samples per note, selected by `xfin/xfout` crossfade [Cited S37] |
 | Bowed | `bowed` (new) | [Cited S29] | none seen |
-| Damped | `damped` (new) | [Estimate] | none seen |
-| Roll | `tremolo` | [Estimate] | none seen |
+| Damped | `damped` (new) | [Estimate: by analogy with the other metal idiophones (section 4); no opened source describes it for crotales] | none seen |
+| Roll | `tremolo` | [Estimate: by analogy with the other mallet instruments; no opened source describes it for crotales] | none seen |
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One percussionist, usually also covering glockenspiel or vibraphone [Estimate].
+- One percussionist, usually also covering glockenspiel or vibraphone [Estimate: general percussion practice; no opened source gives a player count or doubling].
 
 ### 7. Role in the orchestra and typical doublings
 
@@ -934,7 +935,7 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
 ## carillon: Carillon
 
 ```json
-{"id": "carillon", "family": "percussion", "names": {"en": "Carillon", "cs": "zvonohra (věžní zvonkohra)", "it": "carillon", "de": "Carillon", "fr": "carillon", "score_abbreviation": "Car."}, "pitched": true, "transposition": 0, "clefs": ["treble", "bass"], "sounding_playable": [48, 96], "sounding_comfortable": null, "range_provenance": {"playable": "Estimate: a representative four-octave concert carillon in C, non-transposing. A concert carillon has 45-50 bells, about four octaves [Cited S30], and most instruments are 4-4½ octaves [Cited S32]; the lowest pedal C is normally tenor C, 'the second space on the bass clef', C3 [Cited S30, in a quoted reference note]; many C-compass carillons lack the lowest C# and Eb bells, i.e. 49 and 51 here [Cited S30]. Real instruments range from 2 to more than 6 octaves [Cited S32] and transpose from down a fourth to up an octave [Cited S30]", "comfortable": "Estimate: not defined; the range belongs to each tower instrument"}, "written_playable": [48, 96], "gm_program": null, "gm_program_name": null, "gm_percussion_notes": [], "existing_sonara_id": null, "articulations_existing_vocab": ["tremolo", "marcato"], "articulations_proposed_new": ["let_ring"], "articulations_provenance": "Cited S32: touch-sensitive expression, bells ring until the vibration dies, dampers only deaden. Tremolo (repeated batons) and marcato are Estimates", "solo_or_section": "solo", "typical_players": {"classical": "not an orchestral instrument", "romantic": "not an orchestral instrument", "film": "sampled or recorded tower", "chamber": "1 carillonneur (solo instrument)"}, "keyboard": {"action": "mechanical baton clavier: wooden batons played with the closed fist, connected by wires to the clappers; pedalboard of 1-2 octaves for the bass bells", "keys": 49, "lowest": 48, "highest": 96, "pedals": [], "pedal_ccs": {}, "sympathetic_resonance": "all bells hang free and undamped; struck bells and their minor-third (tierce) partials sustain together", "release_and_mechanical_noise": "audible clapper and transmission noise from the clavier; no damper release", "decay": "each bell rings until its vibration dies out naturally; large bells ring for a long time", "dynamic_range": "touch-sensitive, similar to a piano's range"}}
+{"id": "carillon", "family": "percussion", "names": {"en": "Carillon", "cs": "zvonohra (věžní zvonkohra)", "it": "carillon", "de": "Carillon", "fr": "carillon", "score_abbreviation": "Car."}, "pitched": true, "transposition": 0, "clefs": ["treble", "bass"], "sounding_playable": [48, 96], "sounding_comfortable": null, "range_provenance": {"playable": "Estimate: a representative four-octave concert carillon in C, non-transposing. A concert carillon has 45-50 bells, about four octaves [Cited S30], and most instruments are 4-4½ octaves [Cited S32]; the lowest pedal C is normally tenor C, 'the second space on the bass clef', C3 [Cited S30, in a quoted reference note]; many C-compass carillons lack the lowest C# and Eb bells, i.e. 49 and 51 here [Cited S30]. Real instruments range from 2 to more than 6 octaves [Cited S32] and transpose from down a fourth to up an octave [Cited S30]", "comfortable": "Estimate: not defined; the range belongs to each tower instrument"}, "written_playable": [48, 96], "gm_program": null, "gm_program_name": null, "gm_percussion_notes": [], "existing_sonara_id": null, "articulations_existing_vocab": ["tremolo", "marcato"], "articulations_proposed_new": ["let_ring"], "articulations_provenance": "Cited S32: touch-sensitive expression, bells ring until the vibration dies, dampers only deaden. Tremolo (repeated batons) Cited S30, S41; marcato an Estimate (accents come from touch, no source names a marcato)", "solo_or_section": "solo", "typical_players": {"classical": "not an orchestral instrument", "romantic": "not an orchestral instrument", "film": "sampled or recorded tower", "chamber": "1 carillonneur (solo instrument)"}, "keyboard": {"action": "mechanical baton clavier: wooden batons played with the closed fist, connected by wires to the clappers; pedalboard of 1-2 octaves for the bass bells", "keys": 49, "lowest": 48, "highest": 96, "pedals": [], "pedal_ccs": {}, "sympathetic_resonance": "all bells hang free and undamped; struck bells and their minor-third (tierce) partials sustain together", "release_and_mechanical_noise": "audible clapper and transmission noise from the clavier; no damper release", "decay": "each bell rings until its vibration dies out naturally; large bells ring for a long time", "dynamic_range": "touch-sensitive, similar to a piano's range"}}
 ```
 
 ### 1. Identity and names (Czech, English, Italian, German, French; how it appears in a score; family)
@@ -947,7 +948,7 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
 | Italian | carillon | [Cited S34] |
 | German | Carillon; also "Glockenspiel", which in German can mean a carillon | [Cited S27, S30, S34] |
 | French | carillon | [Cited S30, S34] |
-| Score | "Car." | [Estimate] |
+| Score | "Car." | [Estimate: formed like the other abbreviations; no opened source prints one] |
 
 - **The Czech ambiguity.** Czech Wikipedia covers both words in one article [Cited S33]:
   - *zvonkohra*: an instrument or musical machine of tuned metal elements. The small orchestral ones are flat plates struck by mallets or keyboard hammers, with a range of 2-3 octaves.
@@ -984,7 +985,7 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
 - **The JSON is an Estimate:**
   - It shows a 49-key clavier C3-C7 at concert pitch.
   - For a real tower, store that tower's own range and transposition.
-  - The Prague mobile carillon's "F1-d6" is not converted, because the Czech octave naming is not defined in S33 [Estimate].
+  - The Prague mobile carillon's "F1-d6" is not converted, because the Czech octave naming is not defined in S33 [Estimate: judgement; S33 does not define its octave naming, so a conversion would be a guess].
 - Clefs: two staves, treble and bass; the treble clef marks what the hands play and the bass clef what the feet play [Cited S30].
 
 ### 4. Dynamics by register, colour by register, agility, breath/bow/physical limits
@@ -996,12 +997,41 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
   - at most 4 simultaneous notes;
   - no fast repetition on the largest bells.
 
+What a composer writes differently for the carillon:
+
+- **No pedalling and no damping.** A struck bell rings until its vibration dies [Cited S32, S41]: large bells for up to
+  about 30 s, small ones sometimes only a few seconds [Cited S41]. A part has no damper-pedal marks; each harmony rings into
+  the next, and rapid harmonic changes in the bass blur [Cited S41]. Holding the clapper against the bell mutes it, but players
+  advise against it [Cited S41].
+- **Voicing around the minor-third partial.** Bells have a prominent minor-third overtone, the tierce [Cited S30, S41].
+  A close major triad in the bass bells does not sound major, so major chords are spaced out (C-G-E rather than C-E-G),
+  while minor and diminished chords sound natural low down [Cited S41].
+- **Dynamics by touch, loudest in the bass.** Touch sets the dynamic [Cited S30, S32]. The large bass bells have more
+  dynamic range and the small treble bells reach only a fraction of their volume, so a crescendo works better moving down
+  the keyboard, and the melody may go in the bass with the treble accompanying ("think upside down") [Cited S41]. Soft and
+  fast at once is hard: the deep key fall (1.6-2.2 in) must be prepared for a pp note [Cited S41].
+- **Sustain by tremolo and rolls.** Tremolo answered the carillon's inability to sustain single notes expressively [Cited
+  S30]; it is played between the two hands, or with a cluster in each hand [Cited S41]. Rolled chords are idiomatic: an
+  upward arrow asks for an open-handed roll, a lightning-bolt sign for a broken roll with alternating fists [Cited S41].
+- **One note per fist.** Traditional technique strikes each key with a closed fist, one note per hand, and a four-note
+  chord takes two hands and two feet; on lighter claviers one open hand can take two notes up to a fourth apart [Cited S41].
+  The keys lie 14 in per octave against the piano's 6.5 in, so fast leaps are hard; fast independent hands stay within
+  about two octaves of each other, and fast repeated notes belong to the upper range, not to the heavy bass bells or the
+  pedals [Cited S41]. Compared with the concert grand, avoid dense chords in one hand and wide fast leaps [Estimate:
+  follows from the facts in this bullet].
+- **Range and transposition.** Most pieces are written for, or made playable on, a four-octave C3-C7 carillon without the
+  lowest C#3, which suits most concert instruments [Cited S41] (compare the json's 48-96 and the missing-bell note in
+  section 3). Many towers transpose, from down a perfect fourth to up an octave [Cited S30, S41], so the same written
+  part sounds at a different pitch on each [Estimate: follows from the transposition range].
+- **Notation.** Two staves: the top for the manual, read in treble clef, the bottom for the pedals, in bass clef [Cited
+  S30, S41]; players prefer 8va or 8vb beyond the third ledger line to a change of clef [Cited S41].
+
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
 | Technique | Id | Source | Library implementation (read) |
 |---|---|---|---|
 | Struck note, ringing | `let_ring` (new) / default | [Cited S32] | none read |
-| Tremolo (repeated batons) | `tremolo` | [Estimate: common carillon idiom, not in an opened source] | none read |
+| Tremolo (repeated batons) | `tremolo` | [Cited S30, S41] (see "What a composer writes differently" in section 4) | none read |
 | Accent / touch dynamics | `marcato`, velocity | expression through touch [Cited S32]; the `marcato` id for it is an Estimate | none read |
 
 - No carillon sample library was searched or read [Estimate: out of time]. See the open questions.
@@ -1078,7 +1108,7 @@ Timpani are non-transposing and written in bass clef [Cited S5]. Until about 180
     - Family `percussion` vs `keyboards`.
     - The JSON range is a representative C3-C7 instrument (Estimate). Real towers need a per-instance range and transposition.
     - No carillon sample source was searched. The GM1 fallback is 15 "Tubular Bells"; GM2 has variation 2 "Carillon Bells" [S22].
-    - Dampers: the JSON `keyboard` object describes the bells as undamped with no damper release, while §4 cites S32 that dampers only deaden the sound [S32]. Whether S32 means that some carillons carry dampers, or that dampers are avoided for that reason, was not re-checked.
+    - Dampers: the JSON `keyboard` object describes the bells as undamped with no damper release, while §4 cites S32 that dampers only deaden the sound [S32]. Whether S32 means that some carillons carry dampers, or that dampers are avoided for that reason, was not re-checked. S41 settles the practice: each key can hold the clapper against the bell to mute it, and players advise against it, so the undamped model stands [S41].
 16. **Family inference gaps** [S40]. The keyword list lacks "chimes", "tubular", "crotales", "carillon", "vibes", "glock" and "celeste". Sonatina's `Celeste.sfz` sits in a `Percussion` folder and would be inferred as percussion, while the celesta is a keyboards instrument (family.rs doc comment).
 17. **GM coverage.** GM1 has no channel-10 note for any instrument in this group [S21]. The GM2 Orchestra Kit (49) contains timpani, but its note numbers were not read [S22].
 18. **Rimsky-Korsakov's Table E** was read by eye from an image. Its endpoints (xylophone low "confused" F3-A3; keyboard glockenspiel G3-C6/D6) are Estimates and should be checked against a clearer scan.
@@ -1163,3 +1193,6 @@ _Consistency review, 2026-10-30: json against prose, written = sounding - transp
 - carillon §5, accent row: touch expression stays Cited S32, the `marcato` id is marked an Estimate, matching the json.
 - Open question 15: recorded that the json `keyboard` object (undamped bells) and §4 (S32: dampers only deaden the sound) may disagree.
 - Articulation ids in the json blocks of `vibraphone` were harmonized to the shared vocabulary (`multitongue`, `double_tonguing` and `triple_tonguing` become `multi_tongue`; `muted_string` becomes `palm_mute`; `pitch_bend` becomes `portamento`); the prose keeps the original wording.
+- Gave every bare Estimate tag its reason (28 tags); the seven cells of the timpani table's MIDI column now carry one reason, including the 32-in row, which already had a shorter one.
+- Added a "What a composer writes differently" block at the end of section 4 for the carillon, the only instrument in this file with a `keyboard` object, citing new source S41 (Brink, "Composing for Carillon") and S30. The keyboard glockenspiel is a variant inside the glockenspiel card (`keyboard: null`), so it got no block of its own.
+- Carillon: the tremolo row now cites S30 and S41 like the new composer block, and open question 15 records that S41 settles the damping practice.

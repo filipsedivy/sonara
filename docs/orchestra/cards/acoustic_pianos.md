@@ -54,6 +54,7 @@ Transposition = sounding minus written, in semitones._
 | S45 | SFZ Format, opcode reference `sw_lokey` (note names C-1 to G9 for MIDI 0-127) | https://sfzformat.com/opcodes/sw_lokey/ | spec | Yes (added by the fact-check) |
 | S46 | MakeMusic, *Finale 2012* user manual, "General MIDI Patch Numbers & Names" (patches 1-128) | https://usermanuals.finalemusic.com/Finale2012Win/Content/Finale/General_MIDI_Patch_Numbers_F_Names.htm | other | Yes (added by the fact-check; second source for the GM program numbers, because S30 has no table) |
 | S47 | VCSL, GitHub REST tree of tag `v1.2.2-RC` (recursive; 183 `.sfz` files, among them `Chordophones/Zithers/Grand Piano, Steinway B.sfz`, `Grand Piano, Kawai.sfz`, `Grand Piano, Kawai - Legacy.sfz`, `Upright Piano, Knight.sfz`, `Upright Piano, Yamaha.sfz`) | https://api.github.com/repos/sgossner/VCSL/git/trees/v1.2.2-RC?recursive=1 | library maker | Yes (file list only; no `.sfz` file was opened; added in the consistency review) |
+| S48 | Wikipedia, "Stride piano" | https://en.wikipedia.org/wiki/Stride_piano | encyclopedia | Yes (left-hand and right-hand patterns and the link to ragtime; added with the keyboard-writing blocks) |
 
 Conventions used by every card below:
 
@@ -147,7 +148,7 @@ string in the upper two treble sections [Cited S11]. The Imperial's extra bass s
 | Clefs | two staves, F clef for the left hand, G clef for the right, interchanged when the hands move | [Cited S3] |
 | 19th-century compass | "six octaves and seven-eighths" in Berlioz's time | [Cited S3] |
 | Register breaks | 1 string/2 strings/3 strings per note; the change points differ per model | [Cited S11] for the groups; break keys [Estimate: not in an opened source] |
-| Undamped top | above F6 (read as 89; see section 2) | [Cited S23 for Keyscape's LA Custom C7]; the MIDI number and other models [Estimate] |
+| Undamped top | above F6 (read as 89; see section 2) | [Cited S23 for Keyscape's LA Custom C7]; the MIDI number and other models [Estimate: S23 states no octave convention (see section 2), and no opened source gives the first undamped key of other models] |
 | Hammer knock | audible from about A4 (key 49 = MIDI 69) upward | [Cited S20] |
 
 ### 4. Dynamics by register, colour by register, agility, breath/bow/physical limits
@@ -181,12 +182,12 @@ What a composer writes differently for the piano:
 | Id | Piano meaning | MIDI implementation | Provenance |
 |---|---|---|---|
 | sustain | ordinary key stroke, the default patch | velocity layers; note-off triggers the damper | [Estimate: mapping; "sustain" is the default patch id in the vocabulary, S39] |
-| legato | finger legato (overlap of notes) and pedal legato | note overlap plus CC64; no legato script is needed, the instrument is polyphonic | [Estimate] |
+| legato | finger legato (overlap of notes) and pedal legato | note overlap plus CC64; no legato script is needed, the instrument is polyphonic | [Estimate: general piano and MIDI practice; no opened source describes piano legato in MIDI] |
 | staccato, staccatissimo, portato, tenuto | note length (and velocity) only | short or long notes; no separate samples in the libraries read | [Estimate: none of S24, S26, S32, S33 has a staccato patch] |
-| marcato, accent, sforzando | louder attack | higher velocity | [Estimate] |
+| marcato, accent, sforzando | louder attack | higher velocity | [Estimate: general piano practice; no opened source lists piano articulations] |
 | trill | practicable on every note | played as notes | [Cited S3] |
-| tremolo | alternation of notes, octaves or chords | played as notes | [Estimate] |
-| glissando | sweep over white (or black) keys | played as fast notes | [Estimate] |
+| tremolo | alternation of notes, octaves or chords | played as notes | [Estimate: general piano practice; no opened source lists piano articulations] |
+| glissando | sweep over white (or black) keys | played as fast notes | [Estimate: general piano practice; no opened source lists piano articulations] |
 | let_ring | dampers held off | CC64 held | [Cited S3, S11 for the pedal effect] |
 | cluster (new) | adjacent keys struck together with the palm, fist or forearm | chord of adjacent notes | [Estimate: definition of the new id] |
 
@@ -205,7 +206,8 @@ library S38 is the exception, with five sampled articulations (see `piano_prepar
 
 - One player, or two at one instrument "à quatre mains"; Berlioz describes an orchestral four-hand part [Cited S3].
 - Berlioz imagines many grand pianos together, like harps, but notes that a dozen would not fit a moderate orchestra
-  [Cited S3]. Sections of pianos are otherwise not an orchestral norm [Estimate].
+  [Cited S3]. Sections of pianos are otherwise not an orchestral norm [Estimate: general orchestral practice; no opened
+  source describes a piano section in regular use].
 - `solo_or_section`: solo [Estimate: one player per instrument; no divisi concept].
 
 ### 7. Role in the orchestra and typical doublings
@@ -219,7 +221,8 @@ library S38 is the exception, with five sampled articulations (see `piano_prepar
 - Berlioz praises the high, slow piano figures over winds in Beethoven's Eb concerto [Cited S3].
 - Typical doublings: harp, celesta, glockenspiel and pizzicato strings for attack; low strings for bass octaves
   [Estimate: general practice; S2 names the harp and celesta substitutions].
-- Film and media: a concert grand often carries a solo theme over strings [Estimate].
+- Film and media: a concert grand often carries a solo theme over strings [Estimate: general film-scoring practice; no opened
+  source covers media use].
 
 ### 8. Variants and related instruments (when a player changes instrument)
 
@@ -229,7 +232,7 @@ library S38 is the exception, with five sampled articulations (see `piano_prepar
 | Fazioli F308 | fourth pedal left of the usual three: shorter hammer blow, lower volume without a timbre change; helps pianissimo, glissando and fast passages | [Cited S8, S12] |
 | Studio grand | shorter grand; see `piano_studio_grand` | [Cited S41 size classes] |
 | Celesta | steel plates instead of strings; Rimsky-Korsakov wants an upright piano, not glockenspiel, as its substitute | [Cited S1] |
-| Doubling roles | an orchestral pianist often also plays celesta [Estimate: common orchestral practice] | [Estimate] |
+| Doubling roles | an orchestral pianist often also plays celesta [Estimate: common orchestral practice] | [Estimate: see the reason in the Difference column] |
 
 ### 9. General MIDI and existing Sonara metadata
 
@@ -246,7 +249,7 @@ library S38 is the exception, with five sampled articulations (see `piano_prepar
 
 | Library | Licence as stated | Coverage | Plays in the Sonara sampler? | Provenance |
 |---|---|---|---|---|
-| VCSL "Grand Piano, Steinway B" | CC0 | folders `Sus`, `NoSus`, `Rel`; a 211 cm Steinway B is a studio-size grand, not a concert grand (S5) | `master` holds the WAVs only; the patch `Grand Piano, Steinway B.sfz` is in tag `v1.2.2-RC` (S47). The patch was not opened, so playback in Sonara is not checked [Estimate] | [Cited S34, S5, S47] |
+| VCSL "Grand Piano, Steinway B" | CC0 | folders `Sus`, `NoSus`, `Rel`; a 211 cm Steinway B is a studio-size grand, not a concert grand (S5) | `master` holds the WAVs only; the patch `Grand Piano, Steinway B.sfz` is in tag `v1.2.2-RC` (S47). The patch was not opened, so playback in Sonara is not checked [Estimate: only the file list (S47) was read; the patch was not opened or loaded in the Sonara sampler] | [Cited S34, S5, S47] |
 | VSL Synchron Pianos (Steinway D, Bösendorfer Imperial, Fazioli F308) | commercial EULA | pedals, half-pedal, sympathetic resonance, noises | no: needs plugin hosting | [Cited S26]; licence [Estimate: not read] |
 | Apple Studio Piano "Concert Grand" | ships with Logic Pro | three microphone signals (Stereo Mic A condenser pair, Stereo Mic B ribbon pair, Mono Mic ribbon), noises, resonance | no: Logic only | [Cited S24] |
 | No free concert-grand (9 ft class) SFZ was found | | | | [Estimate: only S31, S32, S33, S34 were inspected] |
@@ -265,8 +268,8 @@ library S38 is the exception, with five sampled articulations (see `piano_prepar
 | German | Salon-, Konservatorien- oder Studioflügel (about 180-210 cm); Halbkonzertflügel 210-240 cm | [Cited S41] |
 | Italian | mezza coda 170-200 cm; tre quarti di coda 200-240 cm | [Cited S43] |
 | French | demi-queue, trois-quarts de queue; the French article says these names follow no size standard | [Cited S42] |
-| Czech | křídlo (generic); no separate Czech size term was found | [Cited S40] for "křídlo"; the qualifier [Estimate] |
-| Score | "Piano" / "Pno."; the size is never written in a score | [Estimate] |
+| Czech | křídlo (generic); no separate Czech size term was found | [Cited S40] for "křídlo"; the qualifier [Estimate: descriptive Czech words; S40 gives no size term] |
+| Score | "Piano" / "Pno."; the size is never written in a score | [Estimate: scores name the piano generically; the size classes in S11 and S41 are makers' categories] |
 
 - "Studio grand" is a convention, not a standard: S42 says the French size names mean nothing fixed, and the lower
   bound of a concert grand differs (2.2 m in S11, 240 cm in S41 and S43) [Cited S11, S41, S42, S43]. This card uses
@@ -279,7 +282,7 @@ library S38 is the exception, with five sampled articulations (see `piano_prepar
 |---|---|---|---|
 | Yamaha C3X / C5X / C6X / C7X | 186 / 200 / 212 / 227 cm; 320-415 kg | Damper / Sostenuto / Shift | [Cited S10] |
 | Steinway Model B | 211 cm, 364 kg; longest string 151 cm (Model D: 201 cm) | soft, sustaining, full sostenuto | [Cited S5, S4] |
-| Yamaha C5 (Salamander Grand Piano source) | C5X today is 200 cm (S10); the older C5's length is not stated | | [Cited S31, S10]; old C5 length [Estimate] |
+| Yamaha C5 (Salamander Grand Piano source) | C5X today is 200 cm (S10); the older C5's length is not stated | | [Cited S31, S10]; old C5 length [Estimate: S31 and S10 do not state it, so the card gives no value] |
 
 - Same action, hammers, dampers and two-stage decay as the concert grand [Estimate: S19 says all modern grand actions
   are identical in principle, which is cited; equal hammers and dampers are an estimate].
@@ -297,8 +300,8 @@ library S38 is the exception, with five sampled articulations (see `piano_prepar
 | Comfortable | 21-108 | [Estimate: convention above] |
 | Transposition | 0 | [Cited S3] |
 | Clefs | treble and bass on two staves | [Cited S3] |
-| Undamped top | no dampers above F6 on Keyscape's "LA Custom C7" (F6 read as 89, see the concert grand card) | [Cited S23]; the MIDI number and the Yamaha identity [Estimate] |
-| Register breaks | as the concert grand | [Estimate] |
+| Undamped top | no dampers above F6 on Keyscape's "LA Custom C7" (F6 read as 89, see the concert grand card) | [Cited S23]; the MIDI number and the Yamaha identity [Estimate: S23 states no octave convention and does not mention Yamaha; see the concert grand card, section 2] |
+| Register breaks | as the concert grand | [Estimate: S11 gives the 1/2/3-string groups for pianos in general; no opened source gives a studio grand's break keys] |
 
 ### 4. Dynamics by register, colour by register, agility, breath/bow/physical limits
 
@@ -309,9 +312,27 @@ library S38 is the exception, with five sampled articulations (see `piano_prepar
 - Power: less than a concert grand in a hall [Estimate: S11's size rule].
 - Agility and hand limits as on the concert grand [Cited S3, S19].
 
+What a composer writes differently for the studio grand:
+
+- **Pedalling and notation are the concert grand's.** The studio grands read have three pedals: Damper, Sostenuto
+  and Shift on the Yamaha CX models [Cited S10]; soft, sustaining and full sostenuto on the Steinway B [Cited S5].
+  The same "Ped." marks and "una corda" / "tre corde" apply [Cited S3, S13]. The part is still headed "Piano"
+  [Estimate: scores name the piano generically; see section 1].
+- **Bass register.** Shorter strings give a smaller sound and more inharmonicity [Cited S11], and the Steinway B's
+  longest string is 50 cm shorter than the D's [Cited S4, S5]. Low octaves, close low chords and long pedalled bass
+  notes carry less weight and die sooner than on a concert grand, so a full low end needs doubling or open spacing
+  [Estimate: from S11's rule, as in section 2; no opened source measures it].
+- **Power and balance.** A piano that competes forcibly with a full orchestra "vanishes" [Cited S3], and a studio
+  grand has less power in a hall than a concert grand [Estimate: S11's size rule]. With orchestra, give it
+  accompanied or exposed moments rather than tutti doubling [Estimate: design judgement from S3's advice].
+- **What stays the same.** Hand span, chord sizes and fast repetition are as on the concert grand, because all modern
+  grand actions are identical in principle [Cited S19, S3]; a part written for one plays unchanged on the other
+  [Estimate: the same keyboard, action and pedals].
+
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
-Articulation ids and their MIDI mapping are the same as for `piano_concert_grand` [Estimate].
+Articulation ids and their MIDI mapping are the same as for `piano_concert_grand` [Estimate: the same keyboard
+and action; S24, S26 and S32 give the studio grand no other articulation patches].
 
 | Library / manual | Implementation | Provenance |
 |---|---|---|
@@ -326,7 +347,7 @@ Articulation ids and their MIDI mapping are the same as for `piano_concert_grand
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One player [Estimate]. `solo_or_section`: solo.
+- One player [Estimate: one player per instrument and no divisi, as for the concert grand; no opened source discusses it]. `solo_or_section`: solo.
 
 ### 7. Role in the orchestra and typical doublings
 
@@ -358,8 +379,8 @@ Articulation ids and their MIDI mapping are the same as for `piano_concert_grand
 |---|---|---|---|---|
 | Salamander Grand Piano V3 (Yamaha C5, Alexander Holm) | Creative Commons Attribution 3.0 | full keyboard, 16 velocity layers, release, string-resonance and pedal-noise samples; SFZ+FLAC 707 MiB | partly at best: Sonara's sampler supports velocity layers, `trigger=release`, `sw_*` and CC64 (S39), but S32's file also uses `#define`/`#include`, CC-gated groups (`locc`/`hicc`), `on_locc64`, `set_hdcc` and `*_oncc`, which `docs/sample-libraries.md` does not list | [Cited S31, S32, S39]; the compatibility verdict [Estimate: not tested] |
 | YDP Grand Piano (Zenph Studios Yamaha Disklavier Pro multisamples) | Creative Commons Attribution 3.0 | grand piano; layer count not stated; offered only as SF2 (36 MiB) | no: SF2, not SFZ (S39: SF2 sets are not played by the Sonara sampler) | [Cited S31, S39] |
-| VCSL "Grand Piano, Steinway B" (211 cm) | CC0 | `Sus`, `NoSus`, `Rel` folders | `master` holds the WAVs only; the patch `Grand Piano, Steinway B.sfz` is in tag `v1.2.2-RC` (S47); not opened, playback not checked [Estimate] | [Cited S34, S5, S47] |
-| VCSL "Grand Piano, Kawai" | CC0 | folder exists | patches `Grand Piano, Kawai.sfz` and `Grand Piano, Kawai - Legacy.sfz` are in tag `v1.2.2-RC` (S47); not opened, playback not checked [Estimate] | [Cited S34, S47] |
+| VCSL "Grand Piano, Steinway B" (211 cm) | CC0 | `Sus`, `NoSus`, `Rel` folders | `master` holds the WAVs only; the patch `Grand Piano, Steinway B.sfz` is in tag `v1.2.2-RC` (S47); not opened, playback not checked [Estimate: only the file list (S47) was read; the patch was not opened or loaded in the Sonara sampler] | [Cited S34, S5, S47] |
+| VCSL "Grand Piano, Kawai" | CC0 | folder exists | patches `Grand Piano, Kawai.sfz` and `Grand Piano, Kawai - Legacy.sfz` are in tag `v1.2.2-RC` (S47); not opened, playback not checked [Estimate: only the file list (S47) was read; the patch was not opened or loaded in the Sonara sampler] | [Cited S34, S47] |
 | Apple Studio Piano "Studio Grand" | ships with Logic Pro | three mic sets, noises, resonance | no | [Cited S24] |
 
 ## piano_upright: Upright piano
@@ -413,7 +434,7 @@ Articulation ids and their MIDI mapping are the same as for `piano_concert_grand
 | Comfortable | 21-108 | [Estimate: convention above] |
 | Transposition | 0 | [Cited S3] |
 | Clefs | treble and bass | [Cited S3] |
-| Register breaks | 1/2/3 strings per note as on grands | [Cited S11]; break keys [Estimate] |
+| Register breaks | 1/2/3 strings per note as on grands | [Cited S11]; break keys [Estimate: no opened source gives an upright's break keys; they differ per model] |
 | Undamped top | the top couple of octaves of an upright have no dampers, and the author says grands are the same; no make and no exact first key is given | [Cited S22] |
 
 ### 4. Dynamics by register, colour by register, agility, breath/bow/physical limits
@@ -425,9 +446,33 @@ Articulation ids and their MIDI mapping are the same as for `piano_concert_grand
   mechanism; Estimate for the musical limit].
 - Agility, chord span and hand limits otherwise as on the grand [Cited S3].
 
+What a composer writes differently for the upright piano:
+
+- **Ask for it in words.** The part is headed "Piano"; Rimsky-Korsakov asks for an upright in prose, for the
+  orchestral piano and as the celesta substitute [Cited S1]. No score marking for an upright was found [Estimate: no
+  opened source gives one].
+- **Left pedal.** On most uprights it moves the hammers closer to the strings: a little softer, with no change of
+  timbre; only a minority have a true una corda [Cited S11, S12, S13]. A written "una corda" therefore gives less
+  volume, not the grand's veiled colour [Estimate: consequence of the cited mechanism].
+- **No sostenuto.** Most uprights have a practice (muffler) middle pedal instead, and a true sostenuto is rare
+  [Cited S11, S12]. Avoid "Sost. Ped." writing; hold the notes with the fingers or the damper pedal [Estimate:
+  practical consequence of the cited pedal sets].
+- **Repeated notes and trills.** The single escapement needs the key to rise almost fully before a repeat
+  [Cited S21]; write very fast repeated notes and fast trills on one key sparingly, or share them between the hands
+  [Estimate: the musical limit is not measured in an opened source].
+- **Bass and sustain.** Less bass power and a shorter sustain than a grand [Estimate: from S11's string-length rule];
+  long pedalled bass notes die sooner and may need re-striking [Estimate: same reasoning].
+- **Orchestral colour.** Inside the orchestra Rimsky-Korsakov prefers an upright to a grand, and uses it rather than
+  the glockenspiel in place of a missing celesta [Cited S1]; write it as a blending colour rather than a concerto
+  voice [Estimate: reading of S1's roles].
+- **Muffler.** The practice pedal greatly mutes the sound [Cited S11] and has no MIDI controller of its own
+  [Cited S29 for the CC list]; if that sound is wanted, say so in words and use `piano_felt` [Estimate: no standard
+  marking was found].
+
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
-Ids and mappings as for `piano_concert_grand` [Estimate].
+Ids and mappings as for `piano_concert_grand` [Estimate: the same keyboard; the libraries read (S33, S31, S24) expose
+no articulation patches].
 
 | Library | Implementation | Provenance |
 |---|---|---|
@@ -443,14 +488,14 @@ Ids and mappings as for `piano_concert_grand` [Estimate].
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One player [Estimate]. `solo_or_section`: solo.
+- One player [Estimate: one player per instrument and no divisi, as for the concert grand; no opened source discusses it]. `solo_or_section`: solo.
 
 ### 7. Role in the orchestra and typical doublings
 
 - Rimsky-Korsakov prefers an upright to a grand when the piano is part of the orchestra rather than a soloist, and an
   upright, not glockenspiel, replaces a missing celesta [Cited S1].
 - Saloon and ragtime colour (see `piano_honky_tonk`) [Cited S16].
-- Home, school and pop recordings [Estimate].
+- Home, school and pop recordings [Estimate: general practice; no opened source describes these uses].
 
 ### 8. Variants and related instruments (when a player changes instrument)
 
@@ -465,7 +510,8 @@ Ids and mappings as for `piano_concert_grand` [Estimate].
 
 - GM1 has no upright-piano program (programs 1-8 are Acoustic Grand, Bright Acoustic, Electric Grand, Honky-tonk,
   Electric Piano 1 and 2, Harpsichord, Clavinet) [Cited S27]. `gm_program` is null; program 1 is a reasonable
-  fallback [Estimate].
+  fallback [Estimate: design judgement; GM defines sounds, not piano types, and program 1 is the nearest acoustic
+  piano].
 - Not in `data.rs`; no verification table [Cited S39].
 
 ### 10. Free or licensable sound sources and their coverage (library, licence as stated, what of this instrument it covers)
@@ -474,8 +520,8 @@ Ids and mappings as for `piano_concert_grand` [Estimate].
 |---|---|---|---|---|
 | VSCO 2 CE `UprightPiano.sfz` | CC0 | 88 keys, 3 velocity layers, no pedal or release samples | yes per S39 (VSCO's small opcode set plays); the file uses `lokey`, `hikey`, `lovel`, `hivel`, `pitch_keycenter`, `ampeg_attack`, `ampeg_release`, `ampeg_dynamic`, `volume`, `default_path` and `group_label`; `ampeg_dynamic` is not in the documented supported list and may raise a load warning | [Cited S33, S39] |
 | VSCO 2 CE `VSUpright1.sfz` | CC0 | keys 24-103, 3 dynamics, two-way random round robin | yes (`lorand`/`hirand` are supported) | [Cited S33, S39] |
-| Upright Piano KW | CC0 1.0 | Kawai upright, 2 velocity layers | probably; not checked | [Cited S31]; compatibility [Estimate] |
-| VCSL "Upright Piano, Yamaha" and "Upright Piano, Knight" | CC0 | Yamaha folder has `Sustains` and `Releases` | `master` holds the WAVs only; the patches `Upright Piano, Yamaha.sfz` and `Upright Piano, Knight.sfz` are in tag `v1.2.2-RC` (S47); not opened, playback not checked [Estimate] | [Cited S34, S47] |
+| Upright Piano KW | CC0 1.0 | Kawai upright, 2 velocity layers | probably; not checked | [Cited S31]; compatibility [Estimate: the SFZ file was not opened or loaded in the Sonara sampler] |
+| VCSL "Upright Piano, Yamaha" and "Upright Piano, Knight" | CC0 | Yamaha folder has `Sustains` and `Releases` | `master` holds the WAVs only; the patches `Upright Piano, Yamaha.sfz` and `Upright Piano, Knight.sfz` are in tag `v1.2.2-RC` (S47); not opened, playback not checked [Estimate: only the file list (S47) was read; the patch was not opened or loaded in the Sonara sampler] | [Cited S34, S47] |
 | Apple "Vintage Upright" | ships with Logic Pro | | no | [Cited S24] |
 
 ## piano_felt: Felt piano
@@ -489,9 +535,9 @@ Ids and mappings as for `piano_concert_grand` [Estimate].
 | Language | Name | Provenance |
 |---|---|---|
 | English | felt piano; "soft piano" in product names | [Cited S36, S37] |
-| Czech | pianino with a moderátor (Czech uprights may have a hand-operated moderátor) | [Cited S40 for "moderátor"]; the full name [Estimate] |
+| Czech | pianino with a moderátor (Czech uprights may have a hand-operated moderátor) | [Cited S40 for "moderátor"]; the full name [Estimate: descriptive term; S40 gives only "moderátor"] |
 | Italian, German, French | pianoforte con feltro; Klavier mit Moderator; piano feutré | [Estimate: descriptive terms; the historical "moderator" or "celeste" mechanism is cited in S12] |
-| Score | no standard marking; a composer writes the instruction in words | [Estimate] |
+| Score | no standard marking; a composer writes the instruction in words | [Estimate: no opened source gives a score marking for a felt piano] |
 
 - A felt piano is an ordinary piano with felt (or cloth) between hammers and strings, not a different string
   instrument [Cited S11, S12, S36]. It is a separate Sonara id because its sound, dynamics and libraries differ
@@ -531,8 +577,31 @@ Ids and mappings as for `piano_concert_grand` [Estimate].
 - Brightness still rises with velocity but within a darker band [Estimate: S19's hammer mechanism minus the felt's
   filtering].
 - Agility as the underlying upright (single escapement) [Cited S21]; fast figures blur less audibly because the
-  attack is muted [Estimate].
-- Low register: muddy and indistinct under felt [Estimate].
+  attack is muted [Estimate: reasoning from the softened attack that S35 describes; no source states it].
+- Low register: muddy and indistinct under felt [Estimate: no opened source describes the felt piano's low register].
+
+What a composer writes differently for the felt piano:
+
+- **Dynamics.** The felt greatly mutes the sound [Cited S11], so the range is narrow and soft [Estimate: no opened
+  source gives a dB value]. A written forte does not become loud; contrast comes from register, density and pedal
+  [Estimate: design judgement]. Spitfire's two felt pianos have expression and dynamics controls [Cited S36, S37],
+  which a MIDI part writes as controller curves beside velocity; the CC number is not stated [Estimate: see
+  section 5].
+- **Pedalling.** Long pedals are usable, because pedalled harmony blurs less audibly when the attack is muted
+  [Estimate: as in this section]. The libraries treat the pedal as part of the sound: Spitfire's Felt Piano has a
+  sustain-pedal level control, and NI's Una Corda a pedal mode and pedal noise [Cited S36, S35].
+- **Register and voicing.** Keep melodies and chords in the middle register; space low chords openly or reduce them
+  to single notes and octaves, since the low register turns muddy under felt [Estimate: design judgement; no opened
+  source describes the felt piano's registers].
+- **Texture and idiom.** Slow chords, arpeggios and sparse melodies heard close up, with the mechanism audible: the
+  libraries record a separate hammers signal or close microphones near the hammers [Cited S36, S37]. The setting is
+  intimate film, TV and ambient piano [Estimate: see section 7].
+- **Notation.** No standard marking exists; write the instruction in words, such as "with felt" or "muffler pedal"
+  [Estimate: no opened source gives a score marking]. In MIDI the felt piano is a separate patch, not a key switch
+  or CC of the open piano [Cited S35, S36, S37].
+- **What to avoid compared with the concert grand.** Marcato, sforzando and hard accents lose their point because
+  the felt removes most of the attack, and brilliant passage-work, loud climaxes and balance against a full tutti are
+  beyond its narrow, soft range [Estimate: from the muted attack and dynamics above; no opened source states it].
 
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
@@ -549,7 +618,8 @@ Ids and mappings as for `piano_concert_grand` [Estimate].
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One player; layering with strings or pads is a production choice [Estimate]. `solo_or_section`: solo.
+- One player; layering with strings or pads is a production choice [Estimate: general media-production practice; no
+  opened source discusses it]. `solo_or_section`: solo.
 
 ### 7. Role in the orchestra and typical doublings
 
@@ -568,7 +638,8 @@ Ids and mappings as for `piano_concert_grand` [Estimate].
 
 ### 9. General MIDI and existing Sonara metadata
 
-- No GM1 program [Cited S27]; `gm_program` null; fallback program 1 [Estimate].
+- No GM1 program [Cited S27]; `gm_program` null; fallback program 1 [Estimate: design judgement; GM1 has no felt
+  piano, and program 1 is the nearest acoustic piano].
 - Not in `data.rs`; no verification table [Cited S39].
 
 ### 10. Free or licensable sound sources and their coverage (library, licence as stated, what of this instrument it covers)
@@ -710,21 +781,46 @@ Ids and mappings as for `piano_concert_grand` [Estimate].
 
 - Timbre and dynamics vary from key to key; Cage's aim was that each key has its own characteristic timbre
   [Cited S14].
-- Loud strokes can make loose objects rattle or move [Estimate].
+- Loud strokes can make loose objects rattle or move [Estimate: acoustics reasoning; S15 describes rattling
+  sounds but not how they depend on dynamics].
 - Agility as the underlying grand [Cited S19 for the action]; there is no technical limit specific to preparation
-  [Estimate].
+  [Estimate: no opened source describes a playing limit caused by the preparation].
+
+What a composer writes differently for the prepared piano:
+
+- **The preparation table.** The score opens with the preparation instructions: *Sonatas and Interludes* has a table
+  of preparations, and the Big Fish set follows the instructions at the head of Cage's score [Cited S15, S38]. Each
+  entry names the key, the strings, the object and its position [Estimate: S15 shows part of the table as an image
+  and does not describe its columns].
+- **Notation shows keys, not sounds.** Write the key as for a normal piano; the preparation defines the sound, and
+  the original pitch may not be recognisable [Cited S14, S15 for the pitch; Estimate for the notation practice, as in
+  section 3]. In one of S15's examples a prepared key sounds two octaves above its nominal pitch [Cited S15].
+- **Register.** In *Sonatas and Interludes* the low register is prepared most heavily and the high register least
+  [Cited S15]; unprepared keys keep the normal piano sound available [Estimate: design judgement].
+- **Una corda as a timbre switch.** The soft pedal makes the hammers strike two of three strings, which changes the
+  prepared sounds: one note becomes metallic with no clear fundamental when it is down, and Sonata XV keeps it down
+  throughout [Cited S15]. Mark "una corda" and "tre corde" as part of the sound design, not only for softness
+  [Estimate: consequence of the cited effect].
+- **Dynamics per key.** Each key has its own characteristic timbre [Cited S14], so a dynamic marking can change the
+  sound as much as its volume, and loud strokes can make loose objects rattle or move [Estimate: as in this
+  section].
+- **Practicalities.** Preparing a piano for *Sonatas and Interludes* takes two to three hours [Cited S15], so a change
+  of preparation within a piece is impractical [Estimate: consequence of the cited time]. A proper preparation
+  leaves no trace, whereas tacks pushed into the hammers damage the felt [Cited S14].
+- **What to avoid compared with the concert grand.** Pitch-based voicing and pedalled harmony on prepared keys,
+  whose pitch is unreliable; write such passages on unprepared keys [Estimate: consequence of S14, S15].
 
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
 | Id | Meaning | Provenance |
 |---|---|---|
-| sustain, staccato, marcato | normal key strokes on prepared keys | [Estimate] |
-| tremolo | repeated or alternating keys | [Estimate] |
-| harmonics | touching a string at a node while striking the key | [Estimate] |
-| pizzicato | plucking a string inside the piano | [Estimate] |
+| sustain, staccato, marcato | normal key strokes on prepared keys | [Estimate: ordinary piano practice applied to prepared keys; no opened source lists them] |
+| tremolo | repeated or alternating keys | [Estimate: general inside-piano practice; S38 does not name its five articulations] |
+| harmonics | touching a string at a node while striking the key | [Estimate: general inside-piano practice; S38 does not name its five articulations] |
+| pizzicato | plucking a string inside the piano | [Estimate: general inside-piano practice; S38 does not name its five articulations] |
 | let_ring | dampers off (CC64) | [Cited S11 for the pedal] |
-| glissando | across the strings inside, or on the keys | [Estimate] |
-| damped | stopping the string by hand after the stroke | [Estimate] |
+| glissando | across the strings inside, or on the keys | [Estimate: general inside-piano practice; S38 does not name its five articulations] |
+| damped | stopping the string by hand after the stroke | [Estimate: general inside-piano practice; S38 does not name its five articulations] |
 | cluster (new) | adjacent keys struck together | [Estimate: definition] |
 | muted_string (new) | the key is struck while a finger presses the string, giving a dry pitched thud | [Estimate: definition] |
 
@@ -737,13 +833,14 @@ The piano itself is a Steinway B in the Big Fish set [Estimate: from a search sn
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One player [Estimate]. `solo_or_section`: solo.
+- One player [Estimate: one player per instrument and no divisi, as for the concert grand; no opened source discusses it]. `solo_or_section`: solo.
 
 ### 7. Role in the orchestra and typical doublings
 
 - A solo and chamber instrument; Cage's *Concerto for Prepared Piano* puts it with orchestra [Estimate: not on a
   page read].
-- In media music it acts as tuned percussion (a gamelan-like or drum-like layer) [Estimate].
+- In media music it acts as tuned percussion (a gamelan-like or drum-like layer) [Estimate: from the drum-like and
+  metallic sounds S15 describes; no opened source covers media use].
 
 ### 8. Variants and related instruments (when a player changes instrument)
 
@@ -756,7 +853,7 @@ The piano itself is a Steinway B in the Big Fish set [Estimate: from a search sn
 ### 9. General MIDI and existing Sonara metadata
 
 - No GM1 program [Cited S27]; `gm_program` null. A GM fallback would misrepresent the sound; program 1 only as a
-  last resort [Estimate].
+  last resort [Estimate: design judgement; GM1 has no prepared piano].
 - Not in `data.rs`; no verification table [Cited S39]. The model needs a way to say "pitched key, unreliable
   sounding pitch" (open question 4).
 
@@ -764,7 +861,7 @@ The piano itself is a Steinway B in the Big Fish set [Estimate: from a search sn
 
 | Library | Licence as stated | Coverage | Plays in the Sonara sampler? | Provenance |
 |---|---|---|---|---|
-| Big Fish Audio *John Cage Prepared Piano* | commercial; activation over the internet | Cage's 45-key preparation | WAV export exists, but an SFZ map would have to be written | [Cited S38]; SFZ need [Estimate] |
+| Big Fish Audio *John Cage Prepared Piano* | commercial; activation over the internet | Cage's 45-key preparation | WAV export exists, but an SFZ map would have to be written | [Cited S38]; SFZ need [Estimate: S38 lists EXS24, HALion, Kontakt and WAV/REX/Apple Loops formats but no SFZ] |
 | Free prepared-piano SFZ | none among VSCO 2 CE, VCSL, FreePats | | | [Cited S33, S34, S31] |
 
 ## piano_honky_tonk: Honky-tonk piano
@@ -778,8 +875,8 @@ The piano itself is a Steinway B in the Big Fish set [Estimate: from a search sn
 | Language | Name | Provenance |
 |---|---|---|
 | English | honky-tonk piano; GM name "Honky-tonk Piano" | [Cited S16, S27] |
-| Czech, Italian, German, French | the English term is used, sometimes with a descriptive word (Czech "rozladěné pianino" = detuned upright) | [Estimate] |
-| Score | "Piano (honky-tonk)" or a production note | [Estimate] |
+| Czech, Italian, German, French | the English term is used, sometimes with a descriptive word (Czech "rozladěné pianino" = detuned upright) | [Estimate: no source was found for the names in these languages; the Czech phrase is a descriptive translation] |
+| Score | "Piano (honky-tonk)" or a production note | [Estimate: no opened source gives a score marking for a honky-tonk piano] |
 
 - Family `keyboards` [Cited S39]. It is a piano in a particular state of tuning, not a separate design [Cited S16].
 
@@ -807,19 +904,42 @@ The piano itself is a Steinway B in the Big Fish set [Estimate: from a search sn
 
 - Beating is most audible in the middle and treble, where two or three strings share a key [Estimate: from S11's
   string groups].
-- Bright, often worn and hard hammers [Estimate].
+- Bright, often worn and hard hammers [Estimate: general knowledge of old instruments; S16 mentions old uprights but
+  not their hammers].
 - Agility of an upright action [Cited S21].
+
+What a composer writes differently for the honky-tonk piano:
+
+- **The tuning is the effect.** One or more strings of each key are slightly detuned, without tacks [Cited S16], and
+  in Weinreich's modelled case unison strings mistuned beyond the lock threshold beat instead of fusing, though
+  locking is not always so in practice (section 2) [Cited S18]. The beating lives in the middle and treble, where
+  two or three strings share a key; single-string bass notes cannot beat [Cited S11 for the string groups; Estimate
+  for the consequence]. Put the tunes there [Estimate: design judgement].
+- **Idiom.** The sound is the one tack pianos evoke in ragtime and in western saloon scenes on old uprights
+  [Cited S16]. The stride left hand, taken from ragtime, plays a bass note on beats one and three and a chord on two
+  and four, leaping across the keyboard, under a syncopated right-hand melody [Cited S48].
+- **Pedalling.** Short, rhythmic pedalling or none: long pedalled harmony becomes a wavering wash because the
+  detuned strings beat [Cited S18 for the beating; Estimate for the advice].
+- **Dynamics.** Mostly bright and loud; the grand's soft colours (una corda, pianissimo voicing) are not the point
+  [Estimate: saloon practice; no opened source states it]. The left pedal of an upright only makes the sound a little
+  softer, without a change of timbre [Cited S11, S13].
+- **Repetition.** On an upright action the key must rise almost fully before a repeat [Cited S21], so very fast
+  repeated notes are harder than on a grand [Estimate: as for the upright].
+- **Notation and MIDI.** The part is headed "Piano" with a word or a production note [Estimate: no opened source
+  gives a marking]; in MIDI it is a separate preset, GM program 4 [Cited S27, S46].
 
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
-- Ragtime stride figures, octaves and tremolos are played as notes with velocity and CC64 [Estimate].
+- Ragtime stride figures, octaves and tremolos are played as notes with velocity and CC64 [Estimate: ragtime and saloon
+  piano practice; no opened source lists articulations].
 - In synthesizers and samplers honky-tonk is a separate preset: GM program 4 and GM2's "Wide Honky-Tonk Piano"
   (program 4 bank 1) [Cited S27, S28]. A detuned layer of a normal piano patch (two voices a few cents apart) is the
-  usual way to build it [Estimate].
+  usual way to build it [Estimate: general synthesizer and sampler practice; no opened source describes how presets
+  are built].
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One player [Estimate]. `solo_or_section`: solo.
+- One player [Estimate: one player per instrument and no divisi, as for the concert grand; no opened source discusses it]. `solo_or_section`: solo.
 
 ### 7. Role in the orchestra and typical doublings
 
@@ -843,7 +963,7 @@ The piano itself is a Steinway B in the Big Fish set [Estimate: from a search sn
 | Library | Licence as stated | Coverage | Plays in the Sonara sampler? | Provenance |
 |---|---|---|---|---|
 | GM SoundFonts (FluidR3_GM, MuseScore_General) | MIT, notices required | a program-4 honky-tonk patch | no: SF2/SF3, not SFZ | [Cited S39 for the licences and the SF2 limitation]; that they contain program 4 [Estimate: GM sets have 128 programs, S39] |
-| Built from a free upright | CC0 VSCO 2 CE upright layered twice with a few cents of detune | full keyboard | yes, if the sampler's tuning per region is used | [Cited S33, S39 for the sampler's tuning support]; the method [Estimate] |
+| Built from a free upright | CC0 VSCO 2 CE upright layered twice with a few cents of detune | full keyboard | yes, if the sampler's tuning per region is used | [Cited S33, S39 for the sampler's tuning support]; the method [Estimate: design judgement; not built or tested] |
 
 ## Open questions and disagreements between sources
 
@@ -969,7 +1089,7 @@ keyboards as "Not covered". No card needs a "Verification of data.rs" table, and
 | concert grand §4, Bass row | piano low notes "tubby" compared with a viola; resonance must not be copied to basses | the viola's C-string notes sound tubby on the piano; the "added resonance of the lowest pianoforte notes" is a false analogy for writing basses low (two passages) | S2's wording; the original merged and paraphrased two passages |
 | OQ 2 | S42 starts the concert grand "at 2 m" | S42 gives 2-3 m as a range, not a threshold | S42 wording |
 | studio grand §7 | three pianos | three pianos plus the menu entry "Studio Grand (Mono Mic)" | S24 lists four menu entries |
-| studio grand §5 | C0/C#0 = 12/13 [Estimate] | [Cited S45] | sfz note names run C-1 to G9 for 0-127 |
+| studio grand §5 | C0/C#0 = 12/13 (tagged Estimate, no reason given) | [Cited S45] | sfz note names run C-1 to G9 for 0-127 |
 | §9 of three GM cards; OQ 11 | GM numbers cited to S27 only | S27 and S46 | second source for the numbers, since midi.org shows no table |
 | felt §10 | Spitfire Originals Felt Piano "£/$/€29" | "£29 on the page read" | S36 as fetched shows only £29.00 |
 
@@ -997,7 +1117,9 @@ C7. No numeric json field had to be downgraded.
 Review of 2026-10-30 against the JSON blocks, section 3, section 9, the fact-check log, tag hygiene and quote licence. All six json blocks agree with their prose (ranges 21-108, transposition 0, written = sounding, clefs treble and bass, GM programs 1, 2, null, null, null, 4; no card is in data.rs); every logged correction is applied in both json and prose; every [Cited Sn] points to an existing source row; no verbatim quotation from a non-public-domain source exceeds 15 words.
 
 - S39 source row: the absolute local path in the URL column was replaced by "local checkout of the Sonara repository, branch `research/orchestra-instruments`".
-- piano_prepared section 1: added the score abbreviation "Prep. Pno." [Estimate], which the json carried but no prose mentioned.
+- piano_prepared section 1: added the score abbreviation "Prep. Pno." [Estimate: engraving practice; no opened source states it], which the json carried but no prose mentioned.
 - Fact-check log, opening paragraph: "All 44 sources cited above" now reads "listed above", because S30 is a listed source that is never cited.
 - Articulation ids in the json blocks of `piano_prepared` were harmonized to the shared vocabulary (`multitongue`, `double_tonguing` and `triple_tonguing` become `multi_tongue`; `muted_string` becomes `palm_mute`; `pitch_bend` becomes `portamento`); the prose keeps the original wording.
 - Section 10 of the concert grand, studio grand and upright: the VCSL rows said "raw WAVs; an SFZ must be generated", read from `master`. The SFZ patches exist in tag `v1.2.2-RC` (new source S47, the tag's file list, opened for this change); the rows now name the patches and keep "not opened", because no `.sfz` file itself was read.
+- Gave every bare Estimate tag its reason (52 tags); the quoted old tag of C0/C#0 in Fact-check log table 5 (row 12) now reads "(tagged Estimate, no reason given)", and the review line on "Prep. Pno." repeats the reason of section 1.
+- Added a "What a composer writes differently" block at the end of section 4 for the studio grand, upright piano, felt piano, prepared piano and honky-tonk piano (the concert grand already had one); new source S48 (Wikipedia, "Stride piano") supports the honky-tonk idiom.

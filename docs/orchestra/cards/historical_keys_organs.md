@@ -47,6 +47,8 @@ Transposition = sounding minus written, in semitones._
 | S38 | Wikipedia, "Clonewheel organ" | https://en.wikipedia.org/wiki/Clonewheel_organ | encyclopedia | Yes, but only the list of software emulations was read |
 | S39 | Wikipedia, "Bandoneon" | https://en.wikipedia.org/wiki/Bandoneon | encyclopedia | Yes (lead and infobox) |
 | S40 | VCSL, GitHub REST tree of tag `v1.2.2-RC` (recursive; 183 `.sfz` files, among them the harpsichord, `Pipe Organ` and `Renaissance Organ` patches) | https://api.github.com/repos/sgossner/VCSL/git/trees/v1.2.2-RC?recursive=1 | library maker | Yes (file list only; no `.sfz` file was opened; added in the consistency review) |
+| S41 | J. MacRitchie and G. Nuti, "Using historical accounts of harpsichord touch to empirically investigate the production and perception of dynamics on the 1788 Taskin", *Frontiers in Psychology* 6:183 (2015), CC BY | https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2015.00183/full | other (peer-reviewed article) | Yes (introduction: registration for large sections; timing, articulation, arpeggiation, chord spread and overholding for smaller ones) |
+| S42 | Wikipedia, "Bebung" | https://en.wikipedia.org/wiki/Bebung | encyclopedia | Yes (wikitext, whole article) |
 
 Conventions used in every card below:
 
@@ -132,13 +134,38 @@ Conventions used in every card below:
   [Estimate: keyboard practice].
 - Bass notes ring longer than treble notes [Estimate: plucked-string physics; not stated by an opened source].
 
+What a composer writes differently for the harpsichord:
+
+- **Dynamics by registration, not touch.** A note sounds equally loud however the key is pressed; loudness and colour
+  change with the choirs engaged, the manual coupler and the buff stop [Cited S5]. On French harpsichords registration
+  contrasts large sections rather than single notes [Cited S41], and a change in mid-phrase is impractical on
+  hand-stop instruments [Estimate: inferred from S5]. Write terraced dynamics at section joins, not hairpins inside a
+  phrase [Estimate: consequence of S5 and S41].
+- **Shape within a phrase.** Timing, articulation, arpeggiation, the speed of a chord's spread and overholding notes
+  vary smaller sections [Cited S41]. French 18th-century treatises describe these devices, and scores notate them only
+  in some instances [Cited S41], so a part that needs a spread chord or an overheld bass marks it [Estimate: design
+  judgement].
+- **No damper pedal.** A felt damper on the jack stops the string when the key is released [Cited S5], and there is no
+  pedal for the dampers [Estimate: S5 describes dampers on the jacks and no pedal for them]; legato and held bass
+  notes are finger work [Estimate: keyboard practice].
+- **Register.** The traditional compass is F1-F6 (29-89) [Cited S5], against the concert grand's 21-108 [Estimate:
+  taken from the piano_concert_grand card, not from a source of this card]. A 4′ choir adds the octave above and a 16′
+  choir, where there is one, the octave below [Cited S5, S10]; 8′ plus 4′ is heard as one brighter pitch, not as
+  octaves [Cited S5].
+- **Notation and MIDI.** Two staves, treble and bass [Estimate: keyboard practice]; name the registration (8′, 4′,
+  lute or buff) at the start and at each change [Estimate: design judgement; no opened source prescribes the marking].
+  Write one fixed velocity [Estimate: workaround derived from S32 and S33]: GM harpsichords often use a fixed velocity
+  level [Cited S19], and Sonara's sampler ignores SSO's `amp_veltrack=0` [Cited S33].
+- **What to avoid compared with the grand.** Velocity accents, hairpins inside a phrase, pedal-held bass under chords
+  and notes outside 29-89 [Estimate: consequence of the facts above, S5, S41].
+
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
 | Technique or control | What it is | Library implementation | Provenance |
 |---|---|---|---|
 | sustain (ordinary pluck) | key held, string decays freely | every patch | [Cited S29, S31, S32] |
-| legato / staccato | finger overlap / early release; release noise follows note-off | note length plus release samples (`trigger=release`) | [Cited S32] for the release group; [Estimate] for the musical use |
-| trill and ornaments | played notes | ordinary notes | [Estimate] |
+| legato / staccato | finger overlap / early release; release noise follows note-off | note length plus release samples (`trigger=release`) | [Cited S32] for the release group; [Estimate: keyboard practice; no opened source lists harpsichord articulations] for the musical use |
+| trill and ornaments | played notes | ordinary notes | [Estimate: keyboard practice; no opened source lists harpsichord articulations] |
 | 8′, 4′, 8′+8′+4′ registers | choice of choirs | SSO `Harpsichord KS.sfz`: key switches on keys 96, 98, 100 select 4′, 8′ and Full (`sw_lokey=96`, `sw_hikey=100`); VSL: key switches C1-D1 for "8-feet", "8-feet double" and "tutti" (two 8′ and one 4′) | [Cited S32, S29] |
 | Lute stop | English dogleg system: an alternative row of jacks plucks near the nut, imitating a lute | VCSL's English harpsichord has separate `Sustains/Lute` and `Releases/Lute` sample folders beside `Normal` (separate samples; no SFZ on `master`, but tag `v1.2.2-RC` has `Harpsichord, English - Lute.sfz`, `- Normal.sfz` and `- Keyswitch.sfz`, not opened) | [Cited S5]; [Cited S31] for the folders; [Cited S40] for the tag's patches; [Estimate: the folder name is read as the lute stop] |
 | Buff stop | strip of buff leather against the strings, muting them to imitate a lute | Pianoteq models a buff stop pedal | [Cited S5, S35] |
@@ -163,7 +190,7 @@ opened]. No divisi.
 - Solo roles: Bach's harpsichord concertos and the Fifth Brandenburg Concerto; 20th-century concertos by Poulenc
   (*Concert champêtre*, 1927-28) and de Falla; Carter's *Double Concerto* [Cited S5].
 - Continuo doubling of the bass line by cello, double bass or bassoon [Estimate: continuo practice, no source
-  opened]. Film and pop use for period or "antique" colour [Estimate].
+  opened]. Film and pop use for period or "antique" colour [Estimate: general film and pop practice; no source opened].
 
 ### 8. Variants and related instruments (when a player changes instrument)
 
@@ -175,7 +202,7 @@ opened]. No divisi.
 | Ottavino | spinet or virginals at 4′ pitch | [Cited S5] |
 | Pedal harpsichord | extra strings played by a pedal keyboard, used as organists' practice instruments | [Cited S5] |
 | Fortepiano | the early piano that supplanted it | [Cited S5] |
-| Player doubling | harpsichordists commonly also play organ or piano continuo | [Estimate] |
+| Player doubling | harpsichordists commonly also play organ or piano continuo | [Estimate: general continuo practice; no source opened] |
 
 ### 9. General MIDI and existing Sonara metadata
 
@@ -187,7 +214,7 @@ opened]. No divisi.
 
 | Library | Licence | Coverage | Plays in Sonara today | Provenance |
 |---|---|---|---|---|
-| VCSL | CC0 1.0 | five harpsichords (English, Flemish, French, Italian, unknown), 461 WAV files; each has `Sustains` and `Releases`, subdivided as English `Normal`/`Lute`, Flemish `High`/`Low`, Italian `stop1`; French and unknown undivided | `master` holds WAVs only [Cited S31]; tag `v1.2.2-RC` holds ten patches: `Harpsichord, English - Normal`, `- Lute`, `- Keyswitch`; `Harpsichord, Flemish - 4'`, `- 8'`, `- Full`, `- Keyswitch`; `Harpsichord, French`; `Harpsichord, Italian`; `Harpsichord, Unk` (`.sfz`) [Cited S40]. Not opened, so playback in Sonara is not checked [Estimate] | [Cited S31, S40] |
+| VCSL | CC0 1.0 | five harpsichords (English, Flemish, French, Italian, unknown), 461 WAV files; each has `Sustains` and `Releases`, subdivided as English `Normal`/`Lute`, Flemish `High`/`Low`, Italian `stop1`; French and unknown undivided | `master` holds WAVs only [Cited S31]; tag `v1.2.2-RC` holds ten patches: `Harpsichord, English - Normal`, `- Lute`, `- Keyswitch`; `Harpsichord, Flemish - 4'`, `- 8'`, `- Full`, `- Keyswitch`; `Harpsichord, French`; `Harpsichord, Italian`; `Harpsichord, Unk` (`.sfz`) [Cited S40]. Not opened, so playback in Sonara is not checked [Estimate: the `.sfz` files in tag v1.2.2-RC were not opened] | [Cited S31, S40] |
 | Sonatina Symphonic Orchestra | CC Sampling Plus 1.0 (retired); not bundlable | 4′, 8′, Full patches and a key-switch patch, 29-89, release samples | yes, except `amp_veltrack` and the CC 12 release level, which are ignored | [Cited S32, S33] |
 | VSL Studio Special Keyboards | commercial | 8′, 8′ double, tutti; release samples; 1 velocity layer | no (proprietary player) | [Cited S29, S33] |
 | Pianoteq (Modartt) | commercial | physical model of a Griewisch copy of a 1624 Ioannes Ruckers: lower 8′, upper 8′, 4′, buff stop pedal | no (plug-in hosting is milestone M5) | [Cited S35, S33] |
@@ -196,7 +223,7 @@ opened]. No divisi.
 ## clavichord: Clavichord
 
 ```json
-{"id": "clavichord", "family": "keyboards", "names": {"en": "Clavichord", "cs": "klavichord", "it": "clavicordo", "de": "Clavichord", "fr": "clavicorde", "score_abbreviation": "Clav."}, "pitched": true, "transposition": 0, "clefs": ["treble", "bass"], "sounding_playable": [29, 96], "sounding_comfortable": [36, 86], "range_provenance": {"playable": "Cited S25: the largest compass among eleven listed instruments is FF-c'''' (Lindholm, Stockholm, 1794); FF-f''' (29-89) is the common late German compass (S24, S25)", "comfortable": "Cited S25 (derived): C-d''' (36-86) is the compass that all eleven instruments in S25 share; S6 adds that instruments built before the 1730s were mostly four octaves, which may be narrower"}, "written_playable": [29, 96], "gm_program": null, "gm_program_name": null, "gm_percussion_notes": [], "existing_sonara_id": null, "articulations_existing_vocab": ["sustain", "legato", "staccato", "trill"], "articulations_proposed_new": ["vibrato_on", "portato"], "articulations_provenance": "Cited S6 for vibrato_on (Bebung) and portato (Tragen der Toene), both named by C. P. E. Bach in the quotation on S6; Estimate for sustain, legato, staccato and trill (keyboard practice)", "solo_or_section": "solo", "typical_players": {"classical": "0 (domestic and practice instrument)", "romantic": "0", "film": "0-1 (amplified, as a colour)", "chamber": "1 (solo, or with one soft instrument or voice)"}, "keyboard": {"action": "tangent: a brass blade on the key end strikes the string pair and stays on it while the key is held, acting as the nut; cloth damps the string on release [Cited S6]", "keys": 61, "lowest": 29, "highest": 89, "pedals": [], "pedal_ccs": {}, "sympathetic_resonance": "the string part beyond the tangent is damped by cloth; unfretted instruments carry many strings on one bridge [Cited S6]; audible sympathetic ringing is not documented in an opened source [Estimate]", "release_and_mechanical_noise": "tangent contact and release are part of the sound: the tangent both starts the sound and fixes the pitch [Cited S6]; no release-noise sample was examined [Estimate]", "decay": "short, quiet decay while the key is held; ends when the tangent leaves the string [Cited S6 for the mechanism; Estimate for the length]", "dynamic_range": "touch-sensitive but very quiet: volume follows key force, too soft for most chamber music [Cited S6]"}}
+{"id": "clavichord", "family": "keyboards", "names": {"en": "Clavichord", "cs": "klavichord", "it": "clavicordo", "de": "Clavichord", "fr": "clavicorde", "score_abbreviation": "Clav."}, "pitched": true, "transposition": 0, "clefs": ["treble", "bass"], "sounding_playable": [29, 96], "sounding_comfortable": [36, 86], "range_provenance": {"playable": "Cited S25: the largest compass among eleven listed instruments is FF-c'''' (Lindholm, Stockholm, 1794); FF-f''' (29-89) is the common late German compass (S24, S25)", "comfortable": "Cited S25 (derived): C-d''' (36-86) is the compass that all eleven instruments in S25 share; S6 adds that instruments built before the 1730s were mostly four octaves, which may be narrower"}, "written_playable": [29, 96], "gm_program": null, "gm_program_name": null, "gm_percussion_notes": [], "existing_sonara_id": null, "articulations_existing_vocab": ["sustain", "legato", "staccato", "trill"], "articulations_proposed_new": ["vibrato_on", "portato"], "articulations_provenance": "Cited S6 for vibrato_on (Bebung) and portato (Tragen der Toene), both named by C. P. E. Bach in the quotation on S6; Estimate for sustain, legato, staccato and trill (keyboard practice)", "solo_or_section": "solo", "typical_players": {"classical": "0 (domestic and practice instrument)", "romantic": "0", "film": "0-1 (amplified, as a colour)", "chamber": "1 (solo, or with one soft instrument or voice)"}, "keyboard": {"action": "tangent: a brass blade on the key end strikes the string pair and stays on it while the key is held, acting as the nut; cloth damps the string on release [Cited S6]", "keys": 61, "lowest": 29, "highest": 89, "pedals": [], "pedal_ccs": {}, "sympathetic_resonance": "the string part beyond the tangent is damped by cloth; unfretted instruments carry many strings on one bridge [Cited S6]; audible sympathetic ringing is not documented in an opened source [Estimate: not in any source opened]", "release_and_mechanical_noise": "tangent contact and release are part of the sound: the tangent both starts the sound and fixes the pitch [Cited S6]; no release-noise sample was examined [Estimate: no clavichord library was opened]", "decay": "short, quiet decay while the key is held; ends when the tangent leaves the string [Cited S6 for the mechanism; Estimate for the length]", "dynamic_range": "touch-sensitive but very quiet: volume follows key force, too soft for most chamber music [Cited S6]"}}
 ```
 
 The keyboard object describes the 61-key FF-f‴ instrument of S24 (Hoffmann 1784) [Cited S24]; the JSON range is the
@@ -257,6 +284,27 @@ wider envelope of all instruments in S25.
 - Fretted notes sharing a string must be slightly separated in quick succession, which disturbs legato [Cited S6].
 - Large Swedish clavichords of the early 19th century are the loudest historic clavichords [Cited S6].
 
+What a composer writes differently for the clavichord:
+
+- **Touch dynamics at a whisper.** Key force controls attack, duration and volume [Cited S6], but the volume is
+  extremely low: the instrument suits a small room and at most a soft flute, recorder or one singer [Cited S6]. Write
+  the dynamics the music needs at that scale and never set it against an orchestra [Estimate: consequence of S6].
+- **Bebung and Tragen der Töne.** Vibrato (Bebung) and portato (Tragen der Töne) come from added pressure after the
+  stroke [Cited S6]. Bebung can only raise the pitch above the note [Cited S42]. Scores mark it rarely, and then as
+  dots above or below the note, one per finger movement [Cited S42]. In MIDI it needs per-note pressure, polyphonic
+  aftertouch or MPE [Estimate: no library manual was opened].
+- **No pedal; the sound lasts while the key is down.** The tangent stays on the string while the key is held, and
+  cloth damps the string on release [Cited S6]; with no damper pedal, legato and held bass notes are finger work
+  [Estimate: keyboard practice; no opened source describes a damper pedal].
+- **Fretting.** On a fretted instrument, keys that share a string pair cannot sound together, and quick successions on
+  one string must be slightly separated [Cited S6]. Write such steps detached, or target an unfretted instrument
+  [Estimate: consequence of S6; fretting patterns differ per instrument, S6, S25].
+- **Notation and register.** Two staves, treble and bass [Estimate: keyboard practice]; it plays harpsichord and organ
+  music as written [Cited S6]. Keep parts within C-d‴ (36-86), the compass all eleven instruments of S25 share [Cited
+  S25].
+- **What to avoid compared with the grand.** Forte against other instruments, pedal effects, and notes outside 29-96
+  [Estimate: consequence of the facts above, S6, S25].
+
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
 | Technique | Mapping | Implementation | Provenance |
@@ -271,7 +319,7 @@ wider envelope of all instruments in S25.
 
 A solo and domestic instrument; used for practice and composition, popular from the 16th to the 18th century, out of
 use by 1850 [Cited S6]. Clavichords could be stacked for several manuals, or have a pedal clavichord added [Cited S6].
-No orchestral sections [Estimate].
+No orchestral sections [Estimate: follows from the solo and domestic role in S6; no source states it].
 
 ### 7. Role in the orchestra and typical doublings
 
@@ -286,13 +334,13 @@ No orchestral sections [Estimate].
 | Fretted / unfretted | see section 2 | [Cited S6] |
 | Pedal clavichord | pedal keyboard for organ practice | [Cited S6] |
 | Clavinet | electric clavichord with magnetic pickups | [Cited S6] |
-| Player | usually a harpsichordist or organist | [Estimate] |
+| Player | usually a harpsichordist or organist | [Estimate: general keyboard practice; no source opened] |
 
 ### 9. General MIDI and existing Sonara metadata
 
 - GM1 has no clavichord program [Cited S19: the Piano group 1-8 lists 7 Harpsichord and 8 Clavinet]. GM2 bank 1 of 8
   is "Pulsed Clavinet" [Cited S20]. `gm_program` is null; a GM fallback (7 Harpsichord or 8 Clavi/Clavinet) is an
-  open question [Estimate].
+  open question [Estimate: design judgement; see open question 7].
 - Not in `data.rs` [Cited S33].
 
 ### 10. Free or licensable sound sources and their coverage (library, licence as stated, what of this instrument it covers)
@@ -305,7 +353,7 @@ No orchestral sections [Estimate].
 ## celesta: Celesta
 
 ```json
-{"id": "celesta", "family": "keyboards", "names": {"en": "Celesta", "cs": "celesta", "it": "celesta", "de": "Celesta", "fr": "célesta", "score_abbreviation": "Cel."}, "pitched": true, "transposition": 12, "clefs": ["treble", "bass"], "sounding_playable": [48, 113], "sounding_comfortable": [60, 108], "range_provenance": {"playable": "Cited S7, S23: S7's infobox gives the playing range C3-F8 (48-113); Schiedmayer's two current 5 1/2-octave models (Studio, Compact) have 66 keys c-f5 and the 5-octave model 61 keys c-c5 (S23). Estimate: reading Schiedmayer's names as sounding (section 3). Fact-check: top raised from 108 to 113 so that playable is the envelope of current instruments, as in the clavichord and accordion cards; the standard five-octave model stops at 108", "comfortable": "Cited S7, S23: the four-octave sounding range C4-C8 (S7; top 4186 Hz) that every orchestral celesta has; Mustel's first model c1-c5 (S23)"}, "written_playable": [36, 101], "gm_program": 9, "gm_program_name": "Celesta", "gm_percussion_notes": [], "existing_sonara_id": null, "articulations_existing_vocab": ["sustain", "staccato", "legato", "trill", "tremolo"], "articulations_proposed_new": [], "articulations_provenance": "Cited S2 for melodic, arpeggio and chordal playing with short melody notes; Estimate for trill and tremolo (keyboard practice). The damper pedal is a control (CC 64), not an articulation", "solo_or_section": "solo", "typical_players": {"classical": "0 (invented 1886)", "romantic": "1 (from 1888-1891)", "film": "1", "chamber": "0-1"}, "keyboard": {"action": "simplified piano action: felt hammers strike steel plates from above; a tuned wooden resonator sits under each plate [Cited S2, S23]", "keys": 61, "lowest": 48, "highest": 108, "pedals": ["sustain"], "pedal_ccs": {"sustain": 64}, "sympathetic_resonance": "each plate drives its own resonator [Cited S2, S23]; ringing of undamped plates with the pedal down is not described by an opened source [Estimate]", "release_and_mechanical_noise": "dampers stop the plates on key release unless the pedal lifts them [Cited S23]; action noise not documented [Estimate]", "decay": "bell-like decay; the instrument lacks the orchestral sostenuto, so melody notes must not be too long; the pedal materially enhances sustain [Cited S2]", "dynamic_range": "touch-sensitive (piano action) but soft: overpowered by sustained groups (S1) and not loud enough for full ensemble sections (S7) [Cited S1, S7]"}}
+{"id": "celesta", "family": "keyboards", "names": {"en": "Celesta", "cs": "celesta", "it": "celesta", "de": "Celesta", "fr": "célesta", "score_abbreviation": "Cel."}, "pitched": true, "transposition": 12, "clefs": ["treble", "bass"], "sounding_playable": [48, 113], "sounding_comfortable": [60, 108], "range_provenance": {"playable": "Cited S7, S23: S7's infobox gives the playing range C3-F8 (48-113); Schiedmayer's two current 5 1/2-octave models (Studio, Compact) have 66 keys c-f5 and the 5-octave model 61 keys c-c5 (S23). Estimate: reading Schiedmayer's names as sounding (section 3). Fact-check: top raised from 108 to 113 so that playable is the envelope of current instruments, as in the clavichord and accordion cards; the standard five-octave model stops at 108", "comfortable": "Cited S7, S23: the four-octave sounding range C4-C8 (S7; top 4186 Hz) that every orchestral celesta has; Mustel's first model c1-c5 (S23)"}, "written_playable": [36, 101], "gm_program": 9, "gm_program_name": "Celesta", "gm_percussion_notes": [], "existing_sonara_id": null, "articulations_existing_vocab": ["sustain", "staccato", "legato", "trill", "tremolo"], "articulations_proposed_new": [], "articulations_provenance": "Cited S2 for melodic, arpeggio and chordal playing with short melody notes; Estimate for trill and tremolo (keyboard practice). The damper pedal is a control (CC 64), not an articulation", "solo_or_section": "solo", "typical_players": {"classical": "0 (invented 1886)", "romantic": "1 (from 1888-1891)", "film": "1", "chamber": "0-1"}, "keyboard": {"action": "simplified piano action: felt hammers strike steel plates from above; a tuned wooden resonator sits under each plate [Cited S2, S23]", "keys": 61, "lowest": 48, "highest": 108, "pedals": ["sustain"], "pedal_ccs": {"sustain": 64}, "sympathetic_resonance": "each plate drives its own resonator [Cited S2, S23]; ringing of undamped plates with the pedal down is not described by an opened source [Estimate: not in any source opened]", "release_and_mechanical_noise": "dampers stop the plates on key release unless the pedal lifts them [Cited S23]; action noise not documented [Estimate: not in any source opened]", "decay": "bell-like decay; the instrument lacks the orchestral sostenuto, so melody notes must not be too long; the pedal materially enhances sustain [Cited S2]", "dynamic_range": "touch-sensitive (piano action) but soft: overpowered by sustained groups (S1) and not loud enough for full ensemble sections (S7) [Cited S1, S7]"}}
 ```
 
 `keyboard.lowest` and `highest` are sounding pitches of the 61-key, five-octave model; its keys are written 36-96
@@ -371,7 +419,7 @@ matches the 66-key Studio model exactly [Estimate: reconciliation of S7 and S23]
   [Estimate: ledger lines read from a scanned image]. The fact-checker re-read the enlarged scan independently: bass-clef
   second space (C3), then treble C4 on one ledger line, top note on the second ledger line above the treble staff
   (C6) under "8va" (C7); same result [Estimate: image reading]. It supports reading Schiedmayer's "c1-c5" as sounding
-  only if Table E shows written pitch, which the book does not state [Estimate].
+  only if Table E shows written pitch, which the book does not state [Estimate: S1 does not say whether Table E shows written or sounding pitch].
 - Warning for agents: Tchaikovsky wrote the *Nutcracker* part at actual pitch because a piano is the named
   substitute [Cited S2]. A score's celesta part may therefore be at pitch or an octave low; Sonara stores sounding
   MIDI pitches [Cited S33].
@@ -387,7 +435,28 @@ matches the 66-key Studio model exactly [Estimate: reconciliation of S7 and S23]
   instrument's [Cited S4].
 - Rimsky-Korsakov marks the lowest part of the range "very good" and the rest "good throughout" [Cited S1].
 - Agility: a piano action, so piano-like figuration is possible [Cited S2: arpeggios]; repeated-note speed of the
-  simplified action is not documented [Estimate].
+  simplified action is not documented [Estimate: not in any source opened].
+
+What a composer writes differently for the celesta:
+
+- **Written an octave low.** The part is written an octave below sounding pitch (transposition +12) [Cited S2, S7,
+  S23], on two staves like a piano with treble and bass clefs at discretion [Cited S2] or on two treble staves [Cited
+  S23]. Tchaikovsky wrote the *Nutcracker* part at pitch [Cited S2]; Sonara stores sounding pitches [Cited S33], so a
+  written part is raised an octave before it is sent [Estimate: follows from S2 and S32].
+- **Damper pedal and short notes.** A pedal lifts the dampers like a piano's sustain pedal [Cited S23] and materially
+  enhances sustain, but melody notes must not be too long [Cited S2]. In Sonara the pedal is CC 64 [Cited S32, S33]
+  and acts as on/off, without SSO's half-pedalling [Estimate: consequence of S32 and S33].
+- **Dynamics and balance.** It is touch-sensitive but soft: sustained groups overpower it [Cited S1] and it is not
+  loud enough against full sections [Cited S7]. Accompany it with light woodwind or strings [Cited S2] and give its
+  entries room instead of writing forte [Estimate: consequence of S1, S2 and S7].
+- **Texture and idiom.** Arpeggios, chord work and fragments of melody suit it [Cited S2]; Widor treats it like the
+  piano or like 4′ and 2′ organ stops [Cited S4]. It often doubles a theme in flute, harp or piano [Cited S7], and
+  Rimsky-Korsakov counts it among colours too characteristic to use often [Cited S1].
+- **Register.** There is no bass: the lowest sounding note is C3 (48) on five-octave models and C4 (60) on four-octave
+  ones [Cited S7, S23]. Keep parts within 60-108 unless the instrument is known [Estimate: most orchestras' instrument
+  is not known; open question 5].
+- **What to avoid compared with the grand.** Long sustained melodies, a bass line, forte against the tutti and
+  anything below sounding 48 [Estimate: consequence of the facts above, S1, S2, S7, S23].
 
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
@@ -397,7 +466,7 @@ matches the 66-key Studio model exactly [Estimate: reconciliation of S7 and S23]
 | Damper pedal | CC 64; SSO `Celeste.sfz` labels CC 64 "Sustain Pedal" and implements half-pedalling by rerouting the sustain controller (`sustain_cc=90`) and scaling release time by CC 64 (`ampeg_releasecc64=60`, a `<curve>`) | [Cited S32] |
 | Velocity | SSO has two sample sets, 12 `*-hard` and 12 `*-soft` regions, crossfaded over velocity 0-127: the hard group fades in (`xfin_lovel=0`, `xfin_hivel=127`), the soft group fades out (`xfout_lovel=0`, `xfout_hivel=127`) and is raised by `group_volume=18` | [Cited S32] |
 | Arpeggio, chord work | ordinary notes | [Cited S2] |
-| `trill`, `tremolo` | ordinary notes | [Estimate] |
+| `trill`, `tremolo` | ordinary notes | [Estimate: keyboard practice; no opened source names them for the celesta] |
 
 Sonara note: the sampler plays CC 64 sustain [Cited S33] but ignores `sustain_cc`, `ampeg_releasecc64` and `<curve>`
 [Cited S33: not in `SUPPORTED`], so SSO's half-pedalling is lost and the pedal acts as an on/off sustain [Estimate:
@@ -409,7 +478,7 @@ must be raised an octave before it is sent [Estimate: follows from S2 and S32].
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-One player, a keyboardist [Cited S7]. Two celestas are rare [Estimate]. When unavailable: Rimsky-Korsakov says replace
+One player, a keyboardist [Cited S7]. Two celestas are rare [Estimate: repertoire knowledge; no opened source counts celesta parts]. When unavailable: Rimsky-Korsakov says replace
 it with an upright piano, not the glockenspiel [Cited S1]; Wikipedia lists piano, synthesizer or sampler [Cited S7].
 Morton Feldman used it in many of his large-scale chamber pieces [Cited S7]; there the ensemble's pianist or
 keyboard player probably doubles on it [Estimate: S7 says only that a keyboardist usually plays it].
@@ -441,7 +510,7 @@ keyboard player probably doubles on it [Estimate: S7 says only that a keyboardis
 ### 9. General MIDI and existing Sonara metadata
 
 - GM1 program 9 "Celesta", first of the Chromatic Percussion group [Cited S19]; GM2 has no variation of 9
-  [Cited S20]. GM does not say whether program 9 sounds at written or sounding pitch [Estimate]; Sonara should send
+  [Cited S20]. GM does not say whether program 9 sounds at written or sounding pitch [Estimate: S19 and S20 give program names only]; Sonara should send
   sounding pitches.
 - Not in `data.rs` [Cited S33].
 
@@ -471,7 +540,7 @@ default (S27) and Sonara's sampler, which plays CC 11 [Cited S27, S33].
 | Italian | organo a canne (organo) | [Cited S22] |
 | German | Orgel | [Cited S22] |
 | French | orgue | [Cited S22] |
-| Score | "Org."; written on three staves, two for the hands and one for the pedals | [Cited S3] for the staves; [Estimate] for the abbreviation |
+| Score | "Org."; written on three staves, two for the hands and one for the pedals | [Cited S3] for the staves; [Estimate: publishing practice; no opened source prints an abbreviation] for the abbreviation |
 
 Family slug `keyboards`. Berlioz files it under "Wind instruments with key-boards" [Cited S3]; Sonara's catalog
 groups by the player [Estimate: catalog choice].
@@ -494,7 +563,7 @@ groups by the player [Estimate: catalog choice].
 |---|---|---|---|
 | Modern manual | 61 notes, C to c⁗ | 36-96 | [Cited S8, S4] |
 | Cavaillé-Coll / Mutin manual | 56 notes, C to G "in altissimo" | 36-91 | [Cited S4] |
-| Berlioz's organ | stops of four octaves; builders add five notes "up to F" | about 36-89 | [Cited S3]; the C start is [Estimate] |
+| Berlioz's organ | stops of four octaves; builders add five notes "up to F" | about 36-89 | [Cited S3]; the C start is [Estimate: the 8′ compass starts on C (S10); S3 names only the added top note] |
 | Modern pedal | 30 notes C-f′ or 32 notes C-g′ | 36-65 / 36-67 | [Cited S8, S4] |
 | German and Dutch pedal from 1673 on | 27 notes C-d′, extended to f′ by Bach | 36-62 / 36-65 | [Cited S4 (appendix, p. 200)] |
 | Bach's organ (Widor) | manuals 54 notes CC to F in alt; pedal 30 notes CC to F above middle C | 36-89 / 36-65 | [Cited S4]; Widor's "CC" is the 8′ bottom C [Estimate: from the 61-note "C in altissimo" manual] |
@@ -525,9 +594,36 @@ groups by the player [Estimate: catalog choice].
   register and must be moved higher [Cited S4]. Soft stops alone suit accompanying voices [Cited S3].
 - Speech and agility: Berlioz says emission is less instantaneous than the piano's, so rapid successions are harder
   [Cited S3]; Widor says the Barker lever makes the touch "as light as that of an Erard" with instantaneous sound on
-  coupled manuals [Cited S4]. Disagreement depends on action and building [Estimate].
+  coupled manuals [Cited S4]. Disagreement depends on action and building [Estimate: reconciliation of S3 and S4].
 - Sustain is unlimited; the organ suits the bound (legato) style, suspensions and held notes [Cited S3].
 - Pedal technique: concave, narrow pedal keys allow legatos and glissandos with toe and heel [Cited S4].
+
+What a composer writes differently for the pipe organ:
+
+- **Dynamics by registration and swell.** Striking the keys harder changes nothing [Cited S4]; loudness comes from
+  stops, couplers, the swell box of enclosed divisions and the crescendo pedal [Cited S8, S11]. A hairpin is playable
+  on an enclosed division or with the crescendo pedal; elsewhere dynamics are terraced by changing stops [Estimate:
+  consequence of S8 and S11]. In Sonara the swell is sent as CC 11 [Estimate: follows Vintage B3's expression default
+  (S27) and Sonara's sampler (S33); no organ library manual was opened].
+- **Registration in the part.** Bach and his contemporaries did not mark registration, because tempo and character
+  implied it: foundation stops for serious pieces, mixtures for quick ones [Cited S4]. A modern part names the manual
+  and the stops or footages at the start and at each change [Estimate: organ notation practice; no opened source shows
+  the form of the marks]. Footage moves the octave: 16′ sounds an octave below the key, 4′ an octave above [Cited S9,
+  S10].
+- **Sustain without decay.** A held key sounds without decay until it is released [Cited S8, S3]; a note lasts exactly
+  as long as its key, with no damper pedal [Estimate: follows from S8 and S3]. The organ suits the bound (legato)
+  style, suspensions and held notes [Cited S3]; in a large building, leave time for the sound to travel [Cited S4].
+- **Three staves and the feet.** Write two staves for the hands and one for the pedals [Cited S3]. The modern
+  pedalboard spans C-f′ or C-g′ (36-65 or 36-67) [Cited S8, S4], and concave pedals allow legato and glissando with
+  toe and heel [Cited S4]. Parts are distributed between the manuals and the pedal, each manual playing its own
+  division [Cited S3, S8].
+- **Voicing by stop family and register.** The 8′ foundation stops are the backbone, like the orchestral strings;
+  mixtures give quick motion and power; 16′, 8′ and 4′ reeds cannot be written in four parts in the middle register
+  and must move higher [Cited S4]. Soft stops alone suit accompanying voices [Cited S3].
+- **What to avoid compared with the grand.** Accents by key force [Cited S4]; very rapid successions on organs whose
+  speech is slower than the piano's [Cited S3]; and piano figures meant to be held by the damper pedal, which on the
+  organ sound at full strength for their whole written length [Estimate: consequence of the sustain without decay, S3,
+  S8].
 
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
@@ -539,11 +635,11 @@ without changing how the key is played [Cited S3, S4 for the organist's art of c
 | Stops (registration) | selects ranks | SSO `Organ Single Stops.sfz`: one stop per key switch on keys 12-25 (Great Bourdon 16′, Open Diapason 8′, Stopped Diapason 8′, Dulciana 8′, Flute 4′ ...) | [Cited S32] |
 | Preset combinations | general/divisional pistons recall registrations | SSO `Organ Combinations.sfz`: key switches 12-28 select "Great - Mezzo piano" (Stopped Diapason 8′ + Dulciana 8′), "Mezzo forte" (Open Diapason 8′ + Principal 4′), "Forte" (those + Fifteenth 2′), "Fortissimo" (those + Bourdon 16′) | [Cited S8, S32] |
 | Divisions | separate manuals | separate patches per division (SSO Great, Swell, Pedal; VSCO Loud, Quiet, Pedal) | [Cited S32, S30] |
-| Couplers | play one division from another manual; octave couplers add ±12 | not modelled in an opened library; an agent can layer two patches | [Cited S8]; [Estimate] for the workaround |
-| Swell pedal | CC 11 expression on enclosed divisions | Sonara's sampler plays CC 11 [Cited S33]; no organ library was opened that states its CC | [Cited S11, S33]; [Estimate] for CC 11 |
-| Tremulant | a stop that modulates the wind (listed in S9's sample stoplist) | not in the opened libraries | [Cited S9 for its presence]; [Estimate] for the description |
+| Couplers | play one division from another manual; octave couplers add ±12 | not modelled in an opened library; an agent can layer two patches | [Cited S8]; [Estimate: design judgement for Sonara; no opened library models couplers] for the workaround |
+| Swell pedal | CC 11 expression on enclosed divisions | Sonara's sampler plays CC 11 [Cited S33]; no organ library was opened that states its CC | [Cited S11, S33]; [Estimate: follows Vintage B3's expression default (S27) and Sonara's sampler (S33); no organ library manual was opened] for CC 11 |
+| Tremulant | a stop that modulates the wind (listed in S9's sample stoplist) | not in the opened libraries | [Cited S9 for its presence]; [Estimate: S9 was read for the stop's presence only; general organ knowledge] for the description |
 | Velocity | none on the instrument | SSO `amp_veltrack=0`; VSCO one velocity range 0-127 | [Cited S32, S30] |
-| `legato` | finger overlap; no special samples | note overlap | [Estimate] |
+| `legato` | finger overlap; no special samples | note overlap | [Estimate: keyboard practice; no opened organ library documents legato] |
 | Pedal `glissando` | foot slide on concave pedalboards | ordinary notes | [Cited S4] |
 
 Sonara note: SSO's organ stops use `fil_type`, `cutoff`, `fil_keytrack`, `group_volume` and `amp_veltrack`, which
@@ -552,7 +648,7 @@ will therefore sound brighter than intended and respond to velocity [Estimate: c
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-One organist [Estimate]. Berlioz and Widor discuss the organ as "a complete and independent orchestra" in itself
+One organist [Estimate: general organ practice; no source states a count]. Berlioz and Widor discuss the organ as "a complete and independent orchestra" in itself
 [Cited S3, S4]. No divisi; the organist distributes parts between manuals and pedal [Cited S3].
 
 ### 7. Role in the orchestra and typical doublings
@@ -563,8 +659,8 @@ One organist [Estimate]. Berlioz and Widor discuss the organ as "a complete and 
 - Saint-Saëns's Symphony No. 3 has a prominent organ part [Cited S8]. Rimsky-Korsakov uses an offstage organ in
   *Sadko* (listed among "instruments on the stage and in the wings") [Cited S1].
 - Doublings: Widor compares 8′ foundations to the string body; Robert Franz replaced Bach's organ parts with bassoons
-  and clarinets [Cited S4]. Pedal 16′ doubles contrabass lines [Estimate].
-- Film and liturgy: sacred and dramatic colour [Estimate].
+  and clarinets [Cited S4]. Pedal 16′ doubles contrabass lines [Estimate: general orchestration practice; no source states it].
+- Film and liturgy: sacred and dramatic colour [Estimate: general film and liturgical practice; no source opened].
 
 ### 8. Variants and related instruments (when a player changes instrument)
 
@@ -573,7 +669,7 @@ One organist [Estimate]. Berlioz and Widor discuss the organ as "a complete and 
 | Harmonium / melodium (Alexandre) | free metal reeds, foot bellows, "Register of Expression" for crescendo; five-octave keyboard, stops giving seven octaves | [Cited S3] |
 | Reed organ | GM program 21 | [Cited S19] |
 | Renaissance organ | VCSL records a small organ with 4′, 8′ and Full | [Cited S31] |
-| Positive, chamber organ | small one-manual organs for continuo | [Estimate] |
+| Positive, chamber organ | small one-manual organs for continuo | [Estimate: general organ knowledge; no source opened] |
 | Hammond organ | electric organ using pipe-organ footage names | [Cited S12] (see `organ_hammond`) |
 | Celesta built into organs | Schiedmayer | [Cited S23] |
 
@@ -588,9 +684,9 @@ One organist [Estimate]. Berlioz and Widor discuss the organ as "a complete and 
 | Library | Licence | Coverage | Plays in Sonara | Provenance |
 |---|---|---|---|---|
 | VSCO 2 CE | CC0 | `OrganLoud.sfz` (keys 36-96, 21 regions about every third semitone, one velocity range 0-127, samples `Rode_Man3Open_*`), `OrganLoudPedal.sfz` (36-66); `OrganQuiet` and `OrganQuietPedal` are in the file list but were not opened | yes | [Cited S30, S33] |
-| VCSL | CC0 1.0; `Info.txt`: organ sampled by Simon Dalzell of Ivy Audio, 2015-16, redistribution granted by Versilian Studios | Pipe Organ Loud, Quiet, Loud Pedal, Quiet Pedal, `Rode_Blower.wav` (blower noise); Renaissance Organ 4′, 8′, Full | `master` holds WAVs only [Cited S31]; tag `v1.2.2-RC` holds `Pipe Organ - Loud`, `- Quiet`, `- Loud Pedal`, `- Quiet Pedal`, `- Keyswitch` and `Renaissance Organ - 4'`, `- 8'`, `- 4'+8'`, `- Full`, `- Keyswitch` (`.sfz`) [Cited S40]. Not opened, so playback in Sonara is not checked [Estimate] | [Cited S31, S40] |
+| VCSL | CC0 1.0; `Info.txt`: organ sampled by Simon Dalzell of Ivy Audio, 2015-16, redistribution granted by Versilian Studios | Pipe Organ Loud, Quiet, Loud Pedal, Quiet Pedal, `Rode_Blower.wav` (blower noise); Renaissance Organ 4′, 8′, Full | `master` holds WAVs only [Cited S31]; tag `v1.2.2-RC` holds `Pipe Organ - Loud`, `- Quiet`, `- Loud Pedal`, `- Quiet Pedal`, `- Keyswitch` and `Renaissance Organ - 4'`, `- 8'`, `- 4'+8'`, `- Full`, `- Keyswitch` (`.sfz`) [Cited S40]. Not opened, so playback in Sonara is not checked [Estimate: the `.sfz` files in tag v1.2.2-RC were not opened] | [Cited S31, S40] |
 | Sonatina Symphonic Orchestra | CC Sampling Plus 1.0 (retired); not bundlable | 14 single stops (Great, Swell, Pedal), combinations, all stops; key switches 12-28 | yes, without filters and `amp_veltrack` | [Cited S32, S33] |
-| Hauptwerk, GrandOrgue sample sets | various | not opened | no | [Estimate] |
+| Hauptwerk, GrandOrgue sample sets | various | not opened | no | [Estimate: names from general knowledge; neither product was opened] |
 
 ## organ_hammond: Hammond organ
 
@@ -668,6 +764,30 @@ Drawbars (S27 gives the harmonic numbers relative to 16′; S12 the octave meani
   [Cited S27].
 - Weight: B-3 with bench and pedals 425 lb [Cited S12], so live use favours clonewheels [Cited S12].
 
+What a composer writes differently for the Hammond organ:
+
+- **Expression pedal, not velocity.** Volume does not depend on key force; the expression pedal sets the level [Cited
+  S12], and organists use it heavily and rhythmically [Cited S27]. Write dynamics and swells as pedal moves [Estimate:
+  consequence of S12 and S27]; in Vintage B3 the pedal is CC 11 and also changes the pre-amp's colour [Cited S27].
+- **Drawbar registration.** Colour comes from the nine drawbars, given as nine digits such as 888000000 (16′, 5 ⅓′ and
+  8′ fully out) [Cited S12]. Name the setting at the start and at each change [Estimate: organ part practice; no
+  opened source shows how scores mark it]. Avoid 1 ⅗′ and 1 ⅓′ under a minor bass line: their major-chord colour
+  clashes with it [Cited S27].
+- **Percussion depends on phrasing.** Harmonic percussion sounds on the upper manual only and retriggers only after
+  all upper-manual keys are released, so legato or held notes get none [Cited S12, S27]. Detach the notes that should
+  speak with percussion [Estimate: consequence of S12 and S27].
+- **Leslie speed as a written event.** The rotary speaker switches between slow (chorale) and fast (tremolo), and the
+  rotors speed up and slow down audibly [Cited S13, S27]. Mark speed changes in the part and allow for the ramp
+  [Estimate: design judgement; no opened source gives the times, open question 15].
+- **Sustain and the pedals.** Tones sustain until release; only the percussion decays [Cited S12, S27]. The pedals are
+  a 25-note pedalboard from low C to middle C, not a damper pedal [Cited S12], sounding 36-60 at 8′ [Estimate:
+  arithmetic, as in section 3]; they play bass notes, and the bass is often covered there or in the left hand
+  [Estimate: jazz organ practice]. Write treble and bass staves with an optional pedal staff [Estimate: organ notation
+  practice].
+- **What to avoid compared with the grand.** Velocity accents, pedal-sustained textures and notes outside 36-96, the
+  61-note manual [Cited S12, S27]; in Vintage B3, MIDI 24-35 are preset keys, not notes [Cited S27]. The light action
+  does allow faster passages than a piano [Cited S12].
+
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
 Reference implementation: Apple Logic Pro **Vintage B3** [Cited S27, S28].
@@ -683,7 +803,7 @@ Reference implementation: Apple Logic Pro **Vintage B3** [Cited S27, S28].
 | Key click | contact click on note-on and note-off | VK/CX: CC 113 click-on level, 114 click-off level | [Cited S27, S28] |
 | Leslie speed | slow (chorale), fast (tremolo), brake; rotors accelerate and decelerate audibly | VK/CX: CC 80 and 92 slow/brake/fast, 81 slow/brake, 118 fast rate; Motor page: speed switch by mod wheel (lower third slow, centre brake, upper third fast), aftertouch, sustain pedal or CC 18/19, each as toggle or momentary; Acceleration knob sets spin-up time | [Cited S27, S28] |
 | Expression pedal | volume and pre-amp colour | CC 11 by default | [Cited S27] |
-| Glissando (palm smear) | sweep across keys | ordinary notes | [Estimate] |
+| Glissando (palm smear) | sweep across keys | ordinary notes | [Estimate: jazz and rock organ practice; no opened source describes it] |
 
 Leslie speaker facts: two rotors, a treble horn (one horn works, the other is a counterweight) and a bass drum
 [Cited S27]; horn about 50 rpm (chorale) and 400 rpm (tremolo), drum about 40 and 340 rpm [Cited S13]; crossover at
@@ -700,8 +820,8 @@ One player, often covering bass on the pedals or lower manual [Estimate: jazz or
 ### 7. Role in the orchestra and typical doublings
 
 - Jazz (Jimmy Smith), gospel and church use, rock [Cited S12; GM's "Rock Organ" program, S19]. Not a standard
-  orchestral instrument [Estimate].
-- Film and theatre: pit and studio keyboard parts [Estimate].
+  orchestral instrument [Estimate: general orchestration practice; no source states it].
+- Film and theatre: pit and studio keyboard parts [Estimate: general studio and pit practice; no source opened].
 
 ### 8. Variants and related instruments (when a player changes instrument)
 
@@ -733,7 +853,7 @@ One player, often covering bass on the pedals or lower manual [Estimate: jazz or
 ## accordion: Accordion
 
 ```json
-{"id": "accordion", "family": "keyboards", "names": {"en": "Accordion", "cs": "akordeon", "it": "fisarmonica", "de": "Akkordeon", "fr": "accordéon", "score_abbreviation": "Acc."}, "pitched": true, "transposition": 0, "clefs": ["treble", "bass"], "sounding_playable": [36, 98], "sounding_comfortable": [53, 93], "range_provenance": {"playable": "Cited S16, S18: the right hand reaches written D7 (98) on 49-key piano accordions (S16); the Stradella bass reed set starts at C2 (36) (S18). Key compass at 8' (clarinet) pitch; a 16' (bassoon) reed sounds an octave lower and a 4' (piccolo) reed an octave higher, so a 41-key instrument sounds F2-A7 (41-105) and a 49-key one D2-D8 (S16, S17)", "comfortable": "Cited S16: F3-A6 (53-93), the written right-hand range of the standard 120-bass, 41-key piano accordion. Notes below 53 belong to the left hand, whose Stradella bass buttons sound fixed pitch classes in fixed octaves (S18)"}, "written_playable": [36, 98], "gm_program": 22, "gm_program_name": "Accordion", "gm_percussion_notes": [], "existing_sonara_id": null, "articulations_existing_vocab": ["sustain", "legato", "staccato", "tremolo"], "articulations_proposed_new": ["crescendo_swell", "air_tone"], "articulations_provenance": "Cited S15: bellows swells and fades (crescendo_swell), bellows shake, mapped to tremolo as rapid repetition, and the silent air button's whoosh (air_tone); Estimate for legato and staccato. Register switches are controls (section 5)", "solo_or_section": "solo", "typical_players": {"classical": "0", "romantic": "0-4 (rare)", "film": "0-1", "chamber": "1"}, "keyboard": {"action": "piano-style keys (or chromatic buttons) open pallets over free metal reeds in reed chambers; the touch is not expressive [Cited S15, S16]", "keys": 41, "lowest": 53, "highest": 93, "pedals": [], "pedal_ccs": {}, "sympathetic_resonance": "two or three 8' ranks tuned up to about 25 cents apart beat against each other (violin and musette registers) [Cited S17]", "release_and_mechanical_noise": "bellows and air noise; the air button moves air without sounding reeds [Cited S15]; key and pallet clatter is not documented [Estimate]", "decay": "none while the bellows move: the reed sounds as long as air passes it [Cited S15 for the bellows-driven reed; Estimate for the release behaviour]", "dynamic_range": "all expression is effected through the bellows; key force does not affect dynamics [Cited S15]"}}
+{"id": "accordion", "family": "keyboards", "names": {"en": "Accordion", "cs": "akordeon", "it": "fisarmonica", "de": "Akkordeon", "fr": "accordéon", "score_abbreviation": "Acc."}, "pitched": true, "transposition": 0, "clefs": ["treble", "bass"], "sounding_playable": [36, 98], "sounding_comfortable": [53, 93], "range_provenance": {"playable": "Cited S16, S18: the right hand reaches written D7 (98) on 49-key piano accordions (S16); the Stradella bass reed set starts at C2 (36) (S18). Key compass at 8' (clarinet) pitch; a 16' (bassoon) reed sounds an octave lower and a 4' (piccolo) reed an octave higher, so a 41-key instrument sounds F2-A7 (41-105) and a 49-key one D2-D8 (S16, S17)", "comfortable": "Cited S16: F3-A6 (53-93), the written right-hand range of the standard 120-bass, 41-key piano accordion. Notes below 53 belong to the left hand, whose Stradella bass buttons sound fixed pitch classes in fixed octaves (S18)"}, "written_playable": [36, 98], "gm_program": 22, "gm_program_name": "Accordion", "gm_percussion_notes": [], "existing_sonara_id": null, "articulations_existing_vocab": ["sustain", "legato", "staccato", "tremolo"], "articulations_proposed_new": ["crescendo_swell", "air_tone"], "articulations_provenance": "Cited S15: bellows swells and fades (crescendo_swell), bellows shake, mapped to tremolo as rapid repetition, and the silent air button's whoosh (air_tone); Estimate for legato and staccato. Register switches are controls (section 5)", "solo_or_section": "solo", "typical_players": {"classical": "0", "romantic": "0-4 (rare)", "film": "0-1", "chamber": "1"}, "keyboard": {"action": "piano-style keys (or chromatic buttons) open pallets over free metal reeds in reed chambers; the touch is not expressive [Cited S15, S16]", "keys": 41, "lowest": 53, "highest": 93, "pedals": [], "pedal_ccs": {}, "sympathetic_resonance": "two or three 8' ranks tuned up to about 25 cents apart beat against each other (violin and musette registers) [Cited S17]", "release_and_mechanical_noise": "bellows and air noise; the air button moves air without sounding reeds [Cited S15]; key and pallet clatter is not documented [Estimate: not in any source opened]", "decay": "none while the bellows move: the reed sounds as long as air passes it [Cited S15 for the bellows-driven reed; Estimate for the release behaviour]", "dynamic_range": "all expression is effected through the bellows; key force does not affect dynamics [Cited S15]"}}
 ```
 
 ### 1. Identity and names (Czech, English, Italian, German, French; how it appears in a score; family)
@@ -745,7 +865,7 @@ One player, often covering bass on the pedals or lower manual [Estimate: jazz or
 | Italian | fisarmonica | [Cited S22] |
 | German | Akkordeon (from *Akkord*) | [Cited S15, S22] |
 | French | accordéon | [Cited S22] |
-| Score | "Acc." or "Accord."; left-hand single-note lines marked "B.S." (bassi soli) | [Cited S18] for "B.S."; [Estimate] for the abbreviation |
+| Score | "Acc." or "Accord."; left-hand single-note lines marked "B.S." (bassi soli) | [Cited S18] for "B.S."; [Estimate: publishing practice; no opened source prints an abbreviation] for the abbreviation |
 
 **Family decision: `keyboards`.** Reasons: the piano accordion has a piano-style keyboard [Cited S16]; Wikipedia's
 infobox sets its background to "keyboard" [Cited S15]; General MIDI files Accordion and Tango Accordion in the Organ
@@ -815,18 +935,45 @@ Left hand (Stradella) [Cited S18]:
   subtle intonation changes; the silent air button for an air "whoosh" [Cited S15].
 - Register colour and octave come from the switch table above; "dry" versus "wet" musette tuning [Cited S17].
   Chin or palm master switches allow fast changes while playing [Cited S17].
-- Agility: fast right-hand passages are idiomatic; bellows reversals need placing at phrase points [Estimate].
+- Agility: fast right-hand passages are idiomatic; bellows reversals need placing at phrase points [Estimate: accordion practice; no opened source states it].
+
+What a composer writes differently for the accordion:
+
+- **The bellows is the breath.** Key touch does not affect dynamics; all expression comes from the bellows [Cited
+  S15], whose role is comparable to a violinist's bow or a singer's breathing [Cited S15]. Write swells and fades,
+  bellows shake and the silent air button's whoosh where they are wanted [Cited S15]. In Sonara, dynamics go on CC 11
+  with a constant velocity [Estimate: design judgement from the touch-insensitive keys (S15) and the CC 11 report
+  (S34)].
+- **Bellows changes and sustain.** A note sounds as long as air passes the reed [Cited S15], and no pedal is involved
+  [Estimate: no opened source describes one]. Place bellows changes at phrase points, like bow changes [Estimate:
+  accordion practice; no opened source states it]; on a piano accordion they do not change the pitch, because it is
+  unisonoric [Cited S15].
+- **Registers set colour and octave.** Register switches choose reed ranks, from piccolo 4′, clarinet 8′ and bassoon
+  16′ to the detuned musette and the master with all ranks [Cited S17]. Mark the register at the start and at changes
+  [Estimate: design judgement]: the switches carry icons with a dot for each rank at one of three levels, and versions
+  of these icons appear in some sheet music [Cited S17]. Chin or palm master switches allow fast changes while playing
+  [Cited S17].
+- **Left hand: Stradella buttons.** A chord button sounds a fixed three-note chord, and a bass button has no higher or
+  lower octave, so the written octave of bass and chord notes is arbitrary [Cited S18]. Write the left hand in the
+  bass clef: notes below the middle of the staff are bass buttons, notes above it chord buttons labelled M, m, 7 or d,
+  and single-note bass lines are marked "B.S." [Cited S18].
+- **Register.** The standard 120-bass instrument's right hand covers written F3-A6 (53-93) on 41 keys [Cited S16]; a
+  16′ or 4′ register moves the sound an octave down or up [Cited S16, S17].
+- **What to avoid compared with the grand.** Piano-style left-hand voicings, inversions and wide bass octaves on a
+  Stradella instrument [Estimate: consequence of S18; free-bass instruments play single notes, S15]; velocity accents
+  [Cited S15]; and long phrases with no place to change the bellows [Estimate: accordion practice; no opened source
+  states it].
 
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
 | Technique or control | Mapping | Implementation | Provenance |
 |---|---|---|---|
 | Bellows dynamics | `crescendo_swell` for swells; continuous level | CC 11: a Roland FR-3x V-Accordion sends bellows pressure as CC 11 (a user report); Sonara's sampler plays CC 11 | [Cited S15, S34, S33] |
-| Bellows shake | `tremolo` (rapid repetition by bellows reversal) | repeated short notes or a CC 11 pattern | [Cited S15]; implementation [Estimate] |
-| Air button | `air_tone` | needs an air-noise sample | [Cited S15]; [Estimate] |
-| Register switches | controls (patch or key switch per register) | no accordion library manual opened | [Cited S17]; [Estimate] |
-| Legato / staccato | key timing within one bellows direction | note length | [Estimate] |
-| Velocity | none on the instrument | constant velocity plus CC 11 | [Cited S15]; [Estimate] |
+| Bellows shake | `tremolo` (rapid repetition by bellows reversal) | repeated short notes or a CC 11 pattern | [Cited S15]; implementation [Estimate: design judgement; no accordion library was opened] |
+| Air button | `air_tone` | needs an air-noise sample | [Cited S15]; [Estimate: design judgement for the sample; no accordion library was opened] |
+| Register switches | controls (patch or key switch per register) | no accordion library manual opened | [Cited S17]; [Estimate: no accordion library manual was opened, so the patch or key-switch mapping is a design judgement] |
+| Legato / staccato | key timing within one bellows direction | note length | [Estimate: keyboard practice; no opened source describes it] |
+| Velocity | none on the instrument | constant velocity plus CC 11 | [Cited S15]; [Estimate: design judgement from the touch-insensitive keys (S15) and the CC 11 report (S34)] |
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
@@ -842,7 +989,7 @@ One player. Accordion orchestras existed in the US (New York Accordion Symphony,
 - Tchaikovsky, Giordano and Ives wrote for the diatonic button accordion [Cited S15]; Tchaikovsky's Orchestral Suite
   No. 2 asks for accordions ad libitum [Estimate: not stated by an opened source].
 - Tango: Piazzolla played the bandoneon; his works are also played on accordion [Cited S15].
-- Doublings with clarinets or a reed-organ colour; musette for French colour in film [Estimate].
+- Doublings with clarinets or a reed-organ colour; musette for French colour in film [Estimate: general orchestration and film practice; no source opened].
 
 ### 8. Variants and related instruments (when a player changes instrument)
 
@@ -869,8 +1016,8 @@ One player. Accordion orchestras existed in the US (New York Accordion Symphony,
 |---|---|---|
 | VSCO 2 CE, Sonatina | no accordion in the file lists read | [Cited S30, S32] |
 | VCSL (CC0) | free aerophones: three Hohner harmonicas and a siren; no accordion | [Cited S31] |
-| GM SoundFonts (FluidR3_GM, MuseScore_General; MIT) | program 22 in a complete GM set; SF2 is not played by Sonara's sampler | [Cited S33]; program presence [Estimate] |
-| Commercial accordion libraries | not opened | [Estimate] |
+| GM SoundFonts (FluidR3_GM, MuseScore_General; MIT) | program 22 in a complete GM set; SF2 is not played by Sonara's sampler | [Cited S33]; program presence [Estimate: a complete GM set must contain program 22 (S19); the SoundFont files were not opened] |
+| Commercial accordion libraries | not opened | [Estimate: not in any source opened; no commercial library was checked] |
 
 ## Open questions and disagreements between sources
 
@@ -881,7 +1028,7 @@ One player. Accordion orchestras existed in the US (New York Accordion Symphony,
    Sonara needs a separate registration model (stop list with footage offsets) before it can check sounding pitch for
    these instruments.
 2. **Celesta written or sounding names.** Schiedmayer never says whether "c-c5" and "c-f5" are written or sounding
-   [Cited S23]. The card reads them as sounding (they then match Wikipedia's C4-C8 and C3-F8) [Estimate]. Confirm with
+   [Cited S23]. The card reads them as sounding (they then match Wikipedia's C4-C8 and C3-F8) [Estimate: reconciliation of S7 and S23]. Confirm with
    a celesta player or a dated score.
 3. **Celesta's original compass.** Forsyth and Wikipedia: Mustel's first celesta had five octaves and the bottom one
    was dropped [Cited S2, S7]; Schiedmayer: the first model had four octaves, c1-c5 [Cited S23]; Widor (1906): four
@@ -896,7 +1043,7 @@ One player. Accordion orchestras existed in the US (New York Accordion Symphony,
 6. **Organ action speed.** Berlioz says organ speech is slower than the piano's; Widor says Barker-lever organs speak
    instantly [Cited S3, S4]. It depends on the action and the building; no number for an agent.
 7. **Clavichord GM program.** GM1 has none [Cited S19]. Fallback 7 Harpsichord (similar period colour) or 8
-   Clavi/Clavinet (the clavichord's electric descendant, a funk sound) [Estimate]. The schema has no field for a
+   Clavi/Clavinet (the clavichord's electric descendant, a funk sound) [Estimate: design judgement]. The schema has no field for a
    fallback program.
 8. **Sonara sampler gaps for these instruments.** It ignores `amp_veltrack`, `amplitude_oncc*`, `fil_*`,
    `group_volume`, `sustain_cc`, `ampeg_releasecc64`, `xfin_*`, `xfout_*` and `<curve>` [Cited S33]. Consequences:
@@ -917,7 +1064,7 @@ One player. Accordion orchestras existed in the US (New York Accordion Symphony,
     is also used for the clavinet.
 13. **Harpsichord pitch.** Historical-performance harpsichords are often tuned A = 415 Hz (French repertoire 392 Hz)
     [Cited S5]. Libraries recorded at those pitches need transposing in Sonara; no library opened states its tuning
-    [Estimate].
+    [Estimate: no opened library page states its recording pitch].
 14. **Vendor note names.** SSO (and its VCSL-derived harpsichord samples) and Apple name middle C "C3" [Cited S27,
     S32]; VSL's "F1-E6" harpsichord range does not state its convention [Cited S29]. Any import from vendor docs
     must convert.
@@ -1108,3 +1255,6 @@ _Consistency review of 2026-10-30. No source was re-researched; no json value ch
 - Harpsichord section 5 (lute stop) and section 10, organ_pipe section 10: the VCSL rows said "WAV only" or "no
   SFZ", read from `master`. The SFZ patches exist in tag `v1.2.2-RC` (new source S40, the tag's file list, opened
   for this change); the rows now name them and keep "not opened", because no `.sfz` file itself was read.
+- Gave every bare Estimate tag its reason (47 tags).
+- Added a "What a composer writes differently" block at the end of section 4 for harpsichord, clavichord, celesta,
+  organ_pipe, organ_hammond and accordion; new sources S41 (MacRitchie and Nuti 2015) and S42 (Wikipedia, "Bebung").
