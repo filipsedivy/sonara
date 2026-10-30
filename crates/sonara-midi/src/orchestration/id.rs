@@ -402,10 +402,10 @@ impl InstrumentType {
     }
 
     /// The record of this type in the dataset. The dataset holds one record for every type, at
-    /// the type's place in score order, which a compile-time check proves: the answer is always
-    /// `Some` and never another type's record.
+    /// the type's place in score order, which a compile-time check proves, so every type has its
+    /// own record.
     #[must_use]
-    pub fn get(self) -> Option<&'static Instrument> {
+    pub fn get(self) -> &'static Instrument {
         data::record(self)
     }
 

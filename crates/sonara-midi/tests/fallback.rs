@@ -22,7 +22,7 @@ fn is_traceable(provenance: Provenance) -> bool {
 
 /// The playable range of `instrument`, or `None` when it is unpitched.
 fn playable(instrument: InstrumentType) -> Option<PitchRange> {
-    let record = instrument.get().expect("every type has a record");
+    let record = instrument.get();
     match record.pitch() {
         PitchModel::Pitched(pitched) => Some(pitched.playable.range),
         PitchModel::Unpitched => None,
@@ -272,7 +272,7 @@ fn neighbours_hold_their_invariants() {
             }
             if let Manner::With(articulation) = neighbour.manner {
                 assert_eq!(articulation.axis(), Axis::Primary, "{id}");
-                let record = neighbour.instrument.get().expect("a record");
+                let record = neighbour.instrument.get();
                 assert!(record.articulations().contains(&articulation), "{id}");
             }
             assert_eq!(neighbour.check(instrument_type), Ok(()), "{id}");

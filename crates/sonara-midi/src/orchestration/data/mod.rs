@@ -270,8 +270,10 @@ const _: () = {
     }
 };
 
-/// The record of `instrument_type`. The dataset holds one for every type, which the check above
-/// proves at compile time, so the answer is always `Some`.
-pub(super) fn record(instrument_type: InstrumentType) -> Option<&'static Instrument> {
-    INSTRUMENTS.get(instrument_type as usize)
+/// The record of `instrument_type`. The dataset holds one for every type, at the type's place,
+/// which the check above proves at compile time.
+pub(super) fn record(instrument_type: InstrumentType) -> &'static Instrument {
+    // PRI-04: the compile-time check above proves that `INSTRUMENTS` has a record at every place
+    // of `InstrumentType::ALL`, so the index is always in bounds.
+    &INSTRUMENTS[instrument_type as usize]
 }

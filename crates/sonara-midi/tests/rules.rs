@@ -642,16 +642,14 @@ fn every_named_doubling_is_valid_and_traceable() {
 fn centre_of(selector: Selector) -> f64 {
     let centres: Vec<f64> = covered(selector)
         .into_iter()
-        .filter_map(
-            |instrument| match instrument.get().map(|record| *record.pitch()) {
-                Some(PitchModel::Pitched(pitched)) => {
-                    let range = pitched.playable.range;
-                    #[expect(clippy::cast_precision_loss, reason = "MIDI notes are 0-127")]
-                    Some((range.low().get() + range.high().get()) as f64 / 2.0)
-                }
-                _ => None,
-            },
-        )
+        .filter_map(|instrument| match *instrument.get().pitch() {
+            PitchModel::Pitched(pitched) => {
+                let range = pitched.playable.range;
+                #[expect(clippy::cast_precision_loss, reason = "MIDI notes are 0-127")]
+                Some((range.low().get() + range.high().get()) as f64 / 2.0)
+            }
+            PitchModel::Unpitched => None,
+        })
         .collect();
     assert!(
         !centres.is_empty(),
@@ -718,7 +716,7 @@ fn played_selectors_name_articulations_their_instruments_play() {
                 continue;
             };
             for instrument in ids {
-                let listed = instrument.get().expect("record").articulations();
+                let listed = instrument.get().articulations();
                 assert!(
                     articulations
                         .iter()
@@ -729,11 +727,7 @@ fn played_selectors_name_articulations_their_instruments_play() {
             for articulation in articulations {
                 assert!(
                     ids.iter().any(|instrument| {
-                        instrument
-                            .get()
-                            .expect("record")
-                            .articulations()
-                            .contains(articulation)
+                        instrument.get().articulations().contains(articulation)
                     }),
                     "row {i}: {articulation:?}"
                 );
@@ -1324,7 +1318,7 @@ fn register_factors_match_the_table() {
 fn register_factors_lie_inside_the_playable_range() {
     // TST-07: a register is one the instrument plays.
     for row in &REGISTER_FACTORS {
-        let PitchModel::Pitched(pitched) = *row.instrument.get().expect("record").pitch() else {
+        let PitchModel::Pitched(pitched) = *row.instrument.get().pitch() else {
             panic!("{:?} is pitched", row.instrument);
         };
         assert!(

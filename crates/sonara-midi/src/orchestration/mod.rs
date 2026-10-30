@@ -53,7 +53,7 @@ pub use playability::{Fact, FactKind, LetterName, MODERATO_BPM, Span};
 /// ([`InstrumentType::from_id`]).
 #[must_use]
 pub fn instrument(id: &str) -> Option<&'static Instrument> {
-    InstrumentType::from_id(id).and_then(InstrumentType::get)
+    InstrumentType::from_id(id).map(InstrumentType::get)
 }
 
 /// Every instrument record, in score order (the order of [`InstrumentType::ALL`]).

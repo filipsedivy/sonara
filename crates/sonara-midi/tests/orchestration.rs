@@ -1187,7 +1187,7 @@ fn records_are_in_score_order_and_found_by_type() {
         assert_eq!(record.instrument_type(), instrument_type);
         assert_eq!(record.id(), instrument_type.id());
         assert_eq!(record.family(), instrument_type.family());
-        let by_type = instrument_type.get().expect("every type has a record");
+        let by_type = instrument_type.get();
         assert!(std::ptr::eq(by_type, record), "{instrument_type:?}");
         let by_id = instrument(instrument_type.id());
         assert!(by_id.is_some_and(|found| std::ptr::eq(found, record)));
@@ -3110,13 +3110,13 @@ fn voices_are_singular_and_choir_sections_plural() {
         InstrumentType::ChoirBass,
     ];
     for voice in voices {
-        let record = voice.get().expect("in the dataset");
+        let record = voice.get();
         for alias in record.aliases() {
             assert_ne!(alias.number, Number::Plural, "{}: {alias:?}", record.id());
         }
     }
     for section in sections {
-        let record = section.get().expect("in the dataset");
+        let record = section.get();
         for alias in record.aliases() {
             assert_ne!(alias.number, Number::Singular, "{}: {alias:?}", record.id());
         }
