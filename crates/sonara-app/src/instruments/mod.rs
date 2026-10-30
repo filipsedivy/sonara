@@ -9,9 +9,10 @@
 //! **Preset IDs play.** The sampler's `instrument` parameter offers the IDs of the playable
 //! presets, and a project stores the chosen ID, which holds no absolute path.
 //! [`InstalledInstruments`] is built from the catalog once when the application starts; it gives
-//! the choices, resolves a stored ID to its patch file for the audio engine, and maps the patch
-//! path that a project from before preset IDs stored to the preset of that patch (ADR 0010,
-//! decision 4 as amended).
+//! the choices, and the same choices grouped by library with their names for the device editor
+//! ([`LibraryChoices`]), resolves a stored ID to its patch file for the audio engine, and maps
+//! the patch path that a project from before preset IDs stored to the preset of that patch
+//! (ADR 0010, decision 4 as amended).
 //!
 //! **Discovery** ([`InstrumentCatalog::discover`]) takes the library directories of the
 //! `sample_libraries` setting ([`crate::samples`]) and merges three sources:
@@ -44,7 +45,7 @@ mod verify;
 
 pub use discovery::InstrumentCatalog;
 pub use family::{FamilyClaim, InstrumentFamily};
-pub use installed::InstalledInstruments;
+pub use installed::{InstalledInstruments, LibraryChoices, PresetChoice};
 pub use manifest::{MANIFEST_FILE, MANIFEST_VERSION};
 pub use model::{
     Availability, CatalogError, InstrumentId, InstrumentPreset, InvalidLibraryId, Library,

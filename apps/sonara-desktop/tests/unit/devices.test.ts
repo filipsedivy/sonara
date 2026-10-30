@@ -15,6 +15,7 @@ import {
   groupParams,
   groupRows,
   headerText,
+  instrumentCombo,
   knobValue,
   missingText,
   ownerOf,
@@ -29,7 +30,7 @@ import {
 import type { LiveFrame } from "../../src/lib/live/frame";
 import { keyValue, normOf, pageOf, userValue } from "../../src/lib/mixer/controls";
 import { EMPTY_SELECTION, selectTrack, setCurrentDevice } from "../../src/lib/state/selection";
-import type { DeviceView, EqResponse, ParamView } from "../../src/lib/types";
+import type { DeviceView, EqResponse, LibraryChoices, ParamView } from "../../src/lib/types";
 import { GOLDEN, PLUGINS, defaults, plugin } from "../support/plugins";
 import { project, track } from "../support/project";
 
@@ -246,6 +247,101 @@ test("a card's texts and choices: presets, the renamed plugin, a missing plugin,
     { id: "v", name: "Verb" },
     { id: "a", name: "Vox" },
   ]);
+});
+
+// The sampler's instrument combo. Its choices and libraries are what sonara-app answers for two
+// libraries (crates/sonara-app/tests/instrument_catalog.rs pins that answer).
+const SAMPLER_CHOICES = ["bare/Tuba", "bare/a/Horn", "bare/b/Horn", "zeta/Ens/Violins", "zeta/Solo/Cello", "zeta/Solo/Violin"];
+const SAMPLER_LIBRARIES: LibraryChoices[] = [
+  {
+    id: "zeta",
+    name: "Alpha Strings",
+    presets: [
+      { id: "zeta/Solo/Cello", label: "Cello" },
+      { id: "zeta/Ens/Violins", label: "violin (Ens/Violins)" },
+      { id: "zeta/Solo/Violin", label: "Violin (Solo/Violin)" },
+    ],
+  },
+  {
+    id: "bare",
+    name: "bare",
+    presets: [
+      { id: "bare/a/Horn", label: "Horn (a/Horn)" },
+      { id: "bare/b/Horn", label: "Horn (b/Horn)" },
+      { id: "bare/Tuba", label: "Tuba" },
+    ],
+  },
+];
+
+/** A combo's groups as `[title, [label, value, disabled]…]`. */
+function comboRows(groups: ReturnType<typeof instrumentCombo>["groups"]): [string | null, [string, string, boolean][]][] {
+  return groups.map((g) => [g.title, g.options.map((o) => [o.label, o.value, o.disabled])]);
+}
+
+test("the sampler's instrument combo shows preset names under their library, in sonara-app's order", () => {
+  const combo = instrumentCombo(SAMPLER_CHOICES, SAMPLER_LIBRARIES, "zeta/Solo/Violin", undefined);
+  expect(combo.selected).toBe("zeta/Solo/Violin");
+  expect(comboRows(combo.groups)).toEqual([
+    [
+      "Alpha Strings",
+      [
+        ["Cello", "zeta/Solo/Cello", false],
+        ["violin (Ens/Violins)", "zeta/Ens/Violins", false],
+        ["Violin (Solo/Violin)", "zeta/Solo/Violin", false],
+      ],
+    ],
+    [
+      "bare",
+      [
+        ["Horn (a/Horn)", "bare/a/Horn", false],
+        ["Horn (b/Horn)", "bare/b/Horn", false],
+        ["Tuba", "bare/Tuba", false],
+      ],
+    ],
+  ]);
+  // The tooltip names the preset ID.
+  expect(combo.groups[0]?.options.map((o) => o.title)).toEqual(["zeta/Solo/Cello", "zeta/Ens/Violins", "zeta/Solo/Violin"]);
+  // Every choice once: the options are exactly the descriptor's choices (TST-07).
+  const values = combo.groups.flatMap((g) => g.options.map((o) => o.value));
+  expect([...values].sort()).toEqual(SAMPLER_CHOICES);
+});
+
+test("a choice no library lists still shows, as its ID; a listed preset that is no choice and an empty library do not", () => {
+  const libraries: LibraryChoices[] = [
+    { id: "zeta", name: "Alpha Strings", presets: [{ id: "zeta/Solo/Cello", label: "Cello" }, { id: "zeta/Gone", label: "Gone" }] },
+    { id: "empty", name: "Empty", presets: [{ id: "empty/Nothing", label: "Nothing" }] },
+  ];
+  const combo = instrumentCombo(["other/Pad", "zeta/Solo/Cello"], libraries, "other/Pad", undefined);
+  expect(combo.selected).toBe("other/Pad");
+  expect(comboRows(combo.groups)).toEqual([
+    ["Alpha Strings", [["Cello", "zeta/Solo/Cello", false]]],
+    [null, [["other/Pad", "other/Pad", false]]],
+  ]);
+});
+
+test("an older project's patch path shows the preset it plays; a value not installed here says so first", () => {
+  const path = "/Users/me/Libraries/Zeta/Solo/Cello.sfz";
+  // sonara-app reads the path as the preset of that patch: the combo shows that preset.
+  const read = instrumentCombo(SAMPLER_CHOICES, SAMPLER_LIBRARIES, path, "zeta/Solo/Cello");
+  expect(read.selected).toBe("zeta/Solo/Cello");
+  expect(comboRows(read.groups).map(([title]) => title)).toEqual(["Alpha Strings", "bare"]);
+
+  // Not installed here (TST-03): a disabled first option with the instrument's name, never the
+  // first preset, which the track does not play.
+  const missing = instrumentCombo(SAMPLER_CHOICES, SAMPLER_LIBRARIES, "vsco2ce/Tuba-KS", null);
+  expect(missing.selected).toBe("vsco2ce/Tuba-KS");
+  expect(comboRows(missing.groups)[0]).toEqual([null, [["Not installed: Tuba-KS", "vsco2ce/Tuba-KS", true]]]);
+  expect(missing.groups[0]?.options[0]?.title).toBe("vsco2ce/Tuba-KS");
+  expect(missing.groups).toHaveLength(3);
+  const gonePath = instrumentCombo(SAMPLER_CHOICES, SAMPLER_LIBRARIES, "C:\\Libs\\Keys\\Tone.SFZ", null);
+  expect(gonePath.groups[0]?.options[0]?.label).toBe("Not installed: Tone");
+  // A preset that is no choice does not count as read.
+  expect(instrumentCombo(SAMPLER_CHOICES, SAMPLER_LIBRARIES, path, "zeta/Gone").selected).toBe(path);
+
+  // While sonara-app has not answered, the name alone, with no claim.
+  const asking = instrumentCombo(SAMPLER_CHOICES, SAMPLER_LIBRARIES, path, undefined);
+  expect(asking.selected).toBe(path);
+  expect(comboRows(asking.groups)[0]).toEqual([null, [["Cello", path, true]]]);
 });
 
 test("the gain-reduction readout follows the live frame's devices when its layout is the project's", () => {

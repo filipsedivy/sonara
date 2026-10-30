@@ -549,6 +549,21 @@ export interface PluginGroup {
   plugins: PluginItem[];
 }
 
+/** One playable preset among the sampler's instrument choices (`instruments::PresetChoice`). */
+export interface PresetChoice {
+  /** The preset ID, the value the `instrument` parameter stores. */
+  id: string;
+  /** The preset's name, with its path in the library when another preset there shares it. */
+  label: string;
+}
+
+/** `sampler_instruments`: one library's presets among the sampler's choices (`instruments::LibraryChoices`). */
+export interface LibraryChoices {
+  id: string;
+  name: string;
+  presets: PresetChoice[];
+}
+
 /** `eq_response`: the parametric EQ's curve. */
 export interface EqResponse {
   freqs: number[];

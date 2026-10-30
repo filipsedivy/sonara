@@ -31,6 +31,7 @@ use sonara_app::catalog::{self, DrumMap, PickerKind, PluginGroup};
 use sonara_app::edit::{self, Edit, EditOutcome};
 use sonara_app::eq_response::{self, EqResponse};
 use sonara_app::events::{ErrorNotice, Notice, StatusMessage};
+use sonara_app::instruments::LibraryChoices;
 use sonara_app::media::{AUDIO_IMPORT_SUFFIXES, IMPORT_AUDIO_JOB, ImportReport};
 use sonara_app::peaks::PeaksInfo;
 use sonara_app::projects::RecoverableSession;
@@ -654,6 +655,35 @@ pub fn set_pane_layout(app: AppHandle, shell: State<'_, Shell>, panes: PaneLayou
 )]
 pub fn plugin_menu(shell: State<'_, Shell>, kind: PickerKind) -> Vec<PluginGroup> {
     catalog::plugin_menu(shell.app().plugins(), kind.into())
+}
+
+/// The sampler's instrument choices grouped by library, with the names the device editor shows
+/// (`sonara_app::instruments::InstalledInstruments::by_library`). The libraries are read when
+/// the application starts, so the answer does not change while it runs.
+#[tauri::command]
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "Tauri passes command arguments by value"
+)]
+pub fn sampler_instruments(shell: State<'_, Shell>) -> Vec<LibraryChoices> {
+    shell.app().instruments().by_library().to_vec()
+}
+
+/// The preset ID a stored sampler `instrument` value plays: the value itself when it is a
+/// playable preset's ID, the preset of the patch when it is the patch path a project from before
+/// preset IDs stored, else `None`, which means not installed here
+/// (`sonara_app::instruments::InstalledInstruments::preset_id`).
+#[tauri::command]
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "Tauri passes command arguments by value"
+)]
+pub fn sampler_preset_of(shell: State<'_, Shell>, value: String) -> Option<String> {
+    shell
+        .app()
+        .instruments()
+        .preset_id(&value)
+        .map(str::to_owned)
 }
 
 /// Opens the mixer in a window of its own, or brings that window to the front.

@@ -171,6 +171,8 @@ fn invoke_handler() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + 
         commands::open_project_file,
         commands::set_pane_layout,
         commands::plugin_menu,
+        commands::sampler_instruments,
+        commands::sampler_preset_of,
         commands::open_mixer_window,
         commands::drum_map,
         dialogs::new_project_view,

@@ -849,6 +849,85 @@ fn an_old_patch_path_resolves_to_its_preset() {
 }
 
 #[test]
+fn installed_instruments_are_grouped_by_library_with_their_names() {
+    // The device editor's instrument combo: names, never paths, under the library's name.
+    let dir = tempfile::tempdir().expect("tempdir");
+    let bare = dir.path().join("Bare");
+    library(&bare, &["b/Horn.sfz", "a/Horn.sfz", "Tuba.sfz"]);
+    let named = dir.path().join("Zeta Strings");
+    library(
+        &named,
+        &["Solo/Violin.sfz", "Ens/Violins.sfz", "Solo/Cello.sfz"],
+    );
+    fs::write(named.join("Empty.sfz"), "").expect("write");
+    manifest(
+        &named,
+        &json!({"version": 1, "id": "zeta", "name": "Alpha Strings", "instruments": [
+            {"path": "Solo/Violin.sfz", "name": "Violin"},
+            {"path": "Ens/Violins.sfz", "name": "violin"},
+            {"path": "Gone.sfz", "name": "Gone"}
+        ]}),
+    );
+    let installed =
+        InstalledInstruments::from_catalog(&InstrumentCatalog::discover(&[bare, named]));
+    // Libraries by name, not by ID or configured order; presets by label; a name that two
+    // presets of a library share, ignoring case, gets the patch path below the library. A
+    // missing or invalid preset is not offered, so it neither shows nor makes a name shared.
+    assert_eq!(
+        serde_json::to_value(installed.by_library()).expect("JSON"),
+        json!([
+            {"id": "zeta", "name": "Alpha Strings", "presets": [
+                {"id": "zeta/Solo/Cello", "label": "Cello"},
+                {"id": "zeta/Ens/Violins", "label": "violin (Ens/Violins)"},
+                {"id": "zeta/Solo/Violin", "label": "Violin (Solo/Violin)"}
+            ]},
+            {"id": "bare", "name": "bare", "presets": [
+                {"id": "bare/a/Horn", "label": "Horn (a/Horn)"},
+                {"id": "bare/b/Horn", "label": "Horn (b/Horn)"},
+                {"id": "bare/Tuba", "label": "Tuba"}
+            ]}
+        ])
+    );
+    // The groups hold exactly the sampler's choices (TST-07).
+    let mut grouped: Vec<String> = installed
+        .by_library()
+        .iter()
+        .flat_map(|group| group.presets.iter().map(|preset| preset.id.clone()))
+        .collect();
+    grouped.sort();
+    assert_eq!(grouped, installed.ids());
+    assert_eq!(InstalledInstruments::default().by_library(), []);
+}
+
+#[test]
+fn a_detected_library_groups_its_presets_under_the_profile_name() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let (one, vsco) = two_libraries(dir.path());
+    let installed = InstalledInstruments::from_catalog(&InstrumentCatalog::discover(&[one, vsco]));
+    let groups: Vec<(&str, Vec<&str>)> = installed
+        .by_library()
+        .iter()
+        .map(|group| {
+            (
+                group.name.as_str(),
+                group.presets.iter().map(|p| p.label.as_str()).collect(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        groups,
+        [
+            ("lib-one", vec!["Horn", "Violin"]),
+            (
+                "VSCO 2 Community Edition",
+                vec!["GM-StylePerc", "Tuba-KS", "ViolinEns-KS"]
+            ),
+        ],
+        "a manifest without a name shows the ID; the profile names a detected checkout"
+    );
+}
+
+#[test]
 fn only_a_sampler_path_is_rewritten_to_its_preset_id() {
     let dir = tempfile::tempdir().expect("tempdir");
     let (one, _) = two_libraries(dir.path());

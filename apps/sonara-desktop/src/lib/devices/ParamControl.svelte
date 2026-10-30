@@ -3,11 +3,12 @@
   import Knob from "../mixer/Knob.svelte";
   import Toggle from "../mixer/Toggle.svelte";
   import type { Edit, ParamValue, ParamView } from "../types";
-  import { PARAM_KNOB, comboChoice, controlOf, knobValue, toggleText, tooltipOf } from "./model";
+  import { type GroupedCombo, PARAM_KNOB, comboChoice, controlOf, knobValue, toggleText, tooltipOf } from "./model";
 
   // The editor of one parameter (the prototype's `ParamWidget`): a knob for
   // a float or an int, with the short label above and the value below; an On/Off toggle or a combo
-  // under the label for a bool or a choice. A knob sends its edit at every move of its gesture and
+  // under the label for a bool or a choice, its options in titled groups when the card gives them
+  // (the sampler's instruments by library). A knob sends its edit at every move of its gesture and
   // seals the undo step at its end (`ValueDriver`); a toggle or a choice sends one edit and
   // seals it. The model's value is shown again when it changes, from here, an agent or undo,
   // and a knob the user drives keeps its own value until the view has it.
@@ -19,6 +20,7 @@
     deviceId,
     deps,
     set,
+    grouped = null,
   }: {
     param: ParamView;
     /** The model's value (resolved against the defaults). */
@@ -29,10 +31,16 @@
     deps: () => GestureDeps;
     /** Sends one edit of this parameter, then seals the undo step (a toggle, a choice). */
     set: (value: ParamValue) => Promise<boolean>;
+    /** A choice's options in groups and the one shown, instead of its plain choices. */
+    grouped?: GroupedCombo | null;
   } = $props();
 
   const control = $derived(controlOf(param));
   const tooltip = $derived(tooltipOf(param));
+  /** The choice the combo shows. */
+  const shown = $derived(
+    grouped ? grouped.selected : control.kind === "combo" ? comboChoice(control.choices, value) : "",
+  );
 
   function knobEdit(v: number): Edit {
     return { op: "set_device_params", device_id: deviceId, values: { [param.id]: knobValue(control, v) } };
@@ -42,7 +50,7 @@
     const select = event.currentTarget as HTMLSelectElement;
     const choice = select.value;
     // A refused choice leaves the model's value, which the combo shows again.
-    if (!(await set(choice)) && control.kind === "combo") select.value = comboChoice(control.choices, value);
+    if (!(await set(choice)) && control.kind === "combo") select.value = shown;
   }
 </script>
 
@@ -73,10 +81,26 @@
         onclick={() => void set(!value)}
       />
     {:else}
-      <select aria-label={param.name} title={tooltip} value={comboChoice(control.choices, value)} onchange={choose}>
-        {#each control.choices as choice (choice)}
-          <option value={choice}>{choice}</option>
-        {/each}
+      <select aria-label={param.name} title={tooltip} class:wide={grouped !== null} value={shown} onchange={choose}>
+        {#if grouped}
+          {#each grouped.groups as group, i (i)}
+            {#if group.title === null}
+              {#each group.options as option (option.value)}
+                <option value={option.value} title={option.title} disabled={option.disabled}>{option.label}</option>
+              {/each}
+            {:else}
+              <optgroup label={group.title}>
+                {#each group.options as option (option.value)}
+                  <option value={option.value} title={option.title} disabled={option.disabled}>{option.label}</option>
+                {/each}
+              </optgroup>
+            {/if}
+          {/each}
+        {:else}
+          {#each control.choices as choice (choice)}
+            <option value={choice}>{choice}</option>
+          {/each}
+        {/if}
       </select>
     {/if}
   {/if}
@@ -109,5 +133,8 @@
     color: var(--text);
     font: inherit;
     font-size: 10px;
+  }
+  select.wide {
+    max-width: 160px;
   }
 </style>

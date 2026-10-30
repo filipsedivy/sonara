@@ -4,7 +4,15 @@ import { frameHex } from "../support/frame";
 import { GOLDEN, PLUGINS, defaults, plugin, pluginMap } from "../support/plugins";
 import { project, track, view } from "../support/project";
 import { CURVE_SIZE, xOf, yOf } from "../../src/lib/devices/eq";
-import type { DeviceView, EqResponse, OpenProject, PluginGroup, TrackView } from "../../src/lib/types";
+import type {
+  DeviceView,
+  EqResponse,
+  LibraryChoices,
+  OpenProject,
+  PluginGroup,
+  PluginView,
+  TrackView,
+} from "../../src/lib/types";
 import { AUDIO_SUFFIXES, DATA_LAYER, answer, calls, emit, mockTauri, sendChannel } from "./tauri-mock";
 import { trackList } from "../support/tracks";
 
@@ -583,4 +591,154 @@ test("a device whose plugin this build lacks says so, and can still be removed",
   await expect(gone.locator(".param")).toHaveCount(0);
   await gone.getByRole("button", { name: "Device actions" }).click();
   await expect(page.getByRole("menu", { name: "Device actions" }).getByRole("menuitem")).toHaveText(["Remove"]);
+});
+
+// -- the sampler's instrument combo -------------------------------------------------------------
+
+/** The sampler's preset IDs, sorted, as its descriptor offers them for two libraries. */
+const SAMPLER_CHOICES = ["bare/Tuba", "zeta/Ens/Violins", "zeta/Solo/Cello", "zeta/Solo/Violin"];
+
+/** `sonara.sampler`'s descriptor as sonara-app registers it for those presets (not golden data). */
+const SAMPLER: PluginView = {
+  id: "sonara.sampler",
+  name: "Sonara Sampler",
+  kind: "instrument",
+  category: "sampler",
+  description: "Sample player for SFZ instruments",
+  sidechain: false,
+  presets: [],
+  params: [
+    { id: "volume", name: "Volume", kind: "float", default: 0, min: -36, max: 12, unit: "dB", choices: [], log_scale: false, automatable: true, description: "" },
+    {
+      id: "instrument",
+      name: "Instrument",
+      kind: "enum",
+      default: "bare/Tuba",
+      min: null,
+      max: null,
+      unit: "",
+      choices: SAMPLER_CHOICES,
+      log_scale: false,
+      automatable: false,
+      description: "The SFZ instrument to play",
+    },
+  ],
+};
+
+/** `sampler_instruments`: sonara-app's answer for those presets. */
+const LIBRARIES: LibraryChoices[] = [
+  {
+    id: "zeta",
+    name: "Alpha Strings",
+    presets: [
+      { id: "zeta/Solo/Cello", label: "Cello" },
+      { id: "zeta/Ens/Violins", label: "violin (Ens/Violins)" },
+      { id: "zeta/Solo/Violin", label: "Violin (Solo/Violin)" },
+    ],
+  },
+  { id: "bare", name: "bare", presets: [{ id: "bare/Tuba", label: "Tuba" }] },
+];
+
+/** The devices project with Keys, a sampler track that stores `instrument`. */
+function samplerProject(instrument: string): OpenProject {
+  const sampler: DeviceView = {
+    id: "dev_sampler",
+    plugin_id: "sonara.sampler",
+    name: "Sonara Sampler",
+    enabled: true,
+    preset: null,
+    sidechain_id: null,
+    available: true,
+    params: { volume: 0, instrument },
+  };
+  const open = devicesProject((t) => [...t, { ...track("k", "Keys", "instrument"), instrument: sampler }]);
+  return { ...open, plugins: { ...open.plugins, [SAMPLER.id]: SAMPLER } };
+}
+
+/** The combo's children: an option's text, or an optgroup's label with its options' texts. */
+function comboTree(combo: Locator) {
+  return combo.evaluate((select) =>
+    [...select.children].map((child) =>
+      child instanceof HTMLOptGroupElement
+        ? { group: child.label, options: [...child.children].map((o) => (o as HTMLOptionElement).text) }
+        : { option: (child as HTMLOptionElement).text, disabled: (child as HTMLOptionElement).disabled },
+    ),
+  );
+}
+
+const instrumentCombo = (page: Page) => card(page, "Sonara Sampler").getByRole("combobox", { name: "Instrument", exact: true });
+
+/** The text of the option the combo shows. */
+function shownText(combo: Locator) {
+  return combo.evaluate((select) => (select as HTMLSelectElement).selectedOptions[0]?.text ?? null);
+}
+
+async function asked(page: Page, cmd: string): Promise<unknown[]> {
+  return (await calls(page)).filter((c) => c.cmd === cmd).map((c) => c.args);
+}
+
+const TREE = [
+  { group: "Alpha Strings", options: ["Cello", "violin (Ens/Violins)", "Violin (Solo/Violin)"] },
+  { group: "bare", options: ["Tuba"] },
+];
+
+test("the sampler's instrument combo shows preset names grouped by library and stores the preset ID", async ({ page }) => {
+  await openDevices(page, samplerProject("zeta/Solo/Violin"), { sampler_instruments: LIBRARIES });
+  // Only a sampler's card asks for the libraries.
+  await showTrack(page, "b");
+  await expect(card(page, plugin("sonara.synth.poly").name)).toBeVisible();
+  expect(await asked(page, "sampler_instruments")).toEqual([]);
+  await page.getByRole("tab", { name: "Mixer" }).click();
+  await showTrack(page, "k");
+  const combo = instrumentCombo(page);
+  await expect.poll(() => comboTree(combo)).toEqual(TREE);
+  await expect(combo).toHaveValue("zeta/Solo/Violin");
+  expect(await shownText(combo)).toBe("Violin (Solo/Violin)");
+  // A stored choice needs no reading.
+  expect(await asked(page, "sampler_preset_of")).toEqual([]);
+  // A name is picked; the preset ID is stored, in one step.
+  await combo.selectOption({ label: "Tuba" });
+  await expect.poll(() => steps(page)).toEqual([
+    { op: "set_device_params", device_id: "dev_sampler", values: { instrument: "bare/Tuba" } },
+    "seal",
+  ]);
+  // A refused choice shows the stored preset again (the mock's view still stores the violin).
+  await answer(page, "edit", { reject: { code: "INVALID_ARGUMENT", message: "not a choice" } });
+  await combo.selectOption({ label: "Cello" });
+  await expect(page.getByRole("alert")).toHaveText("not a choice");
+  await expect(combo).toHaveValue("zeta/Solo/Violin");
+});
+
+test("an older project's patch path shows the preset it plays; one not installed here says so", async ({ page }) => {
+  const path = "/Users/me/Libraries/Zeta/Solo/Cello.sfz";
+  await openDevices(page, samplerProject(path), { sampler_instruments: LIBRARIES, sampler_preset_of: "zeta/Solo/Cello" });
+  await showTrack(page, "k");
+  const combo = instrumentCombo(page);
+  await expect(combo).toHaveValue("zeta/Solo/Cello");
+  expect(await shownText(combo)).toBe("Cello");
+  expect(await comboTree(combo)).toEqual(TREE);
+  expect(await asked(page, "sampler_preset_of")).toEqual([{ value: path }]);
+});
+
+test("an instrument that is not installed here shows as such, never as another preset", async ({ page }) => {
+  await openDevices(page, samplerProject("vsco2ce/Tuba-KS"), { sampler_instruments: LIBRARIES, sampler_preset_of: null });
+  await showTrack(page, "k");
+  const combo = instrumentCombo(page);
+  await expect.poll(() => comboTree(combo)).toEqual([{ option: "Not installed: Tuba-KS", disabled: true }, ...TREE]);
+  await expect(combo).toHaveValue("vsco2ce/Tuba-KS");
+  // Choosing an installed preset stores its ID.
+  await combo.selectOption({ label: "Cello" });
+  await expect.poll(() => steps(page)).toEqual([
+    { op: "set_device_params", device_id: "dev_sampler", values: { instrument: "zeta/Solo/Cello" } },
+    "seal",
+  ]);
+});
+
+test("without sonara-app's names the combo keeps the preset IDs and reports why", async ({ page }) => {
+  await openDevices(page, samplerProject("zeta/Solo/Cello"), { sampler_instruments: { reject: "no libraries" } });
+  await showTrack(page, "k");
+  const combo = instrumentCombo(page);
+  await expect(page.getByRole("alert")).toHaveText("no libraries");
+  expect(await comboTree(combo)).toEqual(SAMPLER_CHOICES.map((id) => ({ option: id, disabled: false })));
+  await expect(combo).toHaveValue("zeta/Solo/Cello");
 });

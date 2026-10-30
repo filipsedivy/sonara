@@ -52,11 +52,14 @@ preset ID too.
   IDs as the choices of `instrument`. Then `create_track` (`kind: instrument`,
   `instrument: "sonara.sampler"`) and `set_instrument` with
   `params: {"instrument": "<preset id>"}`, add a MIDI clip, and `render`.
-- **GUI:** the project view builds its plugin catalog from the same registry, so Sonara Sampler
-  should appear among the instruments and its `instrument` choice, listing preset IDs, in the
-  device editor. **This
-  was not exercised in the GUI** (no GUI session was run); if it does not show up, use the agent
-  route above.
+- **GUI:** Sonara Sampler is among the instruments of Replace Instrument and the Browser. Its
+  device card's Instrument combo lists the presets by name, grouped under each library's name
+  (the manifest's name, VSCO 2 CE's and VCSL's own, else the library ID); when two presets of a
+  library have the same name, each also shows its patch path below the library. Choosing one
+  stores its preset ID. A project that stores an older patch path shows the preset it plays; an
+  instrument that is not installed on this machine shows as "Not installed: <name>" until you
+  choose another. **This was not exercised in a running app** (the page was tested against
+  mocked commands); if the sampler does not show up, use the agent route above.
 
 If `sonara.sampler` is not listed, no configured directory holds a `.sfz` file.
 

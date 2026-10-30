@@ -6,15 +6,29 @@
   import type { Session } from "../session.svelte";
   import ContextMenu from "../shell/ContextMenu.svelte";
   import type { MenuItem } from "../shell/menu";
-  import type { DeviceView, Edit, EditOutcome, OpenProject, ParamValue, PluginGroup, PluginView, TrackView } from "../types";
+  import type {
+    DeviceView,
+    Edit,
+    EditOutcome,
+    LibraryChoices,
+    OpenProject,
+    ParamValue,
+    PluginGroup,
+    PluginView,
+    TrackView,
+  } from "../types";
+  import { samplerInstruments, samplerPresetOf } from "./catalog";
   import EqCurve from "./EqCurve.svelte";
   import {
     DYNAMICS,
     EQ_PLUGIN,
+    SAMPLER_INSTRUMENT,
+    SAMPLER_PLUGIN,
     gainReductionOf,
     gainReductionText,
     groupParams,
     groupRows,
+    instrumentCombo,
     missingText,
     paramValue,
     pluginLabel,
@@ -29,9 +43,11 @@
   // toggle, the name and the plugin's name when the device was renamed, the live gain reduction of
   // a dynamics plugin, the preset combo, the ⋯ menu (Replace Instrument or Remove, and Reset to
   // Defaults); the warning of a plugin this build lacks; the sidechain source of a plugin that takes
-  // one; the parametric EQ's curve; and the parameters, grouped, each with its control. The card is
-  // keyed by its device, so a parameter edit, from here, an agent or undo, updates it in place; a
-  // press on it (outside its controls) makes its device the current one, outlined.
+  // one; the parametric EQ's curve; and the parameters, grouped, each with its control. On a
+  // sampler's card, and only there, the instrument combo asks sonara-app for the presets' names by
+  // library and shows the preset the track plays. The card is keyed by its device, so a parameter
+  // edit, from here, an agent or undo, updates it in place; a press on it (outside its controls)
+  // makes its device the current one, outlined.
 
   let {
     session,
@@ -68,6 +84,41 @@
   const dynamics = $derived(plugin?.category === DYNAMICS);
   const options = $derived(plugin?.sidechain ? sidechainOptions(project, track) : []);
   const sidechain = $derived(options.some((o) => o.id === device.sidechain_id) ? (device.sidechain_id ?? "") : "");
+
+  /** The sampler's `instrument` parameter; undefined on any other card. */
+  const instrumentParam = $derived(
+    plugin?.id === SAMPLER_PLUGIN ? plugin.params.find((p) => p.id === SAMPLER_INSTRUMENT && p.kind === "enum") : undefined,
+  );
+  const storedInstrument = $derived(instrumentParam ? String(paramValue(device, instrumentParam)) : null);
+  /** The sampler's choices by library, once sonara-app has answered. */
+  let libraries = $state<readonly LibraryChoices[] | null>(null);
+  /** The preset sonara-app reads a stored value that is not a choice as (an older project's path). */
+  let readAs = $state<{ value: string; preset: string | null } | null>(null);
+  const instrumentChoices = $derived(
+    instrumentParam && libraries && storedInstrument !== null
+      ? instrumentCombo(
+          instrumentParam.choices,
+          libraries,
+          storedInstrument,
+          readAs?.value === storedInstrument ? readAs.preset : undefined,
+        )
+      : null,
+  );
+
+  $effect(() => {
+    if (!instrumentParam) return;
+    samplerInstruments()
+      .then((choices) => (libraries = choices))
+      .catch((error: unknown) => session.fail(error));
+  });
+
+  $effect(() => {
+    const value = storedInstrument;
+    if (value === null || !instrumentParam || instrumentParam.choices.includes(value)) return;
+    samplerPresetOf(value)
+      .then((preset) => (readAs = { value, preset }))
+      .catch((error: unknown) => session.fail(error));
+  });
 
   let menu: { x: number; y: number; items: MenuItem[] } | null = $state(null);
   /** The readout's text; a frame without a value for the device keeps the last one. */
@@ -217,6 +268,7 @@
                 deviceId={device.id}
                 {deps}
                 set={(value) => setParam(param.id, value)}
+                grouped={param === instrumentParam ? instrumentChoices : null}
               />
             {/each}
           </div>

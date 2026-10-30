@@ -94,6 +94,7 @@ of one library both take its ID, so the second is skipped as a duplicate.
 ## Not done
 
 No agent tool, CLI command or GUI lists the catalog itself yet. The sampler's `instrument` choices
-are its available presets' IDs; the device editor shows them as IDs, not yet as names grouped by
-library. A General MIDI or SF2 source would add bank and program. Sound quality of any library
-has not been judged.
+are its available presets' IDs; the device editor shows them as the presets' names grouped by
+library (`InstalledInstruments::by_library`), and a preset whose name another preset of the same
+library shares also shows its patch path below the library. A General MIDI or SF2 source would add
+bank and program. Sound quality of any library has not been judged.

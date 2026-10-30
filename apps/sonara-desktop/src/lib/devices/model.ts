@@ -11,7 +11,7 @@ import type { LiveFrame } from "../live/frame";
 import { type ControlSpec, formatValue, linearMapping, logMapping } from "../mixer/controls";
 import { pyFixed } from "../time/format";
 import { pyRound } from "../time/signatures";
-import type { DeviceView, OpenProject, ParamValue, ParamView, PluginView, TrackView } from "../types";
+import type { DeviceView, LibraryChoices, OpenProject, ParamValue, ParamView, PluginView, TrackView } from "../types";
 
 /** The titles of the groups the prototype names (`GROUP_TITLES`); others are title-cased. */
 export const GROUP_TITLES: Readonly<Record<string, string>> = {
@@ -47,6 +47,10 @@ export const GROUP_ROWS = 2;
 export const DYNAMICS = "dynamics";
 /** The plugin whose card shows the response curve. */
 export const EQ_PLUGIN = "sonara.eq.parametric";
+/** The sample player, whose instrument combo shows preset names grouped by library. */
+export const SAMPLER_PLUGIN = "sonara.sampler";
+/** The sampler's parameter that names the preset it plays (a preset ID). */
+export const SAMPLER_INSTRUMENT = "instrument";
 
 /** The knob of a parameter card (`ParamWidget`'s `Knob(diameter=26, min_width=66)`). */
 export const PARAM_KNOB = { diameter: 26, minWidth: 66 } as const;
@@ -189,6 +193,76 @@ export function toggleText(on: boolean): "On" | "Off" {
 export function comboChoice(choices: readonly string[], value: ParamValue): string {
   const text = String(value);
   return choices.includes(text) ? text : (choices[0] ?? "");
+}
+
+/** One option of a combo: the value it stands for, its text and its tooltip. */
+export interface ComboOption {
+  readonly value: string;
+  readonly label: string;
+  readonly title: string;
+  /** Shown, but not offered: the stored value of an instrument that is not installed. */
+  readonly disabled: boolean;
+}
+
+/** A combo's options under one title (an `<optgroup>`), or under none. */
+export interface ComboGroup {
+  readonly title: string | null;
+  readonly options: readonly ComboOption[];
+}
+
+/** A combo whose options are grouped, and the value it shows. */
+export interface GroupedCombo {
+  readonly groups: readonly ComboGroup[];
+  readonly selected: string;
+}
+
+/** A stored instrument's short name: its last path part without `.sfz` ("Keys/Tone.sfz" → "Tone"). */
+function instrumentName(value: string): string {
+  const name = value.split(/[\\/]/).pop() ?? value;
+  return name.replace(/\.sfz$/i, "") || value;
+}
+
+/**
+ * The sampler's instrument combo: the descriptor's `choices` (preset IDs) as the presets' names
+ * under their library's name, in the order sonara-app gives them (`sampler_instruments`). A choice
+ * no library lists (none, as both come from one snapshot of the libraries) follows under no title,
+ * as its ID, so that every choice can be picked.
+ *
+ * It shows the preset the track plays: the stored `value` when it is a choice, else `preset`, the
+ * preset sonara-app reads the value as (`sampler_preset_of`: an older project's patch path), when
+ * that is a choice. Any other value comes first as a disabled option named after its last path
+ * part, "Not installed: Tuba-KS" when `preset` is null, the bare name while `preset` is not known
+ * yet (undefined), so the combo never shows a preset the track does not play.
+ */
+export function instrumentCombo(
+  choices: readonly string[],
+  libraries: readonly LibraryChoices[],
+  value: ParamValue,
+  preset: string | null | undefined,
+): GroupedCombo {
+  const offered = new Set(choices);
+  const listed = new Set<string>();
+  const option = (id: string, label: string): ComboOption => ({ value: id, label, title: id, disabled: false });
+  const groups: ComboGroup[] = [];
+  for (const library of libraries) {
+    const options = library.presets.filter((p) => offered.has(p.id) && !listed.has(p.id)).map((p) => option(p.id, p.label));
+    for (const o of options) listed.add(o.value);
+    if (options.length > 0) groups.push({ title: library.name, options });
+  }
+  const rest = choices.filter((id) => !listed.has(id));
+  if (rest.length > 0) groups.push({ title: null, options: rest.map((id) => option(id, id)) });
+
+  const stored = String(value);
+  if (offered.has(stored)) return { groups, selected: stored };
+  if (preset && offered.has(preset)) return { groups, selected: preset };
+  const name = instrumentName(stored);
+  const unknown: ComboOption = {
+    value: stored,
+    label: preset === undefined ? name : `Not installed: ${name}`,
+    title: stored,
+    disabled: true,
+  };
+  return { groups: [{ title: null, options: [unknown] }, ...groups], selected: stored };
 }
 
 // -- a card -------------------------------------------------------------------------------------

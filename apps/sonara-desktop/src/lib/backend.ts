@@ -13,6 +13,7 @@ import type {
   EngineStatus,
   EqResponse,
   JobNotice,
+  LibraryChoices,
   PaneLayout,
   PeaksInfo,
   PeaksReady,
@@ -263,6 +264,21 @@ export function onPeaksReady(handler: (ready: PeaksReady) => void): Promise<Unli
 /** MX-06: the picker of every registered plugin of `kind`, grouped by category. */
 export function pluginMenu(kind: "effect" | "instrument"): Promise<PluginGroup[]> {
   return invoke<PluginGroup[]>("plugin_menu", { kind });
+}
+
+// -- the device editors -----------------------------------------------------------------------
+
+/** The sampler's instrument choices grouped by library, with their names. */
+export function samplerInstruments(): Promise<LibraryChoices[]> {
+  return invoke<LibraryChoices[]>("sampler_instruments");
+}
+
+/**
+ * The preset ID a stored sampler `instrument` value plays (an older project's patch path is read
+ * as the preset of that patch); null when it names nothing installed here.
+ */
+export function samplerPresetOf(value: string): Promise<string | null> {
+  return invoke<string | null>("sampler_preset_of", { value });
 }
 
 /** Opens the mixer in a window of its own, or brings that window to the front. */
