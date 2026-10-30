@@ -1,0 +1,8 @@
+{"type":"thread.started","thread_id":"0199a213-81c0-7800-8aa1-bbab2a035a56"}
+{"type":"turn.started"}
+{"type":"item.started","item":{"id":"item_0","type":"command_execution","command":"/bin/zsh -lc 'touch /tmp/x'","aggregated_output":"","exit_code":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_0","type":"command_execution","command":"/bin/zsh -lc 'touch /tmp/x'","aggregated_output":"","exit_code":null,"status":"declined"}}
+{"type":"item.completed","item":{"id":"item_1","type":"file_change","changes":[{"path":"/tmp/x.txt","kind":"add"}],"status":"failed"}}
+{"type":"item.completed","item":{"id":"item_2","type":"web_search","query":"dorian mode","action":{"type":"search","query":"dorian mode"}}}
+{"type":"item.completed","item":{"id":"item_3","type":"agent_message","text":"I could not do that."}}
+{"type":"turn.completed","usage":{"input_tokens":100,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":9,"reasoning_output_tokens":0}}

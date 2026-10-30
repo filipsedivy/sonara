@@ -1,0 +1,6 @@
+{"type":"thread.started","thread_id":"0199a213-81c0-7800-8aa1-bbab2a035a57"}
+{"type":"turn.started"}
+{"type":"future.event","detail":"a later Codex adds top-level events"}
+{"type":"item.completed","item":{"id":"item_0","type":"hologram","brightness":11,"extra":{"nested":true}}}
+{"type":"item.completed","item":{"id":"item_1","type":"agent_message","text":"Done.","new_field":[1,2,3]}}
+{"type":"turn.completed","usage":{"input_tokens":5,"cached_input_tokens":0,"output_tokens":1,"reasoning_output_tokens":0,"another_counter":7},"new_field":true}
