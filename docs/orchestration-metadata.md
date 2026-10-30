@@ -16,7 +16,9 @@ adds no agent tool and changes no contract (CTR-01).
 
 Ids name the **acoustic instrument type** (`violin`, `clarinet_bb`, `horn_f`), not a sample
 preset. They are independent of the preset ids of the instrument catalog
-(`<library>/<patch path>`); the catalog may map presets to these ids later. Display names are not
+(`<library>/<patch path>`); the catalog maps a preset to one of these ids when its library's
+manifest or Sonara's profile of the library says which, or guesses one from the patch's path, and
+says which it did ([instrument-catalog.md](instrument-catalog.md)). Display names are not
 identifiers. The family enum, `Family`, is the catalog's too: the catalog re-exports it as
 `InstrumentFamily`, so presets and instrument types name a family with one type. Its slugs
 (`strings`, `woodwinds`, `brass`, `percussion`, `keyboards`, `plucked`, `choir`, `other`) are its

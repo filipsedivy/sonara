@@ -17,7 +17,7 @@ use super::claims::{
     ProfileCheck, Verdict, VerdictState,
 };
 use super::{
-    ClaimSource, EntryTarget, Field, LibraryClaims, Manifest, ManifestEntry, ManifestError,
+    Claimant, EntryTarget, Field, LibraryClaims, Manifest, ManifestEntry, ManifestError,
     parse_family, validate_relative_path,
 };
 use crate::instruments::model::LibraryId;
@@ -205,7 +205,7 @@ struct RawVerdict {
 }
 
 /// Reads a version 2 manifest; `source` says who claims what it holds.
-pub(super) fn parse(bytes: &[u8], source: ClaimSource) -> Result<Manifest, ManifestError> {
+pub(super) fn parse(bytes: &[u8], source: Claimant) -> Result<Manifest, ManifestError> {
     let raw: RawManifest = serde_json::from_slice(bytes).map_err(ManifestError::Parse)?;
     let id = raw.id.as_deref().map(LibraryId::parse).transpose()?;
     let library = |field| move |reason| ManifestError::Library { field, reason };
@@ -260,7 +260,7 @@ fn label(value: &Value, index: usize) -> String {
 }
 
 /// A text field: written as `null` clears it; a blank text is as if it were left out.
-fn text(raw: Written<String>, source: ClaimSource) -> Field<String> {
+fn text(raw: Written<String>, source: Claimant) -> Field<String> {
     match raw {
         Written::Absent => Field::Unset,
         Written::Null => Field::Cleared,
@@ -272,7 +272,7 @@ fn text(raw: Written<String>, source: ClaimSource) -> Field<String> {
 /// A field whose value `validate` checks.
 fn field<R, T>(
     raw: Written<R>,
-    source: ClaimSource,
+    source: Claimant,
     validate: impl FnOnce(R) -> Result<T, String>,
 ) -> Result<Field<T>, String> {
     Ok(match raw {
@@ -322,7 +322,7 @@ fn needs(what: &str, name: &str, value: Option<i64>) -> Result<i64, String> {
 }
 
 /// Reads and validates one entry.
-fn parse_entry(value: &Value, source: ClaimSource) -> Result<ManifestEntry, String> {
+fn parse_entry(value: &Value, source: Claimant) -> Result<ManifestEntry, String> {
     if !value.is_object() {
         return Err("an entry must be a JSON object".to_owned());
     }
@@ -671,7 +671,7 @@ mod tests {
     use serde_json::{Value, json};
     use sonara_midi::orchestration::{Articulation, InstrumentType, Mute, Vibrato};
 
-    use super::super::{ClaimSource, EntryTarget, Field, Manifest, ManifestError, parse};
+    use super::super::{Claimant, EntryTarget, Field, Manifest, ManifestError, parse};
     use super::{
         ArticulationEntry, ArticulationList, ArticulationName, ArticulationVia, CheckMethod,
         DynamicsMode, EnsembleClaim, EnsembleKind, KeymapEntry, LegatoMode, LibrarySource,
@@ -680,7 +680,7 @@ mod tests {
     use crate::instruments::InstrumentFamily;
     use crate::instruments::model::LibraryId;
 
-    const MANIFEST: ClaimSource = ClaimSource::Manifest;
+    const MANIFEST: Claimant = Claimant::Manifest;
 
     fn read(json: &Value) -> Manifest {
         parse(json.to_string().as_bytes(), MANIFEST).expect("the manifest itself is valid")

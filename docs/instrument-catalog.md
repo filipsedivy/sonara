@@ -7,13 +7,24 @@ and adds no agent tool (CTR-01). Sonara ships no samples and no library.
 
 ## What a preset holds
 
+Every claim about a preset says who makes it, its **source**: **declared** by the library's own
+manifest, which the catalog trusts; **profile**, from the profile Sonara ships for the library
+(below), Sonara's reading of the library's files and not the library's word; or **inferred**, a
+guess from the words of the patch's path. A claim that nobody makes is `null`.
+
 | Field | Meaning |
 |---|---|
 | `id` | `<library id>/<patch path below the library, without .sfz>`, for example `vsco2ce/Strings/Violin Solo`. It holds no absolute path, so it survives moving the library or opening the project on another machine. The sampler's `instrument` parameter offers the IDs of the available presets, and projects store them ([sample-libraries.md](sample-libraries.md)). |
 | `display_name` | The manifest's name, else the name in the profile Sonara ships for the library (below), else the file name. |
-| `family` | `strings`, `woodwinds`, `brass`, `percussion`, `keyboards`, `plucked`, `choir` or `other`, with its source: **declared** (manifest), **inferred** (words in the path, below) or **unknown**. An inferred family is a guess; treat it as one. The family is the orchestration metadata's ([orchestration-metadata.md](orchestration-metadata.md)), so a preset and an instrument type share one family type; a manifest must spell the slug exactly, in lower case. |
+| `family` | `strings`, `woodwinds`, `brass`, `percussion`, `keyboards`, `plucked`, `choir` or `other`, with its source: **declared**, **profile**, **inferred** (words in the path, below) or **unknown**. A manifest or profile states the family, or the instrument the patch plays, whose family it is; where one states both, the family it writes wins, and the manifest's word wins over the profile's. An inferred family is a guess; treat it as one. The family is the orchestration metadata's ([orchestration-metadata.md](orchestration-metadata.md)), so a preset and an instrument type share one family type; a manifest must spell the slug exactly, in lower case. |
+| `instrument` | The instrument type the patch plays, an ID of the orchestration metadata, with its source: `{"instrument": "violin", "source": "profile"}`. Declared or stated by a profile; else inferred from the path (below), and then kept only when its family is the preset's family. `null` when nothing names one type, or when the manifest or profile says the patch plays several (`instrument: null`, or a key map). |
 | `articulations` | Only what the library's manifest declares: the names of a version 1 manifest, the articulation IDs of a version 2 one. Empty means **not verified**, never "none". Keyswitch labels in a patch are not read. |
+| `articulation_map` | The articulations and how each is reached, as the manifest or the profile maps them, with the source: `{"value": [...], "source": "declared"}`. The list is written as in the manifest: names for version 1, objects for version 2. `null` means not verified; articulations are never guessed. |
+| `ensemble`, `keymap`, `key_offset`, `dynamics`, `legato`, `in_situ` | The manifest's or the profile's value of the version 2 field of the same name (below), each as `{"value": …, "source": …}`, written as in the manifest. |
 | `license` | The licence the library's manifest states for this recording (a version 2 entry's own `license`), else for the library. `None` means **unknown**: read the library's own terms. |
+| `license_claim` | The licence of this recording, else of its library, as the manifest declares it or the profile states it, with the source. |
+| `verdict` | How well the preset plays as the manifest or the profile judges it, with the source: `{"value": {"state": "partly", "lost": [...]}, "source": "profile"}`. |
+| `facts` | What the structural check found in the patch (below), once `verify` has run; `null` before. |
 | `availability` | `available` (a regular, non-empty, readable file inside the library), `missing` (listed by the manifest or by Sonara's profile of the library, not on disk) or `invalid` with a reason. |
 | `patch_path` | The `.sfz` file on this machine. |
 
@@ -28,6 +39,13 @@ words do. A word of two families names none: `Bass` is the double bass or the ba
 `Strings/Bass.sfz` is strings and a bare `Bass.sfz` is unknown. A word the metadata does not
 list, such as `Drums` or `Chorus`, names nothing.
 
+An inferred instrument is read from the same words, the file name first, then the folders. A
+segment decides when a word names exactly one instrument type and every other word it names
+something with agrees (the same type, a category that holds it, or its family): `Solo Violin`,
+`FHornSus` and `Timpani 1 - Hit` name the violin, the horn in F and the timpani. A category alone
+names no type, even one with a usual member (`Trumpet`, `Clarinet`, `Piano`), nor does a family
+(`Brass/Patch 1.sfz`), a word of several types (`Bass`) or words that disagree (`Cello Violin`).
+
 ## How libraries are found
 
 `InstrumentCatalog::from_settings` reads the `sample_libraries` directories; `discover` takes
@@ -35,7 +53,7 @@ them directly. Each directory is scanned for `.sfz` files with the same rules as
 (eight levels deep, hidden folders, symbolic links and folders named `includes` skipped, at most
 5,000 patches), and its optional manifest, over the profile Sonara ships for the library if there
 is one, is merged in. A patch the manifest does not list is still found and gets an inferred
-family and no articulations. A manifest or profile entry whose file is gone becomes `missing`;
+family, an inferred instrument when its path names one, and no articulations. A manifest or profile entry whose file is gone becomes `missing`;
 one that names a file in an `includes` folder is listed like any other entry.
 
 Nothing fails the discovery. Missing or non-directory roots, an unreadable or invalid manifest,
@@ -50,6 +68,21 @@ the sampler does, so it can be slow and use memory). A patch that fails becomes 
 loader's message; so does a file with no region, which discovery lists as `available` because it
 does not parse the patch. The check is stricter than playback: a patch with a missing sample is
 `invalid`, although the sampler plays its other regions. Tests use a fake loader.
+
+The same check records the preset's `facts`: `MediaPatchLoader` reads the patch and the headers
+of its samples without decoding them, and the catalog keeps the number of regions and of regions
+that can play, the keys that sound with their velocity layers (`sampled`), the switch keys and
+the default switch, the opcodes the sampler ignores, the missing and unreadable sample files with
+a note for each, the memory the decoded samples would take, and whether the patch is expected to
+load. A loader that does not inspect patches records none.
+
+**Facts beat claims.** `InstrumentPreset::effective_verdict()` is the claimed `verdict` lowered by
+the facts, each finding added to what is lost: a patch with no region, none that can play, an
+unreadable sample or samples over the sampler's 3 GiB cap is `not`; a sample left out, or a
+`keyswitch` articulation whose key the patch does not switch on, makes it at best `partly`. The
+opcodes the sampler ignores lower nothing by themselves; what they cost is the claim's to say.
+Without a claim and without a finding, the verdict is unknown (`None`). The claim itself is kept
+as it was made.
 
 ## The manifest, `sonara-library.json`
 
@@ -166,10 +199,10 @@ manifest is read as before, in one pass, so there a value of the wrong type in a
 whole manifest invalid. Sonara builds that read only version 1 report a version 2 manifest as
 invalid and scan the library without it.
 
-**What the catalog shows.** From a version 2 entry the catalog shows the name, the family, the
-articulation IDs and the licence. The other fields are read and validated, so a mistake in them is
-reported, but the catalog does not show them yet, and a set is not listed as a preset of its own:
-its patches are listed as the patches they are.
+**What the catalog shows.** From a version 2 entry the catalog shows every field of the preset:
+the name, the family, the articulation IDs and the licence as before, and each of the others as
+a claim with its source (above). A set is not listed as a preset of its own: its patches are
+listed as the patches they are, each with its own entry's claims.
 
 **Over a shipped profile.** Sonara's profiles (below) are written in the version 2 shape. When one
 applies to a library, the library's manifest lies over it, field by field: a field the manifest
@@ -178,9 +211,9 @@ keeps the profile's. `articulations` and `keymap` are replaced whole, never merg
 An entry only in the profile stays, an entry only in the manifest is added, and entries match by
 `path` ignoring case, or by `set`. A version 1 manifest replaces only the fields it sets: it
 cannot clear one. What a profile claims is Sonara's word, not the library's, so the catalog never
-shows it as declared: of a profile it uses the library's and the presets' names and the patches it
-lists, while the family, the articulations and the licence come only from the library's own
-manifest.
+shows it as declared: each claim the profile makes is shown with the source `profile`, a field the
+manifest writes with the source `declared`, and `articulations` and `license` keep only what the
+library's own manifest declares.
 
 ## Libraries Sonara recognizes
 
@@ -206,9 +239,10 @@ Sonara's own data, file names and facts read from the library's patch files, wit
 no SFZ text. It lists every patch of its revision, 75 for VSCO 2 CE and 183 for VCSL, so a patch
 your copy lacks shows as `missing`. The catalog shows each patch's name from the profile: VSCO 2
 CE's file names are short codes, so its profile spells them out (`ViolinEnsSusVib` is "Violin
-Section, sustain vibrato"), while VCSL's patches keep their file names. The licence and the
-articulations still come only from a manifest of the library's own. The rest of the profile is
-read and checked, and the catalog does not show it yet:
+Section, sustain vibrato"), while VCSL's patches keep their file names. The catalog shows the
+rest of the profile as claims with the source `profile`, never as the library's word; the fields
+`articulations` and `license` still come only from a manifest of the library's own. The profiles
+say:
 
 - **What a patch plays:** the instrument type and solo or section. VSCO 2 CE's `Ens` strings are
   sections; everything else in both libraries is taken as solo, as the single-instrument names
@@ -273,7 +307,6 @@ rename a preset, correct a claim or clear one with `null`.
 No agent tool, CLI command or GUI lists the catalog itself yet. The sampler's `instrument` choices
 are its available presets' IDs; the device editor shows them as the presets' names grouped by
 library (`InstalledInstruments::by_library`), and a preset whose name another preset of the same
-library shares also shows its patch path below the library. Of a version 2 manifest the catalog
-shows only the name, family, articulation IDs and licence of each patch, of Sonara's profiles only
-the names and the patches they list, and it lists no set as a preset. A General MIDI or SF2 source
-would add bank and program. Sound quality of any library has not been judged.
+library shares also shows its patch path below the library. The catalog lists no set as a
+preset, and records a patch's facts only when `verify` runs on it, one preset at a time. A General
+MIDI or SF2 source would add bank and program. Sound quality of any library has not been judged.

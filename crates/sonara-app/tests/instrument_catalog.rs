@@ -8,12 +8,14 @@ use std::path::{Path, PathBuf};
 
 use serde_json::json;
 use sonara_app::instruments::{
-    Availability, CatalogError, FamilyClaim, InstalledInstruments, InstrumentCatalog,
-    InstrumentFamily, InstrumentPreset, LibraryId, LibraryIssue, MANIFEST_FILE, MediaPatchLoader,
-    PatchLoadError, PatchLoader,
+    Availability, CatalogError, ClaimSource, EnsembleClaim, EnsembleKind, FamilyClaim,
+    InstalledInstruments, InstrumentCatalog, InstrumentClaim, InstrumentFamily, InstrumentPreset,
+    KeyZone, LibraryId, LibraryIssue, MANIFEST_FILE, MediaPatchLoader, PatchFacts, PatchLoadError,
+    PatchLoader, VelocityRange, Verdict, VerdictState,
 };
 use sonara_app::settings::Settings;
 use sonara_media::InstrumentSource;
+use sonara_midi::orchestration::InstrumentType;
 
 fn patch(path: &Path) {
     fs::create_dir_all(path.parent().expect("a parent")).expect("mkdir");
@@ -477,6 +479,13 @@ fn deep_validation_marks_a_broken_patch_invalid_and_skips_missing_ones() {
     let violin = catalog.get(&ids[2]).expect("present");
     assert!(!violin.availability.is_available());
     assert_eq!(catalog.available().count(), 1);
+    // A loader that does not inspect patches records no facts.
+    assert!(
+        catalog
+            .presets()
+            .iter()
+            .all(|preset| preset.facts.is_none())
+    );
 }
 
 #[test]
@@ -504,18 +513,7 @@ fn verifying_an_unknown_preset_is_an_error() {
 fn the_media_loader_accepts_a_playable_patch_and_rejects_a_missing_sample() {
     let dir = tempfile::tempdir().expect("tempdir");
     let root = dir.path().join("lib");
-    fs::create_dir_all(&root).expect("mkdir");
-    let spec = hound::WavSpec {
-        channels: 1,
-        sample_rate: 44_100,
-        bits_per_sample: 16,
-        sample_format: hound::SampleFormat::Int,
-    };
-    let mut wav = hound::WavWriter::create(root.join("tone.wav"), spec).expect("wav");
-    for i in 0..64_i16 {
-        wav.write_sample(i * 100).expect("sample");
-    }
-    wav.finalize().expect("finalize");
+    tone(&root);
     fs::write(root.join("Good.sfz"), "<region> sample=tone.wav key=60\n").expect("write");
     fs::write(root.join("Bad.sfz"), "<region> sample=nope.wav key=60\n").expect("write");
 
@@ -544,18 +542,7 @@ fn the_media_loader_refuses_a_patch_that_plays_without_a_missing_sample() {
     // stays strict and names the file.
     let dir = tempfile::tempdir().expect("tempdir");
     let root = dir.path().join("lib");
-    fs::create_dir_all(&root).expect("mkdir");
-    let spec = hound::WavSpec {
-        channels: 1,
-        sample_rate: 44_100,
-        bits_per_sample: 16,
-        sample_format: hound::SampleFormat::Int,
-    };
-    let mut wav = hound::WavWriter::create(root.join("tone.wav"), spec).expect("wav");
-    for i in 0..64_i16 {
-        wav.write_sample(i * 100).expect("sample");
-    }
-    wav.finalize().expect("finalize");
+    tone(&root);
     fs::write(
         root.join("Partial.sfz"),
         "<region> sample=tone.wav key=60\n<region> sample=nope.wav key=61\n",
@@ -589,6 +576,151 @@ fn the_media_loader_refuses_a_patch_that_plays_without_a_missing_sample() {
         catalog.verify(silent, &MediaPatchLoader).expect("known"),
         &Availability::Available,
         "a silent region is part of the patch"
+    );
+}
+
+/// Writes `tone.wav`, 64 frames of mono 16-bit audio, into `root`.
+fn tone(root: &Path) {
+    fs::create_dir_all(root).expect("mkdir");
+    let spec = hound::WavSpec {
+        channels: 1,
+        sample_rate: 44_100,
+        bits_per_sample: 16,
+        sample_format: hound::SampleFormat::Int,
+    };
+    let mut wav = hound::WavWriter::create(root.join("tone.wav"), spec).expect("wav");
+    for i in 0..64_i16 {
+        wav.write_sample(i * 100).expect("sample");
+    }
+    wav.finalize().expect("finalize");
+}
+
+/// The deep check records what the patch holds, read from the file and the sample headers,
+/// and those facts beat the manifest's claims: a key switch the manifest maps that the patch
+/// does not switch on lowers its verdict (TST-02, TST-03).
+#[test]
+fn verifying_records_the_patch_facts_and_they_beat_the_claims() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path().join("lib");
+    tone(&root);
+    fs::write(
+        root.join("Switch.sfz"),
+        "<global> sw_lokey=36 sw_hikey=37 sw_default=36\n\
+         <region> sample=tone.wav lokey=60 hikey=62 lovel=1 hivel=63 sw_last=36\n\
+         <region> sample=tone.wav lokey=60 hikey=62 lovel=64 hivel=127 sw_last=36\n\
+         <region> sample=tone.wav lokey=60 hikey=62 lovel=1 hivel=127 sw_last=37\n",
+    )
+    .expect("write");
+    manifest(
+        &root,
+        &json!({"version": 2, "instruments": [
+            {"path": "Switch.sfz", "instrument": "violin",
+             "articulations": [
+                 {"id": "sustain", "via": "keyswitch", "key": 36, "default": true},
+                 {"id": "pizzicato", "via": "keyswitch", "key": 37},
+                 {"id": "tremolo", "via": "keyswitch", "key": 40}],
+             "verdict": {"state": "as_is", "lost": []}}
+        ]}),
+    );
+
+    let mut catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
+    let id = catalog.presets()[0].id.clone();
+    assert_eq!(id.as_str(), "lib/Switch");
+    assert_eq!(catalog.presets()[0].facts, None, "discovery opens no patch");
+
+    assert_eq!(
+        catalog.verify(&id, &MediaPatchLoader).expect("known"),
+        &Availability::Available
+    );
+    let preset = catalog.get(&id).expect("present");
+    assert_eq!(
+        preset.facts,
+        Some(PatchFacts {
+            regions: 3,
+            playable_regions: 3,
+            sampled: vec![KeyZone {
+                lo: 60,
+                hi: 62,
+                layers: vec![
+                    VelocityRange { lo: 1, hi: 63 },
+                    VelocityRange { lo: 64, hi: 127 }
+                ],
+            }],
+            switch_keys: vec![36, 37],
+            default_switch: Some(36),
+            ignored_opcodes: Vec::new(),
+            missing_samples: Vec::new(),
+            unreadable_samples: Vec::new(),
+            notes: Vec::new(),
+            // 64 frames, one channel, four bytes a frame, the file counted once.
+            decoded_bytes: 256,
+            loadable: true,
+        })
+    );
+    assert_eq!(
+        preset.instrument,
+        Some(InstrumentClaim {
+            instrument: InstrumentType::Violin,
+            source: ClaimSource::Declared
+        })
+    );
+    // The claim is kept as declared; the effective verdict is lowered by the facts.
+    assert_eq!(
+        preset
+            .verdict
+            .as_ref()
+            .map(|claim| (&claim.value.state, claim.source)),
+        Some((&VerdictState::AsIs, ClaimSource::Declared))
+    );
+    assert_eq!(
+        preset.effective_verdict(),
+        Some(Verdict {
+            state: VerdictState::Partly,
+            lost: vec!["tremolo: key 40 is not a switch key of the patch".to_owned()],
+        })
+    );
+}
+
+/// A patch that loses a sample is invalid for the deep check, and its facts say why; with
+/// nothing claimed, the facts alone make it `partly`.
+#[test]
+fn verifying_records_the_samples_a_patch_leaves_out() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path().join("lib");
+    tone(&root);
+    fs::write(
+        root.join("Partial.sfz"),
+        "<region> sample=tone.wav key=60\n<region> sample=nope.wav key=61\n",
+    )
+    .expect("write");
+    let mut catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
+    let id = catalog.presets()[0].id.clone();
+
+    let availability = catalog
+        .verify(&id, &MediaPatchLoader)
+        .expect("known")
+        .clone();
+
+    assert!(
+        matches!(availability, Availability::Invalid { .. }),
+        "{availability:?}"
+    );
+    let preset = catalog.get(&id).expect("present");
+    let facts = preset.facts.as_ref().expect("inspected");
+    assert_eq!(facts.missing_samples, [root.join("nope.wav")]);
+    assert_eq!((facts.regions, facts.playable_regions), (2, 1));
+    assert!(facts.loadable, "the sampler plays the other region");
+    let note = format!(
+        "sample {} is missing (1 region left out)",
+        root.join("nope.wav").display()
+    );
+    assert_eq!(facts.notes, std::slice::from_ref(&note));
+    assert_eq!(
+        preset.effective_verdict(),
+        Some(Verdict {
+            state: VerdictState::Partly,
+            lost: vec![note],
+        })
     );
 }
 
@@ -753,12 +885,57 @@ fn a_detected_library_keeps_its_profile_id() {
     assert_eq!(flute.availability, Availability::Missing);
     assert_eq!(flute.display_name, "Flute, sustain vibrato");
     // The profile names the presets, but what it claims is Sonara's word, never the library's:
-    // the presets declare no licence, articulations or family.
+    // the presets declare no licence, articulations or family, and every claim of the profile
+    // is shown as the profile's.
     let horn = preset(&catalog, "vsco2ce/FHornSus");
     assert_eq!(horn.display_name, "Horn, sustain");
     assert_eq!(horn.license, None);
     assert_eq!(horn.articulations, Vec::<String>::new());
-    assert!(!matches!(horn.family, FamilyClaim::Declared(_)));
+    assert_eq!(horn.family, FamilyClaim::Profile(InstrumentFamily::Brass));
+    assert_eq!(
+        horn.instrument,
+        Some(InstrumentClaim {
+            instrument: InstrumentType::HornF,
+            source: ClaimSource::Profile
+        })
+    );
+    let map = horn
+        .articulation_map
+        .as_ref()
+        .expect("mapped by the profile");
+    assert_eq!(
+        (map.value.ids(), map.source),
+        (vec!["sustain"], ClaimSource::Profile)
+    );
+    assert_eq!(
+        horn.license_claim
+            .as_ref()
+            .map(|claim| (claim.value.as_str(), claim.source)),
+        Some(("CC0 1.0", ClaimSource::Profile))
+    );
+    let section = preset(&catalog, "vsco2ce/ViolinEns-KS");
+    assert_eq!(
+        section
+            .ensemble
+            .as_ref()
+            .map(|claim| (claim.value, claim.source)),
+        Some((
+            EnsembleClaim {
+                kind: EnsembleKind::Section,
+                players: None
+            },
+            ClaimSource::Profile
+        ))
+    );
+    assert_eq!(
+        section
+            .articulation_map
+            .as_ref()
+            .map(|claim| claim.value.ids()),
+        Some(vec!["sustain", "tremolo", "spiccato", "pizzicato"])
+    );
+    // The percussion patch plays several instruments, so it claims none.
+    assert_eq!(preset(&catalog, "vsco2ce/GM-StylePerc").instrument, None);
 
     let after = dir.path().join("Samples/vsco");
     fs::create_dir_all(after.parent().expect("a parent")).expect("mkdir");

@@ -9,7 +9,7 @@ use sonara_midi::orchestration::{InstrumentType, Mute, RangeCheck, SoundingPitch
 
 use super::{Profile, SHIPPED_SOURCES, shipped};
 use crate::instruments::manifest::{
-    ArticulationEntry, ArticulationList, ArticulationVia, CheckMethod, ClaimSource, DynamicsMode,
+    ArticulationEntry, ArticulationList, ArticulationVia, CheckMethod, Claimant, DynamicsMode,
     EnsembleKind, EntryTarget, Field, KeymapEntry, ManifestEntry, VerdictState,
 };
 
@@ -247,7 +247,7 @@ fn the_library_claims_are_cc0_with_their_source() {
         let claims = &profile(id).claims;
         assert_eq!(
             claims.license,
-            Field::Set("CC0 1.0".to_owned(), ClaimSource::Profile),
+            Field::Set("CC0 1.0".to_owned(), Claimant::Profile),
             "{id}"
         );
         let source = claims.source.value().expect("a source");

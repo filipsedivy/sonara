@@ -4,7 +4,7 @@
 //! The profiles live in `crates/sonara-app/profiles/` as library manifests of version 2 and are
 //! embedded in the binary, so nothing is read at run time and the tests pin them. Each is read
 //! with the manifest reader ([`super::manifest`]) the first time a profile is needed, and every
-//! claim it makes is marked as the profile's ([`ClaimSource::Profile`]), never as the library's
+//! claim it makes is marked as the profile's ([`Claimant::Profile`]), never as the library's
 //! own.
 //!
 //! Two profiles ship: VSCO 2 Community Edition (branch `SFZ`) and the Versilian Community Sample
@@ -31,7 +31,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::LazyLock;
 
-use super::manifest::{self, ClaimSource, LibraryClaims, ManifestError};
+use super::manifest::{self, Claimant, LibraryClaims, ManifestError};
 use super::model::LibraryId;
 
 /// The embedded profiles, by file name.
@@ -77,7 +77,7 @@ pub(crate) enum ProfileError {
 /// every entry is valid (TYP-06: the manifest's own checks, and stricter, because the profile is
 /// Sonara's data and a rejected entry is a defect).
 pub(crate) fn parse(text: &str) -> Result<Profile, ProfileError> {
-    let manifest = manifest::parse(text.as_bytes(), ClaimSource::Profile)?;
+    let manifest = manifest::parse(text.as_bytes(), Claimant::Profile)?;
     if manifest.version != PROFILE_VERSION {
         return Err(ProfileError::Version(manifest.version));
     }
@@ -173,7 +173,7 @@ mod tests {
 
     use super::{Detected, Profile, ProfileError, SHIPPED_SOURCES, detect, merge, parse, shipped};
     use crate::instruments::manifest::{
-        self, ArticulationList, ClaimSource, EntryTarget, Field, LibraryClaims, ManifestEntry,
+        self, ArticulationList, Claimant, EntryTarget, Field, LibraryClaims, ManifestEntry,
         ManifestError,
     };
     use crate::instruments::model::LibraryId;
@@ -194,7 +194,7 @@ mod tests {
     }
 
     /// The claims of `json`, a manifest of the library (`Manifest`) or of a profile (`Profile`).
-    fn claims(json: &serde_json::Value, source: ClaimSource) -> LibraryClaims {
+    fn claims(json: &serde_json::Value, source: Claimant) -> LibraryClaims {
         let manifest = manifest::parse(json.to_string().as_bytes(), source).expect("valid");
         assert_eq!(manifest.rejected, [], "{json}");
         manifest.claims
@@ -215,7 +215,7 @@ mod tests {
             // Every claim of a profile is the profile's, never the library's own word.
             assert_eq!(profile.claims.name.declared(), None, "{file}");
             assert!(
-                matches!(profile.claims.name, Field::Set(_, ClaimSource::Profile)),
+                matches!(profile.claims.name, Field::Set(_, Claimant::Profile)),
                 "{file}"
             );
         }
@@ -379,7 +379,7 @@ mod tests {
                      "articulations": [{"id": "sustain", "via": "patch", "path": "HornSus.sfz"}]}
                 ]
             }),
-            ClaimSource::Profile,
+            Claimant::Profile,
         )
     }
 
@@ -396,19 +396,19 @@ mod tests {
                     {"path": "Mine.sfz", "family": "other"}
                 ]
             }),
-            ClaimSource::Manifest,
+            Claimant::Manifest,
         );
         let merged = merge(Some(&shipped), Some(&user));
 
         // Library fields: written replaces, `null` clears, left out keeps the profile's.
         assert_eq!(
             merged.name,
-            Field::Set("My name".to_owned(), ClaimSource::Manifest)
+            Field::Set("My name".to_owned(), Claimant::Manifest)
         );
         assert_eq!(merged.license, Field::Cleared);
         assert_eq!(
             merged.attribution,
-            Field::Set("Shipped credit".to_owned(), ClaimSource::Profile)
+            Field::Set("Shipped credit".to_owned(), Claimant::Profile)
         );
         assert_eq!(merged.source, shipped.source);
 
@@ -426,20 +426,19 @@ mod tests {
         let violin = entry(&merged, "strings/VIOLIN.sfz");
         assert_eq!(
             violin.name,
-            Field::Set("My violin".to_owned(), ClaimSource::Manifest)
+            Field::Set("My violin".to_owned(), Claimant::Manifest)
         );
         assert_eq!(
             violin.family,
-            Field::Set(InstrumentFamily::Strings, ClaimSource::Profile)
+            Field::Set(InstrumentFamily::Strings, Claimant::Profile)
         );
         assert_eq!(
             violin.instrument,
-            Field::Set(InstrumentType::Violin, ClaimSource::Profile)
+            Field::Set(InstrumentType::Violin, Claimant::Profile)
         );
         assert_eq!(violin.in_situ, Field::Cleared);
         // The articulation list is replaced whole: the shipped key switches are gone.
-        let Field::Set(ArticulationList::Mapped(list), ClaimSource::Manifest) =
-            &violin.articulations
+        let Field::Set(ArticulationList::Mapped(list), Claimant::Manifest) = &violin.articulations
         else {
             panic!("{:?}", violin.articulations)
         };
@@ -461,16 +460,16 @@ mod tests {
             .expect("the set");
         assert_eq!(
             horn.family,
-            Field::Set(InstrumentFamily::Brass, ClaimSource::Manifest)
+            Field::Set(InstrumentFamily::Brass, Claimant::Manifest)
         );
         assert_eq!(
             horn.instrument,
-            Field::Set(InstrumentType::HornF, ClaimSource::Profile)
+            Field::Set(InstrumentType::HornF, Claimant::Profile)
         );
         // An entry only in the manifest is added.
         assert_eq!(
             entry(&merged, "Mine.sfz").family,
-            Field::Set(InstrumentFamily::Other, ClaimSource::Manifest)
+            Field::Set(InstrumentFamily::Other, Claimant::Manifest)
         );
     }
 
@@ -487,7 +486,7 @@ mod tests {
                     {"path": "Timpani.sfz", "name": null, "family": "percussion"}
                 ]
             }),
-            ClaimSource::Manifest,
+            Claimant::Manifest,
         );
         let merged = merge(Some(&shipped), Some(&user));
         assert_eq!(merged.license, shipped.license);
@@ -496,7 +495,7 @@ mod tests {
             violin.articulations,
             Field::Set(
                 ArticulationList::Names(vec!["pizz".to_owned()]),
-                ClaimSource::Manifest
+                Claimant::Manifest
             )
         );
         assert_eq!(violin.name, entry(&shipped, "Strings/Violin.sfz").name);
@@ -504,11 +503,11 @@ mod tests {
         assert_eq!(timpani.name, Field::Unset);
         assert_eq!(
             timpani.family,
-            Field::Set(InstrumentFamily::Percussion, ClaimSource::Manifest)
+            Field::Set(InstrumentFamily::Percussion, Claimant::Manifest)
         );
         assert_eq!(
             timpani.instrument,
-            Field::Set(InstrumentType::Timpani, ClaimSource::Profile)
+            Field::Set(InstrumentType::Timpani, Claimant::Profile)
         );
     }
 
@@ -553,7 +552,7 @@ mod tests {
             })
     }
 
-    fn generated_claims(source: ClaimSource) -> impl Strategy<Value = LibraryClaims> {
+    fn generated_claims(source: Claimant) -> impl Strategy<Value = LibraryClaims> {
         (text_field(), prop::collection::vec(generated_entry(), 0..6)).prop_map(
             move |(name, entries)| {
                 let mut json = serde_json::json!({"version": 2, "instruments": entries});
@@ -580,8 +579,8 @@ mod tests {
         /// the user writes wins, one the user leaves out keeps the profile's.
         #[test]
         fn the_merge_keeps_every_entry_and_lets_written_fields_win(
-            shipped in generated_claims(ClaimSource::Profile),
-            user in generated_claims(ClaimSource::Manifest),
+            shipped in generated_claims(Claimant::Profile),
+            user in generated_claims(Claimant::Manifest),
         ) {
             let merged = merge(Some(&shipped), Some(&user));
             let mut expected: Vec<String> =

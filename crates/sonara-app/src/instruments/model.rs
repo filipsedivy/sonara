@@ -1,12 +1,18 @@
-//! The catalog's data: identifiers, presets, libraries, availability and the problems a scan
-//! reports.
+//! The catalog's data: identifiers, presets with what is claimed about them and who claims it,
+//! libraries, availability and the problems a scan reports.
 
 use std::fmt;
 use std::path::PathBuf;
 
 use serde::Serialize;
+use sonara_midi::orchestration::InstrumentType;
 
+use super::facts::PatchFacts;
 use super::family::FamilyClaim;
+use super::manifest::{
+    ArticulationList, DynamicsMode, EnsembleClaim, KeymapEntry, LegatoMode, Verdict, VerdictState,
+    serialize_instrument,
+};
 
 /// The identifier of a sample library: a lower-case slug, `[a-z0-9][a-z0-9_-]*`, at most 64
 /// characters. It is the library's `id` in its manifest; else the `id` of the library profile
@@ -133,7 +139,46 @@ impl Availability {
     }
 }
 
+/// Who says what the catalog shows about a preset. Serialized in lower case.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ClaimSource {
+    /// The library's own manifest: the library's word, trusted.
+    Declared,
+    /// The library profile Sonara ships for the library: Sonara's word, read from the library's
+    /// patch files, not the library's.
+    Profile,
+    /// A guess from the words of the patch's path.
+    Inferred,
+}
+
+/// A value claimed about a preset, and who claims it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Claim<T> {
+    /// What is claimed.
+    pub value: T,
+    /// Who claims it.
+    pub source: ClaimSource,
+}
+
+/// The instrument type a preset plays, and who says so. Serialized as
+/// `{"instrument": "violin", "source": "profile"}`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub struct InstrumentClaim {
+    /// The instrument type, an ID of the orchestration metadata.
+    #[serde(serialize_with = "serialize_instrument")]
+    pub instrument: InstrumentType,
+    /// Who says so.
+    pub source: ClaimSource,
+}
+
 /// One instrument preset (`contracts/instrument-catalog.md`).
+///
+/// Every claim keeps its source ([`ClaimSource`]): the library's manifest declares, the profile
+/// Sonara ships for the library states Sonara's reading of it, and a guess from the path is
+/// inferred. The fields `articulations` and `license` keep their first meaning, what the
+/// library's own manifest declares; the claims beside them add the profile's word, marked as
+/// such.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct InstrumentPreset {
     /// The stable ID.
@@ -157,6 +202,66 @@ pub struct InstrumentPreset {
     pub license: Option<String>,
     /// Whether the preset can be played now.
     pub availability: Availability,
+    /// The instrument type the preset plays: declared, stated by the profile, or inferred from
+    /// the path when neither says. `None` when nothing names one type, or when the manifest or
+    /// the profile says that the patch plays several (`instrument: null`, a key map). An
+    /// inferred type is kept only when its family is the preset's family.
+    pub instrument: Option<InstrumentClaim>,
+    /// Solo or section, with the player count when it is stated.
+    pub ensemble: Option<Claim<EnsembleClaim>>,
+    /// The articulations and how each is reached, as the manifest or the profile maps them:
+    /// version 1 names say only which, version 2 entries also how. `None` means not verified,
+    /// as for [`Self::articulations`]; nothing is guessed.
+    pub articulation_map: Option<Claim<ArticulationList>>,
+    /// For a percussion patch with one sound per key, the instrument each key plays.
+    pub keymap: Option<Claim<Vec<KeymapEntry>>>,
+    /// Semitones added to incoming notes, for a patch keyed away from the pitch it sounds.
+    pub key_offset: Option<Claim<i8>>,
+    /// What drives dynamics.
+    pub dynamics: Option<Claim<DynamicsMode>>,
+    /// How the preset plays legato.
+    pub legato: Option<Claim<LegatoMode>>,
+    /// Whether the library was recorded in seating position; `None` when unknown.
+    pub in_situ: Option<Claim<bool>>,
+    /// The licence of this recording, else of its library, as the manifest declares it or the
+    /// profile states it.
+    pub license_claim: Option<Claim<String>>,
+    /// How well the preset plays as the manifest or the profile judges it. What the structural
+    /// check finds may lower it: [`Self::effective_verdict`].
+    pub verdict: Option<Claim<Verdict>>,
+    /// What the structural check found in the patch, once [`super::InstrumentCatalog::verify`]
+    /// ran with a loader that inspects patches; `None` before.
+    pub facts: Option<PatchFacts>,
+}
+
+impl InstrumentPreset {
+    /// How well the preset plays: the claimed [`Self::verdict`], lowered by what the
+    /// structural check found ([`Self::facts`]). Facts beat claims: a patch that does not load
+    /// is [`VerdictState::Not`], and a sample left out or a claimed key switch that is not a
+    /// switch key of the patch makes it at best [`VerdictState::Partly`]; each finding is added
+    /// to what is lost. `None` when nothing is claimed and the check found nothing wrong or did
+    /// not run.
+    #[must_use]
+    pub fn effective_verdict(&self) -> Option<Verdict> {
+        let findings = self.facts.as_ref().map_or_else(Vec::new, |facts| {
+            facts.findings(self.articulation_map.as_ref().map(|claim| &claim.value))
+        });
+        let claimed = self.verdict.as_ref().map(|claim| &claim.value);
+        if claimed.is_none() && findings.is_empty() {
+            return None;
+        }
+        let mut verdict = claimed.cloned().unwrap_or(Verdict {
+            state: VerdictState::AsIs,
+            lost: Vec::new(),
+        });
+        for (state, finding) in findings {
+            verdict.state = verdict.state.worse(state);
+            if !verdict.lost.contains(&finding) {
+                verdict.lost.push(finding);
+            }
+        }
+        Some(verdict)
+    }
 }
 
 /// A library root the catalog read.
@@ -241,7 +346,20 @@ pub enum CatalogError {
 
 #[cfg(test)]
 mod tests {
-    use super::{InstrumentId, LibraryId};
+    use std::path::PathBuf;
+
+    use serde_json::json;
+    use sonara_media::sfz::MAX_BANK_BYTES;
+    use sonara_midi::orchestration::{Articulation, InstrumentType, Mute, Vibrato};
+
+    use super::{
+        Availability, Claim, ClaimSource, InstrumentClaim, InstrumentId, InstrumentPreset,
+        LibraryId,
+    };
+    use crate::instruments::{
+        ArticulationEntry, ArticulationList, ArticulationName, ArticulationVia, FamilyClaim,
+        InstrumentFamily, PatchFacts, Verdict, VerdictState,
+    };
 
     #[test]
     fn library_ids_are_validated() {
@@ -272,5 +390,298 @@ mod tests {
             "vsco2ce/Strings/Violin Solo"
         );
         assert_eq!(InstrumentId::new(&library, "Harp").as_str(), "vsco2ce/Harp");
+    }
+
+    /// A violin preset of the library `lib` that the profile judges `verdict`, with
+    /// `articulations` and the structural check's `facts`.
+    fn preset(
+        verdict: Option<Verdict>,
+        articulations: Option<ArticulationList>,
+        facts: Option<PatchFacts>,
+    ) -> InstrumentPreset {
+        let library = LibraryId::parse("lib").expect("valid");
+        let profile = |value| Claim {
+            value,
+            source: ClaimSource::Profile,
+        };
+        InstrumentPreset {
+            id: InstrumentId::new(&library, "Violin.sfz"),
+            display_name: "Violin".to_owned(),
+            family: FamilyClaim::Profile(InstrumentFamily::Strings),
+            library,
+            patch_path: PathBuf::from("/libraries/lib/Violin.sfz"),
+            articulations: Vec::new(),
+            license: None,
+            availability: Availability::Available,
+            instrument: Some(InstrumentClaim {
+                instrument: InstrumentType::Violin,
+                source: ClaimSource::Profile,
+            }),
+            ensemble: None,
+            articulation_map: articulations.map(|value| Claim {
+                value,
+                source: ClaimSource::Profile,
+            }),
+            keymap: None,
+            key_offset: None,
+            dynamics: None,
+            legato: None,
+            in_situ: None,
+            license_claim: None,
+            verdict: verdict.map(profile),
+            facts,
+        }
+    }
+
+    /// The facts of a patch that loads: switch keys 36 and 37, one unsupported opcode.
+    fn sound_facts() -> PatchFacts {
+        PatchFacts {
+            regions: 4,
+            playable_regions: 4,
+            sampled: Vec::new(),
+            switch_keys: vec![36, 37],
+            default_switch: Some(36),
+            ignored_opcodes: vec!["ampeg_dynamic".to_owned()],
+            missing_samples: Vec::new(),
+            unreadable_samples: Vec::new(),
+            notes: Vec::new(),
+            decoded_bytes: 1024,
+            loadable: true,
+        }
+    }
+
+    fn verdict(state: VerdictState, lost: &[&str]) -> Verdict {
+        Verdict {
+            state,
+            lost: lost.iter().map(|line| (*line).to_owned()).collect(),
+        }
+    }
+
+    fn switch(articulation: Articulation, key: u8) -> ArticulationEntry {
+        ArticulationEntry {
+            name: ArticulationName::Vocabulary(articulation),
+            via: ArticulationVia::Keyswitch { key },
+            member: None,
+            label: None,
+            is_default: false,
+            mute: Mute::Open,
+            vibrato: Vibrato::Ordinary,
+            attack_ms: None,
+        }
+    }
+
+    #[test]
+    fn without_a_claim_or_a_finding_the_verdict_is_unknown() {
+        assert_eq!(preset(None, None, None).effective_verdict(), None);
+        // An unsupported opcode alone lowers nothing: what it costs is the claim's to say.
+        assert_eq!(
+            preset(None, None, Some(sound_facts())).effective_verdict(),
+            None
+        );
+        let claimed = verdict(VerdictState::AsIs, &["ampeg_dynamic"]);
+        assert_eq!(
+            preset(Some(claimed.clone()), None, Some(sound_facts())).effective_verdict(),
+            Some(claimed)
+        );
+    }
+
+    /// Facts beat claims: a claimed key switch that does not switch in the patch lowers the
+    /// claim to `partly` and says which (TST-03).
+    #[test]
+    fn a_claimed_key_switch_the_patch_lacks_lowers_the_verdict() {
+        let mapped = ArticulationList::Mapped(vec![
+            switch(Articulation::Sustain, 36),
+            switch(Articulation::Pizzicato, 37),
+            switch(Articulation::Tremolo, 40),
+        ]);
+        let claimed = verdict(VerdictState::AsIs, &["ampeg_dynamic"]);
+        let violin = preset(Some(claimed.clone()), Some(mapped), Some(sound_facts()));
+        assert_eq!(
+            violin.effective_verdict(),
+            Some(verdict(
+                VerdictState::Partly,
+                &[
+                    "ampeg_dynamic",
+                    "tremolo: key 40 is not a switch key of the patch"
+                ]
+            ))
+        );
+        // The claim itself is kept as it was made.
+        assert_eq!(violin.verdict.map(|claim| claim.value), Some(claimed));
+        // Names of a version 1 manifest say nothing about keys, so nothing is checked.
+        let names = ArticulationList::Names(vec!["tremolo".to_owned()]);
+        assert_eq!(
+            preset(None, Some(names), Some(sound_facts())).effective_verdict(),
+            None
+        );
+    }
+
+    /// A sample left out makes a preset at best `partly`, with the reader's note; a patch that
+    /// does not load is `not`, whatever is claimed, and a finding the claim already names is
+    /// not repeated.
+    #[test]
+    fn samples_left_out_and_a_patch_that_does_not_load_lower_the_verdict() {
+        let note = "sample /lib/b.wav is missing (1 region left out)";
+        let partial = PatchFacts {
+            missing_samples: vec![PathBuf::from("/lib/b.wav")],
+            notes: vec![note.to_owned()],
+            ..sound_facts()
+        };
+        assert_eq!(
+            preset(None, None, Some(partial.clone())).effective_verdict(),
+            Some(verdict(VerdictState::Partly, &[note]))
+        );
+        assert_eq!(
+            preset(
+                Some(verdict(VerdictState::Partly, &[note])),
+                None,
+                Some(partial)
+            )
+            .effective_verdict(),
+            Some(verdict(VerdictState::Partly, &[note]))
+        );
+
+        let as_is = || Some(verdict(VerdictState::AsIs, &[]));
+        let not_loading = [
+            (
+                PatchFacts {
+                    regions: 0,
+                    playable_regions: 0,
+                    loadable: false,
+                    ..sound_facts()
+                },
+                "the patch has no region".to_owned(),
+            ),
+            (
+                PatchFacts {
+                    playable_regions: 0,
+                    loadable: false,
+                    ..sound_facts()
+                },
+                "no region of the patch can play".to_owned(),
+            ),
+            (
+                PatchFacts {
+                    unreadable_samples: vec![PathBuf::from("/lib/c.wav")],
+                    loadable: false,
+                    ..sound_facts()
+                },
+                "the patch does not load while a sample file cannot be read".to_owned(),
+            ),
+            (
+                PatchFacts {
+                    decoded_bytes: MAX_BANK_BYTES + 1,
+                    loadable: false,
+                    ..sound_facts()
+                },
+                format!(
+                    "its samples take {} MiB decoded, more than the {} MiB a patch may take",
+                    MAX_BANK_BYTES >> 20,
+                    MAX_BANK_BYTES >> 20
+                ),
+            ),
+        ];
+        for (facts, reason) in not_loading {
+            assert_eq!(
+                preset(as_is(), None, Some(facts)).effective_verdict(),
+                Some(verdict(VerdictState::Not, &[reason.as_str()])),
+                "{reason}"
+            );
+        }
+    }
+
+    #[test]
+    fn the_worse_of_two_states_wins() {
+        use VerdictState::{AsIs, Not, Partly};
+        let cases = [
+            (AsIs, AsIs, AsIs),
+            (AsIs, Partly, Partly),
+            (Partly, AsIs, Partly),
+            (Partly, Not, Not),
+            (Not, AsIs, Not),
+            (Partly, Partly, Partly),
+        ];
+        for (a, b, worse) in cases {
+            assert_eq!(a.worse(b), worse, "{a:?} {b:?}");
+        }
+    }
+
+    /// The JSON form of a preset's claims and facts (TST-05): each claim is its value and its
+    /// source, the instrument type is its orchestration ID, and absent claims are `null`.
+    #[test]
+    fn claims_and_facts_keep_their_json_form() {
+        for (source, text) in [
+            (ClaimSource::Declared, "declared"),
+            (ClaimSource::Profile, "profile"),
+            (ClaimSource::Inferred, "inferred"),
+        ] {
+            assert_eq!(
+                serde_json::to_value(source).expect("serializes"),
+                json!(text)
+            );
+        }
+        assert_eq!(
+            serde_json::to_value(Claim {
+                value: -12,
+                source: ClaimSource::Declared
+            })
+            .expect("serializes"),
+            json!({"value": -12, "source": "declared"})
+        );
+        let facts = PatchFacts {
+            sampled: vec![crate::instruments::KeyZone {
+                lo: 55,
+                hi: 60,
+                layers: vec![crate::instruments::VelocityRange { lo: 1, hi: 127 }],
+            }],
+            ..sound_facts()
+        };
+        let preset = preset(
+            Some(verdict(VerdictState::Partly, &["rt_decay"])),
+            Some(ArticulationList::Mapped(vec![switch(
+                Articulation::Sustain,
+                36,
+            )])),
+            Some(facts),
+        );
+        let value = serde_json::to_value(&preset).expect("serializes");
+        assert_eq!(
+            value["instrument"],
+            json!({"instrument": "violin", "source": "profile"})
+        );
+        assert_eq!(
+            value["family"],
+            json!({"source": "profile", "family": "strings"})
+        );
+        assert_eq!(
+            value["articulation_map"],
+            json!({"value": [{"id": "sustain", "via": "keyswitch", "key": 36}],
+                   "source": "profile"})
+        );
+        assert_eq!(
+            value["verdict"],
+            json!({"value": {"state": "partly", "lost": ["rt_decay"]}, "source": "profile"})
+        );
+        for absent in [
+            "ensemble",
+            "keymap",
+            "key_offset",
+            "dynamics",
+            "legato",
+            "in_situ",
+            "license_claim",
+        ] {
+            assert_eq!(value[absent], json!(null), "{absent}");
+        }
+        assert_eq!(
+            value["facts"],
+            json!({
+                "regions": 4, "playable_regions": 4,
+                "sampled": [{"lo": 55, "hi": 60, "layers": [{"lo": 1, "hi": 127}]}],
+                "switch_keys": [36, 37], "default_switch": 36,
+                "ignored_opcodes": ["ampeg_dynamic"], "missing_samples": [],
+                "unreadable_samples": [], "notes": [], "decoded_bytes": 1024, "loadable": true
+            })
+        );
     }
 }

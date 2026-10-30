@@ -3,10 +3,12 @@
 //! Discovery only checks that a patch file exists and can be opened. Whether the patch parses
 //! and its samples are present and decodable takes reading the samples, which is slow and
 //! memory-hungry, so it runs on request ([`super::InstrumentCatalog::verify`]) through this seam.
-//! Tests use a fake loader; the application uses [`MediaPatchLoader`]. Neither needs an audio
-//! engine.
+//! The same check records what the patch holds ([`PatchFacts`]). Tests use a fake loader; the
+//! application uses [`MediaPatchLoader`]. Neither needs an audio engine.
 
 use std::path::Path;
+
+use super::facts::PatchFacts;
 
 /// Why a patch cannot be loaded, in words for the user.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -22,6 +24,14 @@ pub trait PatchLoader {
     /// [`PatchLoadError`] when the patch or one of its samples is missing, malformed or cannot be
     /// decoded.
     fn load(&self, patch: &Path) -> Result<(), PatchLoadError>;
+
+    /// What the structural check finds in the patch at the given path, from the patch file and
+    /// the headers of its samples. `None` when the patch cannot be read, and for a loader that
+    /// does not inspect patches, which is what this default says: the catalog then records no
+    /// facts.
+    fn inspect(&self, _patch: &Path) -> Option<PatchFacts> {
+        None
+    }
 }
 
 /// The loader of the application: the SFZ reader and sample decoder of `sonara-media`, the one
@@ -46,5 +56,13 @@ impl PatchLoader for MediaPatchLoader {
                 bank.load_notes.join("; ")
             )))
         }
+    }
+
+    /// The report of `sonara_media::sfz::inspect`, which reads the patch and the headers of its
+    /// samples without decoding them.
+    fn inspect(&self, patch: &Path) -> Option<PatchFacts> {
+        sonara_media::sfz::inspect(patch)
+            .ok()
+            .map(|report| PatchFacts::from(&report))
     }
 }

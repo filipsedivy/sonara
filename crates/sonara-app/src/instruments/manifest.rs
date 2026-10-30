@@ -31,7 +31,7 @@
 //! its own, so the same mistake there rejects only that entry.
 //!
 //! Every field of an entry keeps whether it was left out, written as `null` or given a value
-//! ([`Field`]), and who claims it ([`ClaimSource`]), so that a user's manifest can override a
+//! ([`Field`]), and who claims it ([`Claimant`]), so that a user's manifest can override a
 //! shipped profile field by field ([`LibraryClaims::over`]).
 
 mod claims;
@@ -44,6 +44,7 @@ use std::path::Path;
 use serde::Deserialize;
 use sonara_midi::orchestration::InstrumentType;
 
+pub(crate) use claims::serialize_instrument;
 pub use claims::{
     ArticulationEntry, ArticulationList, ArticulationName, ArticulationVia, CheckMethod,
     DynamicsMode, EnsembleClaim, EnsembleKind, KeymapEntry, LegatoMode, LibrarySource,
@@ -51,7 +52,7 @@ pub use claims::{
 };
 
 use super::family::InstrumentFamily;
-use super::model::{InvalidLibraryId, LibraryId};
+use super::model::{ClaimSource, InvalidLibraryId, LibraryId};
 
 /// The manifest's file name.
 pub const MANIFEST_FILE: &str = "sonara-library.json";
@@ -82,11 +83,21 @@ pub(crate) enum ManifestError {
 
 /// Who makes a claim: the library's own manifest, or a library profile Sonara ships.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum ClaimSource {
+pub(crate) enum Claimant {
     /// The manifest in the library's root directory: the library's own word.
     Manifest,
     /// A profile Sonara ships for the library: Sonara's word, not the library's.
     Profile,
+}
+
+impl Claimant {
+    /// The source the catalog shows for a claim of this claimant.
+    pub(crate) const fn source(self) -> ClaimSource {
+        match self {
+            Self::Manifest => ClaimSource::Declared,
+            Self::Profile => ClaimSource::Profile,
+        }
+    }
 }
 
 /// One field of a manifest: left out, written as `null`, or given a value with who claims it.
@@ -101,7 +112,7 @@ pub(crate) enum Field<T> {
     /// Written as `null`.
     Cleared,
     /// Written with a value.
-    Set(T, ClaimSource),
+    Set(T, Claimant),
 }
 
 impl<T: Clone> Field<T> {
@@ -126,12 +137,21 @@ impl<T> Field<T> {
         }
     }
 
+    /// The value with who claims it.
+    #[must_use]
+    pub const fn claimed(&self) -> Option<(&T, Claimant)> {
+        match self {
+            Self::Set(value, claimant) => Some((value, *claimant)),
+            Self::Unset | Self::Cleared => None,
+        }
+    }
+
     /// The value when the library's own manifest claims it.
     #[must_use]
     pub const fn declared(&self) -> Option<&T> {
         match self {
-            Self::Set(value, ClaimSource::Manifest) => Some(value),
-            Self::Set(_, ClaimSource::Profile) | Self::Unset | Self::Cleared => None,
+            Self::Set(value, Claimant::Manifest) => Some(value),
+            Self::Set(_, Claimant::Profile) | Self::Unset | Self::Cleared => None,
         }
     }
 }
@@ -186,7 +206,7 @@ pub(crate) struct ManifestEntry {
 
 impl ManifestEntry {
     /// An entry for `target` that claims nothing.
-    fn new(target: EntryTarget) -> Self {
+    pub(crate) fn new(target: EntryTarget) -> Self {
         Self {
             target,
             name: Field::Unset,
@@ -292,7 +312,7 @@ pub(crate) struct Manifest {
 }
 
 /// Reads the manifest of the library at `root`; `Ok(None)` when it has none. Its claims are the
-/// library's own ([`ClaimSource::Manifest`]).
+/// library's own ([`Claimant::Manifest`]).
 pub(crate) fn read(root: &Path) -> Result<Option<Manifest>, ManifestError> {
     let path = root.join(MANIFEST_FILE);
     let size = match fs::metadata(&path) {
@@ -304,7 +324,7 @@ pub(crate) fn read(root: &Path) -> Result<Option<Manifest>, ManifestError> {
         return Err(ManifestError::TooLarge);
     }
     let bytes = fs::read(&path).map_err(ManifestError::Io)?;
-    parse(&bytes, ClaimSource::Manifest).map(Some)
+    parse(&bytes, Claimant::Manifest).map(Some)
 }
 
 /// The field every version has.
@@ -314,7 +334,7 @@ struct RawVersion {
 }
 
 /// Parses a manifest of any version this build reads; `source` says who claims what it holds.
-pub(crate) fn parse(bytes: &[u8], source: ClaimSource) -> Result<Manifest, ManifestError> {
+pub(crate) fn parse(bytes: &[u8], source: Claimant) -> Result<Manifest, ManifestError> {
     let RawVersion { version } = serde_json::from_slice(bytes).map_err(ManifestError::Parse)?;
     match version {
         1 => parse_v1(bytes, source),
@@ -344,7 +364,7 @@ struct RawEntry {
 /// Reads a version 1 manifest in one pass, as this format was always read. Version 1 cannot
 /// write `null` over a value: a field it leaves out or writes as `null`, a blank text and an
 /// empty articulation list all leave the field unset.
-fn parse_v1(bytes: &[u8], source: ClaimSource) -> Result<Manifest, ManifestError> {
+fn parse_v1(bytes: &[u8], source: Claimant) -> Result<Manifest, ManifestError> {
     let raw: RawManifest = serde_json::from_slice(bytes).map_err(ManifestError::Parse)?;
     let id = raw.id.as_deref().map(LibraryId::parse).transpose()?;
     let mut entries: Vec<ManifestEntry> = Vec::new();
@@ -385,7 +405,7 @@ fn parse_v1(bytes: &[u8], source: ClaimSource) -> Result<Manifest, ManifestError
 }
 
 /// A text field of version 1: set unless it is missing or blank.
-fn text_field(text: Option<String>, source: ClaimSource) -> Field<String> {
+fn text_field(text: Option<String>, source: Claimant) -> Field<String> {
     text.filter(|text| !text.trim().is_empty())
         .map_or(Field::Unset, |text| Field::Set(text, source))
 }
@@ -441,12 +461,12 @@ fn clean_articulations(names: Vec<String>) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        ArticulationList, ClaimSource, EntryTarget, Field, LibraryClaims, ManifestEntry,
+        ArticulationList, Claimant, EntryTarget, Field, LibraryClaims, ManifestEntry,
         ManifestError, parse,
     };
     use crate::instruments::InstrumentFamily;
 
-    const MANIFEST: ClaimSource = ClaimSource::Manifest;
+    const MANIFEST: Claimant = Claimant::Manifest;
 
     fn path(entry: &ManifestEntry) -> &str {
         match &entry.target {
@@ -618,10 +638,72 @@ mod tests {
         assert!(manifest.rejected.is_empty() && manifest.detect.is_empty());
     }
 
+    /// `value` as JSON.
+    fn json(value: impl serde::Serialize) -> serde_json::Value {
+        serde_json::to_value(value).expect("a claim serializes")
+    }
+
+    /// The catalog serializes a claimed value as the manifest writes it, so every value read
+    /// from an entry serializes back to the JSON it was read from (TST-05; the manifest is the
+    /// oracle).
+    #[test]
+    fn claimed_values_serialize_as_the_manifest_writes_them() {
+        let entries = serde_json::json!([
+            {"path": "a.sfz",
+             "ensemble": {"kind": "section_emulated", "players": 12},
+             "articulations": [
+                 {"id": "sustain", "via": "keyswitch", "key": 36, "label": "Sus",
+                  "default": true, "vibrato": "non_vibrato", "attack_ms": 40},
+                 {"id": "sustain", "via": "velocity", "lo": 1, "hi": 63, "mute": "con_sordino"},
+                 {"id": "staccato", "via": "cc", "cc": 32, "value": 5},
+                 {"id": "ordinario", "via": "patch"}],
+             "dynamics": {"via": "fixed", "velocity": 100},
+             "legato": {"kind": "overlap", "crossfade_ms": 90, "start_offset_ms": 60,
+                        "gap_ms": 0},
+             "verdict": {"state": "partly", "lost": ["rt_decay"]}},
+            {"path": "b.sfz", "ensemble": {"kind": "solo", "players": null},
+             "keymap": [
+                 {"keys": [36, 37], "instrument": "bass_drum", "articulation": "roll",
+                  "name": "Kick"},
+                 {"keys": [38], "instrument": "snare_drum"}],
+             "dynamics": {"via": "cc", "cc": 11}, "legato": {"kind": "trigger"},
+             "verdict": {"state": "not", "lost": []}},
+            {"set": "horn", "dynamics": {"via": "velocity"}, "legato": {"kind": "none"},
+             "articulations": [{"id": "sustain", "via": "patch", "path": "Horn.sfz"}],
+             "verdict": {"state": "as_is", "lost": []}}
+        ]);
+        let manifest = parse(
+            serde_json::json!({"version": 2, "instruments": entries})
+                .to_string()
+                .as_bytes(),
+            MANIFEST,
+        )
+        .expect("valid");
+        assert_eq!(manifest.rejected, []);
+        let written = entries.as_array().expect("a list");
+        assert_eq!(manifest.claims.entries.len(), written.len());
+        for (entry, written) in manifest.claims.entries.iter().zip(written) {
+            // A field the entry leaves out is unset, which serializes as `null`.
+            let field = |name: &str| written.get(name).cloned().unwrap_or_default();
+            assert_eq!(json(entry.ensemble.value()), field("ensemble"));
+            assert_eq!(json(entry.articulations.value()), field("articulations"));
+            assert_eq!(json(entry.keymap.value()), field("keymap"));
+            assert_eq!(json(entry.dynamics.value()), field("dynamics"));
+            assert_eq!(json(entry.legato.value()), field("legato"));
+            assert_eq!(json(entry.verdict.value()), field("verdict"));
+        }
+        // Version 1 names stay a list of names.
+        let names = ArticulationList::Names(vec!["pizz".to_owned(), "sustain".to_owned()]);
+        assert_eq!(
+            serde_json::to_value(&names).expect("serializes"),
+            serde_json::json!(["pizz", "sustain"])
+        );
+    }
+
     #[test]
     fn a_field_over_another_keeps_or_replaces_it() {
-        let shipped = Field::Set(1, ClaimSource::Profile);
-        let user = Field::Set(2, ClaimSource::Manifest);
+        let shipped = Field::Set(1, Claimant::Profile);
+        let user = Field::Set(2, Claimant::Manifest);
         assert_eq!(Field::Unset.over(&shipped), shipped);
         assert_eq!(Field::Cleared.over(&shipped), Field::Cleared);
         assert_eq!(user.over(&shipped), user);

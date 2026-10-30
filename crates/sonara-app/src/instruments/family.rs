@@ -1,27 +1,35 @@
-//! Instrument families, and the guess of a family from a patch's path.
+//! Instrument families, and the guesses of a family and of an instrument type from a patch's
+//! path.
 //!
 //! The family is the orchestration metadata's own enum, re-exported here as [`InstrumentFamily`],
 //! so a preset and an instrument type name their family with one type. Its serialized form is
 //! the lowercase slug (`"strings"`, `"woodwinds"`, …), which manifests declare and family claims
-//! write. The guess reads a path with the metadata's own names and aliases ([`resolve`]), so a
-//! patch path names a family through the same aliases as any other text read with them.
+//! write. The guesses read a path with the metadata's own names and aliases ([`resolve`]), so a
+//! patch path names a family or an instrument through the same aliases as any other text read
+//! with them.
 
 use serde::Serialize;
-use sonara_midi::orchestration::{Lang, Mention, Target, resolve};
+use sonara_midi::orchestration::{InstrumentType, Lang, Mention, Target, resolve};
 
 /// The orchestral family of an instrument: [`sonara_midi::orchestration::Family`].
 pub use sonara_midi::orchestration::Family as InstrumentFamily;
 
-/// What is known about the family of a preset. A manifest's word is trusted; a guess from the
-/// path is not, so the two stay apart (`contracts/orchestration-metadata.md`).
+/// What is known about the family of a preset. A manifest's word is trusted, a profile Sonara
+/// ships is Sonara's word and not the library's, and a guess from the path is a guess, so the
+/// three stay apart (`contracts/orchestration-metadata.md`).
+///
+/// A manifest or a profile states the family, or states the instrument type a patch plays,
+/// whose family it is.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(tag = "source", content = "family", rename_all = "lowercase")]
 pub enum FamilyClaim {
     /// Declared by the library's manifest.
     Declared(InstrumentFamily),
+    /// Stated by the library profile Sonara ships for the library.
+    Profile(InstrumentFamily),
     /// Guessed from the words of the patch's path.
     Inferred(InstrumentFamily),
-    /// Neither declared nor recognised.
+    /// Neither stated nor recognised.
     Unknown,
 }
 
@@ -30,7 +38,7 @@ impl FamilyClaim {
     #[must_use]
     pub const fn family(self) -> Option<InstrumentFamily> {
         match self {
-            Self::Declared(family) | Self::Inferred(family) => Some(family),
+            Self::Declared(family) | Self::Profile(family) | Self::Inferred(family) => Some(family),
             Self::Unknown => None,
         }
     }
@@ -57,6 +65,54 @@ pub(crate) fn infer_family(relative_path: &str) -> FamilyClaim {
         .rsplit('/')
         .find_map(family_of_segment)
         .map_or(FamilyClaim::Unknown, FamilyClaim::Inferred)
+}
+
+/// Guesses the instrument type from the words of `relative_path` (`/`-separated, below the
+/// library root), read as [`infer_family`] reads them: the file name first, then the folders from
+/// the nearest to the farthest.
+///
+/// A segment decides when one of its words names exactly one instrument type and every other
+/// word it names something with agrees: the same type, a category that holds it or its family.
+/// A category alone decides nothing, even one with a usual member (`Trumpet` is a category of
+/// several trumpets), nor does a word of several instruments (`Bass`), nor words that disagree
+/// (`Contrabass Clarinet`: the double bass and a clarinet). `None` when no segment decides; what
+/// one decides is only a guess.
+#[must_use]
+pub(crate) fn infer_instrument(relative_path: &str) -> Option<InstrumentType> {
+    relative_path.rsplit('/').find_map(instrument_of_segment)
+}
+
+/// The one instrument type the words of `segment` name and agree on (see [`infer_instrument`]).
+fn instrument_of_segment(segment: &str) -> Option<InstrumentType> {
+    let mentions = resolve(&split_words(segment), PATH_LANGUAGES);
+    let mut named = None;
+    for mention in &mentions {
+        if let [Target::Instrument(instrument)] = mention.targets()[..]
+            && *named.get_or_insert(instrument) != instrument
+        {
+            return None;
+        }
+    }
+    let named = named?;
+    mentions
+        .iter()
+        .all(|mention| {
+            mention
+                .matches()
+                .iter()
+                .any(|&(target, _)| admits(target, named))
+        })
+        .then_some(named)
+}
+
+/// Whether a word that names `target` agrees with `instrument`: it names that instrument, a
+/// category that holds it, or its family.
+fn admits(target: Target, instrument: InstrumentType) -> bool {
+    match target {
+        Target::Instrument(named) => named == instrument,
+        Target::Category(category) => category.get().members().any(|member| member == instrument),
+        Target::Family(family) => family == instrument.family(),
+    }
 }
 
 /// The family the clues of `segment` agree on; `None` when it holds no clue or its clues name
@@ -132,7 +188,7 @@ fn starts_word(previous: char, current: char, next: Option<char>) -> bool {
 mod tests {
     use sonara_midi::orchestration::{InstrumentType, Lang, Target, all_aliases, resolve};
 
-    use super::{FamilyClaim, InstrumentFamily, infer_family, split_words};
+    use super::{FamilyClaim, InstrumentFamily, infer_family, infer_instrument, split_words};
 
     fn inferred(path: &str) -> FamilyClaim {
         infer_family(path)
@@ -342,6 +398,101 @@ mod tests {
         }
     }
 
+    /// The instrument type is read from the file name first, then from the folders, as the
+    /// family is; a family word beside the instrument's name agrees with it.
+    #[test]
+    fn an_instrument_is_inferred_from_the_nearest_segment_that_names_one() {
+        let cases = [
+            ("Violin.sfz", InstrumentType::Violin),
+            ("Strings/Solo Violin.sfz", InstrumentType::Violin),
+            ("Strings Violin.sfz", InstrumentType::Violin),
+            ("Violin/Sustain.sfz", InstrumentType::Violin),
+            ("ViolinEns-KS.sfz", InstrumentType::Violin),
+            ("FHornSus.sfz", InstrumentType::HornF),
+            ("Tuba-KS.sfz", InstrumentType::Tuba),
+            ("Double Bass.sfz", InstrumentType::DoubleBass),
+            ("Bass Drum.sfz", InstrumentType::BassDrum),
+            ("Celeste.sfz", InstrumentType::Celesta),
+            (
+                "Membranophones/Struck Membranophones/Timpani 1 - Hit.sfz",
+                InstrumentType::Timpani,
+            ),
+            (
+                "Aerophones/Reed Aerophones/Tenor Saxophone - Keyswitch.sfz",
+                InstrumentType::SaxophoneTenor,
+            ),
+        ];
+        for (path, instrument) in cases {
+            assert_eq!(infer_instrument(path), Some(instrument), "{path}");
+        }
+    }
+
+    /// A category, a family, a word of several instruments or words that disagree name no one
+    /// instrument type, so nothing is inferred, though a family may be.
+    #[test]
+    fn no_instrument_is_inferred_without_one_agreed_type() {
+        let cases = [
+            // Categories of several types, with or without a usual member.
+            ("Trumpet.sfz", Some(InstrumentFamily::Brass)),
+            ("Clarinet.sfz", Some(InstrumentFamily::Woodwinds)),
+            ("Piano.sfz", Some(InstrumentFamily::Keyboards)),
+            // A family names no instrument, in the file name or a folder.
+            ("Brass/Patch 1.sfz", Some(InstrumentFamily::Brass)),
+            ("Strings/Bass.sfz", Some(InstrumentFamily::Strings)),
+            // `bass` is the double bass and the bass voice; `basses` too.
+            ("Bass.sfz", None),
+            ("Choir/Basses.sfz", Some(InstrumentFamily::Choir)),
+            // Two instruments, or an instrument and a category it is not in.
+            ("Cello Violin.sfz", Some(InstrumentFamily::Strings)),
+            ("Contrabass Clarinet.sfz", None),
+            (
+                "Woodwinds/Contrabass Clarinet.sfz",
+                Some(InstrumentFamily::Woodwinds),
+            ),
+            ("Pad 7.sfz", None),
+            ("", None),
+        ];
+        for (path, family) in cases {
+            assert_eq!(infer_instrument(path), None, "{path}");
+            assert_eq!(
+                infer_family(path).family(),
+                family,
+                "{path}: the family is still read"
+            );
+        }
+    }
+
+    /// Every English alias, as a file name, infers the instrument type it alone names, and no
+    /// type when its targets are a category, a family or several types (oracle: the targets in
+    /// `all_aliases`).
+    #[test]
+    fn every_english_alias_infers_the_one_instrument_it_names() {
+        let english: Vec<_> = all_aliases()
+            .filter(|(_, alias)| alias.lang == Lang::En)
+            .collect();
+        let mut inferred_some = 0;
+        for (_, alias) in &english {
+            let mut targets: Vec<Target> = english
+                .iter()
+                .filter(|(_, other)| other.text == alias.text)
+                .map(|&(target, _)| target)
+                .collect();
+            targets.dedup();
+            let expected = match targets[..] {
+                [Target::Instrument(instrument)] => Some(instrument),
+                _ => None,
+            };
+            inferred_some += usize::from(expected.is_some());
+            assert_eq!(
+                infer_instrument(&format!("{}.sfz", alias.text)),
+                expected,
+                "{}",
+                alias.text
+            );
+        }
+        assert!(inferred_some > 100, "{inferred_some} single-type aliases");
+    }
+
     #[test]
     fn an_unrecognised_path_is_unknown_not_guessed() {
         assert_eq!(inferred("Pad 7.sfz"), FamilyClaim::Unknown);
@@ -373,9 +524,14 @@ mod tests {
                 format!(r#"{{"source":"declared","family":"{slug}"}}"#)
             );
             assert_eq!(
+                serde_json::to_string(&FamilyClaim::Profile(family)).expect("a claim serializes"),
+                format!(r#"{{"source":"profile","family":"{slug}"}}"#)
+            );
+            assert_eq!(
                 serde_json::to_string(&FamilyClaim::Inferred(family)).expect("a claim serializes"),
                 format!(r#"{{"source":"inferred","family":"{slug}"}}"#)
             );
+            assert_eq!(FamilyClaim::Profile(family).family(), Some(family));
         }
         assert_eq!(
             serde_json::to_string(&FamilyClaim::Unknown).expect("a claim serializes"),

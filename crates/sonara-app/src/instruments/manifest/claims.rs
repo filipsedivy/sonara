@@ -1,9 +1,58 @@
 //! What a version 2 manifest, or a library profile Sonara ships, claims about a preset and its
 //! library, as validated domain values (TYP-06). The manifest's spelling of each value is in
-//! `docs/instrument-catalog.md`.
+//! `docs/instrument-catalog.md`; the catalog serializes each value in that same spelling.
 
-use serde::Deserialize;
+use serde::ser::SerializeMap;
+use serde::{Deserialize, Serialize, Serializer};
 use sonara_midi::orchestration::{Articulation, InstrumentType, Mute, Vibrato};
+
+/// Serializes an instrument type as its orchestration ID, for example `"horn_f"`.
+#[expect(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "serde passes the field by reference"
+)]
+pub(crate) fn serialize_instrument<S: Serializer>(
+    instrument: &InstrumentType,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    serializer.serialize_str(instrument.id())
+}
+
+/// Serializes a mute as its articulation ID; only called for a mute other than open.
+#[expect(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "serde passes the field by reference"
+)]
+fn serialize_mute<S: Serializer>(mute: &Mute, serializer: S) -> Result<S::Ok, S::Error> {
+    serializer.serialize_str(mute.articulation().map_or("open", Articulation::id))
+}
+
+/// Serializes a vibrato as its articulation ID; only called for a vibrato other than ordinary.
+#[expect(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "serde passes the field by reference"
+)]
+fn serialize_vibrato<S: Serializer>(vibrato: &Vibrato, serializer: S) -> Result<S::Ok, S::Error> {
+    serializer.serialize_str(vibrato.articulation().map_or("ordinary", Articulation::id))
+}
+
+/// Whether a recording carries no mute, which a manifest does not write.
+#[expect(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "serde passes the field by reference"
+)]
+fn is_open(mute: &Mute) -> bool {
+    *mute == Mute::Open
+}
+
+/// Whether a recording carries the ordinary vibrato, which a manifest does not write.
+#[expect(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "serde passes the field by reference"
+)]
+fn is_ordinary(vibrato: &Vibrato) -> bool {
+    *vibrato == Vibrato::Ordinary
+}
 
 /// The articulation an articulation entry names: the instrument's ordinary sound, or an id of
 /// the articulation vocabulary ([`Articulation`]).
@@ -14,6 +63,12 @@ pub enum ArticulationName {
     Ordinario,
     /// An id of the vocabulary, for example `pizzicato`.
     Vocabulary(Articulation),
+}
+
+impl Serialize for ArticulationName {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.id())
+    }
 }
 
 impl ArticulationName {
@@ -38,8 +93,10 @@ impl ArticulationName {
     }
 }
 
-/// How the sampler reaches an articulation of a patch.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// How the sampler reaches an articulation of a patch. Serialized as the manifest writes it:
+/// `{"via": "keyswitch", "key": 36}`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(tag = "via", rename_all = "snake_case")]
 pub enum ArticulationVia {
     /// The whole patch is this articulation; in a multi-patch set, the member patch is.
     Patch,
@@ -64,30 +121,45 @@ pub enum ArticulationVia {
     },
 }
 
-/// One articulation that a version 2 entry maps.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// One articulation that a version 2 entry maps. Serialized as the manifest writes it: `id`,
+/// `via` with its fields, then `path`, `label`, `default`, `mute`, `vibrato` and `attack_ms` when
+/// they say something.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ArticulationEntry {
     /// The articulation.
+    #[serde(rename = "id")]
     pub name: ArticulationName,
     /// How it is reached.
+    #[serde(flatten)]
     pub via: ArticulationVia,
     /// In a multi-patch set, the member patch that plays it, a path below the library root.
     /// Always `None` in an entry of a single patch, whose own patch plays it.
+    #[serde(rename = "path", skip_serializing_if = "Option::is_none")]
     pub member: Option<String>,
     /// The library's own name for it, for example `Sustain Vibrato`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
     /// Whether it is the patch's ordinary sound. At most one articulation of an entry is.
+    #[serde(rename = "default", skip_serializing_if = "std::ops::Not::not")]
     pub is_default: bool,
     /// The mute the recording carries; [`Mute::Open`] unless the entry names one.
+    #[serde(skip_serializing_if = "is_open", serialize_with = "serialize_mute")]
     pub mute: Mute,
     /// The vibrato the recording carries; [`Vibrato::Ordinary`] unless the entry names one.
+    #[serde(
+        skip_serializing_if = "is_ordinary",
+        serialize_with = "serialize_vibrato"
+    )]
     pub vibrato: Vibrato,
     /// The onset of its samples in milliseconds, 0 to 2000, when the entry states it.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub attack_ms: Option<u16>,
 }
 
-/// The articulations an entry declares.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// The articulations an entry declares. Serialized as the manifest writes the list: names for
+/// version 1, objects for version 2.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(untagged)]
 pub enum ArticulationList {
     /// A version 1 manifest's names, trimmed, without empty or repeated ones. They are free
     /// text, never checked against the vocabulary, and say nothing about how each is reached.
@@ -117,7 +189,7 @@ impl ArticulationList {
 }
 
 /// Whether a preset plays one player or a section.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum EnsembleKind {
     /// One player.
@@ -129,7 +201,7 @@ pub enum EnsembleKind {
 }
 
 /// Solo or section, with the player count when it is stated.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub struct EnsembleClaim {
     /// Solo or section.
     pub kind: EnsembleKind,
@@ -149,8 +221,29 @@ pub enum DynamicsMode {
     Fixed(u8),
 }
 
-/// How a patch plays legato.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Serialized as the manifest writes it: `{"via": "velocity"}`, `{"via": "cc", "cc": 1}` or
+/// `{"via": "fixed", "velocity": 100}`.
+impl Serialize for DynamicsMode {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut map = serializer.serialize_map(None)?;
+        match *self {
+            Self::Velocity => map.serialize_entry("via", "velocity")?,
+            Self::Cc(cc) => {
+                map.serialize_entry("via", "cc")?;
+                map.serialize_entry("cc", &cc)?;
+            }
+            Self::Fixed(velocity) => {
+                map.serialize_entry("via", "fixed")?;
+                map.serialize_entry("velocity", &velocity)?;
+            }
+        }
+        map.end()
+    }
+}
+
+/// How a patch plays legato. Serialized as the manifest writes it: `{"kind": "overlap", …}`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
 pub enum LegatoMode {
     /// It does not.
     None,
@@ -167,21 +260,25 @@ pub enum LegatoMode {
     Trigger,
 }
 
-/// One row of a percussion patch's key map: the keys that play one instrument.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// One row of a percussion patch's key map: the keys that play one instrument. Serialized as
+/// the manifest writes it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct KeymapEntry {
     /// The keys, 0 to 127, never empty; no key is in two rows of a map.
     pub keys: Vec<u8>,
     /// The instrument the keys play.
+    #[serde(serialize_with = "serialize_instrument")]
     pub instrument: InstrumentType,
     /// The articulation they play, when it is not the instrument's ordinary sound.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub articulation: Option<ArticulationName>,
     /// The pad's name to show, when the entry gives one.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 
 /// How well a preset plays as its library intends.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum VerdictState {
     /// As the library intends.
@@ -192,8 +289,21 @@ pub enum VerdictState {
     Not,
 }
 
+impl VerdictState {
+    /// The worse of `self` and `other`: [`Self::Not`] below [`Self::Partly`] below
+    /// [`Self::AsIs`].
+    #[must_use]
+    pub const fn worse(self, other: Self) -> Self {
+        match (self, other) {
+            (Self::Not, _) | (_, Self::Not) => Self::Not,
+            (Self::Partly, _) | (_, Self::Partly) => Self::Partly,
+            (Self::AsIs, Self::AsIs) => Self::AsIs,
+        }
+    }
+}
+
 /// A verdict on a preset: its state and what is lost.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Verdict {
     /// The state.
     pub state: VerdictState,

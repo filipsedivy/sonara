@@ -31,18 +31,29 @@
 //!   claims lie below the manifest's, which overrides them field by field, and are never shown
 //!   as declared;
 //! - a **scan** for `.sfz` files, which finds every patch whether or not the manifest knows it.
-//!   A patch the manifest does not list gets a name from its file name and a family *inferred*
-//!   from the words of its path ([`InstrumentFamily`]), marked as inferred. Articulations are
-//!   never guessed: without a manifest the list is empty, which means "not verified". The scan
-//!   leaves out folders named `includes`, which hold fragments that other patches include
-//!   ([`crate::samples`]); a manifest entry that names a file in one is still listed.
+//!   A patch the manifest does not list gets a name from its file name, and a family and an
+//!   instrument type *inferred* from the words of its path ([`InstrumentFamily`]), marked as
+//!   inferred. Articulations are never guessed: without a manifest or a profile the list is
+//!   empty, which means "not verified". The scan leaves out folders named `includes`, which
+//!   hold fragments that other patches include ([`crate::samples`]); a manifest entry that names
+//!   a file in one is still listed.
+//!
+//! **Every claim keeps its source** ([`ClaimSource`]): what a preset plays, solo or section, its
+//! articulations and how each is reached, dynamics, legato, the licence and a verdict are shown
+//! as declared by the library's manifest, as stated by Sonara's profile, or as inferred from the
+//! path ([`InstrumentPreset`]). The fields that predate the profiles, the articulation IDs and the
+//! licence, keep only what the library's own manifest declares.
 //!
 //! A manifest entry whose file is gone is kept as [`Availability::Missing`], so the user sees
 //! what to reinstall. Discovery opens no patch, so a file with no region is listed as available
-//! until [`InstrumentCatalog::verify`] loads it and marks it [`Availability::Invalid`]. SFZ has
-//! no bank or program numbers, so a preset has none; a future SF2 source would add them.
+//! until [`InstrumentCatalog::verify`] loads it and marks it [`Availability::Invalid`]. The same
+//! check records what the patch holds ([`PatchFacts`]): facts from the file, which no claim
+//! overrides, and which lower the claimed verdict where the two disagree
+//! ([`InstrumentPreset::effective_verdict`]). SFZ has no bank or program numbers, so a preset has
+//! none; a future SF2 source would add them.
 
 mod discovery;
+mod facts;
 mod family;
 mod installed;
 mod manifest;
@@ -51,6 +62,7 @@ mod profiles;
 mod verify;
 
 pub use discovery::InstrumentCatalog;
+pub use facts::{KeyZone, PatchFacts, VelocityRange};
 pub use family::{FamilyClaim, InstrumentFamily};
 pub use installed::{InstalledInstruments, LibraryChoices, PresetChoice};
 pub use manifest::{
@@ -59,7 +71,7 @@ pub use manifest::{
     MANIFEST_FILE, MANIFEST_VERSION, ProfileCheck, Verdict, VerdictState,
 };
 pub use model::{
-    Availability, CatalogError, InstrumentId, InstrumentPreset, InvalidLibraryId, Library,
-    LibraryId, LibraryIssue,
+    Availability, CatalogError, Claim, ClaimSource, InstrumentClaim, InstrumentId,
+    InstrumentPreset, InvalidLibraryId, Library, LibraryId, LibraryIssue,
 };
 pub use verify::{MediaPatchLoader, PatchLoadError, PatchLoader};
