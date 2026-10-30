@@ -22,6 +22,9 @@ use crate::composer::{ClaudeParser, Invocation, LineParser, Located, StopPolicy,
 /// - `SLOW`: waits for `SIGINT`, then exits 130;
 /// - `SLOWOK`: waits for `SIGINT`, then reports a success and exits 0;
 /// - `SLOWEXIT`: like `SLOW`, but takes 0.5 s to end;
+/// - `HOLD`: like `SLOW`, but ends only once the file `$OUT/release` exists;
+/// - `STUBBORN`: ignores `SIGINT` and `SIGTERM`, notes its pid in `$OUT/pid`, and never ends
+///   by itself;
 /// - `MCPFAIL`: reports the `sonara` MCP server as failed and waits for `SIGINT`;
 /// - anything else: streams two text pieces, takes 0.1 s, and reports `answer to: <message>`.
 ///
@@ -32,7 +35,10 @@ last=$(printf '%s' "$input" | tail -n 1)
 word=${last%% *}
 printf '%s' "$input" > "$OUT/in-$word.txt"
 echo "start $word" >> "$OUT/log"
+echo $$ > "$OUT/pid"
 case "$word" in
+  STUBBORN) trap '' INT TERM ;;
+  HOLD) trap 'while [ ! -e "$OUT/release" ]; do sleep 0.02; done; echo "end $word" >> "$OUT/log"; exit 130' INT ;;
   SLOW|SLOWOK|MCPFAIL) trap 'echo "end $word" >> "$OUT/log"; exit 130' INT ;;
   SLOWEXIT) trap 'sleep 0.5; echo "end $word" >> "$OUT/log"; exit 130' INT ;;
 esac
@@ -48,7 +54,7 @@ case "$word" in
   FAIL) echo boom >&2; echo "end $word" >> "$OUT/log"; exit 1 ;;
   NORESULT) echo "end $word" >> "$OUT/log"; exit 0 ;;
   DIE130) echo "end $word" >> "$OUT/log"; exit 130 ;;
-  SLOW|SLOWOK|SLOWEXIT|MCPFAIL)
+  SLOW|SLOWOK|SLOWEXIT|MCPFAIL|STUBBORN|HOLD)
     echo '{"type":"stream_event","event":{"delta":{"type":"text_delta","text":"working"}}}'
     while true; do sleep 0.05; done ;;
   EXIT3)
@@ -190,6 +196,11 @@ fn discovery(dir: &Path) -> PathBuf {
 }
 
 fn fixture_with(ready: bool, program: Option<&str>) -> Fixture {
+    fixture_through(ready, program, |sink| sink)
+}
+
+/// A fixture whose sink is `wrap` of the recording one.
+fn fixture_through(ready: bool, program: Option<&str>, wrap: impl FnOnce(Sink) -> Sink) -> Fixture {
     let dir = tempfile::tempdir().unwrap();
     let out = dir.path().join("out");
     fs::create_dir(&out).unwrap();
@@ -208,7 +219,7 @@ fn fixture_with(ready: bool, program: Option<&str>) -> Fixture {
             sonara_cli: PathBuf::from("/App/sonara"),
             discovery_file: discovery(dir.path()),
         },
-        recorder.sink(),
+        wrap(recorder.sink()),
     );
     Fixture {
         _dir: dir,
@@ -270,9 +281,34 @@ impl Fixture {
         });
     }
 
+    /// Waits until the chat is idle and everything it published has reached the sink: no run,
+    /// an empty outbox and no delivery going. After this, what the recorder holds and what the
+    /// snapshot says are the same final state, and a count of events cannot change any more
+    /// (unless the test starts something). Wait for the state you expect first.
     fn wait_idle(&self) {
-        wait_until("the chat to be idle", || {
-            (!self.chat.is_busy()).then_some(())
+        wait_until("the chat to be idle and delivered", || {
+            let core = self.chat.inner.lock();
+            (core.active.is_none() && core.outbox.is_empty() && !core.delivering).then_some(())
+        });
+    }
+
+    /// Waits until the outbox is empty and nothing is delivering it, although a run may go on.
+    fn wait_drained(&self) {
+        wait_until("the outbox to be delivered", || {
+            let core = self.chat.inner.lock();
+            (core.outbox.is_empty() && !core.delivering).then_some(())
+        });
+    }
+
+    /// Waits until the run of `id` has reported a text piece, which every running fake agent
+    /// does last, before it waits or ends; its output is then complete.
+    fn wait_text(&self, id: TaskId) {
+        wait_until(&format!("task {id} to report text"), || {
+            self.recorder
+                .run_events(id)
+                .iter()
+                .any(|event| matches!(event, Event::Text { .. }))
+                .then_some(())
         });
     }
 }
@@ -376,6 +412,8 @@ fn the_window_can_resync_from_a_snapshot_with_the_coalesced_log() {
     let fx = fixture();
     let id = fx.chat.enqueue("alpha").unwrap();
     fx.wait_state(id, TaskState::Done);
+    // The snapshot holds what was delivered: wait until the exit has been.
+    fx.wait_idle();
     let snapshot = fx.chat.snapshot();
     assert_eq!(snapshot.logs.len(), 1);
     let log = &snapshot.logs[0];
@@ -439,8 +477,9 @@ fn a_failing_task_pauses_the_queue_and_resume_goes_on() {
     assert!(reason.contains("boom"), "the stderr is quoted: {reason}");
     let state = fx.chat.snapshot().state;
     assert_eq!(state.mode, QueueMode::Paused);
-    // The queue stays paused: the second task does not start by itself.
-    thread::sleep(Duration::from_millis(300));
+    // The queue stays paused: once the chat is idle and delivered, the second task has not
+    // started, and nothing is left that would start it.
+    fx.wait_idle();
     assert_eq!(fx.task(next).state, TaskState::Queued);
     assert_eq!(fx.log(), ["start FAIL", "end FAIL"]);
 
@@ -533,6 +572,8 @@ fn stop_with_nothing_running_does_nothing() {
     assert!(fx.recorder.all().is_empty(), "no event for a no-op");
     let id = fx.chat.enqueue("alpha").unwrap();
     fx.wait_state(id, TaskState::Done);
+    // Sample only once the run's last event has reached the sink (an empty outbox, no
+    // delivery going, no run), so that no event is still on its way.
     fx.wait_idle();
     let events = fx.recorder.all().len();
     let state = fx.chat.stop();
@@ -605,6 +646,7 @@ fn queued_tasks_can_be_edited_removed_and_moved_before_they_start() {
     );
     assert_eq!(fx.chat.edit(b, "  ").unwrap_err(), ChatError::PromptEmpty);
     // The window was told about each change.
+    fx.wait_drained();
     let last = fx.recorder.states().pop().unwrap();
     assert_eq!(prompts(&last), ["SLOW first", "d1", "b2", "c1"]);
 
@@ -809,24 +851,25 @@ fn events_of_a_wiped_generation_never_reach_the_window() {
 #[test]
 fn nothing_starts_while_the_process_of_the_wiped_generation_is_still_ending() {
     let fx = fixture();
-    let old = fx.chat.enqueue("SLOWEXIT one").unwrap();
+    let old = fx.chat.enqueue("HOLD one").unwrap();
     fx.wait_started(old);
     let _ = fx.chat.clear();
-    // The old process takes 0.5 s to end. A new task must wait for it.
+    // The old process ends only when it is released, so there is no race: a new task must
+    // wait for it for as long as it is held.
     let new = fx.chat.enqueue("fresh").unwrap();
     assert_eq!(fx.task(new).state, TaskState::Queued);
     assert!(fx.chat.is_busy(), "the old process is still ending");
-    thread::sleep(Duration::from_millis(150));
     assert_eq!(fx.task(new).state, TaskState::Queued, "still waiting");
     assert!(
         !fx.log().iter().any(|line| line == "start fresh"),
         "the new run has not started: {:?}",
         fx.log()
     );
+    fs::write(fx.out.join("release"), "").unwrap();
     fx.wait_state(new, TaskState::Done);
     assert_eq!(
         fx.log(),
-        ["start SLOWEXIT", "end SLOWEXIT", "start fresh", "end fresh"],
+        ["start HOLD", "end HOLD", "start fresh", "end fresh"],
         "the runs never overlapped"
     );
 }
@@ -860,11 +903,17 @@ fn a_replaced_project_wipes_the_chat_like_clear() {
 fn shutdown_ends_the_run_and_closes_the_chat() {
     let fx = fixture();
     let slow = fx.chat.enqueue("SLOW one").unwrap();
-    fx.wait_started(slow);
+    // The run has said its last word and waits: nothing is on its way to the sink.
+    fx.wait_text(slow);
+    fx.wait_drained();
     let sent = fx.recorder.all().len();
     fx.chat.shutdown();
+    assert_eq!(
+        fx.log(),
+        ["start SLOW", "end SLOW"],
+        "the process has ended when shutdown returns"
+    );
     fx.wait_idle();
-    assert_eq!(fx.log(), ["start SLOW", "end SLOW"]);
     assert_eq!(fx.chat.enqueue("more").unwrap_err().code(), "CONFLICT");
     assert_eq!(fx.chat.edit(slow, "x").unwrap_err().code(), "CONFLICT");
     assert_eq!(
@@ -873,6 +922,330 @@ fn shutdown_ends_the_run_and_closes_the_chat() {
         "nothing is sent after the shutdown"
     );
     assert_eq!(fx.chat.snapshot().state.tasks.len(), 0);
+}
+
+/// Whether any process of the group led by `pid` exists.
+fn group_exists(pid: i32) -> bool {
+    let pid = rustix::process::Pid::from_raw(pid).unwrap();
+    rustix::process::test_kill_process_group(pid).is_ok()
+}
+
+#[test]
+fn shutdown_kills_a_run_that_ignores_sigint_and_sigterm_before_it_returns() {
+    let fx = fixture();
+    let id = fx.chat.enqueue("STUBBORN one").unwrap();
+    fx.wait_text(id);
+    let pid: i32 = fs::read_to_string(fx.out.join("pid"))
+        .unwrap()
+        .trim()
+        .parse()
+        .unwrap();
+    assert!(group_exists(pid), "the agent is running");
+    let started = Instant::now();
+    fx.chat.shutdown_within(Duration::from_millis(300));
+    let elapsed = started.elapsed();
+    assert!(
+        elapsed >= Duration::from_millis(300),
+        "SIGINT got its grace: {elapsed:?}"
+    );
+    assert!(
+        elapsed < Duration::from_secs(5),
+        "shutdown is bounded, it does not wait for the stop timer's 10 s: {elapsed:?}"
+    );
+    // The process has been reaped and its group is gone, on the thread that called shutdown.
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while group_exists(pid) && Instant::now() < deadline {
+        thread::sleep(Duration::from_millis(20));
+    }
+    assert!(!group_exists(pid), "no process of the group is left");
+    fx.wait_idle();
+}
+
+#[test]
+fn the_default_shutdown_grace_is_short() {
+    assert!(SHUTDOWN_GRACE <= Duration::from_secs(2));
+}
+
+// ---- a sink that panics --------------------------------------------------------------------
+
+#[test]
+fn a_panic_in_the_sink_does_not_stop_the_run_or_the_queue() {
+    // Panics on the first run event and on the first state with a finished task, which are
+    // delivered by the run's own thread; the panics are the defect, the controller must go on.
+    let panics = Arc::new(Mutex::new((false, false)));
+    let fx = fixture_through(true, None, {
+        let panics = Arc::clone(&panics);
+        move |inner| {
+            Arc::new(move |event: ChatEvent| {
+                let mut seen = panics.lock().unwrap();
+                match &event {
+                    ChatEvent::Run { .. } if !seen.0 => {
+                        seen.0 = true;
+                        drop(seen);
+                        panic!("the sink fails on a run event");
+                    }
+                    ChatEvent::Changed { state }
+                        if !seen.1 && state.tasks.iter().any(|t| t.state == TaskState::Done) =>
+                    {
+                        seen.1 = true;
+                        drop(seen);
+                        panic!("the sink fails on the finished task");
+                    }
+                    _ => {}
+                }
+                drop(seen);
+                inner(event);
+            })
+        }
+    });
+    let first = fx.chat.enqueue("alpha").unwrap();
+    let second = fx.chat.enqueue("beta").unwrap();
+    fx.wait_state(first, TaskState::Done);
+    fx.wait_state(second, TaskState::Done);
+    fx.wait_idle();
+    assert_eq!(
+        *panics.lock().unwrap(),
+        (true, true),
+        "both panics happened"
+    );
+    assert_eq!(
+        fx.log(),
+        ["start alpha", "end alpha", "start beta", "end beta"],
+        "the queue went on after the panics"
+    );
+    // Delivery works after them: a later call reaches the sink.
+    let third = fx.chat.enqueue("gamma").unwrap();
+    fx.wait_state(third, TaskState::Done);
+    fx.wait_idle();
+    assert!(
+        fx.recorder
+            .run_events(third)
+            .iter()
+            .any(|e| matches!(e, Event::Exited { .. })),
+        "events of later runs are delivered"
+    );
+}
+
+// ---- the snapshot and the outbox ------------------------------------------------------------
+
+/// Holds the sink on the events `holds` picks, from the moment it is armed until it is opened.
+struct Gate {
+    state: Mutex<GateState>,
+    changed: std::sync::Condvar,
+}
+
+#[derive(Default)]
+struct GateState {
+    armed: bool,
+    open: bool,
+    /// How many sink calls were held.
+    held: usize,
+}
+
+impl Gate {
+    fn new() -> Arc<Self> {
+        Arc::new(Self {
+            state: Mutex::default(),
+            changed: std::sync::Condvar::new(),
+        })
+    }
+
+    fn arm(&self) {
+        self.state.lock().unwrap().armed = true;
+    }
+
+    fn open(&self) {
+        self.state.lock().unwrap().open = true;
+        self.changed.notify_all();
+    }
+
+    fn wait_held(&self) {
+        wait_until("the sink to be held", || {
+            (self.state.lock().unwrap().held > 0).then_some(())
+        });
+    }
+
+    fn wrap(self: &Arc<Self>, holds: fn(&ChatEvent) -> bool) -> impl FnOnce(Sink) -> Sink {
+        let gate = Arc::clone(self);
+        move |inner| {
+            Arc::new(move |event: ChatEvent| {
+                {
+                    let mut state = gate.state.lock().unwrap();
+                    if state.armed && holds(&event) {
+                        state.held += 1;
+                        while !state.open {
+                            state = gate.changed.wait(state).unwrap();
+                        }
+                    }
+                }
+                inner(event);
+            })
+        }
+    }
+}
+
+/// The snapshot plus the run events delivered after it (`delivered_before` were delivered
+/// before) is the whole log of `id`, with no event twice.
+fn assert_resync_is_exact(fx: &Fixture, early: &ChatSnapshot, id: TaskId, delivered_before: usize) {
+    let mut rebuilt = Logs::default();
+    for log in &early.logs {
+        for event in &log.events {
+            rebuilt.push(log.task_id, event);
+        }
+    }
+    for event in fx.recorder.run_events(id).iter().skip(delivered_before) {
+        rebuilt.push(id, event);
+    }
+    assert_eq!(rebuilt.views(), fx.chat.snapshot().logs);
+}
+
+#[test]
+fn a_snapshot_leaves_out_the_events_still_in_the_outbox() {
+    let gate = Gate::new();
+    let fx = fixture_through(true, None, gate.wrap(|_| true));
+    let id = fx.chat.enqueue("SLOW one").unwrap();
+    fx.wait_text(id);
+    fx.wait_drained();
+    let delivered_before = fx.recorder.run_events(id).len();
+    // A call from another thread is held in the sink, and delivers nothing else meanwhile.
+    gate.arm();
+    let chat = fx.chat.clone();
+    let holder = thread::spawn(move || chat.enqueue("later").unwrap());
+    gate.wait_held();
+    // The run ends meanwhile: its exit is logged, and waits in the outbox.
+    let _ = fx.chat.stop();
+    fx.wait_state(id, TaskState::Cancelled);
+    {
+        let core = fx.chat.inner.lock();
+        assert!(
+            core.outbox.iter().any(|e| matches!(
+                e,
+                ChatEvent::Run {
+                    event: Event::Exited { .. },
+                    ..
+                }
+            )),
+            "the exit waits in the outbox"
+        );
+        assert!(
+            matches!(
+                core.logs.views()[0].events.last(),
+                Some(Event::Exited { .. })
+            ),
+            "and it is in the log already"
+        );
+    }
+    let early = fx.chat.snapshot();
+    assert_eq!(early.logs.len(), 1);
+    assert!(
+        !early.logs[0]
+            .events
+            .iter()
+            .any(|e| matches!(e, Event::Exited { .. })),
+        "the snapshot leaves it out, the window gets it next: {:?}",
+        early.logs[0].events
+    );
+    assert!(
+        early.logs[0]
+            .events
+            .iter()
+            .any(|e| matches!(e, Event::Text { text } if text == "working")),
+        "what was delivered stays"
+    );
+    gate.open();
+    holder.join().unwrap();
+    fx.wait_idle();
+    let exits = fx
+        .recorder
+        .run_events(id)
+        .into_iter()
+        .filter(|e| matches!(e, Event::Exited { .. }))
+        .count();
+    assert_eq!(exits, 1, "the exit is delivered exactly once");
+    assert_resync_is_exact(&fx, &early, id, delivered_before);
+}
+
+#[test]
+fn a_snapshot_leaves_out_the_event_that_is_being_delivered() {
+    let gate = Gate::new();
+    let fx = fixture_through(
+        true,
+        None,
+        gate.wrap(|e| matches!(e, ChatEvent::Run { .. })),
+    );
+    gate.arm();
+    let id = fx.chat.enqueue("alpha").unwrap();
+    // The run's first event is in the sink, held: out of the outbox, not delivered yet.
+    gate.wait_held();
+    {
+        let core = fx.chat.inner.lock();
+        assert_eq!(core.logs.views().len(), 1, "it is in the log");
+        assert!(core.in_flight.is_some());
+    }
+    let early = fx.chat.snapshot();
+    assert_eq!(
+        early.logs,
+        [],
+        "the window has not been sent it yet, so the snapshot does not hold it"
+    );
+    gate.open();
+    fx.wait_state(id, TaskState::Done);
+    fx.wait_idle();
+    assert!(fx.chat.inner.lock().in_flight.is_none());
+    assert_resync_is_exact(&fx, &early, id, 0);
+    assert_eq!(fx.chat.snapshot().logs.len(), 1);
+}
+
+#[test]
+fn the_pending_text_is_taken_off_the_merged_log_text() {
+    let id = TaskId::from_raw(1);
+    let other = TaskId::from_raw(2);
+    let text = |t: &str| Event::Text { text: t.into() };
+    let mut logs = Logs::default();
+    let init = Event::Stderr {
+        line: "init".into(),
+    };
+    let exited = Event::Exited {
+        code: Some(0),
+        stopped: false,
+    };
+    logs.push(id, &init);
+    logs.push(id, &text("ab"));
+    logs.push(other, &text("zz"));
+    logs.push(id, &text("cd"));
+    logs.push(id, &text("ef"));
+    logs.push(id, &exited);
+
+    let events_of = |views: Vec<TaskLog>, task| {
+        views
+            .into_iter()
+            .find(|log| log.task_id == task)
+            .map(|log| log.events)
+    };
+    // The exit and a text piece, and the piece before it, are still to be delivered.
+    let pending = [(id, text("cd")), (id, text("ef")), (id, exited.clone())];
+    let views = logs.views_without(pending.iter().map(|(task, event)| (*task, event)));
+    assert_eq!(
+        events_of(views.clone(), id),
+        Some(vec![init.clone(), text("ab")])
+    );
+    assert_eq!(
+        events_of(views, other),
+        Some(vec![text("zz")]),
+        "other tasks stay"
+    );
+
+    // Nothing pending changes nothing; a task with only pending events disappears.
+    let all = logs.views_without(std::iter::empty());
+    assert_eq!(all, logs.views());
+    let only = [(other, text("zz"))];
+    let views = logs.views_without(only.iter().map(|(task, event)| (*task, event)));
+    assert_eq!(events_of(views, other), None);
+
+    // An event that is not at the end of its log (the log was wiped and refilled) stays.
+    let stale = [(id, text("not there"))];
+    let views = logs.views_without(stale.iter().map(|(task, event)| (*task, event)));
+    assert_eq!(views, logs.views());
 }
 
 // ---- the conversation replay -------------------------------------------------------------

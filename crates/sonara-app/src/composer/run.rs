@@ -9,14 +9,23 @@
 //! **Stopping.** [`Run::stop`] sends `SIGINT` to Claude Code, which ends the turn and still
 //! writes its `result` (a `SIGTERM` would exit with 143 and no result). A run that ignores it is
 //! sent `SIGTERM` and then `SIGKILL` as a process group, which also ends the `sonara mcp` child.
+//! The escalation runs on a timer thread, which an exiting process never lets finish, so a host
+//! that is about to quit uses [`Run::stop_now`], which does the same on the calling thread
+//! within a bound.
+//!
+//! **The end.** [`Event::Exited`] follows the exit of the process and the end of its output,
+//! which the readers see when every holder of the pipes has closed them. A helper that left the
+//! process group (`setsid`) can keep a pipe open for as long as it lives, so the exit thread
+//! waits for the readers at most [`READER_GRACE`]; after that it reports the exit anyway, and
+//! the output that arrives later is dropped.
 
 use std::io::{self, BufRead, BufReader, Write};
 use std::os::unix::process::CommandExt;
 use std::process::{Child, Command, Stdio};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex, PoisonError};
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use crossbeam_channel::{Sender, unbounded};
 use rustix::process::{Pid, Signal, kill_process, kill_process_group};
@@ -24,6 +33,42 @@ use rustix::process::{Pid, Signal, kill_process, kill_process_group};
 use super::invocation::{Invocation, Workspace};
 use super::stop::StopPolicy;
 use super::stream::{ClaudeParser, Event, LineParser};
+
+/// How long the exit thread waits for the readers of the output pipes after the process has been
+/// reaped, before it reports the exit without the rest of the output.
+pub const READER_GRACE: Duration = Duration::from_secs(2);
+
+/// How often a wait for the process or a reader looks at its flag.
+const POLL: Duration = Duration::from_millis(10);
+
+/// How long [`Run::stop_now`] gives `SIGTERM` before it sends `SIGKILL`.
+const TERMINATE_GRACE: Duration = Duration::from_millis(300);
+
+/// How long [`Run::stop_now`] waits for the exit after `SIGKILL`.
+const KILL_REAP: Duration = Duration::from_secs(1);
+
+/// The gate of the event channel. The readers send through it, and the exit thread closes it
+/// as it sends [`Event::Exited`], so that nothing a straggling reader says comes after the exit.
+#[derive(Debug, Clone)]
+struct Gate {
+    sender: Sender<Event>,
+    closed: Arc<Mutex<bool>>,
+}
+
+impl Gate {
+    /// Sends `event` unless the gate is closed; `false` when the event was not delivered.
+    fn send(&self, event: Event) -> bool {
+        let closed = self.closed.lock().unwrap_or_else(PoisonError::into_inner);
+        !*closed && self.sender.send(event).is_ok()
+    }
+
+    /// Closes the gate, then sends `event` as the last one.
+    fn close_with(&self, event: Event) -> bool {
+        let mut closed = self.closed.lock().unwrap_or_else(PoisonError::into_inner);
+        *closed = true;
+        self.sender.send(event).is_ok()
+    }
+}
 
 /// A running agent process (Claude Code, or another provider's CLI).
 #[derive(Debug)]
@@ -114,7 +159,11 @@ impl Run {
             return Err(RunError::Thread(io::Error::other("a pipe is missing")));
         };
 
-        let (events, receiver) = unbounded::<Event>();
+        let (sender, receiver) = unbounded::<Event>();
+        let events = Gate {
+            sender,
+            closed: Arc::new(Mutex::new(false)),
+        };
         let stop_requested = Arc::new(AtomicBool::new(false));
         let finished = Arc::new(AtomicBool::new(false));
 
@@ -153,14 +202,18 @@ impl Run {
                         }
                     };
                     done.store(true, Ordering::Release);
-                    // The pipes close with the process; read them to the end first.
+                    // The pipes close with the process; read them to the end first, but not
+                    // for longer than a helper outside the process group keeps them open.
+                    let deadline = Instant::now() + READER_GRACE;
                     for reader in [out, err] {
-                        if reader.join().is_err() {
-                            log::warn!("composer: a reader thread panicked");
+                        if !join_before(reader, deadline) {
+                            log::warn!(
+                                "composer: the output of the process is still open after {READER_GRACE:?}; reporting the exit without it"
+                            );
                         }
                     }
                     let stopped = stopped.load(Ordering::Acquire);
-                    if events.send(Event::Exited { code, stopped }).is_err() {
+                    if !events.close_with(Event::Exited { code, stopped }) {
                         log::debug!("composer: nobody listens for the exit");
                     }
                     drop(workspace);
@@ -169,7 +222,12 @@ impl Run {
                 .name("composer-events".to_owned())
                 .spawn(move || {
                     for event in receiver {
+                        let last = matches!(event, Event::Exited { .. });
                         sink(event);
+                        // A reader that outlived the grace still holds the channel open.
+                        if last {
+                            break;
+                        }
                     }
                 })?;
             Ok(())
@@ -219,6 +277,46 @@ impl Run {
         }
     }
 
+    /// Ends the run before this thread returns, for an application that is about to quit (a
+    /// timer thread would not outlive it): `SIGINT` at once (unless [`Run::stop`] sent it
+    /// already), then, if the process has not ended after `grace`, `SIGTERM` and a moment later
+    /// `SIGKILL` to its whole process group. Returns when the process has ended, or about
+    /// `grace` plus a second at the most when it has not.
+    ///
+    /// It waits on the calling thread, so call it where waiting is allowed (never from a
+    /// real-time thread, RT-06).
+    pub fn stop_now(&self, grace: Duration) {
+        if self.finished.load(Ordering::Acquire) {
+            return;
+        }
+        if !self.stop_requested.swap(true, Ordering::AcqRel) {
+            signal(self.pid, Signal::INT);
+        }
+        if self.wait_finished(grace) {
+            return;
+        }
+        signal_group(self.pid, Signal::TERM);
+        if self.wait_finished(TERMINATE_GRACE) {
+            return;
+        }
+        signal_group(self.pid, Signal::KILL);
+        if !self.wait_finished(KILL_REAP) {
+            log::warn!("composer: the process did not end after SIGKILL");
+        }
+    }
+
+    /// Waits until the process has ended or `limit` has passed; whether it has ended.
+    fn wait_finished(&self, limit: Duration) -> bool {
+        let deadline = Instant::now() + limit;
+        while !self.finished.load(Ordering::Acquire) {
+            if Instant::now() >= deadline {
+                return false;
+            }
+            thread::sleep(POLL);
+        }
+        true
+    }
+
     /// Whether the process has ended.
     #[must_use]
     pub fn is_finished(&self) -> bool {
@@ -227,12 +325,7 @@ impl Run {
 }
 
 /// Reads `source` line by line, sending what `parse` makes of each.
-fn spawn_reader<R, P>(
-    name: &str,
-    source: R,
-    events: Sender<Event>,
-    parse: P,
-) -> io::Result<JoinHandle<()>>
+fn spawn_reader<R, P>(name: &str, source: R, events: Gate, parse: P) -> io::Result<JoinHandle<()>>
 where
     R: io::Read + Send + 'static,
     P: FnMut(String) -> Vec<Event> + Send + 'static,
@@ -242,12 +335,27 @@ where
         for line in BufReader::new(source).lines() {
             let Ok(line) = line else { break };
             for event in parse(line) {
-                if events.send(event).is_err() {
+                if !events.send(event) {
                     return;
                 }
             }
         }
     })
+}
+
+/// Waits for `reader` until `deadline`; `false` when it is still running then (it ends on its own
+/// when the pipe closes, and nobody waits for it any more).
+fn join_before(reader: JoinHandle<()>, deadline: Instant) -> bool {
+    while !reader.is_finished() {
+        if Instant::now() >= deadline {
+            return false;
+        }
+        thread::sleep(POLL);
+    }
+    if reader.join().is_err() {
+        log::warn!("composer: a reader thread panicked");
+    }
+    true
 }
 
 fn pid_of(pid: u32) -> Option<Pid> {
@@ -566,6 +674,160 @@ echo 'plain text'"#,
         assert!(events.contains(&Event::Output {
             line: "plain text".into()
         }));
+    }
+
+    /// A helper that leaves the process group of the run (`setsid`, which ships with macOS'
+    /// perl) and keeps the inherited pipes open, as a detached daemon would.
+    const DETACHED_HELPER: &str =
+        "perl -MPOSIX -e 'POSIX::setsid(); sleep 3; print qq(late\\n); sleep 4' &";
+
+    #[test]
+    fn a_helper_outside_the_group_that_holds_the_pipes_does_not_hold_back_the_exit() {
+        let directory = tempfile::tempdir().unwrap();
+        let invocation = script(
+            directory.path(),
+            &format!("{DETACHED_HELPER}\necho first\nexit 0"),
+        );
+        let seen = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let sink = Arc::clone(&seen);
+        let started = Instant::now();
+        let (tx, rx) = mpsc::channel();
+        let _run = Run::start_with(
+            &invocation,
+            workspace(directory.path()),
+            Box::new(ClaudeParser),
+            StopPolicy::CLAUDE,
+            move |event| {
+                sink.lock().unwrap().push(event.clone());
+                tx.send(event).ok();
+            },
+        )
+        .unwrap();
+        let events = until_exit(&rx);
+        let elapsed = started.elapsed();
+        assert!(
+            elapsed >= READER_GRACE.saturating_sub(Duration::from_millis(100)),
+            "the readers were given their grace: {elapsed:?}"
+        );
+        assert!(
+            elapsed < READER_GRACE + Duration::from_secs(2),
+            "the exit was reported although the pipes are still open: {elapsed:?}"
+        );
+        assert!(events.contains(&Event::Output {
+            line: "first".into()
+        }));
+        assert_eq!(
+            events.last(),
+            Some(&Event::Exited {
+                code: Some(0),
+                stopped: false
+            })
+        );
+        // The helper prints after the exit was reported: that line is dropped, not delivered
+        // behind the exit.
+        thread::sleep(Duration::from_secs(3));
+        assert_eq!(
+            seen.lock().unwrap().last(),
+            Some(&Event::Exited {
+                code: Some(0),
+                stopped: false
+            }),
+            "nothing follows the exit"
+        );
+    }
+
+    /// Whether any process of the group led by `pid` still exists.
+    fn group_exists(pid: u32) -> bool {
+        let pid = Pid::from_raw(i32::try_from(pid).unwrap()).unwrap();
+        rustix::process::test_kill_process_group(pid).is_ok()
+    }
+
+    #[test]
+    fn stop_now_ends_a_run_that_ignores_sigint_and_sigterm_before_it_returns() {
+        let directory = tempfile::tempdir().unwrap();
+        let invocation = script(
+            directory.path(),
+            "trap '' INT TERM\necho ready\nwhile true; do sleep 0.05; done",
+        );
+        let (tx, rx) = mpsc::channel();
+        let run = Run::start_with(
+            &invocation,
+            workspace(directory.path()),
+            Box::new(ClaudeParser),
+            StopPolicy::CLAUDE,
+            move |event| {
+                tx.send(event).ok();
+            },
+        )
+        .unwrap();
+        assert!(matches!(
+            rx.recv_timeout(Duration::from_secs(10)).unwrap(),
+            Event::Output { .. }
+        ));
+        let started = Instant::now();
+        run.stop_now(Duration::from_millis(200));
+        let elapsed = started.elapsed();
+        assert!(run.is_finished(), "the process is reaped when it returns");
+        assert!(
+            elapsed >= Duration::from_millis(200),
+            "SIGINT got its grace: {elapsed:?}"
+        );
+        assert!(
+            elapsed < Duration::from_secs(3),
+            "the call is bounded, not the 10 s and 5 s of the timer: {elapsed:?}"
+        );
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while group_exists(run.pid) && Instant::now() < deadline {
+            thread::sleep(Duration::from_millis(20));
+        }
+        assert!(!group_exists(run.pid), "no process of the group is left");
+        assert_eq!(
+            until_exit(&rx).last(),
+            Some(&Event::Exited {
+                code: None,
+                stopped: true
+            })
+        );
+    }
+
+    #[test]
+    fn stop_now_lets_a_run_that_honours_sigint_end_by_itself() {
+        let directory = tempfile::tempdir().unwrap();
+        let invocation = script(
+            directory.path(),
+            "trap 'echo bye; exit 130' INT\necho ready\nwhile true; do sleep 0.05; done",
+        );
+        let (tx, rx) = mpsc::channel();
+        let run = Run::start_with(
+            &invocation,
+            workspace(directory.path()),
+            Box::new(ClaudeParser),
+            StopPolicy::CLAUDE,
+            move |event| {
+                tx.send(event).ok();
+            },
+        )
+        .unwrap();
+        assert!(matches!(
+            rx.recv_timeout(Duration::from_secs(10)).unwrap(),
+            Event::Output { .. }
+        ));
+        let started = Instant::now();
+        run.stop_now(Duration::from_secs(5));
+        assert!(run.is_finished());
+        assert!(
+            started.elapsed() < Duration::from_secs(3),
+            "it did not wait out the grace: {:?}",
+            started.elapsed()
+        );
+        assert_eq!(
+            until_exit(&rx).last(),
+            Some(&Event::Exited {
+                code: Some(130),
+                stopped: true
+            }),
+            "ended by its own SIGINT handler, not killed"
+        );
     }
 
     #[test]

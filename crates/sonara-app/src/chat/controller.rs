@@ -8,13 +8,20 @@
 //!
 //! **Locks.** One mutex guards the state, the run handle, the event logs and the outbox. Calls
 //! never wait on a process: stopping is a signal and returns at once (RT-06's spirit, for the
-//! host side), and a process is started, and the provider detected, with no lock held.
+//! host side), and a process is started, and the provider detected, with no lock held. The one
+//! exception is [`ChatController::shutdown`], which waits a bounded time for the process to end,
+//! with no lock held, because the application is about to exit and a timer thread would die
+//! with it.
 //!
 //! **Delivery.** Events go into an outbox under the state lock and are delivered by one thread
 //! at a time, outside the lock, in the order the state changed. So the sink never runs under
 //! the state lock (it may call back into the controller), and a window never sees a state older
 //! than one it saw before. A burst of [`ChatEvent::Changed`] that has not been delivered yet
-//! collapses into the newest.
+//! collapses into the newest. A panic in the sink is caught at that boundary (ERR-07: a safety
+//! net for a defect in the sink): the event is lost, but the run's thread lives on, so that the
+//! exit of the run is still handled and the queue goes on. The [`ChatController::snapshot`] is
+//! what the window has been sent so far: the logs leave out the run events that are queued in
+//! the outbox, which the window gets after it, so that it never applies one twice.
 //!
 //! **Generations.** [`ChatController::clear`] and [`ChatController::on_project_replaced`] wipe
 //! the chat and start a new generation. A run of the old generation is stopped and its events
@@ -27,8 +34,10 @@
 //! reason, and a failed or cancelled task pauses the queue.
 
 use std::collections::VecDeque;
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use std::time::Duration;
 
 use super::error::ChatError;
 use super::event::{ChatEvent, ChatSnapshot, TaskLog};
@@ -45,6 +54,10 @@ use crate::composer::{Run, Workspace};
 
 /// The most events the log of one task keeps (the oldest go first).
 pub const MAX_LOG_EVENTS: usize = 2_000;
+
+/// How long [`ChatController::shutdown`] waits for a run to end after `SIGINT`, before it kills
+/// the run's process group.
+pub const SHUTDOWN_GRACE: Duration = Duration::from_secs(2);
 
 /// How many trailing lines of standard error a failure message may quote.
 const STDERR_LINES: usize = 3;
@@ -76,6 +89,8 @@ struct RunHandle;
 #[cfg(not(unix))]
 impl RunHandle {
     fn stop(&self) {}
+
+    fn stop_now(&self, _grace: Duration) {}
 }
 
 /// What a run reported as its result.
@@ -141,12 +156,47 @@ impl Logs {
         }
     }
 
+    /// Every log, as it is.
+    #[cfg(test)]
     fn views(&self) -> Vec<TaskLog> {
-        self.tasks
-            .iter()
+        self.views_without(std::iter::empty())
+    }
+
+    /// The logs as they were before the events in `pending` (the newest pushes, oldest first)
+    /// were pushed: each is taken off the end of its task's log again, a text piece off the
+    /// end of the text it was merged into. An event that is not at the end of its log (the log
+    /// was wiped since) is left alone.
+    fn views_without<'a>(
+        &self,
+        pending: impl DoubleEndedIterator<Item = (TaskId, &'a Event)>,
+    ) -> Vec<TaskLog> {
+        let mut tasks = self.tasks.clone();
+        for (id, event) in pending.rev() {
+            let Some((_, events)) = tasks.iter_mut().find(|(task, _)| *task == id) else {
+                continue;
+            };
+            match (event, events.back_mut()) {
+                (Event::Text { text }, Some(Event::Text { text: last })) => {
+                    if let Some(kept) = last.strip_suffix(text.as_str()) {
+                        let kept_len = kept.len();
+                        last.truncate(kept_len);
+                        if last.is_empty() {
+                            events.pop_back();
+                        }
+                    }
+                }
+                (event, Some(last)) if last == event => {
+                    events.pop_back();
+                }
+                _ => {}
+            }
+        }
+        tasks
+            .into_iter()
+            .filter(|(_, events)| !events.is_empty())
             .map(|(task_id, events)| TaskLog {
-                task_id: *task_id,
-                events: events.iter().cloned().collect(),
+                task_id,
+                events: events.into_iter().collect(),
             })
             .collect()
     }
@@ -161,6 +211,9 @@ struct Core {
     outbox: VecDeque<ChatEvent>,
     /// Whether a thread is delivering the outbox.
     delivering: bool,
+    /// The run event the delivering thread has taken out of the outbox and whose sink call has
+    /// not returned yet. The window may not have it, so a snapshot leaves it out.
+    in_flight: Option<(TaskId, Event)>,
     /// After [`ChatController::shutdown`]: nothing starts and nothing is sent.
     closed: bool,
 }
@@ -224,19 +277,31 @@ impl ChatController {
                     logs: Logs::default(),
                     outbox: VecDeque::new(),
                     delivering: false,
+                    in_flight: None,
                     closed: false,
                 }),
             }),
         }
     }
 
-    /// The state and the logs, for a window that starts or reloads.
+    /// The state and the logs, for a window that starts or reloads. The logs hold what the
+    /// window has been sent: a run event that is still in the outbox is not in them, because
+    /// the window gets it after the snapshot.
     #[must_use]
     pub fn snapshot(&self) -> ChatSnapshot {
         let core = self.inner.lock();
+        let queued = core.outbox.iter().filter_map(|event| match event {
+            ChatEvent::Run { task_id, event, .. } => Some((*task_id, event)),
+            ChatEvent::Changed { .. } => None,
+        });
+        let pending = core
+            .in_flight
+            .iter()
+            .map(|(task_id, event)| (*task_id, event))
+            .chain(queued);
         ChatSnapshot {
             state: core.chat.view(),
-            logs: core.logs.views(),
+            logs: core.logs.views_without(pending),
         }
     }
 
@@ -409,11 +474,30 @@ impl ChatController {
 
     /// The application ends: stops the run, wipes the chat and refuses further calls. Nothing
     /// is sent to the window any more.
+    ///
+    /// Unlike [`ChatController::stop`] this waits for the process: `SIGINT`, then up to
+    /// [`SHUTDOWN_GRACE`] for it to end, then `SIGTERM` and `SIGKILL` to its process group,
+    /// all on the calling thread. A timer thread would not outlive the application, and an
+    /// agent that ignores `SIGINT` would be left running after Sonara has quit.
     pub fn shutdown(&self) {
-        let mut core = self.inner.lock();
-        core.wipe();
-        core.closed = true;
-        core.outbox.clear();
+        self.shutdown_within(SHUTDOWN_GRACE);
+    }
+
+    /// [`ChatController::shutdown`] with `grace` for `SIGINT`, so that a test need not wait
+    /// out [`SHUTDOWN_GRACE`].
+    pub fn shutdown_within(&self, grace: Duration) {
+        let run = {
+            let mut core = self.inner.lock();
+            // The run leaves the task here, so that the wipe does not interrupt it a second time.
+            let run = core.active.as_mut().and_then(|active| active.run.take());
+            core.wipe();
+            core.closed = true;
+            core.outbox.clear();
+            run
+        };
+        if let Some(run) = run {
+            run.stop_now(grace);
+        }
     }
 }
 
@@ -442,7 +526,9 @@ struct DeliveryGuard<'a> {
 impl Drop for DeliveryGuard<'_> {
     fn drop(&mut self) {
         if !self.finished {
-            self.inner.lock().delivering = false;
+            let mut core = self.inner.lock();
+            core.delivering = false;
+            core.in_flight = None;
         }
     }
 }
@@ -482,6 +568,10 @@ impl Inner {
             let next = {
                 let mut core = self.lock();
                 let next = core.outbox.pop_front();
+                core.in_flight = match &next {
+                    Some(ChatEvent::Run { task_id, event, .. }) => Some((*task_id, event.clone())),
+                    _ => None,
+                };
                 if next.is_none() {
                     // Seen empty and released in one step: an event queued after this finds
                     // `delivering` false and delivers itself.
@@ -493,7 +583,13 @@ impl Inner {
                 guard.finished = true;
                 return;
             };
-            (self.sink)(event);
+            // ERR-07: a panic in the sink is a defect in the sink. Catch it here so that the
+            // run's thread, which delivers its own events, survives it: the exit of the run is
+            // still handled and the queue goes on.
+            if catch_unwind(AssertUnwindSafe(|| (self.sink)(event))).is_err() {
+                log::error!("chat: the sink panicked; the event was dropped");
+            }
+            self.lock().in_flight = None;
         }
     }
 
@@ -585,8 +681,17 @@ impl Inner {
     /// in while it was being started.
     fn attach(&self, task_id: TaskId, generation: u64, run: RunHandle) {
         let mut core = self.lock();
+        let closed = core.closed;
         let retired = generation != core.chat.generation();
         match core.active.as_mut() {
+            // The application quit while the process was being started: nobody is left to stop
+            // it later, so end it here, with no lock held.
+            Some(active)
+                if active.task_id == task_id && active.generation == generation && closed =>
+            {
+                drop(core);
+                run.stop_now(SHUTDOWN_GRACE);
+            }
             Some(active) if active.task_id == task_id && active.generation == generation => {
                 if retired || active.stop_requested {
                     run.stop();
