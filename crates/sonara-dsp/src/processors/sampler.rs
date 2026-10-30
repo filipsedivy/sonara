@@ -8,6 +8,15 @@
 //!   range, keyswitch, random range and round-robin position match. A press of one of the
 //!   patch's keyswitch keys makes it the active switch; the patch's default switch is active
 //!   until then, also when the patch has no keyswitch keys.
+//! - **Legato triggers.** A `trigger=first` region starts only on a press while no other key is
+//!   down, and a `trigger=legato` region only on a press while one is, as the SFZ format and the
+//!   reference player sfizz read them ([`Trigger::starts_on_press`]). Sonatina's legato patches
+//!   pair them with a timed exclusive-group fade, so a phrase starts with the attack sample and
+//!   each joined note overlaps the one before it. Unlike sfizz, which counts every key down, a
+//!   held keyswitch key does not count, so an articulation chosen with a held switch still
+//!   starts its phrase with a `first` note. A key released under the sustain pedal is not down,
+//!   and a key pressed again while it is still down counts itself, so the second press is
+//!   joined as in sfizz. All notes off releases every key, so the next press is a `first` note.
 //! - **Velocity.** A region's gain follows the note's velocity as its `amp_veltrack` says: the
 //!   curve `(velocity / 127)²` at the default 100 %, constant at 0 %, inverted below 0. Its
 //!   velocity crossfade (`xfin_*vel`, `xfout_*vel`, `xf_velcurve`) scales it too, so dynamic
@@ -19,11 +28,15 @@
 //!   key press that matched a round-robin region. `lorand`/`hirand` use a fixed-seed generator,
 //!   so a render is deterministic (TST-04).
 //! - **Release.** Key release fades the voice out over the region's release time, and starts
-//!   the `trigger=release` regions that match the released key and its original velocity.
+//!   the `trigger=release` and `trigger=release_key` regions that match the released key and
+//!   its original velocity. Those voices are the note's tail: they play on, and a later release
+//!   of the same key does not fade them.
 //! - **Sustain pedal.** A key released while the pedal (CC 64) is down keeps sounding until the
 //!   pedal lifts. Its `trigger=release` regions start then, chosen as at the release: by the
 //!   velocity the key was pressed with and the keyswitch active when it was released. A key
-//!   released twice under one pedal starts them once, for the later release.
+//!   released twice under one pedal starts them once, for the later release. Its
+//!   `trigger=release_key` regions ignore the pedal (SFZ: "ignores sustain pedal") and start at
+//!   the release itself, as Sonatina's timpani roll endings need.
 //! - **Exclusive groups.** A key press that starts a region of `group` switches off the voices
 //!   whose region names that group in `off_by`. They fade out as their region's `off_mode` says
 //!   ([`OffMode`]): quickly (10 ms) by default, over the region's release (`normal`), or over
@@ -263,6 +276,9 @@ impl Sampler {
             return;
         };
         let key = event.pitch;
+        // Counted before this key is marked down, so a press of a key that is still down
+        // counts that key (sfizz counts both presses too).
+        let another_key_down = self.another_key_down(&bank);
         if bank.keyswitches.contains(key) {
             self.last_switch = Some(key);
         }
@@ -276,7 +292,7 @@ impl Sampler {
         let counter = self.round_robin;
         let mut advanced = false;
         for (index, region) in bank.regions.iter().enumerate() {
-            if region.trigger != Trigger::Attack
+            if !region.trigger.starts_on_press(another_key_down)
                 || !matches_note(region, key, event.velocity, self.last_switch)
                 || !(region.rand_lo..region.rand_hi).contains(&roll)
                 || !in_sequence(region, counter)
@@ -290,6 +306,15 @@ impl Sampler {
         if advanced {
             self.round_robin = self.round_robin.wrapping_add(1);
         }
+    }
+
+    /// Whether a key other than a keyswitch key of `bank` is down: what selects between the
+    /// `first` and `legato` regions of a press. A key the sustain pedal holds after its release
+    /// is not down.
+    fn another_key_down(&self, bank: &SampleBank) -> bool {
+        (0..=127_u8)
+            .zip(&self.key_down)
+            .any(|(key, down)| *down && !bank.keyswitches.contains(key))
     }
 
     fn note_off(&mut self, event: &InstrumentEvent) {
@@ -312,7 +337,7 @@ impl Sampler {
             let Some(region) = bank.as_ref().and_then(|b| b.regions.get(voice.region)) else {
                 continue;
             };
-            if region.loop_mode == LoopMode::OneShot || region.trigger == Trigger::Release {
+            if region.loop_mode == LoopMode::OneShot || region.trigger.is_release() {
                 continue;
             }
             if pedal {
@@ -329,6 +354,16 @@ impl Sampler {
                 .unwrap_or(event.velocity),
             switch: self.last_switch,
         };
+        if let Some(bank) = bank {
+            // `trigger=release_key` "ignores sustain pedal" and starts now in any case; a
+            // `trigger=release` region starts now only when the pedal is up.
+            let starts: fn(Trigger) -> bool = if pedal {
+                |trigger| trigger == Trigger::ReleaseKey
+            } else {
+                Trigger::is_release
+            };
+            self.start_release_regions(&bank, key, event.channel, release, starts);
+        }
         if pedal {
             // SFZ `trigger=release` plays "on note-off or sustain pedal off": the regions wait
             // for the pedal. The release is captured now, so a re-press of the key before the
@@ -336,15 +371,12 @@ impl Sampler {
             if let Some(slot) = self.released_under_pedal.get_mut(usize::from(key)) {
                 *slot = Some(release);
             }
-            return;
-        }
-        if let Some(bank) = bank {
-            self.start_release_regions(&bank, key, event.channel, release);
         }
     }
 
-    /// Starts the release regions of the keys released while the pedal was down, in key order,
-    /// and forgets those releases.
+    /// Starts the `trigger=release` regions of the keys released while the pedal was down, in
+    /// key order, and forgets those releases. Their `release_key` regions started at the
+    /// release.
     fn start_pedal_releases(&mut self, channel: u8) {
         let pending = std::mem::replace(&mut self.released_under_pedal, [None; 128]);
         let Some(bank) = self.bank.clone() else {
@@ -352,18 +384,22 @@ impl Sampler {
         };
         for (key, release) in (0..=127_u8).zip(pending) {
             if let Some(release) = release {
-                self.start_release_regions(&bank, key, channel, release);
+                self.start_release_regions(&bank, key, channel, release, |trigger| {
+                    trigger == Trigger::Release
+                });
             }
         }
     }
 
-    /// Starts the `trigger=release` regions that `release` of `key` selects.
+    /// Starts the regions of a trigger that `starts` accepts (the release triggers) that
+    /// `release` of `key` selects.
     fn start_release_regions(
         &mut self,
         bank: &SampleBank,
         key: u8,
         channel: u8,
         release: KeyRelease,
+        starts: fn(Trigger) -> bool,
     ) {
         let event = InstrumentEvent {
             offset: 0,
@@ -375,8 +411,7 @@ impl Sampler {
             number: 0,
         };
         for (index, region) in bank.regions.iter().enumerate() {
-            if region.trigger == Trigger::Release
-                && matches_note(region, key, release.velocity, release.switch)
+            if starts(region.trigger) && matches_note(region, key, release.velocity, release.switch)
             {
                 self.start_voice(bank, index, region, &event);
             }

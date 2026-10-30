@@ -84,7 +84,8 @@ If `sonara.sampler` is not listed, no configured directory holds a `.sfz` file.
 ## What the sampler plays
 
 Velocity layers, round robin (`seq_length`/`seq_position`, `lorand`/`hirand`), keyswitches
-(`sw_*`), release samples (`trigger=release`), exclusive groups (`group`/`off_by`, faded out as
+(`sw_*`), release samples (`trigger=release` and `release_key`), legato triggers
+(`trigger=first` and `legato`), exclusive groups (`group`/`off_by`, faded out as
 `off_mode`/`off_time` say), loops, attack and release times, tuning and volume. A region's level
 follows the velocity as its `amp_veltrack` says: at the default 100 % the gain is
 `(velocity / 127)²`, at 0 % (organs, harpsichords) every velocity plays at full level, and below 0
@@ -98,7 +99,17 @@ release scale, instrument, and instrument type, articulation and dynamics (below
 Release samples start when the key is released; for a key released while the sustain pedal is
 down, they start when the pedal lifts, at the velocity the key was pressed with and with the
 keyswitch that was active at the release. All notes off drops the releases still waiting for the
-pedal.
+pedal. A `trigger=release_key` region ignores the pedal and starts at the key release in any case
+(Sonatina's timpani end their rolls this way). A release sample plays on: releasing the same key
+again later does not fade it.
+
+A `trigger=first` region plays only when its key is pressed while no other key is down, and a
+`trigger=legato` region only while another key is down, as the SFZ format and sfizz define them.
+Sonatina's legato patches are written this way: the first note of a phrase plays its attack, and
+each note played while the previous key is still held plays the legato group, which overlaps the
+old note for the patch's `off_time`. Held keyswitch keys do not count as notes (sfizz counts
+them), keys the sustain pedal holds after their release are not down, and all notes off (a seek or
+a loop wrap) starts the next note as a new phrase.
 
 An exclusive group switches off the notes of the regions that name it in `off_by`, and each fades
 out as its region's `off_mode` says: `fast` (the default) in 10 ms, `normal` over the region's own
@@ -112,9 +123,9 @@ does not hold a note its group has switched off. `off_curve` and `off_shape` are
 Not supported: CC-driven layers and crossfades (for example Sonatina's dynamics on CC 1 and vibrato
 on CC 21), key crossfades, velocity curves (`amp_velcurve_N`), filters, per-region pan, streaming.
 The loader reports unsupported opcodes in the load warning when a patch is rendered, together with
-the values the sampler does not play (`trigger=first`, `legato` or `release_key`, which play on
-every key press for now, unknown `loop_mode` values, which play as `no_loop`, and unknown
-`off_mode` values, which play as if the opcode were absent) and the headers whose opcodes it skips
+the values the sampler does not play (unknown `trigger` values, which play as `attack`, unknown
+`loop_mode` values, which play as `no_loop`, and unknown `off_mode` values, which play as if the
+opcode were absent) and the headers whose opcodes it skips
 (`<curve>`, `<effect>`, `<midi>`, `<sample>`). A keyswitch key selects an articulation; it makes no
 sound unless a region of the patch also covers that key, and then it does both. Regions that the
 patch starts from a controller instead of a key (`on_locc`/`on_hicc`, such as Salamander's pedal

@@ -738,6 +738,199 @@ fn a_release_under_the_pedal_keeps_the_keyswitch_it_was_released_with() {
 }
 
 #[test]
+fn each_trigger_starts_on_its_own_press_or_release() {
+    // The SFZ format's `trigger` values: `attack` on every press, `first` on a press with no
+    // other key down, `legato` on one with another key down; `release` and `release_key` on a
+    // release only.
+    let starts = |trigger: Trigger| {
+        (
+            trigger.starts_on_press(false),
+            trigger.starts_on_press(true),
+            trigger.is_release(),
+        )
+    };
+    assert_eq!(starts(Trigger::Attack), (true, true, false));
+    assert_eq!(starts(Trigger::First), (true, false, false));
+    assert_eq!(starts(Trigger::Legato), (false, true, false));
+    assert_eq!(starts(Trigger::Release), (false, false, true));
+    assert_eq!(starts(Trigger::ReleaseKey), (false, false, true));
+}
+
+/// A `first` region on sample 0 (0.5) and a `legato` region on sample 1 (0.25) over the keys
+/// from 36, with keyswitches on 24 and 25.
+fn first_and_legato() -> SampleBank {
+    let phrase = |sample, trigger| Region {
+        trigger,
+        key_lo: 36,
+        ..region(sample)
+    };
+    SampleBank {
+        samples: vec![constant(0.5), constant(0.25)],
+        regions: vec![phrase(0, Trigger::First), phrase(1, Trigger::Legato)],
+        keyswitches: switches(&[(24, 25)], Some(24)),
+        ..SampleBank::default()
+    }
+}
+
+#[test]
+fn legato_region_plays_only_while_another_key_is_held() {
+    // TST-06: Sonatina's legato patches played both groups on every press.
+    let mut processor = sampler(first_and_legato());
+    // No other key down: only the `first` region starts.
+    let first = run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    close(level(&first), 0.5);
+    assert_eq!(processor.report().entries(), [("voices", 1.0)]);
+    // 60 is held: 62 starts only the `legato` region.
+    let joined = run(&mut *processor, &[event(EventKind::NoteOn, 62, 127)]);
+    close(level(&joined), 0.5 + 0.25);
+    assert_eq!(processor.report().entries(), [("voices", 2.0)]);
+    // Both keys up: the next press starts a new phrase.
+    let released = run(
+        &mut *processor,
+        &[
+            event(EventKind::NoteOff, 60, 0),
+            event(EventKind::NoteOff, 62, 0),
+        ],
+    );
+    close(level(&released), 0.0);
+    let again = run(&mut *processor, &[event(EventKind::NoteOn, 64, 127)]);
+    close(level(&again), 0.5);
+    assert_eq!(processor.report().entries(), [("voices", 1.0)]);
+}
+
+#[test]
+fn a_held_keyswitch_does_not_make_a_note_legato() {
+    // The switch key 25 is held down while 60 is pressed: 60 still starts the phrase. Unlike
+    // sfizz, which counts every key down, a switch key is no note of the phrase.
+    let mut processor = sampler(first_and_legato());
+    let out = run(
+        &mut *processor,
+        &[
+            event(EventKind::NoteOn, 25, 127),
+            event(EventKind::NoteOn, 60, 127),
+        ],
+    );
+    close(level(&out), 0.5);
+    assert_eq!(processor.report().entries(), [("voices", 1.0)]);
+}
+
+#[test]
+fn a_key_the_pedal_holds_does_not_make_the_next_note_legato() {
+    // 60 is released under the pedal and keeps sounding, but its key is up, so 62 starts a new
+    // phrase with its `first` region.
+    let mut processor = sampler(first_and_legato());
+    run(
+        &mut *processor,
+        &[pedal(true), event(EventKind::NoteOn, 60, 127)],
+    );
+    run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+    let out = run(&mut *processor, &[event(EventKind::NoteOn, 62, 127)]);
+    close(level(&out), 0.5 + 0.5);
+    assert_eq!(processor.report().entries(), [("voices", 2.0)]);
+}
+
+#[test]
+fn a_key_pressed_again_while_it_is_down_joins_as_legato() {
+    // Two presses of 60 without a release between them: the second counts the first, as in
+    // sfizz, and starts the `legato` region.
+    let mut processor = sampler(first_and_legato());
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    let out = run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    close(level(&out), 0.5 + 0.25);
+    assert_eq!(processor.report().entries(), [("voices", 2.0)]);
+}
+
+#[test]
+fn all_notes_off_starts_the_next_phrase_with_a_first_note() {
+    // A seek or a loop wrap sends all notes off: the held key is up, so the chased note after
+    // it starts with its attack, not as a transition from a note that no longer sounds.
+    let mut processor = sampler(first_and_legato());
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    run(&mut *processor, &[event(EventKind::AllNotesOff, 0, 0)]);
+    let out = run(&mut *processor, &[event(EventKind::NoteOn, 62, 127)]);
+    close(level(&out), 0.5);
+    assert_eq!(processor.report().entries(), [("voices", 1.0)]);
+}
+
+/// A note (0.5, a 1 ms release) with a `release_key` region (0.125) and a `release` region
+/// (0.25) over every key.
+fn note_with_both_tails() -> SampleBank {
+    SampleBank {
+        samples: vec![constant(0.5), constant(0.125), constant(0.25)],
+        regions: vec![
+            Region {
+                release: 0.001,
+                ..region(0)
+            },
+            Region {
+                trigger: Trigger::ReleaseKey,
+                ..region(1)
+            },
+            Region {
+                trigger: Trigger::Release,
+                ..region(2)
+            },
+        ],
+        ..SampleBank::default()
+    }
+}
+
+#[test]
+fn release_key_plays_on_note_off_even_with_the_pedal_down() {
+    // TST-06: Sonatina's timpani roll endings (`trigger=release_key`) sounded at the press. They
+    // start at the key release whatever the pedal does, while the `release` tail waits for the
+    // pedal.
+    let mut processor = sampler(note_with_both_tails());
+    run(
+        &mut *processor,
+        &[pedal(true), event(EventKind::NoteOn, 60, 80)],
+    );
+    let pressed = run(&mut *processor, &[]);
+    close(level(&pressed), 0.5 * gain(80));
+    assert_eq!(processor.report().entries(), [("voices", 1.0)]);
+    let released = run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+    // The pedal holds the note; the `release_key` tail plays at the note's velocity.
+    close(level(&released), (0.5 + 0.125) * gain(80));
+    assert_eq!(processor.report().entries(), [("voices", 2.0)]);
+    let lifted = run(&mut *processor, &[pedal(false)]);
+    // The note fades; the `release` tail starts; the `release_key` tail does not start again.
+    close(level(&lifted), (0.125 + 0.25) * gain(80));
+    assert_eq!(processor.report().entries(), [("voices", 2.0)]);
+}
+
+#[test]
+fn release_key_plays_on_note_off_without_the_pedal() {
+    let mut processor = sampler(note_with_both_tails());
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 100)]);
+    let released = run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+    close(level(&released), (0.125 + 0.25) * gain(100));
+    assert_eq!(processor.report().entries(), [("voices", 2.0)]);
+}
+
+#[test]
+fn a_release_key_tail_plays_on_through_the_next_release_of_its_key() {
+    // The tail is the released note's: pressing and releasing the key again starts a second
+    // tail beside it and does not fade the first.
+    let bank = SampleBank {
+        regions: note_with_both_tails()
+            .regions
+            .into_iter()
+            .filter(|region| region.trigger != Trigger::Release)
+            .collect(),
+        ..note_with_both_tails()
+    };
+    let mut processor = sampler(bank);
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    let tail = run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+    close(level(&tail), 0.125);
+    let pressed = run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    close(level(&pressed), 0.5 + 0.125);
+    let released = run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+    close(level(&released), 0.125 + 0.125);
+    assert_eq!(processor.report().entries(), [("voices", 2.0)]);
+}
+
+#[test]
 fn a_region_no_key_starts_matches_no_key() {
     // A key of -1 or a controller trigger (TST-06: Salamander's pedal noises sounded on every
     // note): neither its attack nor its release region starts on any of the 128 keys.

@@ -7,14 +7,49 @@
 //! and the input of the sampler processor. A bank is immutable once built and shared through
 //! an [`Arc`](std::sync::Arc), so the render thread never frees or grows it (RT-02, RT-09).
 
-/// What starts a region.
+/// What starts a region (SFZ `trigger`), as the SFZ format and the reference player sfizz read
+/// it. "Another key down" counts the keys held down that are no keyswitch keys (see
+/// [`Trigger::starts_on_press`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Trigger {
     /// A key press (SFZ `trigger=attack`, the default).
     #[default]
     Attack,
-    /// A key release (SFZ `trigger=release`): the sample of the released note's tail.
+    /// A key release (SFZ `trigger=release`): the sample of the released note's tail. Under
+    /// the sustain pedal it waits for the pedal to lift ("on note-off or sustain pedal off").
     Release,
+    /// A key press while no other key is down (SFZ `trigger=first`): the first note of a
+    /// phrase, which a legato patch plays with its attack.
+    First,
+    /// A key press while another key is down (SFZ `trigger=legato`): a note that joins the one
+    /// before it, which a legato patch plays as a transition.
+    Legato,
+    /// A key release, whatever the sustain pedal does (SFZ `trigger=release_key`, "ignores
+    /// sustain pedal"): Sonatina's timpani roll endings.
+    ReleaseKey,
+}
+
+impl Trigger {
+    /// Whether a key press starts a region of this trigger, given whether another key was down
+    /// when it was pressed: an attack region always, a `first` region only when no other key
+    /// was down, a `legato` region only when one was, a release region never.
+    #[must_use]
+    pub fn starts_on_press(self, another_key_down: bool) -> bool {
+        match self {
+            Self::Attack => true,
+            Self::First => !another_key_down,
+            Self::Legato => another_key_down,
+            Self::Release | Self::ReleaseKey => false,
+        }
+    }
+
+    /// Whether a key release, rather than a press, starts a region of this trigger (`release`
+    /// and `release_key`): its voice is the released note's tail, which plays on and which a
+    /// later release of the key does not fade.
+    #[must_use]
+    pub fn is_release(self) -> bool {
+        matches!(self, Self::Release | Self::ReleaseKey)
+    }
 }
 
 /// How a region plays after it started (SFZ `loop_mode`).
@@ -376,12 +411,12 @@ pub struct SampleBank {
     /// How long the instrument can keep sounding after the last key release, in seconds: the
     /// longest release, the longest timed fade of a region that an exclusive group can switch
     /// off ([`OffMode::Time`]: a press just before the last release may have started it), and
-    /// the longest release-trigger sample.
+    /// the longest sample a key release starts (`trigger=release` and `release_key`).
     pub tail_seconds: f64,
     /// What the patch writes that the sampler does not play, sorted, without duplicates: the
     /// names of unsupported SFZ opcodes (a numbered family as one entry, `locc*`), the values of
-    /// supported opcodes it plays as if they were absent (`trigger=legato`), and the headers
-    /// whose opcodes are skipped (`<curve>`).
+    /// supported opcodes it plays as if they were absent (`loop_mode=loop_forever`), and the
+    /// headers whose opcodes are skipped (`<curve>`).
     pub ignored_opcodes: Vec<String>,
     /// The regions the loader left out and why, one note per sample they name, in the order the
     /// patch first names it: a sample file that does not exist, or a generator the sampler does

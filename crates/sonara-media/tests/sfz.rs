@@ -487,36 +487,57 @@ fn decodes_the_samples_and_reports_what_it_ignores() {
 }
 
 #[test]
-fn unsupported_trigger_values_are_reported() {
-    // Sonatina's legato and timpani roll patches (TST-06): `first`, `legato` and `release_key`
-    // regions play on every key press until the sampler plays those triggers, and the load
-    // warning used to say nothing about it.
+fn every_sfz_trigger_value_is_read() {
+    // Sonatina's legato and timpani roll patches (TST-06): their `first`, `legato` and
+    // `release_key` regions were read as attacks and played on every key press. Each value of
+    // the SFZ format now loads as itself, inherited from its group like any opcode, and none is
+    // reported.
     let dir = library();
     let bank = load_patch(
         &dir,
-        "<group> lokey=c3 hikey=c5\n\
+        "<group> lokey=c3 hikey=c5 trigger=legato\n\
          <region> sample=Samples/soft1.wav trigger=first\n\
-         <region> sample=Samples/soft1.wav trigger=legato\n\
+         <region> sample=Samples/soft1.wav\n\
          <region> sample=Samples/soft1.wav trigger=release_key\n\
          <region> sample=Samples/soft1.wav trigger=release\n\
          <region> sample=Samples/soft1.wav trigger=attack\n\
-         <region> sample=Samples/soft1.wav trigger=legato\n",
+         <group> lokey=c3 hikey=c5\n\
+         <region> sample=Samples/soft1.wav\n",
     );
-    assert_eq!(
-        bank.ignored_opcodes,
-        ["trigger=first", "trigger=legato", "trigger=release_key"]
+    assert!(
+        bank.ignored_opcodes.is_empty(),
+        "{:?}",
+        bank.ignored_opcodes
     );
     assert_eq!(
         bank.regions.iter().map(|r| r.trigger).collect::<Vec<_>>(),
         [
-            Trigger::Attack,
-            Trigger::Attack,
-            Trigger::Attack,
+            Trigger::First,
+            Trigger::Legato,
+            Trigger::ReleaseKey,
             Trigger::Release,
             Trigger::Attack,
             Trigger::Attack
-        ],
-        "an unsupported trigger plays as the default, attack"
+        ]
+    );
+}
+
+#[test]
+fn an_unknown_trigger_value_is_reported_and_plays_as_an_attack() {
+    // TST-03: a value outside the SFZ format's five is named in the load warning, and the
+    // region plays as if the opcode were absent.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<group> lokey=c3 hikey=c5\n\
+         <region> sample=Samples/soft1.wav trigger=pedal\n\
+         <region> sample=Samples/soft1.wav trigger=release\n",
+    );
+    assert_eq!(bank.ignored_opcodes, ["trigger=pedal"]);
+    assert_eq!(
+        bank.regions.iter().map(|r| r.trigger).collect::<Vec<_>>(),
+        [Trigger::Attack, Trigger::Release],
+        "an unknown trigger plays as the default, attack"
     );
 }
 
@@ -1013,32 +1034,58 @@ fn a_timed_off_fade_counts_in_the_tail() {
 #[test]
 fn a_legato_patch_overlaps_its_notes_for_the_off_time() {
     // Sonatina's legato layout (TST-06): two groups, both in group 1 and switched off by it with
-    // `off_mode=time`, the first `trigger=first`, the second `trigger=legato` (both played on
-    // every press for now), so each press leaves one voice. Its 1 s `off_time` is 50 ms here
-    // (2205 frames at 44.1 kHz), to fit the fixture's 0.1 s samples. The old note used to stop
-    // within the 10 ms choke; now it is still fading at the end of the next 2048-frame block.
+    // `off_mode=time`, the first `trigger=first`, the second `trigger=legato`, so a phrase
+    // starts with the first group and each note joined while the previous key is down plays the
+    // legato group; each press leaves one voice. The groups play different samples here (soft1,
+    // then loud1) to tell them apart. Its 1 s `off_time` is 50 ms here (2205 frames at 44.1 kHz),
+    // to fit the fixture's 0.1 s samples. The old note used to stop within the 10 ms choke; now
+    // it is still fading at the end of the next 2048-frame block.
     let dir = library();
     let legato = |mode: &str| {
         let group = format!("<group> group=1 off_by=1 lokey=c3 hikey=c5 {mode}");
         load_patch(
             &dir,
             &format!(
-                "{group} trigger=first\n<region> sample=Samples/loud1.wav\n\
+                "{group} trigger=first\n<region> sample=Samples/soft1.wav\n\
                  {group} trigger=legato\n<region> sample=Samples/loud1.wav\n"
             ),
         )
     };
-    let loud = 20_000.0 / 32_768.0;
+    let (soft, loud) = (3_000.0 / 32_768.0, 20_000.0 / 32_768.0);
+    let (out, voices) = play(legato("off_mode=time off_time=0.05"), &[&[60]]);
+    assert_eq!(voices, 1.0, "the phrase starts with the first group only");
+    let last = out.last().expect("a block")[0];
+    assert!((last - soft).abs() < 1e-6, "{last}");
+
+    // The `play` helper holds every key it presses, so 62 joins 60.
     let (out, voices) = play(legato("off_mode=time off_time=0.05"), &[&[60], &[62]]);
     assert_eq!(voices, 2.0, "the old note fades under the new one");
     let fading = 1.0 - 2_048.0 / 2_205.0;
     let last = out.last().expect("a block")[0];
-    assert!((last - loud * (1.0 + fading)).abs() < 1e-6, "{last}");
+    assert!((last - (loud + soft * fading)).abs() < 1e-6, "{last}");
 
     let (out, voices) = play(legato(""), &[&[60], &[62]]);
     assert_eq!(voices, 1.0, "the default choke ends the old note");
     let last = out.last().expect("a block")[0];
     assert!((last - loud).abs() < 1e-6, "{last}");
+}
+
+#[test]
+fn a_release_key_sample_counts_in_the_tail() {
+    // Sonatina's timpani roll endings start at the key release, as release samples do, so the
+    // whole sample after its offset (4410 - 2205 frames at 44.1 kHz) can sound after the last
+    // release; the attack region's release is shorter.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<region> sample=Samples/soft1.wav ampeg_release=0.02\n\
+         <region> sample=Samples/tail.wav loop_mode=one_shot trigger=release_key offset=2205\n",
+    );
+    assert!(
+        (bank.tail_seconds - 0.05).abs() < 1e-12,
+        "{}",
+        bank.tail_seconds
+    );
 }
 
 #[test]
@@ -1374,8 +1421,8 @@ fn inspect_reports_the_structure_the_loader_builds() {
 
 #[test]
 fn inspect_agrees_with_the_loader_on_skipped_and_ignored_parts() {
-    // Generators, a missing sample, unsupported values and skipped headers: the report and the
-    // bank come from the same regions.
+    // Generators, a missing sample, unsupported values, the legato triggers and skipped headers:
+    // the report and the bank come from the same regions.
     let dir = library();
     for text in [
         "<region> sample=Samples/soft1.wav lokey=c3 hikey=c5\n\
@@ -1467,9 +1514,11 @@ fn inspect_splits_the_velocity_layers_at_a_crossfade() {
 
 #[test]
 fn inspect_counts_only_the_keys_a_press_sounds() {
-    // Release regions, regions no key starts, silent regions, empty samples or velocity
-    // ranges, and a `sw_last` that no switch reaches sound nothing on a press. A switch key
-    // with a region both switches and sounds (VSCO's CelloEns-KS has such keys).
+    // Release regions (`release` and `release_key`), regions no key starts, silent regions,
+    // empty samples or velocity ranges, and a `sw_last` that no switch reaches sound nothing on
+    // a press. A switch key with a region both switches and sounds (VSCO's CelloEns-KS has such
+    // keys). `first` and `legato` regions sound on a press, one with no other key down, the
+    // other with one down, so a legato patch's keys are listed.
     let dir = library();
     wav(&dir.path().join("Samples/empty.wav"), 44_100, 0, 0);
     let report = inspect_text(
@@ -1486,11 +1535,17 @@ fn inspect_counts_only_the_keys_a_press_sounds() {
          <region> sample=soft1.wav key=75 lovel=100 hivel=20\n\
          <region> sample=*sine key=76\n\
          <region> sample=soft1.wav key=77\n\
-         <region> sample=empty.wav key=78\n",
+         <region> sample=empty.wav key=78\n\
+         <region> sample=soft1.wav key=79 trigger=first\n\
+         <region> sample=soft1.wav key=80 trigger=legato\n\
+         <region> sample=soft1.wav key=81 trigger=release_key\n",
     );
-    assert_eq!(report.sampled_keys().collect::<Vec<_>>(), [25, 74, 77]);
+    assert_eq!(
+        report.sampled_keys().collect::<Vec<_>>(),
+        [25, 74, 77, 79, 80]
+    );
     assert_eq!(report.keyswitches.keys().collect::<Vec<_>>(), [24, 25, 26]);
-    assert_eq!((report.regions, report.playable_regions), (11, 10));
+    assert_eq!((report.regions, report.playable_regions), (14, 13));
     // A key of -1 from the scope is overridden by nothing: the same patch, loaded, agrees.
     let bank = load_patch(
         &dir,

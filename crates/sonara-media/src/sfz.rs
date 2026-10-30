@@ -14,12 +14,19 @@
 //! `xfin_lovel`, `xfin_hivel`, `xfout_lovel`, `xfout_hivel`, `xf_velcurve`, `ampeg_attack`,
 //! `ampeg_release`, and the `#define`/`#include` directives. Every other opcode is recorded in
 //! [`SampleBank::ignored_opcodes`] and has no effect. So is a value of `trigger` other than
-//! `attack` and `release`, of `loop_mode` other than `no_loop`, `one_shot`, `loop_continuous`
-//! and `loop_sustain`, or of `off_mode` other than `fast`, `normal` and `time`, as
-//! `trigger=legato`: the region plays as if the opcode were absent, so a `first`, `legato` or
-//! `release_key` region plays on every key press. A header other than `<control>`, `<global>`,
-//! `<master>`, `<group>` and `<region>` (`<curve>`, `<effect>`, `<midi>`, `<sample>`) is recorded
-//! as written, and the opcodes after it are skipped up to the next of those headers.
+//! `attack`, `release`, `first`, `legato` and `release_key`, of `loop_mode` other than
+//! `no_loop`, `one_shot`, `loop_continuous` and `loop_sustain`, or of `off_mode` other than
+//! `fast`, `normal` and `time`, as `loop_mode=loop_forever`: the region plays as if the opcode
+//! were absent, so an unknown trigger plays on every key press. A header other than `<control>`,
+//! `<global>`, `<master>`, `<group>` and `<region>` (`<curve>`, `<effect>`, `<midi>`, `<sample>`)
+//! is recorded as written, and the opcodes after it are skipped up to the next of those headers.
+//!
+//! **Triggers.** `trigger` selects what starts a region ([`Trigger`]), as the SFZ format and the
+//! reference player sfizz read it: `attack` (the default) a key press, `release` a key release
+//! (under the sustain pedal, the pedal's lift), `first` a press while no other key is down,
+//! `legato` a press while one is, and `release_key` a key release whatever the pedal does.
+//! Sonatina's legato patches pair a `first` and a `legato` group, and its timpani end their rolls
+//! with `release_key` regions.
 //!
 //! **Regions no key starts.** A `key`, `lokey` or `hikey` of -1 means "no key" (SFZ 2), and a
 //! region with a controller trigger (`on_loccN`/`on_hiccN`, or their `hdcc` forms, other than
@@ -169,9 +176,11 @@ pub struct PatchReport {
     /// the patch loads.
     pub playable_regions: usize,
     /// The keys a press sounds on, ascending, as runs of neighbouring keys with the same
-    /// velocity layers. A key sounds when a loaded attack region covers it whose sample has
-    /// frames and whose `sw_last`, if it writes one, is a switch key or the default switch.
-    /// Release regions, regions no key starts and `*silence` do not count.
+    /// velocity layers. A key sounds when a loaded region that a press starts covers it (an
+    /// attack region, or a `first` or `legato` region, which a press starts with no other key
+    /// down or with one down) whose sample has frames and whose `sw_last`, if it writes one, is
+    /// a switch key or the default switch. Release regions (`release`, `release_key`), regions no
+    /// key starts and `*silence` do not count.
     pub sampled: Vec<LayerZone>,
     /// The switch keys and the default switch, as [`load_sfz`] gives them to the sampler. A
     /// switch key that is also in [`PatchReport::sampled`] both switches and sounds.
@@ -280,11 +289,12 @@ pub fn inspect(path: &Path) -> Result<PatchReport, MediaError> {
     })
 }
 
-/// Whether a press can sound `region`, whose sample has `frames` frames: an attack region a key
-/// starts, with some velocity, a sample that plays, and a `sw_last` the sampler can reach (a
-/// switch key, or the default switch it starts with).
+/// Whether a press can sound `region`, whose sample has `frames` frames: a region a key press
+/// starts (`attack`, `first` or `legato`, whether or not another key is down), with some
+/// velocity, a sample that plays, and a `sw_last` the sampler can reach (a switch key, or the
+/// default switch it starts with).
 fn sounds_on_press(region: &Region, frames: usize, keyswitches: &Keyswitches) -> bool {
-    region.trigger == Trigger::Attack
+    (region.trigger.starts_on_press(false) || region.trigger.starts_on_press(true))
         && region.on_key
         && region.vel_lo <= region.vel_hi
         && frames > 0
@@ -406,7 +416,7 @@ fn tail_seconds(bank: &SampleBank) -> f64 {
     bank.regions
         .iter()
         .map(|region| {
-            if region.trigger == Trigger::Release {
+            if region.trigger.is_release() {
                 bank.samples.get(region.sample).map_or(0.0, |sample| {
                     let frames = sample.frames().saturating_sub(region.offset);
                     f64::from(u32::try_from(frames).unwrap_or(u32::MAX))
@@ -1209,6 +1219,9 @@ fn parse_trigger(value: &str) -> Option<Trigger> {
     match value {
         "attack" => Some(Trigger::Attack),
         "release" => Some(Trigger::Release),
+        "first" => Some(Trigger::First),
+        "legato" => Some(Trigger::Legato),
+        "release_key" => Some(Trigger::ReleaseKey),
         _ => None,
     }
 }
