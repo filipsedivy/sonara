@@ -289,6 +289,24 @@ fn files_containing(root: &Path, needle: &str) -> Vec<String> {
         .collect()
 }
 
+/// Sets the modification time of every file under `directory` to the frozen clock's start.
+fn freeze_modification_times(directory: &Path) {
+    let frozen = UNIX_EPOCH + Duration::from_secs(FROZEN_UNIX_SECONDS);
+    for entry in fs::read_dir(directory).expect("directory") {
+        let path = entry.expect("entry").path();
+        if path.is_dir() {
+            freeze_modification_times(&path);
+        } else {
+            fs::File::options()
+                .write(true)
+                .open(&path)
+                .expect("file")
+                .set_modified(frozen)
+                .expect("modification time");
+        }
+    }
+}
+
 /// What an arm leaves behind.
 struct Saved {
     bundle: BTreeMap<String, Vec<u8>>,
@@ -574,6 +592,10 @@ fn save_everything(app: &AppContext, dir: &Path, script: &dyn Fn(&str)) -> Saved
     script("in place");
     svc.save(None, None).expect("saved in place, with a backup");
     let bundle = tree(&bundle_path);
+    // The archive stores each media file's modification time (to two seconds), which is real
+    // file-system time and has nothing to do with the chat: freeze it, so that the two arms
+    // cannot differ by when they happened to run.
+    freeze_modification_times(&bundle_path);
     script("archive");
     let archive_path = dir.join("Proof Packaged.sonara");
     svc.save(Some(&archive_path), Some(true))
