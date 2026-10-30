@@ -223,7 +223,7 @@ defined in the last section.
   rejection. The model is also offered a code-mode `exec` tool (a JavaScript sandbox with no file
   system and no network) whose nested tools include `apply_patch`, the MCP resource tools
   (`list_mcp_resources`, `list_mcp_resource_templates`, `read_mcp_resource`), the clock tools and,
-  according to the first probe, the Sonara MCP tools; and, at the top level, `wait`,
+  the Sonara MCP tools (only the allowed ones: see "Corrections", item 10); and, at the top level, `wait`,
   `request_user_input`, `request_user_input_async`, `clock` and `sleep`. The keys
   `features.code_mode` and `features.code_mode_host` did not remove `exec`. None of these can be
   switched off by configuration; they are rejected or inert because of the sandbox and the
@@ -301,8 +301,9 @@ defined in the last section.
 - `CONFIRMATION_REQUIRED` replay is not blocked on any backend.
 - The tools nested in Codex's code-mode `exec` include the Sonara MCP tools, and `exec` cannot be
   disabled by configuration. The Sonara tool lists (`enabled_tools`, `disabled_tools`) are the
-  boundary there as well; whether a nested call is reported as an `mcp_tool_call` item (and so
-  shown in the window) is not verified.
+  boundary there as well, and the probe of 2026-10-30 verified that they filter inside `exec`
+  (item 10 of the corrections); whether a nested call is reported as an `mcp_tool_call` item (and
+  so shown in the window) is not verified.
 - An orphaned `sonara mcp` after a SIGKILL of the provider: unmeasured whether it exits on stdin
   EOF.
 - The destructive-tool denial in Codex depends on MCP annotations. `disabled_tools` repeats the
@@ -351,8 +352,8 @@ defined in the last section.
   - with this argv the model is offered `exec`, `wait`, `request_user_input`,
     `request_user_input_async`, `clock` and `sleep` at the top level, and inside `exec`
     `apply_patch`, `list_mcp_resources`, `list_mcp_resource_templates`, `read_mcp_resource` and
-    `clock__curr_time`. The test runs without the `sonara` server, so the Sonara tools are not in
-    that listing; `update_plan` did not appear in it either;
+    `clock__curr_time`. That test runs without the `sonara` server, so the Sonara tools are not in
+    that listing; `update_plan` did not appear in it either (the Sonara tools: item 10);
   - an unknown `-c` key (`features.shell_toool`) aborts the run with exit 1 under
     `--strict-config`.
 - **claude**: the chat's availability check reads `claude --help` for `--no-session-persistence`
@@ -386,7 +387,7 @@ dependencies. All eleven feature keys checked (the nine used plus `codex_hooks` 
   Claude Code in the chat (`apps/sonara/tests/chat_live.rs` exists, is ignored by default, and has
   no recorded run).
 - Whether a Sonara call made from inside Codex's code-mode `exec` shows up as an `mcp_tool_call`
-  item, and whether the code-mode `exec` tool can be disabled at all (`features.code_mode` and
+  item (that the lists filter inside `exec` was verified, item 10), and whether the code-mode `exec` tool can be disabled at all (`features.code_mode` and
   `features.code_mode_host` did not remove it).
 - Whether `delete_track` is denied on Codex for a track without content (the `destructiveHint`
   handling was read from source and not run).
@@ -405,8 +406,8 @@ sections above.
 2. **Codex offers a code-mode `exec` tool** (JavaScript sandbox, no file system, no network),
    plus `wait`, `request_user_input`, `request_user_input_async` and the clock tools, besides
    `apply_patch` and the MCP resource tools. `exec` could not be disabled by `features.code_mode`
-   or `features.code_mode_host`. Its nested tools include the Sonara MCP tools; whether a nested
-   call is reported as an `mcp_tool_call` item is not verified.
+   or `features.code_mode_host`. Its nested tools include the allowed Sonara MCP tools (item 10);
+   whether a nested call is reported as an `mcp_tool_call` item is not verified.
 3. **The Codex `StopPolicy` is SIGINT, 4 s, SIGTERM to the group, 2 s, SIGKILL to the group.**
    `run.rs` is shared, so there is no Codex-only path without the SIGTERM step.
 4. **The Codex parser:** a `reasoning` item produces no event; an `error` item becomes `Stderr`
@@ -415,7 +416,8 @@ sections above.
 5. **`ClaudeProvider` checks `claude --help`** for `--no-session-persistence` and is `too_old` or
    `unsupported` without it.
 6. **44 of the 57 tools are on the Codex allow-list.** `delete_track` is blocked on Codex by its
-   handling of `destructiveHint`, even on an empty track (not verified at run time).
+   handling of `destructiveHint`, even on an empty track (not verified at run time; the tool is
+   still listed to the model, item 10).
 7. **The real-binary test `chat_codex_binary.rs` passed on 0.166.0:** the argv loads under
    `--strict-config` and the developer instructions round-trip exactly.
 8. **`Provider::build` takes the path of the `sonara` tool**, and chat turns put the addendum in
@@ -440,3 +442,22 @@ sections above.
    instructions apply, and `chat_codex_binary.rs` pins the gap (it fails when a release makes
    closing it possible). A private `CODEX_HOME` would close it, but would also lose the sign-in,
    and Sonara never reads or copies credentials.
+10. **The tool lists of the Codex boundary filter the Sonara tools inside `exec` as well
+    (verified 2026-10-30, codex 0.166.0, with a live server).** The earlier inspection ran
+    without the `sonara` server, so this was open. MCP tools are deferred in Codex's code mode:
+    the request carries no Sonara tool at all (neither at the top level nor in the description of
+    `exec`, which says "Some deferred nested tools may be omitted"); they exist on the global
+    `tools` object and in `ALL_TOOLS` of the `exec` sandbox. The probe
+    (`chat_codex_binary.rs`, `codex_offers_no_denied_sonara_tool_with_a_live_sonara_server`)
+    starts `sonara serve --audio null` in a private `SONARA_HOME`, builds the argv with the real
+    `invocation::args` (only `-c openai_base_url` for a fake Responses endpoint on 127.0.0.1 is
+    added), and makes the fake model answer with a `custom_tool_call` of `exec` that prints
+    `ALL_TOOLS` and `typeof tools.mcp__sonara__<denied>`. Result: the server attached (the run
+    would have aborted with `required=true` otherwise); `ALL_TOOLS` held exactly the 44 allowed
+    Sonara tools and none of the 13 of `DENIED_SONARA_TOOLS`; every denied tool was `undefined`
+    on `tools`; none of the 13 names occurs in the first request. A control run with the
+    `enabled_tools` and `disabled_tools` keys removed listed all 57 tools, so the probe does
+    see a denied tool when the filter is missing. No login and no quota were used. Still not
+    verified: that a nested call is reported as an `mcp_tool_call` item, and that the
+    `destructiveHint` handling refuses a `delete_track` call (the tool is offered, because the
+    chat allows it).

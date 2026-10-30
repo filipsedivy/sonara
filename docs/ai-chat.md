@@ -226,9 +226,13 @@ never in the arguments). Each `-c` value travels as one argument, with no shell 
     item with status `failed`; read from source, not seen in a real run);
   - `request_user_input`: nothing can answer it in `exec`;
   - the MCP resource tools reach only the `sonara` server;
-  - the tools nested in `exec` include the Sonara MCP tools. Whether a Sonara call made from
-    inside `exec` shows up as an `mcp_tool_call` item is **not verified**; the committed test
-    runs without the `sonara` server and so does not list them;
+  - the tools nested in `exec` include the Sonara MCP tools, and `enabled_tools` and
+    `disabled_tools` filter them there too: verified on 2026-10-30 with codex 0.166.0 and a live
+    `sonara mcp` (`ALL_TOOLS` in `exec` held exactly the 44 allowed tools and none of the 13
+    denied ones; a control run without the two keys listed all 57; the Sonara tools are
+    deferred, so the request itself lists none of them). `delete_track` is offered, because it
+    is allowed. Whether a Sonara call made from inside `exec` shows up as an `mcp_tool_call`
+    item is **not verified**;
   - `features.multi_agent=false` alone still leaves `spawn_agent`, `send_message` and
     `followup_task` offered; `agents.enabled=false` removes them (found with
     `codex debug prompt-input`; `chat_codex_binary.rs` asserts that they are gone).
@@ -379,7 +383,11 @@ of the message.
     written (the TOML escaping is right), that none of `exec_command`, `write_stdin`,
     `view_image`, `spawn_agent`, `send_message` and `followup_task` is offered (also not inside
     `exec`), and that an unknown key is rejected. It ran and passed against 0.166.0 on
-    2026-10-30.
+    2026-10-30. A further test there, `codex_offers_no_denied_sonara_tool_with_a_live_sonara_server`
+    (it also needs `cargo build -p sonara`, or `SONARA_BIN`, and skips when `codex` or `sonara`
+    is missing), starts a headless session and the real command line against a fake Responses
+    endpoint, runs `ALL_TOOLS` inside `exec` and asserts that exactly the allowed Sonara tools
+    are offered and no denied one is.
   - `apps/sonara/tests/chat_live.rs` drives the real providers through `ChatController` against
     a headless `sonara serve --audio null`. For each of Claude Code and Codex there are four
     tests: no shell and no file written, the project cannot be saved, a plain question is

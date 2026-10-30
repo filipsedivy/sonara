@@ -16,7 +16,8 @@ break the API. The project format is versioned independently, see
   until you press Run queue. The window carries a Beta badge. Two providers: Claude Code (the
   default, with the command line of the former AI Composer plus a session that is not kept) and
   Codex CLI (Beta, `codex exec` with only the Sonara tools, read-only and without a kept
-  session). The window shows, before the first message, whether each is installed, recent
+  session; a local probe with a live server verified that the tool lists also filter the Sonara
+  tools offered inside Codex's code-mode `exec`). The window shows, before the first message, whether each is installed, recent
   enough and signed in. Each task is given the earlier finished tasks as bounded context. The
   history lives in memory only: it is wiped when the chat window closes, when a project is
   opened, created, restored or closed, and by Clear history, and it never reaches a `.sonara`

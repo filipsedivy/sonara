@@ -20,12 +20,20 @@
 //! set to a made-up key, so no sign-in and no quota are involved) and reads what Codex put in the
 //! request, with a private `CODEX_HOME` that holds a canary `AGENTS.md` and a canary skill. It
 //! pins what the boundary does not reach (ADR 0011).
+//!
+//! A fourth test attaches a LIVE `sonara mcp` (a headless `sonara serve --audio null`; it needs
+//! `cargo build -p sonara` or `SONARA_BIN`, and skips when `codex` or `sonara` is missing). The
+//! Sonara tools are deferred in Codex's code mode, so the fake model runs a script in `exec` that
+//! lists `ALL_TOOLS`, and the test asserts that exactly the allowed Sonara tools are offered and
+//! none of `DENIED_SONARA_TOOLS` (verified 2026-10-30 on 0.166.0), with a control run that has no
+//! filter keys and lists all 57.
 
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::sync::mpsc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, mpsc};
 use std::thread;
 use std::time::Duration;
 
@@ -234,7 +242,12 @@ const SSE_BODY: &str = concat!(
 
 /// Answers one connection: a `POST` gets the body sent to `bodies` and a finished response; any
 /// other request (Codex tries a WebSocket first) gets a `404`, so that it falls back to `POST`.
-fn answer(stream: TcpStream, bodies: &mpsc::Sender<Vec<u8>>) -> std::io::Result<()> {
+fn answer(
+    stream: TcpStream,
+    bodies: &mpsc::Sender<Vec<u8>>,
+    replies: &[String],
+    posts: &AtomicUsize,
+) -> std::io::Result<()> {
     let mut reader = BufReader::new(stream.try_clone()?);
     let mut request_line = String::new();
     reader.read_line(&mut request_line)?;
@@ -257,9 +270,12 @@ fn answer(stream: TcpStream, bodies: &mpsc::Sender<Vec<u8>>) -> std::io::Result<
         let mut body = vec![0_u8; length];
         reader.read_exact(&mut body)?;
         bodies.send(body).ok();
+        // The n-th `POST` gets the n-th reply; the last reply repeats.
+        let at = posts.fetch_add(1, Ordering::SeqCst).min(replies.len() - 1);
+        let reply = &replies[at];
         write!(
             stream,
-            "HTTP/1.1 200 OK\r\ncontent-type: text/event-stream\r\nconnection: close\r\n\r\n{SSE_BODY}"
+            "HTTP/1.1 200 OK\r\ncontent-type: text/event-stream\r\nconnection: close\r\n\r\n{reply}"
         )?;
     } else {
         write!(
@@ -273,15 +289,24 @@ fn answer(stream: TcpStream, bodies: &mpsc::Sender<Vec<u8>>) -> std::io::Result<
 /// A fake Responses endpoint on a free port of 127.0.0.1; the bodies of the `POST`s arrive on the
 /// receiver.
 fn fake_endpoint() -> (u16, mpsc::Receiver<Vec<u8>>) {
+    fake_endpoint_replying(vec![SSE_BODY.to_owned()])
+}
+
+/// Like [`fake_endpoint`], but the n-th `POST` gets `replies[n]` (the last one repeats).
+fn fake_endpoint_replying(replies: Vec<String>) -> (u16, mpsc::Receiver<Vec<u8>>) {
+    let replies = Arc::new(replies);
+    let posts = Arc::new(AtomicUsize::new(0));
     let listener = TcpListener::bind("127.0.0.1:0").expect("a local port");
     let port = listener.local_addr().expect("an address").port();
     let (bodies, received) = mpsc::channel();
     thread::spawn(move || {
         for stream in listener.incoming().flatten() {
             let bodies = bodies.clone();
+            let replies = Arc::clone(&replies);
+            let posts = Arc::clone(&posts);
             thread::spawn(move || {
                 // A connection that breaks off is the CLI giving up on it: nothing to report.
-                answer(stream, &bodies).ok();
+                answer(stream, &bodies, &replies, &posts).ok();
             });
         }
     });
@@ -377,4 +402,286 @@ fn a_chat_turn_carries_no_user_skills_but_still_the_global_agents_md() {
         request.contains("CANARY_GLOBAL_AGENTS_MD"),
         "the global AGENTS.md is no longer sent: a switch may exist now, see the comment"
     );
+}
+
+/// The `sonara` executable of this workspace: `SONARA_BIN`, or the debug build next to the
+/// test binaries (`cargo build -p sonara` makes it).
+fn sonara_binary() -> Option<PathBuf> {
+    let path = std::env::var_os("SONARA_BIN").map_or_else(
+        || Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/sonara"),
+        PathBuf::from,
+    );
+    path.is_file().then_some(path)
+}
+
+/// A headless `sonara serve --audio null` in a private `SONARA_HOME`, stopped when it drops.
+struct Session {
+    child: std::process::Child,
+    home: tempfile::TempDir,
+}
+
+impl Session {
+    fn start(sonara: &Path) -> Self {
+        let home = tempfile::tempdir().expect("a SONARA_HOME");
+        let mut child = Command::new(sonara)
+            .args(["serve", "--audio", "null"])
+            .env("SONARA_HOME", home.path())
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("sonara serve starts");
+        let stderr = child.stderr.take().expect("stderr");
+        let session = Self { child, home };
+        let (tx, rx) = mpsc::channel();
+        thread::spawn(move || {
+            for line in BufReader::new(stderr).lines().map_while(Result::ok) {
+                if tx.send(line).is_err() {
+                    break;
+                }
+            }
+        });
+        let deadline = std::time::Instant::now() + Duration::from_secs(30);
+        loop {
+            let line = rx
+                .recv_timeout(deadline.saturating_duration_since(std::time::Instant::now()))
+                .expect("sonara serve reports that it listens");
+            if line.contains("listening on") {
+                break;
+            }
+        }
+        session
+    }
+}
+
+impl Drop for Session {
+    fn drop(&mut self) {
+        self.child.kill().ok();
+        self.child.wait().ok();
+    }
+}
+
+/// The script the fake model runs in Codex's code-mode `exec` tool: it prints every nested tool
+/// Codex lists in `ALL_TOOLS` and the `typeof` of the denied Sonara tools on the global `tools`
+/// object (MCP tools are deferred: they are not in the request, only in `ALL_TOOLS`).
+fn probe_script() -> String {
+    let denied = serde_json::to_string(&sonara_app::chat::boundary::DENIED_SONARA_TOOLS)
+        .expect("a JSON list");
+    format!(
+        "const names = ALL_TOOLS.map((tool) => tool.name);\n\
+         const denied = {denied};\n\
+         const kinds = Object.fromEntries(denied.map((n) => [n, typeof tools['mcp__sonara__' + n]]));\n\
+         text(JSON.stringify({{ names, keys: Object.keys(tools), kinds }}));\n"
+    )
+}
+
+/// The reply that makes Codex call its `exec` tool with `script`, then ends the response.
+fn exec_call_reply(script: &str) -> String {
+    let item = serde_json::json!({
+        "type": "custom_tool_call",
+        "call_id": "call_probe_1",
+        "name": "exec",
+        "input": script,
+    });
+    format!(
+        "event: response.created\n\
+         data: {{\"type\":\"response.created\",\"response\":{{\"id\":\"resp_1\"}}}}\n\n\
+         event: response.output_item.done\n\
+         data: {}\n\n\
+         event: response.completed\n\
+         data: {{\"type\":\"response.completed\",\"response\":{{\"id\":\"resp_1\",\"usage\":{{\"input_tokens\":1,\"input_tokens_details\":null,\"output_tokens\":1,\"output_tokens_details\":null,\"total_tokens\":2}}}}}}\n\n",
+        serde_json::json!({"type": "response.output_item.done", "item": item})
+    )
+}
+
+/// What a probe run captured.
+struct Probe {
+    /// The request of the first model call (what Codex offers at the top level).
+    first_request: String,
+    /// The output the `exec` tool returned for [`probe_script`], as the second request carries it.
+    exec_output: String,
+}
+
+/// Runs the chat's real command line with a LIVE `sonara mcp` server (the one of `session`)
+/// against a fake Responses endpoint whose model runs [`probe_script`] in `exec`.
+///
+/// With `without_filters` the `enabled_tools` and `disabled_tools` keys are left out (the
+/// control run that shows the probe can see a denied tool).
+fn probe_with_live_sonara(
+    codex: &Path,
+    sonara: &Path,
+    session: &Session,
+    without_filters: bool,
+) -> Probe {
+    use std::os::unix::process::CommandExt;
+
+    let codex_home = tempfile::tempdir().expect("a private CODEX_HOME");
+    let cwd = tempfile::tempdir().expect("an empty working directory");
+    let (port, bodies) =
+        fake_endpoint_replying(vec![exec_call_reply(&probe_script()), SSE_BODY.to_owned()]);
+    // The real command line, with only the address of the fake endpoint added before the `-`.
+    let mut args: Vec<String> = Vec::new();
+    let mut chat = invocation::args(sonara, cwd.path(), session.home.path()).into_iter();
+    while let Some(arg) = chat.next() {
+        let arg = arg.into_string().expect("UTF-8 arguments");
+        if arg == "-c" && without_filters {
+            let setting = chat.next().expect("a value after -c");
+            let setting = setting.into_string().expect("UTF-8 arguments");
+            if setting.contains(".enabled_tools=") || setting.contains(".disabled_tools=") {
+                continue;
+            }
+            args.extend([arg, setting]);
+            continue;
+        }
+        if arg == "-" {
+            args.extend([
+                "-c".to_owned(),
+                format!("openai_base_url=\"http://127.0.0.1:{port}/v1\""),
+            ]);
+        }
+        args.push(arg);
+    }
+    let mut child = private_command(codex, codex_home.path(), cwd.path())
+        .env("CODEX_API_KEY", "sk-not-a-real-key")
+        .args(&args)
+        .process_group(0)
+        .spawn()
+        .expect("codex exec starts");
+    child
+        .stdin
+        .take()
+        .expect("stdin")
+        .write_all(b"ping")
+        .expect("the prompt");
+    // The first request arrives after Codex has given up on its WebSocket attempts; the second
+    // one carries the output of the `exec` call.
+    let first = bodies.recv_timeout(Duration::from_secs(120));
+    let second = bodies.recv_timeout(Duration::from_secs(60));
+    if let Ok(group) = i32::try_from(child.id())
+        && let Some(group) = rustix::process::Pid::from_raw(group)
+    {
+        rustix::process::kill_process_group(group, rustix::process::Signal::KILL).ok();
+    }
+    let output = child.wait_with_output().expect("codex ends");
+    eprintln!("codex stderr: {}", String::from_utf8_lossy(&output.stderr));
+    eprintln!("codex stdout: {}", String::from_utf8_lossy(&output.stdout));
+    let first_request =
+        String::from_utf8(first.expect("Codex sent a request to the fake endpoint"))
+            .expect("UTF-8");
+    let second =
+        String::from_utf8(second.expect("Codex sent the output of exec back")).expect("UTF-8");
+    let second: Value = serde_json::from_str(&second).expect("a JSON request");
+    let exec_output = second["input"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .find(|item| item["type"] == "custom_tool_call_output")
+        .map(|item| item["output"].to_string())
+        .expect("a custom_tool_call_output in the second request");
+    Probe {
+        first_request,
+        exec_output,
+    }
+}
+
+#[test]
+#[ignore = "needs the codex and sonara binaries (no login, no quota); run with --ignored"]
+fn codex_offers_no_denied_sonara_tool_with_a_live_sonara_server() {
+    // Probe of 2026-10-30 on codex 0.166.0 (ADR 0011): do `enabled_tools` and `disabled_tools`
+    // filter the Sonara tools inside the code-mode `exec` tool too, with the server attached?
+    // MCP tools are deferred (not in the request), so the fake model runs a script in `exec`
+    // that lists `ALL_TOOLS`.
+    //
+    // Run: `cargo build -p sonara && cargo test -p sonara-app --test chat_codex_binary
+    // codex_offers_no_denied -- --ignored --nocapture`. `SONARA_BIN` and `CODEX_BIN` override
+    // the executables; `PROBE_DUMP=<file>` writes the output of the script there. It skips when
+    // codex or sonara is missing.
+    let Some(sonara) = sonara_binary() else {
+        eprintln!("skipped: no sonara binary (cargo build -p sonara, or set SONARA_BIN)");
+        return;
+    };
+    let found = std::env::var_os("CODEX_BIN")
+        .map(PathBuf::from)
+        .or_else(|| {
+            let home = std::env::var_os("HOME").map(PathBuf::from);
+            let path_var = std::env::var_os("PATH");
+            locate::candidates(home.as_deref(), path_var.as_deref())
+                .into_iter()
+                .find(|path| path.is_file())
+        });
+    let Some(codex) = found else {
+        eprintln!("skipped: no codex executable (or CODEX_BIN)");
+        return;
+    };
+    let session = Session::start(&sonara);
+    let allowed = sonara_app::chat::providers::codex::tools::allowed_sonara_tools();
+    let denied = sonara_app::chat::boundary::DENIED_SONARA_TOOLS;
+
+    // Control: without the two filter keys, every Sonara tool is listed, the denied ones too.
+    // (The probe can see a denied tool; the server really attached.)
+    let control = probe_with_live_sonara(&codex, &sonara, &session, true);
+    let listed = sonara_tools_listed(&control);
+    eprintln!("control, without filters: {} Sonara tools", listed.len());
+    assert_eq!(
+        listed.len(),
+        allowed.len() + denied.len(),
+        "the control run lists every tool of the Agent API: {listed:?}"
+    );
+    assert!(
+        denied
+            .iter()
+            .all(|tool| listed.iter().any(|name| name == tool))
+    );
+
+    // The chat's real command line.
+    let probe = probe_with_live_sonara(&codex, &sonara, &session, false);
+    if let Some(dump) = std::env::var_os("PROBE_DUMP") {
+        std::fs::write(dump, &probe.exec_output).expect("the dump file");
+    }
+    let listed = sonara_tools_listed(&probe);
+    eprintln!("Sonara tools in exec: {} ({listed:?})", listed.len());
+    // Exactly the allow-list: the server attached, the allowed tools are there, nothing else.
+    let mut expected: Vec<String> = allowed.iter().map(|tool| (*tool).to_owned()).collect();
+    let mut seen = listed.clone();
+    expected.sort_unstable();
+    seen.sort_unstable();
+    assert_eq!(seen, expected);
+    // No denied tool is visible, on the `tools` object (`typeof`) or at the top level.
+    let value = exec_listing(&probe);
+    for tool in denied {
+        assert_eq!(value["kinds"][tool], "undefined", "{tool} is on `tools`");
+        assert!(
+            !probe.first_request.contains(tool),
+            "{tool} is in the first request"
+        );
+    }
+}
+
+/// The JSON that [`probe_script`] printed, as the `exec` output carries it.
+fn exec_listing(probe: &Probe) -> Value {
+    // The output is a JSON text inside a JSON string: undo one level of quoting.
+    let start = probe
+        .exec_output
+        .find("{\\\"names\\\"")
+        .expect("the script printed its JSON");
+    let unescaped = probe.exec_output[start..]
+        .replace("\\\"", "\"")
+        .replace("\\\\", "\\");
+    serde_json::Deserializer::from_str(&unescaped)
+        .into_iter::<Value>()
+        .next()
+        .expect("a JSON value")
+        .expect("valid JSON")
+}
+
+/// The bare names of the Sonara tools in `ALL_TOOLS`.
+fn sonara_tools_listed(probe: &Probe) -> Vec<String> {
+    exec_listing(probe)["names"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .filter_map(|name| name.strip_prefix("mcp__sonara__"))
+        .map(str::to_owned)
+        .collect()
 }
