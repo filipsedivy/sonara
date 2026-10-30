@@ -50,13 +50,13 @@ Once they merge, wiring means adding agent tools or app services that call their
 extending this path; the tools' schemas are part of CTR-01 and change only by a deliberate,
 versioned decision, which is why none of them were wired by their own tasks.
 
-## By hand: the AI menu and the AI Composer in the bundled app (owner)
+## By hand: the AI menu and the AI Chat in the bundled app (owner)
 
 Not a CI gate and not automated (HW-01): it needs the bundled `Sonara.app` started from the
 Finder, a signed-in Claude Code and a person who looks at the native menu bar. The automated
 parts are covered elsewhere: the menu model's order, with the AI menu between View and Window
-(`crates/sonara-app/tests/gui_menus.rs`), the panel's page tests (`tests/page/composer.spec.ts`)
-and a run against a fake `claude` (`sonara_app::composer`). What only the bundle can show is that
+(`crates/sonara-app/tests/gui_menus.rs`), the window's page tests (`tests/page/chat.spec.ts`)
+and a run against a fake `claude` (`sonara_app::chat`). What only the bundle can show is that
 the native menu is built from that model, and that the run finds `claude` and the bundled CLI
 from the Finder's minimal `PATH`.
 
@@ -72,20 +72,19 @@ Sonara first, so that the window you see is the only instance.
    problem this check is for. The first start of an ad-hoc signed app may need right-click →
    Open.
 3. **Menu bar.** Read it from left to right: **Sonara, File, Edit, Track, Transport, View, AI,
-   Window, Help**. Open **AI**: it holds one item, **AI Composer…**. Expected: the AI menu sits
+   Window, Help**. Open **AI**: it holds one item, **AI Chat (Beta)…**. Expected: the AI menu sits
    between View and Window.
-4. **Panel.** Create or open a project (File → New Project… or Open…), then choose **AI → AI Composer…**. Expected:
-   a panel, not a modal dialog (the window and its menus stay usable), that shows the path and
-   version of Claude Code and enables Compose. Not expected: "the sonara command line tool is
+4. **Window.** Create or open a project (File → New Project… or Open…), then choose **AI → AI Chat (Beta)…**. Expected:
+   a chat window, not a modal dialog (the window and its menus stay usable), that shows the path
+   and version of Claude Code as ready. Not expected: "the sonara command line tool is
    missing", "cannot find Claude Code" or "agents cannot attach to this window".
-5. **Run.** Prompt: `Add a drum track with a one-bar beat at 100 BPM.` Press Compose. Expected:
-   tracks and notes appear on the timeline while the step log fills, and the panel ends with a
-   result.
-6. **One undo step.** Open **Edit**: the first item reads **Undo AI Composer**. Press ⌘Z once:
+5. **Run.** Prompt: `Add a drum track with a one-bar beat at 100 BPM.` Send it. Expected:
+   tracks and notes appear on the timeline while the step log fills, and the task ends as done.
+6. **One undo step.** Open **Edit**: the first item reads **Undo AI Chat**. Press ⌘Z once:
    everything the run added is gone and the project equals the one before the run. ⇧⌘Z brings it
    all back. If the run was only a question and changed nothing, there is nothing to undo.
 7. **Stop.** Start a longer prompt (`Compose a three-minute song in four sections.`), press Stop
-   after a few steps. Expected: the panel reports a stopped run, and **Edit → Undo AI Composer**
+   after a few steps. Expected: the task is shown as stopped, and **Edit → Undo AI Chat**
    removes the part that was written.
 8. **Quit.** ⌘Q during a run. Expected: Sonara quits and
    `pgrep -fl 'claude -p|sonara mcp'` shows no process left over from it (a plain `claude` is your

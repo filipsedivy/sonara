@@ -78,6 +78,11 @@ pub fn forward(app: &AppHandle, notice: Notice) {
             // A project opened, saved or closed may change the recent projects.
             let replaced = matches!(notice.kind, "loaded" | "saved" | "closed");
             crate::chrome::refresh(app, replaced);
+            // The chat is about the project that was open: a save keeps it, a load or a close
+            // wipes it.
+            if matches!(notice.kind, "loaded" | "closed") {
+                crate::chat::project_replaced(app);
+            }
         }
         Notice::Job(job) => {
             emit(app, "job-changed", &job);

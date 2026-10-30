@@ -1,0 +1,16 @@
+{"type":"thread.started","thread_id":"0199a213-81c0-7800-8aa1-bbab2a035a54"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"reasoning","text":"**Planning the arrangement**"}}
+{"type":"item.started","item":{"id":"item_1","type":"todo_list","items":[{"text":"Set tempo","completed":false},{"text":"Add drum track","completed":false}]}}
+{"type":"item.started","item":{"id":"item_2","type":"mcp_tool_call","server":"sonara","tool":"set_tempo","arguments":{"bpm":96},"result":null,"error":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_2","type":"mcp_tool_call","server":"sonara","tool":"set_tempo","arguments":{"bpm":96},"result":{"content":[{"type":"text","text":"{\"ok\": true, \"tool\": \"set_tempo\"}"}],"structured_content":{"ok":true,"tool":"set_tempo"}},"error":null,"status":"completed"}}
+{"type":"item.updated","item":{"id":"item_1","type":"todo_list","items":[{"text":"Set tempo","completed":true},{"text":"Add drum track","completed":false}]}}
+{"type":"item.started","item":{"id":"item_3","type":"mcp_tool_call","server":"sonara","tool":"rename_track","arguments":{"track_id":"trk_missing","name":"Drums"},"result":null,"error":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_3","type":"mcp_tool_call","server":"sonara","tool":"rename_track","arguments":{"track_id":"trk_missing","name":"Drums"},"result":{"content":[{"type":"text","text":"{\"ok\": false, \"tool\": \"rename_track\", \"error\": {\"code\": \"NOT_FOUND\", \"message\": \"no such track\"}}"}],"structured_content":{"ok":false,"tool":"rename_track","error":{"code":"NOT_FOUND","message":"no such track"}}},"error":null,"status":"failed"}}
+{"type":"item.started","item":{"id":"item_4","type":"mcp_tool_call","server":"sonara","tool":"delete_track","arguments":{"track_id":"trk_1"},"result":null,"error":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_4","type":"mcp_tool_call","server":"sonara","tool":"delete_track","arguments":{"track_id":"trk_1"},"result":null,"error":{"message":"MCP tool call requires approval, but approval policy is never"},"status":"failed"}}
+{"type":"item.completed","item":{"id":"item_5","type":"mcp_tool_call","server":"sonara","tool":"list_tracks","arguments":{},"result":{"content":[{"type":"text","text":"{\"ok\": true, \"tool\": \"list_tracks\", \"tracks\": []}"}],"structured_content":null},"error":null,"status":"completed"}}
+{"type":"item.completed","item":{"id":"item_6","type":"error","message":"model rerouted: gpt-x -> gpt-y (capacity)"}}
+{"type":"item.completed","item":{"id":"item_7","type":"todo_list","items":[{"text":"Set tempo","completed":true},{"text":"Add drum track","completed":false}]}}
+{"type":"item.completed","item":{"id":"item_8","type":"agent_message","text":"Tempo is 96 BPM. The track could not be renamed or deleted."}}
+{"type":"turn.completed","usage":{"input_tokens":30100,"cached_input_tokens":29000,"cache_write_input_tokens":0,"output_tokens":210,"reasoning_output_tokens":0}}

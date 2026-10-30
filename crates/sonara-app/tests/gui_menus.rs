@@ -150,7 +150,7 @@ View
   Piano Roll  ⌘2
   Devices  ⌘3
 AI
-  AI Composer…
+  AI Chat (Beta)…
 Window
   [Minimize]
   [Zoom]
@@ -401,6 +401,7 @@ fn each_item_runs_where_its_state_is() {
         "remove-unused-media",
         "undo",
         "redo",
+        "ai-chat",
     ] {
         assert!(routes.contains(&(id, Route::Desktop)), "{id}");
     }

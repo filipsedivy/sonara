@@ -177,11 +177,11 @@ jobs:
           pnpm run check
           pnpm run build
           pnpm run test
-      # `pnpm run test` has no project filter, so the page tests of the AI Composer panel run
+      # `pnpm run test` has no project filter, so the page tests of the AI Chat window run
       # above. This fails the job if a config change ever drops them from the run.
-      - name: The AI Composer panel's page tests are in the run
+      - name: The AI Chat window's page tests are in the run
         working-directory: apps/sonara-desktop
-        run: pnpm exec playwright test --project page --list | grep 'page/composer.spec.ts' >/dev/null
+        run: pnpm exec playwright test --project page --list | grep 'page/chat.spec.ts' >/dev/null
 
   build:
     name: build (macos-26)

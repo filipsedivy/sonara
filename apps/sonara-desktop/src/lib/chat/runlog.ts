@@ -1,8 +1,8 @@
-// What the AI composer's panel shows of a run: a log of the assistant's text and of its tool
-// calls in order, the session's facts, and the outcome. A pure reducer over the run's events
-// (the panel keeps the state), so that the progress and the end of a run are testable.
+// What the AI Chat shows of one task's run: a log of the assistant's text and of its tool calls
+// in order, the session's facts, and how the process ended. A pure reducer over the run's events
+// (the chat keeps one log per task), so that the progress and the end of a run are testable.
 
-import type { ComposerEvent, McpServer } from "./api";
+import type { McpServer, RunEvent } from "./events";
 
 /** The most entries kept: a long song is hundreds of calls, never thousands. */
 export const MAX_ENTRIES = 2000;
@@ -22,9 +22,9 @@ export type Entry =
       preview: string;
     };
 
-export type ResultInfo = Extract<ComposerEvent, { kind: "result" }>;
+export type ResultInfo = Extract<RunEvent, { kind: "result" }>;
 
-export type Phase = "idle" | "starting" | "running" | "stopping" | "done";
+export type Phase = "idle" | "running" | "done";
 
 export interface RunLog {
   phase: Phase;
@@ -40,8 +40,6 @@ export interface RunLog {
   stderr: string[];
   output: string[];
   exit: { code: number | null; stopped: boolean } | null;
-  /** Why the run did not start. */
-  startError: string | null;
 }
 
 export function emptyLog(): RunLog {
@@ -58,23 +56,7 @@ export function emptyLog(): RunLog {
     stderr: [],
     output: [],
     exit: null,
-    startError: null,
   };
-}
-
-/** The log of a run that is about to start. */
-export function starting(): RunLog {
-  return { ...emptyLog(), phase: "starting" };
-}
-
-/** The log after the user asked to stop. */
-export function stopping(log: RunLog): RunLog {
-  return log.phase === "done" ? log : { ...log, phase: "stopping" };
-}
-
-/** The log of a run that could not start. */
-export function failedToStart(message: string): RunLog {
-  return { ...emptyLog(), phase: "done", startError: message };
 }
 
 /** Whether the Sonara tools failed to connect: the run can compose nothing. */
@@ -93,12 +75,12 @@ function pushEntry(entries: Entry[], entry: Entry): Entry[] {
 }
 
 /** `log` after `event`. */
-export function reduce(log: RunLog, event: ComposerEvent): RunLog {
+export function reduce(log: RunLog, event: RunEvent): RunLog {
   switch (event.kind) {
     case "init":
       return {
         ...log,
-        phase: log.phase === "stopping" ? "stopping" : "running",
+        phase: "running",
         model: event.model,
         sessionId: event.session_id,
         toolCount: event.tool_count,
@@ -159,27 +141,6 @@ export function reduce(log: RunLog, event: ComposerEvent): RunLog {
         ),
       };
   }
-}
-
-export type Outcome = "running" | "stopped" | "done" | "failed";
-
-/** How the run ended (or `running`). */
-export function outcome(log: RunLog): Outcome {
-  if (log.phase !== "done") return "running";
-  if (log.exit?.stopped) return "stopped";
-  if (log.startError === null && log.result?.success) return "done";
-  return "failed";
-}
-
-/** Why a finished run failed: the best message there is. */
-export function failureReason(log: RunLog): string {
-  if (log.startError) return log.startError;
-  const fromResult = log.result && !log.result.success ? log.result.text.trim() : "";
-  if (fromResult) return fromResult;
-  const lastOutput = log.stderr[log.stderr.length - 1] ?? log.output[log.output.length - 1];
-  if (lastOutput) return lastOutput;
-  if (log.result) return `Claude Code ended with ${log.result.subtype}.`;
-  return `Claude Code exited with code ${log.exit?.code ?? "unknown"} without a result.`;
 }
 
 /** The steps of a log, for the counter. */

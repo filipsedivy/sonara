@@ -10,7 +10,9 @@
 //! - [`mod@locate`]: finds Claude Code and checks its version.
 //! - [`invocation`]: the system prompt, the tool boundaries and the command line.
 //! - [`stream`]: parses the `stream-json` output into [`stream::Event`]s for the panel.
-//! - [`run`]: starts the process, streams the events and stops it (unix only).
+//! - [`run`]: starts the process, streams the events and stops it (unix only). The parser of the
+//!   output ([`LineParser`]) and the stop signals ([`StopPolicy`]) are the parts that differ
+//!   between providers; the AI Chat ([`crate::chat`]) uses them for its own providers.
 //!
 //! Nothing here runs on a real-time thread, and no tool, schema or CLI contract changes (CTR-01):
 //! the composer is a client of the existing agent API.
@@ -19,10 +21,14 @@ pub mod invocation;
 pub mod locate;
 #[cfg(unix)]
 pub mod run;
+pub mod stop;
 pub mod stream;
 
-pub use invocation::{Invocation, PromptError, Workspace, build, check_prompt};
-pub use locate::{ClaudeCli, LocateError, locate};
+pub use invocation::{
+    BuildOptions, Invocation, PromptError, Workspace, build, build_with, check_prompt,
+};
+pub use locate::{ClaudeCli, LocateError, Located, locate};
 #[cfg(unix)]
 pub use run::{Run, RunError};
-pub use stream::Event;
+pub use stop::StopPolicy;
+pub use stream::{ClaudeParser, Event, LineParser};

@@ -1,24 +1,11 @@
 import { expect, test } from "@playwright/test";
-import type { ComposerEvent } from "../../src/lib/composer/api";
-import {
-  MAX_ENTRIES,
-  duration,
-  emptyLog,
-  failedToStart,
-  failureReason,
-  outcome,
-  reduce,
-  sonaraMissing,
-  starting,
-  stepCounts,
-  stopping,
-  type RunLog,
-} from "../../src/lib/composer/model";
+import type { RunEvent } from "../../src/lib/chat/events";
+import { MAX_ENTRIES, duration, emptyLog, reduce, sonaraMissing, stepCounts, type RunLog } from "../../src/lib/chat/runlog";
 
-// The AI composer's log: what the panel shows of a run, from the events of
+// The run log of one chat task: what the chat shows of a run, from the events of
 // crates/sonara-app/src/composer/stream.rs.
 
-const init: ComposerEvent = {
+const init: RunEvent = {
   kind: "init",
   session_id: "s1",
   model: "claude-x",
@@ -27,7 +14,7 @@ const init: ComposerEvent = {
   mcp_errors: [],
 };
 
-const result = (extra: Partial<Extract<ComposerEvent, { kind: "result" }>> = {}): ComposerEvent => ({
+const result = (extra: Partial<Extract<RunEvent, { kind: "result" }>> = {}): RunEvent => ({
   kind: "result",
   success: true,
   subtype: "success",
@@ -42,13 +29,13 @@ const result = (extra: Partial<Extract<ComposerEvent, { kind: "result" }>> = {})
   ...extra,
 });
 
-function play(events: ComposerEvent[], from: RunLog = starting()): RunLog {
+function play(events: RunEvent[], from: RunLog = emptyLog()): RunLog {
   return events.reduce(reduce, from);
 }
 
-test("a run goes from starting to running to done, and keeps its steps in order", () => {
-  let log = starting();
-  expect(log.phase).toBe("starting");
+test("a run goes from idle to running to done, and keeps its steps in order", () => {
+  let log = emptyLog();
+  expect(log.phase).toBe("idle");
   log = reduce(log, init);
   expect(log).toMatchObject({ phase: "running", model: "claude-x", sessionId: "s1", toolCount: 40 });
   log = play(
@@ -70,54 +57,40 @@ test("a run goes from starting to running to done, and keeps its steps in order"
     "Next.",
   ]);
   expect(stepCounts(log)).toEqual({ total: 2, failed: 1 });
-  expect(outcome(log)).toBe("running");
+  expect(log.phase).toBe("running");
+  expect(log.exit).toBeNull();
   log = play([result(), { kind: "exited", code: 0, stopped: false }], log);
   expect(log.phase).toBe("done");
-  expect(outcome(log)).toBe("done");
+  expect(log.result).toMatchObject({ success: true, text: "Done." });
   expect(log.exit).toEqual({ code: 0, stopped: false });
 });
 
-test("a stop ends as stopped even though Claude Code still reports a result", () => {
+test("a stopped run keeps its result and marks the step it interrupted as failed", () => {
   let log = play([init, { kind: "tool_use", id: "t1", tool: "create_track", summary: "{}", nested: false }]);
-  log = stopping(log);
-  expect(log.phase).toBe("stopping");
-  // An init that arrives late must not undo the stop.
-  expect(reduce(log, init).phase).toBe("stopping");
   log = play([result({ success: false, subtype: "error_during_execution" }), { kind: "exited", code: 130, stopped: true }], log);
-  expect(outcome(log)).toBe("stopped");
+  expect(log.phase).toBe("done");
+  expect(log.exit).toEqual({ code: 130, stopped: true });
+  expect(log.result).toMatchObject({ success: false, subtype: "error_during_execution" });
   expect(log.entries[0]).toMatchObject({ type: "step", status: "failed" });
-  // Stopping a finished run changes nothing.
-  expect(stopping(log)).toBe(log);
 });
 
-test("a failed run says why, from the result, else the last line it printed", () => {
-  const notLoggedIn = play([result({ success: false, subtype: "success", text: "Not logged in · Please run /login" }), { kind: "exited", code: 1, stopped: false }]);
-  expect(outcome(notLoggedIn)).toBe("failed");
-  expect(failureReason(notLoggedIn)).toBe("Not logged in · Please run /login");
-
-  const crashed = play([{ kind: "stderr", line: "boom" }, { kind: "exited", code: 2, stopped: false }]);
-  expect(failureReason(crashed)).toBe("boom");
-
-  const silent = play([{ kind: "exited", code: 9, stopped: false }]);
-  expect(failureReason(silent)).toContain("code 9");
-
-  const refused = failedToStart("Claude Code is not installed");
-  expect(outcome(refused)).toBe("failed");
-  expect(failureReason(refused)).toBe("Claude Code is not installed");
+test("the last lines a failed run printed are kept, and a run without a result stays without one", () => {
+  const crashed = play([{ kind: "stderr", line: "boom" }, { kind: "output", line: "partial" }, { kind: "exited", code: 2, stopped: false }]);
+  expect(crashed).toMatchObject({ phase: "done", stderr: ["boom"], output: ["partial"], result: null, exit: { code: 2, stopped: false } });
 });
 
 test("a failed Sonara connection is detected from the init", () => {
-  const failed = reduce(starting(), {
+  const failed = reduce(emptyLog(), {
     ...init,
     mcp_servers: [{ name: "sonara", status: "failed" }],
-  } as ComposerEvent);
+  } as RunEvent);
   expect(sonaraMissing(failed)).toBe(true);
-  expect(sonaraMissing(reduce(starting(), init))).toBe(false);
+  expect(sonaraMissing(reduce(emptyLog(), init))).toBe(false);
   expect(sonaraMissing(emptyLog())).toBe(false);
 });
 
 test("a retry shows until the next sign of life", () => {
-  let log = reduce(starting(), { kind: "retry", attempt: 2, max_retries: 10, delay_ms: 2000, error: "rate_limit" });
+  let log = reduce(emptyLog(), { kind: "retry", attempt: 2, max_retries: 10, delay_ms: 2000, error: "rate_limit" });
   expect(log.retry).toContain("rate_limit");
   expect(log.retry).toContain("2 of 10");
   log = reduce(log, { kind: "text", text: "x" });
@@ -125,7 +98,7 @@ test("a retry shows until the next sign of life", () => {
 });
 
 test("the log is bounded", () => {
-  let log = starting();
+  let log = emptyLog();
   for (let i = 0; i < MAX_ENTRIES + 50; i++) {
     log = reduce(log, { kind: "tool_use", id: `t${i}`, tool: "x", summary: "", nested: false });
   }

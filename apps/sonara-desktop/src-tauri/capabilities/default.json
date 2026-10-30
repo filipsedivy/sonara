@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Permissions of the main window and the mixer's own window. Sonara's own commands need no entry; the pages get the core set only.",
-  "windows": ["main", "mixer"],
+  "description": "Permissions of the main window, the mixer's own window and the AI Chat's window. Sonara's own commands need no entry; the pages get the core set only.",
+  "windows": ["main", "mixer", "chat"],
   "permissions": ["core:default"]
 }

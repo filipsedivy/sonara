@@ -68,14 +68,17 @@ impl fmt::Display for Version {
     }
 }
 
-/// A usable Claude Code installation.
+/// A usable installation of an agent CLI.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct ClaudeCli {
+pub struct Located {
     /// The executable.
     pub path: PathBuf,
     /// Its version.
     pub version: Version,
 }
+
+/// A usable Claude Code installation.
+pub type ClaudeCli = Located;
 
 /// Why no Claude Code can be used.
 #[derive(Debug, thiserror::Error)]
@@ -110,6 +113,24 @@ pub enum LocateError {
 /// then the installer's usual places under `home` and the package managers' prefixes.
 #[must_use]
 pub fn candidates(home: Option<&Path>, path_var: Option<&OsStr>) -> Vec<PathBuf> {
+    candidates_named(
+        "claude",
+        &[".local/bin", ".claude/local", ".npm-global/bin"],
+        home,
+        path_var,
+    )
+}
+
+/// The places to look for the executable `binary`, in order and without repeats: the
+/// directories of `path_var`, then each of `home_dirs` (relative to `home`), then Homebrew's
+/// and `/usr/local`'s `bin`.
+#[must_use]
+pub fn candidates_named(
+    binary: &str,
+    home_dirs: &[&str],
+    home: Option<&Path>,
+    path_var: Option<&OsStr>,
+) -> Vec<PathBuf> {
     let mut found: Vec<PathBuf> = Vec::new();
     let mut add = |path: PathBuf| {
         if !found.contains(&path) {
@@ -118,16 +139,16 @@ pub fn candidates(home: Option<&Path>, path_var: Option<&OsStr>) -> Vec<PathBuf>
     };
     if let Some(path_var) = path_var {
         for directory in std::env::split_paths(path_var) {
-            add(directory.join("claude"));
+            add(directory.join(binary));
         }
     }
     if let Some(home) = home {
-        add(home.join(".local/bin/claude"));
-        add(home.join(".claude/local/claude"));
-        add(home.join(".npm-global/bin/claude"));
+        for directory in home_dirs {
+            add(home.join(directory).join(binary));
+        }
     }
-    add(PathBuf::from("/opt/homebrew/bin/claude"));
-    add(PathBuf::from("/usr/local/bin/claude"));
+    add(PathBuf::from("/opt/homebrew/bin").join(binary));
+    add(PathBuf::from("/usr/local/bin").join(binary));
     found
 }
 
@@ -143,6 +164,24 @@ pub fn locate_in(
     exists: impl Fn(&Path) -> bool,
     probe: impl Fn(&Path) -> io::Result<String>,
 ) -> Result<ClaudeCli, LocateError> {
+    locate_named_in(places, MIN_VERSION, exists, probe)
+}
+
+/// [`locate_in`] for any agent CLI: the first of `places` that exists and answers `probe` with
+/// a version of at least `min_version`.
+///
+/// The messages of the [`LocateError`]s name Claude Code; a caller for another provider
+/// matches the variant and words its own message.
+///
+/// # Errors
+///
+/// As [`locate_in`].
+pub fn locate_named_in(
+    places: &[PathBuf],
+    min_version: Version,
+    exists: impl Fn(&Path) -> bool,
+    probe: impl Fn(&Path) -> io::Result<String>,
+) -> Result<Located, LocateError> {
     let Some(path) = places.iter().find(|place| exists(place)) else {
         return Err(LocateError::NotFound {
             searched: places.to_vec(),
@@ -156,14 +195,14 @@ pub fn locate_in(
         path: path.clone(),
         reason: format!("`--version` printed {:?}", output.trim()),
     })?;
-    if version < MIN_VERSION {
+    if version < min_version {
         return Err(LocateError::TooOld {
             path: path.clone(),
             found: version,
-            required: MIN_VERSION,
+            required: min_version,
         });
     }
-    Ok(ClaudeCli {
+    Ok(Located {
         path: path.clone(),
         version,
     })
@@ -180,24 +219,31 @@ pub fn locate() -> Result<ClaudeCli, LocateError> {
     let path_var = std::env::var_os("PATH");
     let places = candidates(home.as_deref(), path_var.as_deref());
     locate_in(&places, Path::is_file, |path| {
-        let output = Command::new(path)
-            .arg("--version")
-            .env(
-                "PATH",
-                super::invocation::search_path(path, path_var.as_deref()),
-            )
-            .stdin(Stdio::null())
-            .stderr(Stdio::null())
-            .output()?;
-        if output.status.success() {
-            Ok(String::from_utf8_lossy(&output.stdout).into_owned())
-        } else {
-            Err(io::Error::other(format!(
-                "`--version` exited with {}",
-                output.status
-            )))
-        }
+        probe_version(path, path_var.as_deref())
     })
+}
+
+/// The output of `<program> --version`, run with the `PATH` of a composer run (the directory of
+/// `program` first, then `path_var`, then the usual prefixes).
+///
+/// # Errors
+///
+/// The I/O error of starting the program, or one that says the exit status was not success.
+pub fn probe_version(program: &Path, path_var: Option<&OsStr>) -> io::Result<String> {
+    let output = Command::new(program)
+        .arg("--version")
+        .env("PATH", super::invocation::search_path(program, path_var))
+        .stdin(Stdio::null())
+        .stderr(Stdio::null())
+        .output()?;
+    if output.status.success() {
+        Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+    } else {
+        Err(io::Error::other(format!(
+            "`--version` exited with {}",
+            output.status
+        )))
+    }
 }
 
 #[cfg(test)]
@@ -292,5 +338,85 @@ mod tests {
             locate_in(&places, |_| true, |_| Err(io::Error::other("boom"))),
             Err(LocateError::Unusable { .. })
         ));
+    }
+}
+
+#[cfg(test)]
+mod named_tests {
+    use super::*;
+
+    #[test]
+    fn candidates_are_candidates_named_claude() {
+        let home = Some(Path::new("/Users/a"));
+        let path_var = Some(OsStr::new("/usr/bin:/opt/homebrew/bin"));
+        assert_eq!(
+            candidates(home, path_var),
+            candidates_named(
+                "claude",
+                &[".local/bin", ".claude/local", ".npm-global/bin"],
+                home,
+                path_var
+            )
+        );
+        // The order the Claude search always had.
+        assert_eq!(
+            candidates(home, None),
+            [
+                "/Users/a/.local/bin/claude",
+                "/Users/a/.claude/local/claude",
+                "/Users/a/.npm-global/bin/claude",
+                "/opt/homebrew/bin/claude",
+                "/usr/local/bin/claude",
+            ]
+            .map(PathBuf::from)
+        );
+    }
+
+    #[test]
+    fn another_binary_is_searched_by_its_own_name_without_repeats() {
+        let places = candidates_named(
+            "codex",
+            &[".local/bin"],
+            Some(Path::new("/Users/a")),
+            Some(OsStr::new("/opt/homebrew/bin:/x/bin")),
+        );
+        assert_eq!(
+            places,
+            [
+                "/opt/homebrew/bin/codex",
+                "/x/bin/codex",
+                "/Users/a/.local/bin/codex",
+                "/usr/local/bin/codex",
+            ]
+            .map(PathBuf::from)
+        );
+    }
+
+    #[test]
+    fn a_named_search_uses_its_own_minimum_version() {
+        let places = vec![PathBuf::from("/x/codex")];
+        let min = Version::parse("0.100.0").unwrap();
+        let ok = |_: &Path| Ok("0.166.0\n".to_owned());
+        let found = locate_named_in(&places, min, |_| true, ok).unwrap();
+        assert_eq!(found.version.to_string(), "0.166.0");
+        let old = |_: &Path| Ok("0.99.9".to_owned());
+        let Err(LocateError::TooOld {
+            found, required, ..
+        }) = locate_named_in(&places, min, |_| true, old)
+        else {
+            panic!("expected TooOld");
+        };
+        assert_eq!((found.to_string(), required), ("0.99.9".to_owned(), min));
+        assert!(matches!(
+            locate_named_in(&places, min, |_| false, ok),
+            Err(LocateError::NotFound { .. })
+        ));
+    }
+
+    #[test]
+    fn the_real_probe_reports_a_failing_program() {
+        let error = probe_version(Path::new("/usr/bin/false"), None).unwrap_err();
+        assert!(error.to_string().contains("--version"), "{error}");
+        assert!(probe_version(Path::new("/nonexistent/claude"), None).is_err());
     }
 }

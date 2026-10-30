@@ -8,6 +8,38 @@ break the API. The project format is versioned independently, see
 
 ## [Unreleased]
 
+### Added
+
+- **AI Chat (Beta, menu AI → AI Chat (Beta)…):** a chat window in which you talk to an agent that
+  works in the open project. Each message is a task in a queue; tasks run one after the other, a
+  queued task can be edited, removed or reordered, and a failed or stopped task pauses the queue
+  until you press Run queue. The window carries a Beta badge. Two providers: Claude Code (the
+  default, with the command line of the former AI Composer plus a session that is not kept) and
+  Codex CLI (Beta, `codex exec` with only the Sonara tools, read-only and without a kept
+  session; a local probe with a live server verified that the tool lists also filter the Sonara
+  tools offered inside Codex's code-mode `exec`). The window shows, before the first message, whether each is installed, recent
+  enough and signed in. Each task is given the earlier finished tasks as bounded context. The
+  history lives in memory only: it is wiped when the chat window closes, when a project is
+  opened, created, restored or closed, and by Clear history, and it never reaches a `.sonara`
+  project or an export (`crates/sonara-app/tests/chat_save.rs`). `CONFIRMATION_REQUIRED` stays a
+  rule of the system prompt on both providers, not a hard block. No live Codex turn has been
+  recorded yet. No tool, schema, project format or CLI contract changes. See
+  [docs/ai-chat.md](docs/ai-chat.md) and
+  [ADR 0011](docs/decisions/0011-ai-chat-provider-bridge.md). The window keeps Enter that commits
+  an input-method composition from sending a message, announces the outcome of each task to
+  screen readers, and quitting Sonara now ends a running agent before the process exits. A Codex
+  chat run still receives the global instructions of the user's Codex configuration
+  (`AGENTS.md`); its user skills are left out. A whole task is one undo step: Edit → "Undo AI
+  Chat" reverts everything the task did, and Redo brings it back. An edit you make yourself while
+  the task runs stays a separate step.
+
+### Changed
+
+- **The AI Composer panel is replaced by the AI Chat.** The menu entry AI → AI Composer… and the
+  panel are gone. The Claude Code command line of a run (tool boundaries, isolation, the pinned
+  session) is unchanged and is the Claude Code provider of the chat; chat turns add
+  `--no-session-persistence` and a chat addition to the system prompt.
+
 ## [0.1.12] — 2026-10-30
 
 ### Changed

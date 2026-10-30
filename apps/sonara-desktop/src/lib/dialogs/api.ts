@@ -7,7 +7,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 /** A dialog the menu asks the page to open (`dialog-command`). */
-export type DialogName = "new-project" | "settings" | "export-audio" | "agent-connection" | "ai-composer" | "about" | "import-audio";
+export type DialogName = "new-project" | "settings" | "export-audio" | "agent-connection" | "about" | "import-audio";
 
 /** One entry of a combo: its text and the value it sends. */
 export interface Choice<T> {

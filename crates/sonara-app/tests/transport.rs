@@ -529,17 +529,21 @@ fn midi_take_keeps_controllers() {
     let Clip::Midi(clip) = clip else {
         panic!("a MIDI clip");
     };
-    let controls: Vec<(ControlKind, i64, i64, i64)> = clip
+    // Compared as a set (TST-04): the clip orders controllers by beat and then by kind, and two
+    // messages drained in the same period share a beat, so the send order is not the stored
+    // order. The beat order is checked below.
+    let mut controls: Vec<(ControlKind, i64, i64, i64)> = clip
         .controls
         .iter()
         .map(|c| (c.kind, c.value, c.number, c.channel))
         .collect();
+    controls.sort();
     assert_eq!(
         controls,
         [
             (ControlKind::Cc, 99, 1, 1),
-            (ControlKind::PitchBend, 4096, 0, 0),
             (ControlKind::ChannelPressure, 42, 0, 2),
+            (ControlKind::PitchBend, 4096, 0, 0),
         ]
     );
     let note_on = clip.notes[0].start;
@@ -552,7 +556,7 @@ fn midi_take_keeps_controllers() {
             .all(|c| c.beat >= note_on && c.beat < clip.length)
     );
     // Non-decreasing, not strictly increasing (TST-04), for the same reason: two messages
-    // drained before the next period share a frame. Their order is checked above.
+    // drained before the next period share a frame. Only the beat order is pinned.
     assert!(clip.controls.windows(2).all(|w| w[0].beat <= w[1].beat));
     // One undo step removes the clip with its controllers.
     let clip_id = clip.id.clone();

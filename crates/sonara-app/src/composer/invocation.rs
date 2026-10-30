@@ -68,6 +68,9 @@ pub const DENIED_TOOLS: [&str; 18] = [
 
 static NEXT_WORKSPACE: AtomicU32 = AtomicU32::new(0);
 
+/// How many names [`Workspace::create`] tries before it gives up on a crowded temporary folder.
+const NAME_ATTEMPTS: u32 = 16;
+
 /// A private folder for one run, removed when it drops: an empty working directory, and a
 /// `SONARA_HOME` whose `run/` holds a copy of one window's discovery file.
 #[derive(Debug)]
@@ -79,10 +82,16 @@ impl Workspace {
     /// Creates the folder (mode `0700`) with a copy of `discovery_file`, which is the
     /// `session-<pid>.json` of the window the run must edit.
     ///
+    /// The root is created, never reused: a folder that already exists at the chosen name (left
+    /// by a crashed run with the same process id, or planted by another user under a shared
+    /// temporary directory) is not entered, and the next name is tried instead. The folders
+    /// inside it are made new inside it.
+    ///
     /// # Errors
     ///
     /// The I/O error of creating the folders or copying the file, and `InvalidInput` when the
-    /// file's name is not that of a discovery file (clients find sessions by it).
+    /// file's name is not that of a discovery file (clients find sessions by it). When every
+    /// name that was tried exists already, [`io::ErrorKind::AlreadyExists`].
     pub fn create(discovery_file: &Path) -> io::Result<Self> {
         let name = discovery_file
             .file_name()
@@ -96,13 +105,29 @@ impl Workspace {
                     format!("{} is not a discovery file", discovery_file.display()),
                 )
             })?;
-        let serial = NEXT_WORKSPACE.fetch_add(1, Ordering::Relaxed);
-        let root =
-            std::env::temp_dir().join(format!("sonara-composer-{}-{serial}", std::process::id()));
+        let base = std::env::temp_dir();
+        let mut taken = None;
+        for _ in 0..NAME_ATTEMPTS {
+            let serial = NEXT_WORKSPACE.fetch_add(1, Ordering::Relaxed);
+            let root = base.join(format!("sonara-composer-{}-{serial}", std::process::id()));
+            match Self::create_at(root, discovery_file, name) {
+                Err(error) if error.kind() == io::ErrorKind::AlreadyExists => taken = Some(error),
+                result => return result,
+            }
+        }
+        Err(taken.unwrap_or_else(|| io::Error::from(io::ErrorKind::AlreadyExists)))
+    }
+
+    /// [`Workspace::create`] at exactly `root`, which must not exist.
+    fn create_at(root: PathBuf, discovery_file: &Path, name: &OsStr) -> io::Result<Self> {
+        // Not recursive: an existing path (a directory, or a symlink to one) is an error, and
+        // the workspace is not built before this succeeds, so its `Drop` can never remove
+        // what this call did not create.
+        private_dir(&root)?;
         let workspace = Self { root };
         // From here on a failure drops `workspace`, which removes what was created.
-        private_dir(&workspace.root)?;
         private_dir(&workspace.cwd())?;
+        private_dir(&workspace.home())?;
         private_dir(&workspace.home().join("run"))?;
         fs::copy(discovery_file, workspace.home().join("run").join(name))?;
         Ok(workspace)
@@ -131,9 +156,10 @@ impl Drop for Workspace {
     }
 }
 
+/// Creates the one directory `path` (mode `0700`), whose parent exists; an error if `path`
+/// exists.
 fn private_dir(path: &Path) -> io::Result<()> {
     let mut builder = DirBuilder::new();
-    builder.recursive(true);
     #[cfg(unix)]
     std::os::unix::fs::DirBuilderExt::mode(&mut builder, 0o700);
     builder.create(path)
@@ -225,12 +251,51 @@ pub fn mcp_config(sonara_cli: &Path, workspace: &Workspace) -> String {
     .to_string()
 }
 
+/// What a caller may change in the command line of a run of Claude Code. The default is the
+/// composer panel's run.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BuildOptions<'a> {
+    /// Whether Claude Code keeps the session on disk (`false` adds `--no-session-persistence`).
+    pub persist_session: bool,
+    /// Text appended to [`SYSTEM_PROMPT`] in the same `--append-system-prompt` value.
+    pub system_prompt_addendum: Option<&'a str>,
+}
+
+impl Default for BuildOptions<'_> {
+    fn default() -> Self {
+        Self {
+            persist_session: true,
+            system_prompt_addendum: None,
+        }
+    }
+}
+
 /// The command line of a run of `claude` that composes from `prompt` in `workspace`.
 ///
 /// `prompt` goes through stdin, so that a prompt which begins with `-` is not read as a flag.
+/// Same as [`build_with`] with the default [`BuildOptions`].
 #[must_use]
 pub fn build(claude: &Path, sonara_cli: &Path, workspace: &Workspace, prompt: &str) -> Invocation {
-    let args = [
+    build_with(
+        claude,
+        sonara_cli,
+        workspace,
+        prompt,
+        &BuildOptions::default(),
+    )
+}
+
+/// [`build`] with `options`: the tool boundaries, the isolation and the pinned session are the
+/// same whatever the options say.
+#[must_use]
+pub fn build_with(
+    claude: &Path,
+    sonara_cli: &Path,
+    workspace: &Workspace,
+    prompt: &str,
+    options: &BuildOptions<'_>,
+) -> Invocation {
+    let mut args = vec![
         "-p".to_owned(),
         "--output-format".to_owned(),
         "stream-json".to_owned(),
@@ -249,9 +314,16 @@ pub fn build(claude: &Path, sonara_cli: &Path, workspace: &Workspace, prompt: &s
         DENIED_TOOLS.join(","),
         "--max-turns".to_owned(),
         MAX_TURNS.to_string(),
-        "--append-system-prompt".to_owned(),
-        SYSTEM_PROMPT.to_owned(),
     ];
+    if !options.persist_session {
+        args.push("--no-session-persistence".to_owned());
+    }
+    // One flag only: a second `--append-system-prompt` would replace the first.
+    args.push("--append-system-prompt".to_owned());
+    args.push(match options.system_prompt_addendum {
+        Some(addendum) => format!("{SYSTEM_PROMPT}\n{addendum}"),
+        None => SYSTEM_PROMPT.to_owned(),
+    });
     Invocation {
         program: claude.to_path_buf(),
         args: args.into_iter().map(OsString::from).collect(),
@@ -266,6 +338,8 @@ pub fn build(claude: &Path, sonara_cli: &Path, workspace: &Workspace, prompt: &s
 
 #[cfg(test)]
 mod tests {
+    use std::os::unix::fs::PermissionsExt;
+
     use super::*;
 
     fn discovery(directory: &Path) -> PathBuf {
@@ -308,11 +382,56 @@ mod tests {
 
     #[test]
     fn the_workspace_is_private_to_the_user() {
-        use std::os::unix::fs::PermissionsExt;
         let source = tempfile::tempdir().unwrap();
         let workspace = Workspace::create(&discovery(source.path())).unwrap();
-        for directory in [workspace.cwd(), workspace.home().join("run")] {
+        let root = workspace.cwd().parent().unwrap().to_path_buf();
+        for directory in [root, workspace.cwd(), workspace.home().join("run")] {
             let mode = fs::metadata(&directory).unwrap().permissions().mode();
+            assert_eq!(mode & 0o077, 0, "{}", directory.display());
+        }
+    }
+
+    #[test]
+    fn an_existing_folder_is_never_reused_and_never_removed() {
+        let source = tempfile::tempdir().unwrap();
+        let file = discovery(source.path());
+        let name = file.file_name().unwrap();
+        let scratch = tempfile::tempdir().unwrap();
+        // Another user's folder at the predictable name, with a file of theirs inside.
+        let planted = scratch.path().join("sonara-composer-1-0");
+        fs::create_dir(&planted).unwrap();
+        fs::write(planted.join("theirs"), "keep").unwrap();
+        let error = Workspace::create_at(planted.clone(), &file, name).unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::AlreadyExists, "{error}");
+        assert_eq!(
+            fs::read_to_string(planted.join("theirs")).unwrap(),
+            "keep",
+            "what was there stays, as the failed workspace removes only what it made"
+        );
+        assert!(
+            !planted.join("home").exists() && !planted.join("cwd").exists(),
+            "nothing was made inside it"
+        );
+
+        // A symlink to a directory is no better: it is not followed.
+        let target = scratch.path().join("target");
+        fs::create_dir(&target).unwrap();
+        let link = scratch.path().join("sonara-composer-1-1");
+        std::os::unix::fs::symlink(&target, &link).unwrap();
+        let error = Workspace::create_at(link.clone(), &file, name).unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::AlreadyExists, "{error}");
+        assert_eq!(
+            fs::read_dir(&target).unwrap().count(),
+            0,
+            "nothing went through it"
+        );
+        assert!(link.is_symlink(), "and the link is left alone");
+
+        // A fresh name works, and is private all the way down, the root included.
+        let fresh = scratch.path().join("sonara-composer-1-2");
+        let workspace = Workspace::create_at(fresh.clone(), &file, name).unwrap();
+        for directory in [&fresh, &workspace.cwd(), &workspace.home()] {
+            let mode = fs::metadata(directory).unwrap().permissions().mode();
             assert_eq!(mode & 0o077, 0, "{}", directory.display());
         }
     }
@@ -467,5 +586,150 @@ mod tests {
         ] {
             assert!(SYSTEM_PROMPT.contains(needle), "{needle}");
         }
+    }
+}
+
+#[cfg(test)]
+mod build_options_tests {
+    use super::*;
+
+    fn workspace() -> (tempfile::TempDir, Workspace) {
+        let source = tempfile::tempdir().unwrap();
+        let file = source.path().join("session-4242.json");
+        fs::write(&file, "{}").unwrap();
+        let workspace = Workspace::create(&file).unwrap();
+        (source, workspace)
+    }
+
+    fn strings(invocation: &Invocation) -> Vec<&str> {
+        invocation
+            .args
+            .iter()
+            .map(|arg| arg.to_str().unwrap())
+            .collect()
+    }
+
+    #[test]
+    fn the_composer_command_line_is_exactly_what_it_was() {
+        let (_source, workspace) = workspace();
+        let run = build(
+            Path::new("/bin/claude"),
+            Path::new("/App/sonara"),
+            &workspace,
+            "p",
+        );
+        let config = mcp_config(Path::new("/App/sonara"), &workspace);
+        let allowed = ALLOWED_TOOLS.join(",");
+        let denied = DENIED_TOOLS.join(",");
+        let expected = [
+            "-p",
+            "--output-format",
+            "stream-json",
+            "--verbose",
+            "--include-partial-messages",
+            "--strict-mcp-config",
+            "--mcp-config",
+            &config,
+            "--permission-mode",
+            "dontAsk",
+            "--permission-prompts",
+            "none",
+            "--allowedTools",
+            &allowed,
+            "--disallowedTools",
+            &denied,
+            "--max-turns",
+            "200",
+            "--append-system-prompt",
+            SYSTEM_PROMPT,
+        ];
+        assert_eq!(strings(&run), expected);
+    }
+
+    #[test]
+    fn the_default_options_change_nothing() {
+        let (_source, workspace) = workspace();
+        let plain = build(
+            Path::new("/bin/claude"),
+            Path::new("/App/sonara"),
+            &workspace,
+            "p",
+        );
+        let with = build_with(
+            Path::new("/bin/claude"),
+            Path::new("/App/sonara"),
+            &workspace,
+            "p",
+            &BuildOptions::default(),
+        );
+        assert_eq!(plain, with);
+        assert!(BuildOptions::default().persist_session);
+    }
+
+    #[test]
+    fn an_unpersisted_session_adds_one_flag_and_nothing_else() {
+        let (_source, workspace) = workspace();
+        let plain = build(
+            Path::new("/bin/claude"),
+            Path::new("/App/sonara"),
+            &workspace,
+            "p",
+        );
+        let chat = build_with(
+            Path::new("/bin/claude"),
+            Path::new("/App/sonara"),
+            &workspace,
+            "p",
+            &BuildOptions {
+                persist_session: false,
+                system_prompt_addendum: None,
+            },
+        );
+        let mut without = strings(&chat);
+        let position = without
+            .iter()
+            .position(|arg| *arg == "--no-session-persistence")
+            .expect("the flag is there");
+        without.remove(position);
+        assert_eq!(without, strings(&plain));
+    }
+
+    #[test]
+    fn the_addendum_extends_the_one_system_prompt_flag() {
+        let (_source, workspace) = workspace();
+        let run = build_with(
+            Path::new("/bin/claude"),
+            Path::new("/App/sonara"),
+            &workspace,
+            "-- keep this off the command line",
+            &BuildOptions {
+                persist_session: false,
+                system_prompt_addendum: Some("# Addendum marker"),
+            },
+        );
+        let args = strings(&run);
+        assert_eq!(
+            args.iter()
+                .filter(|arg| **arg == "--append-system-prompt")
+                .count(),
+            1,
+            "a second flag would replace the first"
+        );
+        let position = args
+            .iter()
+            .position(|arg| *arg == "--append-system-prompt")
+            .unwrap();
+        let prompt = args[position + 1];
+        assert!(prompt.starts_with(SYSTEM_PROMPT));
+        assert!(prompt.ends_with("# Addendum marker"));
+        assert!(prompt.contains("composer inside Sonara"));
+        assert!(!args.iter().any(|arg| arg.contains("keep this off")));
+        assert_eq!(run.stdin, "-- keep this off the command line");
+        assert!(!args.contains(&"--bare"));
+        // The deny list and the isolation are intact.
+        let denied = args[args.iter().position(|a| *a == "--disallowedTools").unwrap() + 1];
+        assert_eq!(denied, DENIED_TOOLS.join(","));
+        assert!(args.contains(&"--strict-mcp-config"));
+        assert!(args.contains(&"dontAsk"));
     }
 }

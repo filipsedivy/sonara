@@ -19,7 +19,7 @@
 //!    when the backend plays and input ports exist.
 //!
 //! The File menu's flows ([`lifecycle`]) and quitting ([`quit`]) ask about unsaved changes first.
-//! The AI composer, a headless Claude Code that edits the project, is [`composer`]. The browser, the
+//! The AI Chat, a queue of tasks that an agent CLI carries out in the project, is [`chat`]. The browser, the
 //! inspector and the dialogs are [`dialogs`]; every native prompt and
 //! panel goes through [`prompt`]. The menu bar is [`menu`], built from `sonara-app`'s
 //! model of it.
@@ -27,9 +27,9 @@
 
 #[cfg(feature = "bench")]
 mod bench;
+mod chat;
 mod chrome;
 mod commands;
-mod composer;
 mod dialogs;
 mod lifecycle;
 mod live;
@@ -91,7 +91,6 @@ fn main() -> ExitCode {
     let built = builder
         .plugin(tauri_plugin_dialog::init())
         .manage(shell)
-        .manage(composer::Composer::default())
         .register_asynchronous_uri_scheme_protocol("peaks", live::peaks_protocol)
         .invoke_handler(invoke_handler())
         .menu(menu::build)
@@ -108,6 +107,10 @@ fn main() -> ExitCode {
             // The mixer goes back into the main window's tab.
             WindowEvent::Destroyed if window.label() == window::MIXER => {
                 window::report_mixer(window.app_handle(), false);
+            }
+            // The history belongs to the chat window: closing it stops the run and wipes it.
+            WindowEvent::Destroyed if window.label() == window::CHAT => {
+                chat::window_closed(window.app_handle());
             }
             _ => {}
         })
@@ -127,7 +130,7 @@ fn main() -> ExitCode {
         if let RunEvent::Exit = event {
             // Quitting without the prompt (the Dock's Quit, logging out): the autosave stays
             // for recovery.
-            handle.state::<composer::Composer>().stop();
+            chat::shutdown(handle);
             let shell = handle.state::<Shell>();
             if !shell.is_stopped() {
                 window::save_layout(handle);
@@ -179,9 +182,16 @@ fn invoke_handler() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + 
         dialogs::export_browse,
         dialogs::export_audio,
         dialogs::agent_connection,
-        composer::composer_check,
-        composer::composer_start,
-        composer::composer_stop,
+        chat::chat_snapshot,
+        chat::chat_providers,
+        chat::chat_set_provider,
+        chat::chat_enqueue,
+        chat::chat_edit,
+        chat::chat_remove,
+        chat::chat_move,
+        chat::chat_stop,
+        chat::chat_resume,
+        chat::chat_clear,
         dialogs::about_info,
         dialogs::open_link,
         dialogs::browser_devices,
@@ -231,6 +241,9 @@ fn start_window(
     app: &AppHandle,
     autosave_of: Option<PathBuf>,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    // Before the pump: a project that loads must find the chat to wipe, and the window's first
+    // snapshot must find its state.
+    chat::install(app);
     let shell = app.state::<Shell>();
     let sink = app.clone();
     shell.start_pump(move |notice| commands::forward(&sink, notice))?;
