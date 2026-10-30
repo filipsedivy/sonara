@@ -1,11 +1,12 @@
 //! Contract tests of the orchestration metadata through its public API (SON-P06).
 
 use sonara_midi::orchestration::{
-    Articulation, ArticulationAvailability, Axis, CheckError, Clef, EnsembleProfile, Era,
-    EraPlayers, Family, Forms, INSTRUMENTS, Instrument, InstrumentError, InstrumentSpec,
-    InstrumentType, Kind, Mute, PitchModel, PitchRange, Pitched, PlayerRange, Provenance,
-    RangeCheck, Request, RequestAvailability, RequestError, SoundingPitch, SourcedRange,
-    Transposition, Vibrato, WrittenPitch, instrument, instruments,
+    Alias, Articulation, ArticulationAvailability, Axis, CategoryId, CheckError, Clef,
+    EnsembleProfile, Era, EraPlayers, Family, Forms, INSTRUMENTS, Instrument, InstrumentError,
+    InstrumentSpec, InstrumentType, Kind, Lang, Mute, Names, Number, PitchModel, PitchRange,
+    Pitched, PlayerRange, Provenance, RangeCheck, Request, RequestAvailability, RequestError,
+    Selection, SoundingPitch, SourcedRange, Target, Transposition, Vibrato, WrittenPitch,
+    all_aliases, category, instrument, instruments,
 };
 
 const ESTIMATE: Provenance = Provenance::Estimate {
@@ -46,9 +47,19 @@ fn fixture(
     )
 }
 
+/// Display names that pass the checks.
+const NAMES: Names = Names {
+    en: "Fixture",
+    cs: "Fixture",
+    de: "Fixture",
+    fr: "Fixture",
+    it: "Fixture",
+    abbreviation: "Fx.",
+};
+
 /// A valid unpitched spec: the base of the fixtures that break one field each.
 const VALID: InstrumentSpec = InstrumentSpec {
-    name: "Fixture",
+    names: NAMES,
     articulations_provenance: ESTIMATE,
     ..InstrumentSpec::EMPTY
 };
@@ -154,7 +165,10 @@ fn dataset_invariants_hold() {
         let rebuilt = Instrument::try_new(instrument.instrument_type(), spec);
         assert_eq!(rebuilt, Ok(*instrument), "{}", instrument.id());
         // The accessors read the spec the record was built from.
-        assert_eq!(spec.name, instrument.name());
+        assert_eq!(spec.names.en, instrument.name());
+        assert_eq!(&spec.names, instrument.names());
+        assert_eq!(spec.aliases, instrument.aliases());
+        assert_eq!(spec.category, instrument.category());
         assert_eq!(&spec.pitch, instrument.pitch());
         assert_eq!(spec.articulations, instrument.articulations());
         assert_eq!(
@@ -528,7 +542,12 @@ fn validator_rejects_broken_metadata() {
 #[test]
 fn empty_spec_needs_a_name_and_an_articulation_provenance() {
     let empty = InstrumentSpec::EMPTY;
-    assert_eq!(empty.name, "");
+    for lang in Lang::ALL {
+        assert_eq!(empty.names.get(lang), "");
+    }
+    assert_eq!(empty.names.abbreviation, "");
+    assert_eq!(empty.aliases, []);
+    assert_eq!(empty.category, None);
     assert_eq!(empty.pitch, PitchModel::Unpitched);
     assert_eq!(empty.articulations, []);
     assert_eq!(empty.clefs, []);
@@ -538,7 +557,14 @@ fn empty_spec_needs_a_name_and_an_articulation_provenance() {
         Err(InstrumentError::EmptyName)
     );
     let named = InstrumentSpec {
-        name: "Triangle",
+        names: Names {
+            en: "Triangle",
+            cs: "triangl",
+            de: "Triangel",
+            fr: "triangle",
+            it: "triangolo",
+            abbreviation: "Trgl.",
+        },
         ..InstrumentSpec::EMPTY
     };
     assert_eq!(
@@ -556,15 +582,29 @@ fn empty_spec_needs_a_name_and_an_articulation_provenance() {
     assert_eq!(triangle.written_playable(), None);
 }
 
+/// Each of the five names and the abbreviation must be stated (TST-03).
 #[test]
 fn blank_names_are_rejected() {
-    for name in ["", " ", "\t\n"] {
-        assert_eq!(
-            Instrument::try_new(InstrumentType::Triangle, InstrumentSpec { name, ..VALID }),
-            Err(InstrumentError::EmptyName),
-            "{name:?}"
-        );
+    let blank_one: [fn(&mut Names, &'static str); 6] = [
+        |names, text| names.en = text,
+        |names, text| names.cs = text,
+        |names, text| names.de = text,
+        |names, text| names.fr = text,
+        |names, text| names.it = text,
+        |names, text| names.abbreviation = text,
+    ];
+    for (field, blank) in blank_one.iter().enumerate() {
+        for text in ["", " ", "\t\n"] {
+            let mut names = NAMES;
+            blank(&mut names, text);
+            assert_eq!(
+                Instrument::try_new(InstrumentType::Triangle, InstrumentSpec { names, ..VALID }),
+                Err(InstrumentError::EmptyName),
+                "field {field}, {text:?}"
+            );
+        }
     }
+    assert!(Instrument::try_new(InstrumentType::Triangle, VALID).is_ok());
 }
 
 /// The dataset check traces a cited source only by a URL or a page, and an estimate only by its
@@ -2063,7 +2103,14 @@ fn display_names_drop_their_parenthetical_alternates() {
         assert_eq!(get(id).name(), name, "{id}");
     }
     for record in instruments() {
-        assert!(!record.name().contains(['(', ')']), "{}", record.id());
+        for lang in Lang::ALL {
+            let name = record.names().get(lang);
+            assert!(
+                !name.contains(['(', ')']),
+                "{} {lang:?}: {name}",
+                record.id()
+            );
+        }
     }
 }
 
@@ -2456,4 +2503,750 @@ fn ensemble_profiles_record_forms_and_players() {
             .map(|profile| profile.romantic.note),
         Some("6-8 in large scores; Wagner's Ring 8")
     );
+}
+
+/// An alias with `text` in English, singular.
+const fn en(text: &'static str) -> Alias {
+    Alias {
+        text,
+        lang: Lang::En,
+        number: Number::Singular,
+    }
+}
+
+/// The same text twice in one language, with different numbers.
+const TWICE: &[Alias] = &[
+    en("viola"),
+    en("violas"),
+    Alias {
+        number: Number::Plural,
+        ..en("viola")
+    },
+];
+
+/// The same text in two languages.
+const TWO_LANGUAGES: &[Alias] = &[
+    en("viola"),
+    Alias {
+        lang: Lang::Cs,
+        ..en("viola")
+    },
+];
+
+/// A duplicate followed by an unfolded text.
+const TWICE_THEN_UNFOLDED: &[Alias] = &[en("viola"), en("viola"), en("Viola")];
+
+/// A valid record with `aliases`.
+fn with_aliases(aliases: &'static [Alias]) -> Result<Instrument, InstrumentError> {
+    Instrument::try_new(
+        InstrumentType::Triangle,
+        InstrumentSpec { aliases, ..VALID },
+    )
+}
+
+/// An alias is stored folded, has three letters or more and appears once per language in a record;
+/// each rejected text is reported (TST-03).
+#[test]
+fn aliases_must_be_folded_long_enough_and_listed_once() {
+    for text in [
+        "Housle",
+        "lesní rohy",
+        " housle",
+        "housle ",
+        "lesni  rohy",
+        "clarinet-in-bb",
+        "oboe d'amore",
+        "",
+        " ",
+    ] {
+        let aliases: &'static [Alias] = Box::leak(Box::new([en(text)]));
+        assert_eq!(
+            with_aliases(aliases),
+            Err(InstrumentError::AliasNotFolded(text)),
+            "{text:?}"
+        );
+    }
+    for text in ["hn", "vc", "b3", "a 1", "s d"] {
+        let aliases: &'static [Alias] = Box::leak(Box::new([en(text)]));
+        assert_eq!(
+            with_aliases(aliases),
+            Err(InstrumentError::AliasTooShort(text)),
+            "{text:?}"
+        );
+    }
+    // Three letters are enough, with digits and spaces between them or not.
+    for text in ["cor", "t bl", "b fl", "b3 bb"] {
+        let aliases: &'static [Alias] = Box::leak(Box::new([en(text)]));
+        assert!(with_aliases(aliases).is_ok(), "{text:?}");
+    }
+    // The same text twice in one language is a duplicate, whatever its number; in two languages
+    // it is not.
+    assert_eq!(
+        with_aliases(TWICE),
+        Err(InstrumentError::DuplicateAlias("viola"))
+    );
+    assert!(with_aliases(TWO_LANGUAGES).is_ok());
+    // Every alias is checked for its form before any duplicate is reported.
+    assert_eq!(
+        with_aliases(TWICE_THEN_UNFOLDED),
+        Err(InstrumentError::AliasNotFolded("Viola"))
+    );
+}
+
+/// Every alias of the dataset (records, categories and families) holds only `a-z`, `0-9` and
+/// single inner spaces, has three letters or more, and appears once per language and target
+/// (TST-07; checked here character by character, apart from the compile-time check).
+#[test]
+fn every_stored_alias_is_folded() {
+    let mut seen = std::collections::HashSet::new();
+    let mut count = 0;
+    for (target, alias) in all_aliases() {
+        let text = alias.text;
+        assert!(
+            text.chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == ' '),
+            "{target:?}: {text:?}"
+        );
+        assert_eq!(text.trim(), text, "{target:?}: {text:?}");
+        assert!(!text.contains("  "), "{target:?}: {text:?}");
+        assert!(
+            text.chars().filter(char::is_ascii_lowercase).count() >= 3,
+            "{target:?}: {text:?}"
+        );
+        assert!(
+            seen.insert((target, alias.lang, text)),
+            "{target:?}: {text:?} twice"
+        );
+        count += 1;
+    }
+    let records: usize = instruments().iter().map(|r| r.aliases().len()).sum();
+    let categories: usize = CategoryId::ALL
+        .iter()
+        .map(|id| id.get().aliases().len())
+        .sum();
+    let families: usize = [
+        Family::Strings,
+        Family::Woodwinds,
+        Family::Brass,
+        Family::Percussion,
+        Family::Keyboards,
+        Family::Plucked,
+        Family::Choir,
+        Family::Other,
+    ]
+    .iter()
+    .map(|family| family.aliases().len())
+    .sum();
+    assert_eq!(count, records + categories + families);
+}
+
+/// The table lists the aliases first by instrument in score order, then by category and last by
+/// family, so a lookup can return its targets in a stable order (TST-04).
+#[test]
+fn all_aliases_come_in_data_order() {
+    let targets: Vec<Target> = all_aliases().map(|(target, _)| target).collect();
+    let mut blocks: Vec<Target> = targets.clone();
+    blocks.dedup();
+    let mut expected: Vec<Target> = InstrumentType::ALL
+        .into_iter()
+        .map(Target::Instrument)
+        .collect();
+    expected.extend(CategoryId::ALL.map(Target::Category));
+    expected.extend(
+        [
+            Family::Strings,
+            Family::Woodwinds,
+            Family::Brass,
+            Family::Percussion,
+            Family::Keyboards,
+            Family::Plucked,
+            Family::Choir,
+        ]
+        .map(Target::Family),
+    );
+    assert_eq!(blocks, expected);
+    assert_eq!(
+        all_aliases().next(),
+        Some((
+            Target::Instrument(InstrumentType::Piccolo),
+            &Alias {
+                text: "piccolo",
+                lang: Lang::En,
+                number: Number::Singular,
+            }
+        ))
+    );
+    assert_eq!(Family::Other.aliases(), []);
+}
+
+/// Every record has aliases in each of the five languages, and every family but `Other` too.
+#[test]
+fn every_record_and_family_has_aliases_in_every_language() {
+    for record in instruments() {
+        for lang in Lang::ALL {
+            assert!(
+                record.aliases().iter().any(|alias| alias.lang == lang),
+                "{} has no {lang:?} alias",
+                record.id()
+            );
+        }
+    }
+    for family in [
+        Family::Strings,
+        Family::Woodwinds,
+        Family::Brass,
+        Family::Percussion,
+        Family::Keyboards,
+        Family::Plucked,
+        Family::Choir,
+    ] {
+        for lang in Lang::ALL {
+            assert!(
+                family.aliases().iter().any(|alias| alias.lang == lang),
+                "{family:?} has no {lang:?} alias"
+            );
+        }
+    }
+}
+
+/// The targets of `text`, in data order, each once.
+fn targets_of(text: &str) -> Vec<Target> {
+    let mut targets: Vec<Target> = Vec::new();
+    for (target, alias) in all_aliases() {
+        if alias.text == text && !targets.contains(&target) {
+            targets.push(target);
+        }
+    }
+    targets
+}
+
+/// The alias `text` in `lang` of `target`, if stored.
+fn alias_of(target: Target, text: &str, lang: Lang) -> Option<Alias> {
+    all_aliases()
+        .find(|(t, alias)| *t == target && alias.text == text && alias.lang == lang)
+        .map(|(_, alias)| *alias)
+}
+
+/// Folded texts that name several targets, with the targets in data order. One word may name
+/// several instruments (`bass`), a word may mean different things in two languages (`alto`), and
+/// folding may join two Czech forms (`tenoru` is "tenoru", of the tenor voice, and "tenorů", of
+/// the tenors). Each is listed on purpose, so an accidental collision fails the test below.
+const KNOWN_AMBIGUOUS: [(&str, &[Target]); 16] = [
+    (
+        "alto",
+        &[
+            Target::Instrument(InstrumentType::VoiceAlto),
+            Target::Instrument(InstrumentType::Viola),
+        ],
+    ),
+    (
+        "altos",
+        &[
+            Target::Instrument(InstrumentType::ChoirAlto),
+            Target::Instrument(InstrumentType::Viola),
+        ],
+    ),
+    (
+        "altu",
+        &[
+            Target::Instrument(InstrumentType::VoiceAlto),
+            Target::Instrument(InstrumentType::ChoirAlto),
+        ],
+    ),
+    (
+        "bass",
+        &[
+            Target::Instrument(InstrumentType::VoiceBass),
+            Target::Instrument(InstrumentType::DoubleBass),
+        ],
+    ),
+    (
+        "basse",
+        &[
+            Target::Instrument(InstrumentType::VoiceBass),
+            Target::Instrument(InstrumentType::ChoirBass),
+        ],
+    ),
+    (
+        "basses",
+        &[
+            Target::Instrument(InstrumentType::ChoirBass),
+            Target::Instrument(InstrumentType::DoubleBass),
+        ],
+    ),
+    (
+        "basstuba",
+        &[
+            Target::Instrument(InstrumentType::WagnerTubaBass),
+            Target::Instrument(InstrumentType::Tuba),
+        ],
+    ),
+    (
+        "basstuben",
+        &[
+            Target::Instrument(InstrumentType::WagnerTubaBass),
+            Target::Instrument(InstrumentType::Tuba),
+        ],
+    ),
+    (
+        "basu",
+        &[
+            Target::Instrument(InstrumentType::VoiceBass),
+            Target::Instrument(InstrumentType::ChoirBass),
+        ],
+    ),
+    (
+        "cinelu",
+        &[
+            Target::Instrument(InstrumentType::ClashCymbals),
+            Target::Category(CategoryId::Cymbals),
+        ],
+    ),
+    (
+        "sopranu",
+        &[
+            Target::Instrument(InstrumentType::VoiceSoprano),
+            Target::Instrument(InstrumentType::ChoirSoprano),
+        ],
+    ),
+    (
+        "tenore",
+        &[
+            Target::Instrument(InstrumentType::VoiceTenor),
+            Target::Instrument(InstrumentType::ChoirTenor),
+        ],
+    ),
+    (
+        "tenortuba",
+        &[
+            Target::Instrument(InstrumentType::WagnerTubaTenor),
+            Target::Instrument(InstrumentType::Euphonium),
+        ],
+    ),
+    (
+        "tenortuben",
+        &[
+            Target::Instrument(InstrumentType::WagnerTubaTenor),
+            Target::Instrument(InstrumentType::Euphonium),
+        ],
+    ),
+    (
+        "tenoru",
+        &[
+            Target::Instrument(InstrumentType::VoiceTenor),
+            Target::Instrument(InstrumentType::ChoirTenor),
+        ],
+    ),
+    (
+        "tuba basse",
+        &[
+            Target::Instrument(InstrumentType::Euphonium),
+            Target::Instrument(InstrumentType::Tuba),
+        ],
+    ),
+];
+
+/// The texts that name several targets are exactly the listed ones, with the listed targets
+/// (TST-07).
+#[test]
+fn known_ambiguous_aliases_are_exactly_the_listed_ones() {
+    let mut texts: Vec<&str> = all_aliases().map(|(_, alias)| alias.text).collect();
+    texts.sort_unstable();
+    texts.dedup();
+    let computed: Vec<(&str, Vec<Target>)> = texts
+        .into_iter()
+        .map(|text| (text, targets_of(text)))
+        .filter(|(_, targets)| targets.len() > 1)
+        .collect();
+    let listed: Vec<(&str, Vec<Target>)> = KNOWN_AMBIGUOUS
+        .iter()
+        .map(|(text, targets)| (*text, targets.to_vec()))
+        .collect();
+    assert_eq!(computed, listed);
+}
+
+/// The forms an orchestration request in Czech or English names the strings, the horns and the
+/// timpani with ("smyčce hrají legato melodii, lesní rohy a tympány pod tím"; "the strings play
+/// a legato melody, horns and timpani underneath"), and the Czech cases of the horn that the
+/// planner reads, each with its number (TST-05).
+#[test]
+fn the_planner_finds_the_forms_it_needs() {
+    let horn = Target::Instrument(InstrumentType::HornF);
+    let timpani = Target::Instrument(InstrumentType::Timpani);
+    let violin = Target::Instrument(InstrumentType::Violin);
+    let strings = Target::Family(Family::Strings);
+    let cases = [
+        (strings, "smycce", Lang::Cs, Number::Plural),
+        (strings, "smyccu", Lang::Cs, Number::Plural),
+        (strings, "strings", Lang::En, Number::Plural),
+        (horn, "lesni roh", Lang::Cs, Number::Singular),
+        (horn, "lesniho rohu", Lang::Cs, Number::Singular),
+        (horn, "lesni rohy", Lang::Cs, Number::Plural),
+        (horn, "lesnich rohu", Lang::Cs, Number::Plural),
+        (horn, "lesnim rohum", Lang::Cs, Number::Plural),
+        (horn, "lesnimi rohy", Lang::Cs, Number::Plural),
+        (horn, "lesnich rozich", Lang::Cs, Number::Plural),
+        (horn, "horns", Lang::En, Number::Plural),
+        (horn, "horner", Lang::De, Number::Plural),
+        (horn, "cors", Lang::Fr, Number::Plural),
+        (horn, "corni", Lang::It, Number::Plural),
+        (timpani, "tympany", Lang::Cs, Number::Plural),
+        (timpani, "tympanu", Lang::Cs, Number::Unmarked),
+        (timpani, "kotle", Lang::Cs, Number::Plural),
+        (timpani, "timpani", Lang::En, Number::Plural),
+        (timpani, "kettledrums", Lang::En, Number::Plural),
+        (violin, "housle", Lang::Cs, Number::Unmarked),
+        (violin, "housli", Lang::Cs, Number::Unmarked),
+        (violin, "houslemi", Lang::Cs, Number::Unmarked),
+    ];
+    for (target, text, lang, number) in cases {
+        assert_eq!(
+            alias_of(target, text, lang).map(|alias| alias.number),
+            Some(number),
+            "{target:?} {text:?} {lang:?}"
+        );
+        assert_eq!(targets_of(text), [target], "{text:?} names one target");
+    }
+    // The bare Czech "roh" (also a corner) and two-letter abbreviations name nothing.
+    for text in ["roh", "hn", "vc", "cb"] {
+        assert!(targets_of(text).is_empty(), "{text:?}");
+    }
+}
+
+/// A solo voice has the singular forms and a choir section the plural: "tenor" names the solo
+/// tenor, "tenors" and the Czech "tenory" the section (TST-07).
+#[test]
+fn voices_are_singular_and_choir_sections_plural() {
+    let voices = [
+        InstrumentType::VoiceSoprano,
+        InstrumentType::VoiceMezzoSoprano,
+        InstrumentType::VoiceAlto,
+        InstrumentType::VoiceTenor,
+        InstrumentType::VoiceBaritone,
+        InstrumentType::VoiceBass,
+    ];
+    let sections = [
+        InstrumentType::ChoirSoprano,
+        InstrumentType::ChoirAlto,
+        InstrumentType::ChoirTenor,
+        InstrumentType::ChoirBass,
+    ];
+    for voice in voices {
+        let record = voice.get().expect("in the dataset");
+        for alias in record.aliases() {
+            assert_ne!(alias.number, Number::Plural, "{}: {alias:?}", record.id());
+        }
+    }
+    for section in sections {
+        let record = section.get().expect("in the dataset");
+        for alias in record.aliases() {
+            assert_ne!(alias.number, Number::Singular, "{}: {alias:?}", record.id());
+        }
+    }
+    assert_eq!(
+        targets_of("tenor"),
+        [Target::Instrument(InstrumentType::VoiceTenor)]
+    );
+    for text in ["tenors", "tenory", "tenori", "chortenor"] {
+        assert_eq!(
+            targets_of(text),
+            [Target::Instrument(InstrumentType::ChoirTenor)],
+            "{text:?}"
+        );
+    }
+}
+
+/// The display names of a sample of records in English, Czech, German, French and Italian, and
+/// their abbreviation, written by hand from the sources. The German choir sections are compounds
+/// with "Chor", because the bare "Tenor" is the solo voice's name.
+const NAMES_TABLE: [(&str, [&str; 6]); 10] = [
+    (
+        "violin",
+        ["Violin", "housle", "Violine", "violon", "violino", "Vn."],
+    ),
+    (
+        "cello",
+        [
+            "Cello",
+            "violoncello",
+            "Violoncello",
+            "violoncelle",
+            "violoncello",
+            "Vc.",
+        ],
+    ),
+    (
+        "double_bass",
+        [
+            "Double bass",
+            "kontrabas",
+            "Kontrabass",
+            "contrebasse",
+            "contrabbasso",
+            "Cb.",
+        ],
+    ),
+    (
+        "horn_f",
+        ["Horn in F", "lesní roh", "Horn", "cor", "corno", "Hn."],
+    ),
+    (
+        "timpani",
+        [
+            "Timpani", "tympány", "Pauken", "timbales", "timpani", "Timp.",
+        ],
+    ),
+    (
+        "clarinet_bb",
+        [
+            "Clarinet in B♭",
+            "klarinet in B",
+            "Klarinette in B",
+            "clarinette en si♭",
+            "clarinetto in si♭",
+            "Cl. (B♭)",
+        ],
+    ),
+    (
+        "piano_studio_grand",
+        [
+            "Studio grand piano",
+            "křídlo",
+            "Studioflügel",
+            "piano à queue",
+            "pianoforte a coda",
+            "Pno.",
+        ],
+    ),
+    (
+        "organ_pipe",
+        [
+            "Pipe organ",
+            "varhany",
+            "Orgel",
+            "orgue",
+            "organo a canne",
+            "Org.",
+        ],
+    ),
+    (
+        "glockenspiel",
+        [
+            "Glockenspiel",
+            "zvonkohra",
+            "Glockenspiel",
+            "jeu de timbres",
+            "campanelli",
+            "Glock.",
+        ],
+    ),
+    (
+        "choir_tenor",
+        ["Tenors", "Tenory", "Chortenor", "Ténors", "Tenori", "T."],
+    ),
+];
+
+/// The display names in five languages and the abbreviation, for a sample of records, as the
+/// sources give them with their parenthesized alternates moved to the aliases (TST-06; the
+/// values are written by hand).
+#[test]
+fn names_in_five_languages_match_the_sources() {
+    for (id, [en, cs, de, fr, it, abbreviation]) in NAMES_TABLE {
+        assert_eq!(
+            *get(id).names(),
+            Names {
+                en,
+                cs,
+                de,
+                fr,
+                it,
+                abbreviation,
+            },
+            "{id}"
+        );
+    }
+    // Two records never share a display name in one language.
+    for lang in Lang::ALL {
+        let mut names: Vec<&str> = instruments()
+            .iter()
+            .map(|record| record.names().get(lang))
+            .collect();
+        names.sort_unstable();
+        let count = names.len();
+        names.dedup();
+        assert_eq!(names.len(), count, "{lang:?}");
+    }
+    assert_eq!(Lang::ALL.map(Lang::code), ["en", "cs", "de", "fr", "it"]);
+}
+
+/// Each category's id, slug, selection rule and members in score order.
+const CATEGORY_TABLE: [(CategoryId, &str, Selection, &[InstrumentType]); 12] = [
+    (
+        CategoryId::Clarinet,
+        "clarinet",
+        Selection::Default(InstrumentType::ClarinetBb),
+        &[
+            InstrumentType::ClarinetEb,
+            InstrumentType::ClarinetBb,
+            InstrumentType::ClarinetA,
+            InstrumentType::BassClarinet,
+        ],
+    ),
+    (
+        CategoryId::Saxophone,
+        "saxophone",
+        Selection::Default(InstrumentType::SaxophoneAlto),
+        &[
+            InstrumentType::SaxophoneSoprano,
+            InstrumentType::SaxophoneAlto,
+            InstrumentType::SaxophoneTenor,
+            InstrumentType::SaxophoneBaritone,
+        ],
+    ),
+    (
+        CategoryId::WagnerTuba,
+        "wagner_tuba",
+        Selection::All,
+        &[
+            InstrumentType::WagnerTubaTenor,
+            InstrumentType::WagnerTubaBass,
+        ],
+    ),
+    (
+        CategoryId::Trumpet,
+        "trumpet",
+        Selection::Default(InstrumentType::TrumpetBb),
+        &[
+            InstrumentType::TrumpetPiccolo,
+            InstrumentType::TrumpetC,
+            InstrumentType::TrumpetBb,
+        ],
+    ),
+    (
+        CategoryId::Trombone,
+        "trombone",
+        Selection::Default(InstrumentType::TromboneTenor),
+        &[InstrumentType::TromboneTenor, InstrumentType::TromboneBass],
+    ),
+    (
+        CategoryId::Cymbals,
+        "cymbals",
+        Selection::Default(InstrumentType::ClashCymbals),
+        &[
+            InstrumentType::ClashCymbals,
+            InstrumentType::SuspendedCymbal,
+        ],
+    ),
+    (
+        CategoryId::Bells,
+        "bells",
+        Selection::Ask,
+        &[
+            InstrumentType::Glockenspiel,
+            InstrumentType::TubularBells,
+            InstrumentType::Crotales,
+            InstrumentType::Carillon,
+        ],
+    ),
+    (
+        CategoryId::Piano,
+        "piano",
+        Selection::Default(InstrumentType::PianoConcertGrand),
+        &[
+            InstrumentType::PianoConcertGrand,
+            InstrumentType::PianoStudioGrand,
+            InstrumentType::PianoUpright,
+            InstrumentType::PianoFelt,
+            InstrumentType::PianoPrepared,
+            InstrumentType::PianoHonkyTonk,
+        ],
+    ),
+    (
+        CategoryId::ElectricPiano,
+        "electric_piano",
+        Selection::Default(InstrumentType::ElectricPianoRhodes),
+        &[
+            InstrumentType::ElectricPianoRhodes,
+            InstrumentType::ElectricPianoWurlitzer,
+        ],
+    ),
+    (
+        CategoryId::Organ,
+        "organ",
+        Selection::Default(InstrumentType::OrganPipe),
+        &[InstrumentType::OrganPipe, InstrumentType::OrganHammond],
+    ),
+    (
+        CategoryId::SoloVoice,
+        "solo_voice",
+        Selection::Ask,
+        &[
+            InstrumentType::VoiceSoprano,
+            InstrumentType::VoiceMezzoSoprano,
+            InstrumentType::VoiceAlto,
+            InstrumentType::VoiceTenor,
+            InstrumentType::VoiceBaritone,
+            InstrumentType::VoiceBass,
+        ],
+    ),
+    (
+        CategoryId::Choir,
+        "choir",
+        Selection::All,
+        &[
+            InstrumentType::ChoirSoprano,
+            InstrumentType::ChoirAlto,
+            InstrumentType::ChoirTenor,
+            InstrumentType::ChoirBass,
+        ],
+    ),
+];
+
+/// Each category's selection rule and members, written by hand from the orchestration
+/// conventions the data follows (TST-06), and the invariants that tie records and categories
+/// together (TST-07).
+#[test]
+fn categories_choose_among_their_members() {
+    assert_eq!(CATEGORY_TABLE.map(|(id, ..)| id), CategoryId::ALL);
+    for (id, slug, selection, members) in CATEGORY_TABLE {
+        let record = category(id);
+        assert_eq!(record.id(), id);
+        assert_eq!(id.get(), record);
+        assert_eq!(id.slug(), slug);
+        assert_eq!(record.selection(), selection, "{slug}");
+        assert_eq!(record.members().collect::<Vec<_>>(), members, "{slug}");
+        if let Selection::Default(member) = selection {
+            assert!(members.contains(&member), "{slug}");
+        }
+        let Provenance::Estimate { reason } = record.provenance() else {
+            panic!("{slug}: a selection rule is an estimate");
+        };
+        assert!(!reason.trim().is_empty(), "{slug}");
+        assert!(!record.aliases().is_empty(), "{slug}");
+    }
+    // Members point back: a record's category lists it, and no other category does.
+    for record in instruments() {
+        for id in CategoryId::ALL {
+            assert_eq!(
+                category(id)
+                    .members()
+                    .any(|t| t == record.instrument_type()),
+                record.category() == Some(id),
+                "{} {id:?}",
+                record.id()
+            );
+        }
+    }
+    // The words for a whole category name the category, not a member.
+    for (text, id) in [
+        ("clarinet", CategoryId::Clarinet),
+        ("klarinety", CategoryId::Clarinet),
+        ("klavir", CategoryId::Piano),
+        ("organ", CategoryId::Organ),
+        ("choir", CategoryId::Choir),
+        ("sbor", CategoryId::Choir),
+        ("bells", CategoryId::Bells),
+    ] {
+        assert_eq!(targets_of(text), [Target::Category(id)], "{text:?}");
+    }
 }

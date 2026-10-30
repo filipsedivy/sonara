@@ -3,8 +3,10 @@
 use thiserror::Error;
 
 use super::articulation::{Articulation, ArticulationAvailability, Request, RequestAvailability};
+use super::data;
 use super::ensemble_profile::{EnsembleProfile, Era};
-use super::id::InstrumentType;
+use super::id::{CategoryId, InstrumentType};
+use super::names::{Alias, Names, alias_fault};
 use super::pitch::{Clef, PitchRange, SoundingPitch, Transposition, WrittenPitch};
 
 /// The instrument family. The slugs equal the family slugs of the instrument catalog
@@ -44,6 +46,13 @@ impl Family {
             Self::Choir => "choir",
             Self::Other => "other",
         }
+    }
+
+    /// The words that name the family as a whole, such as "strings" or the Czech "smyčce"
+    /// (folded; see [`Alias`]). Empty for [`Family::Other`].
+    #[must_use]
+    pub const fn aliases(self) -> &'static [Alias] {
+        data::family_aliases(self)
     }
 }
 
@@ -145,8 +154,8 @@ pub enum InstrumentError {
     /// would write it two octaves above the sound.
     #[error("a transposing instrument lists a clef with an octave of its own")]
     OctaveClefWithTransposition,
-    /// The display name is empty or blank.
-    #[error("the display name is empty or blank")]
+    /// A display name or the score abbreviation is empty or blank.
+    #[error("a display name or the score abbreviation is empty or blank")]
     EmptyName,
     /// A provenance is a `Cited` source or an `Estimate` reason that is empty or blank.
     #[error("a cited source or an estimate reason is empty or blank")]
@@ -163,6 +172,16 @@ pub enum InstrumentError {
         /// The high end.
         max: u8,
     },
+    /// An alias is not in folded form: lower-case ASCII letters and digits, words separated by
+    /// one space ([`Alias`]).
+    #[error("alias {0:?} is not folded")]
+    AliasNotFolded(&'static str),
+    /// An alias has fewer than three letters.
+    #[error("alias {0:?} has fewer than three letters")]
+    AliasTooShort(&'static str),
+    /// An alias is listed twice in one language.
+    #[error("alias {0:?} is listed twice in one language")]
+    DuplicateAlias(&'static str),
 }
 
 /// The values of an instrument record, checked by [`Instrument::try_new`].
@@ -173,8 +192,14 @@ pub enum InstrumentError {
 /// record: see there which fields a record must state.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct InstrumentSpec {
-    /// The English display name. Not an identifier.
-    pub name: &'static str,
+    /// The display names in five languages and the score abbreviation. Not identifiers.
+    pub names: Names,
+    /// The forms a person may write to mean this instrument, folded, each at most once per
+    /// language; empty when none are recorded.
+    pub aliases: &'static [Alias],
+    /// The category the instrument belongs to, such as the clarinets for the clarinet in A;
+    /// `None` for an instrument no category word names.
+    pub category: Option<CategoryId>,
     /// The pitch capabilities.
     pub pitch: PitchModel,
     /// The clefs the instrument's parts are written in, in order of use (the usual one first),
@@ -192,13 +217,22 @@ pub struct InstrumentSpec {
 impl InstrumentSpec {
     /// The base of every record literal.
     ///
-    /// A record must state `name` and `articulations_provenance`: here they are empty, which
+    /// A record must state `names` and `articulations_provenance`: here they are empty, which
     /// [`Instrument::try_new`] rejects, so a record that forgets one does not build. `pitch` is
     /// [`PitchModel::Unpitched`], which only percussion may keep; a pitched percussion instrument
-    /// states its pitch. The other fields hold their "not known" value: no clefs, no
-    /// articulations and no ensemble profile.
+    /// states its pitch. The other fields hold their "not known" value: no aliases, no category,
+    /// no clefs, no articulations and no ensemble profile.
     pub const EMPTY: Self = Self {
-        name: "",
+        names: Names {
+            en: "",
+            cs: "",
+            de: "",
+            fr: "",
+            it: "",
+            abbreviation: "",
+        },
+        aliases: &[],
+        category: None,
         pitch: PitchModel::Unpitched,
         clefs: &[],
         articulations: &[],
@@ -224,7 +258,8 @@ impl Instrument {
     ///
     /// # Errors
     /// [`InstrumentError`]: [`EmptyName`](InstrumentError::EmptyName) for an empty or blank
-    /// name; [`UnpitchedOutsidePercussion`](InstrumentError::UnpitchedOutsidePercussion) for an
+    /// display name or abbreviation;
+    /// [`UnpitchedOutsidePercussion`](InstrumentError::UnpitchedOutsidePercussion) for an
     /// unpitched instrument outside the percussion family;
     /// [`ComfortableOutsidePlayable`](InstrumentError::ComfortableOutsidePlayable) and
     /// [`WrittenOutOfMidi`](InstrumentError::WrittenOutOfMidi) for ranges that do not fit;
@@ -236,13 +271,17 @@ impl Instrument {
     /// with an octave of its own on a transposing instrument and
     /// [`WrittenOutOfMidi`](InstrumentError::WrittenOutOfMidi) when the playable range written
     /// in the clef leaves MIDI; [`EmptyProvenance`](InstrumentError::EmptyProvenance) when any
-    /// provenance of the record (ranges, articulations, ensemble profile) is empty or blank. The
-    /// first failing check in that order is reported.
+    /// provenance of the record (ranges, articulations, ensemble profile) is empty or blank;
+    /// then, alias by alias in list order, [`AliasNotFolded`](InstrumentError::AliasNotFolded)
+    /// for a text that is not folded and [`AliasTooShort`](InstrumentError::AliasTooShort) for
+    /// one with fewer than three letters, and last
+    /// [`DuplicateAlias`](InstrumentError::DuplicateAlias) for a text listed twice in one
+    /// language. The first failing check in that order is reported.
     pub const fn try_new(
         instrument_type: InstrumentType,
         spec: InstrumentSpec,
     ) -> Result<Self, InstrumentError> {
-        if spec.name.trim_ascii().is_empty() {
+        if spec.names.has_blank() {
             return Err(InstrumentError::EmptyName);
         }
         match &spec.pitch {
@@ -283,6 +322,9 @@ impl Instrument {
         if !provenances_are_stated(&spec) {
             return Err(InstrumentError::EmptyProvenance);
         }
+        if let Some(error) = alias_fault(spec.aliases) {
+            return Err(error);
+        }
         Ok(Self {
             kind: instrument_type,
             spec,
@@ -319,10 +361,28 @@ impl Instrument {
         self.kind.id()
     }
 
-    /// The English display name. Not an identifier.
+    /// The English display name, that of [`Instrument::names`]. Not an identifier.
     #[must_use]
     pub const fn name(&self) -> &'static str {
-        self.spec.name
+        self.spec.names.en
+    }
+
+    /// The display names in five languages and the score abbreviation.
+    #[must_use]
+    pub const fn names(&self) -> &Names {
+        &self.spec.names
+    }
+
+    /// The forms a person may write to mean this instrument (folded; see [`Alias`]).
+    #[must_use]
+    pub const fn aliases(&self) -> &'static [Alias] {
+        self.spec.aliases
+    }
+
+    /// The category the instrument belongs to, or `None`.
+    #[must_use]
+    pub const fn category(&self) -> Option<CategoryId> {
+        self.spec.category
     }
 
     /// The family, that of [`Instrument::instrument_type`].

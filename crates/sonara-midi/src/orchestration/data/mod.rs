@@ -6,8 +6,25 @@
 //! (`Estimate`). A `Cited` value names its sources in full from the list in `sources`, each
 //! followed by what it states; Wikipedia is used for facts only (see
 //! `docs/orchestration-metadata.md`).
+//!
+//! Each record also holds its display names in five languages and its aliases, and the categories
+//! and families hold the words that name them as a whole, in `categories`.
+
+/// A list of aliases, written folded: `aliases![En Plural: "horns"; Cs Plural: "lesni rohy",
+/// "lesnich rohu";]` gives each text with the language and the number before its colon. Defined
+/// before the modules below, so they all see it.
+macro_rules! aliases {
+    ($($lang:ident $number:ident: $($text:literal),+;)+) => {
+        &[$($($crate::orchestration::names::Alias {
+            text: $text,
+            lang: $crate::orchestration::names::Lang::$lang,
+            number: $crate::orchestration::names::Number::$number,
+        }),+),+]
+    };
+}
 
 mod brass;
+mod categories;
 mod keyboards;
 mod percussion;
 mod plucked;
@@ -15,6 +32,8 @@ mod sources;
 mod strings;
 mod voices;
 mod woodwinds;
+
+pub(super) use categories::{FAMILY_ALIASES, category, family_aliases};
 
 use super::ensemble_profile::{EraPlayers, PlayerRange};
 use super::id::InstrumentType;

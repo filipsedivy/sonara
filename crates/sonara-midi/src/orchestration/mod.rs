@@ -1,5 +1,6 @@
-//! Orchestral instrument metadata: pitch ranges, transposition, families, articulations and
-//! ensemble profiles (SON-P06, `contracts/orchestration-metadata.md`).
+//! Orchestral instrument metadata: names and aliases in five languages, categories, pitch ranges,
+//! transposition, families, articulations and ensemble profiles (SON-P06,
+//! `contracts/orchestration-metadata.md`).
 //!
 //! The data is about instruments in general, not about any sample library, audio engine or UI. A
 //! value is either sourced or marked as an estimate, and an articulation counts as supported only
@@ -10,6 +11,7 @@ mod data;
 mod ensemble_profile;
 mod id;
 mod instrument;
+mod names;
 mod pitch;
 
 pub use articulation::{
@@ -18,11 +20,12 @@ pub use articulation::{
 };
 pub use data::INSTRUMENTS;
 pub use ensemble_profile::{EnsembleProfile, Era, EraPlayers, Forms, PlayerRange};
-pub use id::InstrumentType;
+pub use id::{Category, CategoryId, InstrumentType, Selection};
 pub use instrument::{
     CheckError, Family, Instrument, InstrumentError, InstrumentSpec, PitchModel, Pitched,
     Provenance, RangeCheck, SourcedRange,
 };
+pub use names::{Alias, Lang, Names, Number, Target, all_aliases};
 pub use pitch::{Clef, PitchRange, RangeError, SoundingPitch, Transposition, WrittenPitch};
 
 /// The instrument with id `id`, or `None` for an unknown id. The id must match exactly
@@ -36,4 +39,10 @@ pub fn instrument(id: &str) -> Option<&'static Instrument> {
 #[must_use]
 pub fn instruments() -> &'static [Instrument] {
     &INSTRUMENTS
+}
+
+/// The record of category `id`.
+#[must_use]
+pub fn category(id: CategoryId) -> &'static Category {
+    id.get()
 }

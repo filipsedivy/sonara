@@ -8,14 +8,38 @@ use crate::orchestration::articulation::Articulation::{
     SnaresOff, Staccato, Tremolo, TremoloMeasured, Trill, VibratoOn,
 };
 use crate::orchestration::ensemble_profile::{EnsembleProfile, Forms};
-use crate::orchestration::id::InstrumentType;
+use crate::orchestration::id::{CategoryId, InstrumentType};
 use crate::orchestration::instrument::{Instrument, InstrumentSpec, PitchModel, Provenance};
+use crate::orchestration::names::Names;
 use crate::orchestration::pitch::Clef;
 
 pub(super) const TIMPANI: Instrument = Instrument::new(
     InstrumentType::Timpani,
     InstrumentSpec {
-        name: "Timpani",
+        names: Names {
+            en: "Timpani",
+            cs: "tympány",
+            de: "Pauken",
+            fr: "timbales",
+            it: "timpani",
+            abbreviation: "Timp.",
+        },
+        aliases: aliases![
+            En Plural: "timpani", "kettledrums", "timps";
+            En Singular: "kettledrum";
+            En Unmarked: "timp";
+            Cs Singular: "tympan", "tympanem";
+            Cs Unmarked: "tympanu";
+            Cs Plural: "tympany", "tympanum", "tympanech", "kotle", "kotlu", "kotlum", "kotlich",
+                "kotli";
+            De Plural: "pauken";
+            De Singular: "pauke";
+            Fr Plural: "timbales";
+            Fr Singular: "timbale";
+            It Plural: "timpani";
+            It Singular: "timpano";
+        ],
+        category: None,
         pitch: pitched(
             0,
             cited(
@@ -90,7 +114,31 @@ pub(super) const TIMPANI: Instrument = Instrument::new(
 pub(super) const BASS_DRUM: Instrument = Instrument::new(
     InstrumentType::BassDrum,
     InstrumentSpec {
-        name: "Bass drum",
+        names: Names {
+            en: "Bass drum",
+            cs: "velký buben",
+            de: "große Trommel",
+            fr: "grosse caisse",
+            it: "gran cassa",
+            abbreviation: "B.D.",
+        },
+        aliases: aliases![
+            En Singular: "bass drum", "concert bass drum";
+            En Plural: "bass drums";
+            Cs Singular: "velky buben", "velkeho bubnu", "velkemu bubnu", "velkem bubnu",
+                "velkym bubnem", "basovy buben", "basoveho bubnu", "basovemu bubnu",
+                "basovem bubnu", "basovym bubnem";
+            Cs Plural: "velke bubny", "velkych bubnu", "velkym bubnum", "velkych bubnech",
+                "velkymi bubny", "basove bubny", "basovych bubnu", "basovym bubnum",
+                "basovych bubnech", "basovymi bubny";
+            De Singular: "grosse trommel", "basstrommel";
+            De Plural: "grosse trommeln", "basstrommeln";
+            Fr Singular: "grosse caisse";
+            Fr Plural: "grosses caisses";
+            It Singular: "gran cassa", "grancassa", "gran tamburo";
+            It Plural: "gran casse";
+        ],
+        category: None,
         pitch: PitchModel::Unpitched,
         clefs: &[Clef::SingleLine, Clef::Bass, Clef::Percussion],
         articulations: &[Roll, Marcato, ConSordino, Damped, LetRing],
@@ -127,7 +175,31 @@ pub(super) const BASS_DRUM: Instrument = Instrument::new(
 pub(super) const SNARE_DRUM: Instrument = Instrument::new(
     InstrumentType::SnareDrum,
     InstrumentSpec {
-        name: "Snare drum",
+        names: Names {
+            en: "Snare drum",
+            cs: "malý buben",
+            de: "kleine Trommel",
+            fr: "caisse claire",
+            it: "tamburo militare",
+            abbreviation: "S.D.",
+        },
+        aliases: aliases![
+            En Singular: "snare drum", "snare", "side drum";
+            En Plural: "snare drums", "snares", "side drums";
+            Cs Singular: "maly buben", "maleho bubnu", "malemu bubnu", "malem bubnu",
+                "malym bubnem", "virivy buben", "viriveho bubnu", "virivemu bubnu", "virivem bubnu",
+                "virivym bubnem";
+            Cs Plural: "male bubny", "malych bubnu", "malym bubnum", "malych bubnech",
+                "malymi bubny", "virive bubny", "virivych bubnu", "virivym bubnum",
+                "virivych bubnech", "virivymi bubny";
+            De Singular: "kleine trommel";
+            De Plural: "kleine trommeln";
+            Fr Singular: "caisse claire", "tambour militaire";
+            Fr Plural: "caisses claires";
+            It Singular: "tamburo militare", "tamburo piccolo", "rullante";
+            It Plural: "tamburi militari";
+        ],
+        category: None,
         pitch: PitchModel::Unpitched,
         clefs: &[Clef::SingleLine, Clef::Treble, Clef::Percussion],
         articulations: &[
@@ -166,7 +238,22 @@ pub(super) const SNARE_DRUM: Instrument = Instrument::new(
 pub(super) const CLASH_CYMBALS: Instrument = Instrument::new(
     InstrumentType::ClashCymbals,
     InstrumentSpec {
-        name: "Clash cymbals",
+        names: Names {
+            en: "Clash cymbals",
+            cs: "činely",
+            de: "Becken",
+            fr: "cymbales",
+            it: "piatti",
+            abbreviation: "Cym.",
+        },
+        aliases: aliases![
+            En Plural: "clash cymbals", "crash cymbals", "hand cymbals";
+            Cs Plural: "cinely", "cinelu", "cinelum", "cinelech";
+            De Unmarked: "becken", "paarbecken";
+            Fr Plural: "cymbales";
+            It Plural: "piatti", "cinelli";
+        ],
+        category: Some(CategoryId::Cymbals),
         pitch: PitchModel::Unpitched,
         clefs: &[Clef::SingleLine, Clef::Bass, Clef::Percussion],
         articulations: &[Roll, Marcato, LetRing, Damped, Choke],
@@ -198,7 +285,30 @@ pub(super) const CLASH_CYMBALS: Instrument = Instrument::new(
 pub(super) const SUSPENDED_CYMBAL: Instrument = Instrument::new(
     InstrumentType::SuspendedCymbal,
     InstrumentSpec {
-        name: "Suspended cymbal",
+        names: Names {
+            en: "Suspended cymbal",
+            cs: "zavěšený činel",
+            de: "hängendes Becken",
+            fr: "cymbale suspendue",
+            it: "piatto sospeso",
+            abbreviation: "sus. cym.",
+        },
+        aliases: aliases![
+            En Singular: "suspended cymbal";
+            En Plural: "suspended cymbals";
+            En Unmarked: "sus cym";
+            Cs Singular: "zaveseny cinel", "zaveseneho cinelu", "zavesenemu cinelu",
+                "zavesenem cinelu", "zavesenym cinelem";
+            Cs Plural: "zavesene cinely", "zavesenych cinelu", "zavesenym cinelum",
+                "zavesenych cinelech", "zavesenymi cinely";
+            De Singular: "hangendes becken";
+            De Plural: "hangende becken";
+            Fr Singular: "cymbale suspendue";
+            Fr Plural: "cymbales suspendues";
+            It Singular: "piatto sospeso";
+            It Plural: "piatti sospesi";
+        ],
+        category: Some(CategoryId::Cymbals),
         pitch: PitchModel::Unpitched,
         clefs: &[Clef::SingleLine, Clef::Bass, Clef::Percussion],
         articulations: &[
@@ -237,7 +347,28 @@ pub(super) const SUSPENDED_CYMBAL: Instrument = Instrument::new(
 pub(super) const TAM_TAM: Instrument = Instrument::new(
     InstrumentType::TamTam,
     InstrumentSpec {
-        name: "Tam-tam",
+        names: Names {
+            en: "Tam-tam",
+            cs: "tam-tam",
+            de: "Tamtam",
+            fr: "tam-tam",
+            it: "tam-tam",
+            abbreviation: "T.-t.",
+        },
+        aliases: aliases![
+            En Singular: "tam tam", "gong";
+            En Plural: "tam tams", "gongs";
+            Cs Singular: "tam tam", "tam tamu", "tam tamem", "gong", "gongem";
+            Cs Plural: "tam tamy", "gongy", "gongum";
+            Cs Unmarked: "gongu";
+            De Singular: "tamtam", "gong";
+            De Plural: "tamtams", "gongs";
+            Fr Singular: "tam tam", "gong";
+            Fr Plural: "tam tams", "gongs";
+            It Unmarked: "tam tam";
+            It Singular: "gong";
+        ],
+        category: None,
         pitch: PitchModel::Unpitched,
         clefs: &[Clef::SingleLine, Clef::Bass, Clef::Percussion],
         articulations: &[
@@ -281,7 +412,28 @@ pub(super) const TAM_TAM: Instrument = Instrument::new(
 pub(super) const TRIANGLE: Instrument = Instrument::new(
     InstrumentType::Triangle,
     InstrumentSpec {
-        name: "Triangle",
+        names: Names {
+            en: "Triangle",
+            cs: "triangl",
+            de: "Triangel",
+            fr: "triangle",
+            it: "triangolo",
+            abbreviation: "Trgl.",
+        },
+        aliases: aliases![
+            En Singular: "triangle";
+            En Plural: "triangles";
+            En Unmarked: "trgl";
+            Cs Singular: "triangl", "trianglem";
+            Cs Unmarked: "trianglu";
+            Cs Plural: "triangly", "trianglum", "trianglech";
+            De Unmarked: "triangel";
+            Fr Singular: "triangle";
+            Fr Plural: "triangles";
+            It Singular: "triangolo";
+            It Plural: "triangoli";
+        ],
+        category: None,
         pitch: PitchModel::Unpitched,
         clefs: &[Clef::SingleLine, Clef::Treble, Clef::Percussion],
         articulations: &[Roll, Marcato, LetRing, Damped],
@@ -313,7 +465,29 @@ pub(super) const TRIANGLE: Instrument = Instrument::new(
 pub(super) const TAMBOURINE: Instrument = Instrument::new(
     InstrumentType::Tambourine,
     InstrumentSpec {
-        name: "Tambourine",
+        names: Names {
+            en: "Tambourine",
+            cs: "tamburína",
+            de: "Schellentrommel",
+            fr: "tambour de basque",
+            it: "tamburino",
+            abbreviation: "Tamb.",
+        },
+        aliases: aliases![
+            En Singular: "tambourine";
+            En Plural: "tambourines";
+            En Unmarked: "tamb";
+            Cs Singular: "tamburina", "tamburine", "tamburinu", "tamburinou";
+            Cs Unmarked: "tamburiny";
+            Cs Plural: "tamburin", "tamburinam", "tamburinach", "tamburinami";
+            De Singular: "schellentrommel", "tamburin";
+            De Plural: "schellentrommeln", "tamburine";
+            Fr Singular: "tambour de basque";
+            Fr Plural: "tambours de basque";
+            It Singular: "tamburino", "tamburello";
+            It Plural: "tamburini", "tamburelli";
+        ],
+        category: None,
         pitch: PitchModel::Unpitched,
         clefs: &[Clef::SingleLine, Clef::Treble, Clef::Percussion],
         articulations: &[Roll, Marcato, ShakeStroke],
@@ -341,10 +515,28 @@ pub(super) const TAMBOURINE: Instrument = Instrument::new(
     },
 );
 
+// Aliases: "Cast." is left out, since it is also an English word.
 pub(super) const CASTANETS: Instrument = Instrument::new(
     InstrumentType::Castanets,
     InstrumentSpec {
-        name: "Castanets",
+        names: Names {
+            en: "Castanets",
+            cs: "kastaněty",
+            de: "Kastagnetten",
+            fr: "castagnettes",
+            it: "castagnette",
+            abbreviation: "Cast.",
+        },
+        aliases: aliases![
+            En Plural: "castanets";
+            En Singular: "castanet";
+            Cs Plural: "kastanety", "kastanet", "kastanetam", "kastanetach", "kastanetami";
+            De Plural: "kastagnetten";
+            De Singular: "kastagnette";
+            Fr Plural: "castagnettes";
+            It Plural: "castagnette", "nacchere";
+        ],
+        category: None,
         pitch: PitchModel::Unpitched,
         clefs: &[Clef::SingleLine, Clef::Treble, Clef::Percussion],
         articulations: &[Roll, Marcato],
@@ -368,7 +560,30 @@ pub(super) const CASTANETS: Instrument = Instrument::new(
 pub(super) const WOOD_BLOCK: Instrument = Instrument::new(
     InstrumentType::WoodBlock,
     InstrumentSpec {
-        name: "Wood block",
+        names: Names {
+            en: "Wood block",
+            cs: "dřevěný blok",
+            de: "Holzblock",
+            fr: "bloc de bois",
+            it: "cassa di legno",
+            abbreviation: "W.B.",
+        },
+        aliases: aliases![
+            En Singular: "wood block", "woodblock";
+            En Plural: "wood blocks", "woodblocks";
+            En Unmarked: "wd bl";
+            Cs Singular: "dreveny blok", "dreveneho bloku", "drevenemu bloku", "drevenem bloku",
+                "drevenym blokem";
+            Cs Plural: "drevene bloky", "drevenych bloku", "drevenym blokum", "drevenych blocich",
+                "drevenymi bloky";
+            De Singular: "holzblock", "holzblocktrommel";
+            De Plural: "holzblocke", "holzblocktrommeln";
+            Fr Singular: "bloc de bois", "tambour de bois";
+            Fr Plural: "blocs de bois";
+            It Singular: "cassa di legno";
+            It Plural: "casse di legno";
+        ],
+        category: None,
         pitch: PitchModel::Unpitched,
         clefs: &[Clef::SingleLine, Clef::Percussion],
         articulations: &[Marcato, Roll],
@@ -397,7 +612,28 @@ pub(super) const WOOD_BLOCK: Instrument = Instrument::new(
 pub(super) const TEMPLE_BLOCKS: Instrument = Instrument::new(
     InstrumentType::TempleBlocks,
     InstrumentSpec {
-        name: "Temple blocks",
+        names: Names {
+            en: "Temple blocks",
+            cs: "temple bloky",
+            de: "Tempelblock",
+            fr: "bloc chinois",
+            it: "temple block",
+            abbreviation: "T.Bl.",
+        },
+        aliases: aliases![
+            En Plural: "temple blocks";
+            En Singular: "temple block";
+            En Unmarked: "t bl";
+            Cs Singular: "temple blok", "temple blokem";
+            Cs Unmarked: "temple bloku";
+            Cs Plural: "temple bloky", "temple blokum", "temple blocich";
+            De Singular: "tempelblock";
+            De Plural: "tempelblocke";
+            Fr Singular: "bloc chinois";
+            Fr Plural: "blocs chinois";
+            It Unmarked: "temple block";
+        ],
+        category: None,
         pitch: PitchModel::Unpitched,
         clefs: &[Clef::Percussion],
         articulations: &[Marcato, Roll, Glissando],
@@ -431,7 +667,27 @@ pub(super) const TEMPLE_BLOCKS: Instrument = Instrument::new(
 pub(super) const SLEIGH_BELLS: Instrument = Instrument::new(
     InstrumentType::SleighBells,
     InstrumentSpec {
-        name: "Sleigh bells",
+        names: Names {
+            en: "Sleigh bells",
+            cs: "rolničky",
+            de: "Schellen",
+            fr: "grelots",
+            it: "sonagli",
+            abbreviation: "Sl. B.",
+        },
+        aliases: aliases![
+            En Plural: "sleigh bells", "jingle bells";
+            En Unmarked: "sl b";
+            Cs Singular: "rolnicka", "rolnicce", "rolnicku", "rolnickou";
+            Cs Unmarked: "rolnicky";
+            Cs Plural: "rolnicek", "rolnickam", "rolnickach", "rolnickami";
+            De Plural: "schellen";
+            Fr Plural: "grelots";
+            Fr Singular: "grelot";
+            It Plural: "sonagli";
+            It Singular: "sonaglio";
+        ],
+        category: None,
         pitch: PitchModel::Unpitched,
         clefs: &[Clef::SingleLine, Clef::Percussion],
         articulations: &[Roll, Marcato, ShakeStroke],
@@ -465,7 +721,25 @@ pub(super) const SLEIGH_BELLS: Instrument = Instrument::new(
 pub(super) const MARACAS: Instrument = Instrument::new(
     InstrumentType::Maracas,
     InstrumentSpec {
-        name: "Maracas",
+        names: Names {
+            en: "Maracas",
+            cs: "rumba koule",
+            de: "Maracas",
+            fr: "maracas",
+            it: "maracas",
+            abbreviation: "Mar.",
+        },
+        aliases: aliases![
+            En Plural: "maracas";
+            En Singular: "maraca";
+            En Unmarked: "mrcs";
+            Cs Unmarked: "rumba koule", "rumba kouli";
+            Cs Plural: "rumba koulim", "rumba koulich", "rumba koulemi";
+            De Unmarked: "maracas";
+            Fr Unmarked: "maracas";
+            It Unmarked: "maracas";
+        ],
+        category: None,
         pitch: PitchModel::Unpitched,
         clefs: &[Clef::SingleLine, Clef::Percussion],
         articulations: &[Roll, Marcato, ShakeStroke],
@@ -499,7 +773,27 @@ pub(super) const MARACAS: Instrument = Instrument::new(
 pub(super) const SHAKER: Instrument = Instrument::new(
     InstrumentType::Shaker,
     InstrumentSpec {
-        name: "Shaker",
+        names: Names {
+            en: "Shaker",
+            cs: "šejkr",
+            de: "Shaker",
+            fr: "shaker",
+            it: "shaker",
+            abbreviation: "Shk.",
+        },
+        aliases: aliases![
+            En Singular: "shaker";
+            En Plural: "shakers";
+            En Unmarked: "shk";
+            Cs Singular: "sejkr", "sejkrem";
+            Cs Unmarked: "sejkru";
+            Cs Plural: "sejkry", "sejkrum", "sejkrech";
+            De Unmarked: "shaker";
+            Fr Singular: "shaker";
+            Fr Plural: "shakers";
+            It Unmarked: "shaker";
+        ],
+        category: None,
         pitch: PitchModel::Unpitched,
         clefs: &[Clef::SingleLine, Clef::Percussion],
         articulations: &[Roll, Marcato, ShakeStroke],
@@ -529,10 +823,33 @@ pub(super) const SHAKER: Instrument = Instrument::new(
     },
 );
 
+// Aliases: the Czech "biči" and "bičích" are left out, since they fold like "bicí" and
+// "bicích", the percussion.
 pub(super) const WHIP: Instrument = Instrument::new(
     InstrumentType::Whip,
     InstrumentSpec {
-        name: "Whip",
+        names: Names {
+            en: "Whip",
+            cs: "bič",
+            de: "Peitsche",
+            fr: "fouet",
+            it: "frusta",
+            abbreviation: "Whip",
+        },
+        aliases: aliases![
+            En Singular: "whip", "slapstick";
+            En Plural: "whips", "slapsticks";
+            Cs Singular: "bic", "bicem";
+            Cs Unmarked: "bice";
+            Cs Plural: "bicu", "bicum";
+            De Singular: "peitsche";
+            De Plural: "peitschen";
+            Fr Singular: "fouet";
+            Fr Plural: "fouets";
+            It Singular: "frusta";
+            It Plural: "fruste";
+        ],
+        category: None,
         pitch: PitchModel::Unpitched,
         clefs: &[Clef::SingleLine, Clef::Percussion],
         articulations: &[Marcato],
@@ -565,10 +882,33 @@ pub(super) const WHIP: Instrument = Instrument::new(
     },
 );
 
+// Aliases: the Czech "zvonkohra" is the orchestral glockenspiel; the tower instrument is
+// "zvonohra" or "věžní zvonkohra", whose longer form is matched first.
 pub(super) const GLOCKENSPIEL: Instrument = Instrument::new(
     InstrumentType::Glockenspiel,
     InstrumentSpec {
-        name: "Glockenspiel",
+        names: Names {
+            en: "Glockenspiel",
+            cs: "zvonkohra",
+            de: "Glockenspiel",
+            fr: "jeu de timbres",
+            it: "campanelli",
+            abbreviation: "Glock.",
+        },
+        aliases: aliases![
+            En Singular: "glockenspiel";
+            En Plural: "glockenspiels", "orchestral bells";
+            En Unmarked: "glock";
+            Cs Singular: "zvonkohra", "zvonkohre", "zvonkohru", "zvonkohrou";
+            Cs Unmarked: "zvonkohry";
+            Cs Plural: "zvonkoher", "zvonkohram", "zvonkohrach", "zvonkohrami";
+            De Singular: "glockenspiel";
+            De Plural: "glockenspiele";
+            Fr Singular: "jeu de timbres";
+            Fr Plural: "jeux de timbres";
+            It Plural: "campanelli";
+        ],
+        category: Some(CategoryId::Bells),
         pitch: pitched(
             24,
             cited(
@@ -624,7 +964,29 @@ pub(super) const GLOCKENSPIEL: Instrument = Instrument::new(
 pub(super) const XYLOPHONE: Instrument = Instrument::new(
     InstrumentType::Xylophone,
     InstrumentSpec {
-        name: "Xylophone",
+        names: Names {
+            en: "Xylophone",
+            cs: "xylofon",
+            de: "Xylophon",
+            fr: "xylophone",
+            it: "xilofono",
+            abbreviation: "Xyl.",
+        },
+        aliases: aliases![
+            En Singular: "xylophone";
+            En Plural: "xylophones";
+            En Unmarked: "xyl";
+            Cs Singular: "xylofon", "xylofonem";
+            Cs Unmarked: "xylofonu";
+            Cs Plural: "xylofony", "xylofonum", "xylofonech";
+            De Singular: "xylophon";
+            De Plural: "xylophone";
+            Fr Singular: "xylophone";
+            Fr Plural: "xylophones";
+            It Singular: "xilofono", "silofono";
+            It Plural: "xilofoni";
+        ],
+        category: None,
         pitch: pitched(
             12,
             cited(
@@ -676,10 +1038,32 @@ pub(super) const XYLOPHONE: Instrument = Instrument::new(
     },
 );
 
+// Aliases: "Vib." is left out, since it also abbreviates vibrato.
 pub(super) const VIBRAPHONE: Instrument = Instrument::new(
     InstrumentType::Vibraphone,
     InstrumentSpec {
-        name: "Vibraphone",
+        names: Names {
+            en: "Vibraphone",
+            cs: "vibrafon",
+            de: "Vibraphon",
+            fr: "vibraphone",
+            it: "vibrafono",
+            abbreviation: "Vib.",
+        },
+        aliases: aliases![
+            En Singular: "vibraphone";
+            En Plural: "vibraphones", "vibes";
+            Cs Singular: "vibrafon", "vibrafonem";
+            Cs Unmarked: "vibrafonu";
+            Cs Plural: "vibrafony", "vibrafonum", "vibrafonech";
+            De Singular: "vibraphon";
+            De Plural: "vibraphone";
+            Fr Singular: "vibraphone";
+            Fr Plural: "vibraphones";
+            It Singular: "vibrafono";
+            It Plural: "vibrafoni";
+        ],
+        category: None,
         pitch: pitched(
             0,
             cited(
@@ -731,7 +1115,29 @@ pub(super) const VIBRAPHONE: Instrument = Instrument::new(
 pub(super) const MARIMBA: Instrument = Instrument::new(
     InstrumentType::Marimba,
     InstrumentSpec {
-        name: "Marimba",
+        names: Names {
+            en: "Marimba",
+            cs: "marimba",
+            de: "Marimba",
+            fr: "marimba",
+            it: "marimba",
+            abbreviation: "Mar.",
+        },
+        aliases: aliases![
+            En Singular: "marimba";
+            En Plural: "marimbas";
+            En Unmarked: "mar";
+            Cs Singular: "marimba", "marimbe", "marimbu", "marimbou";
+            Cs Unmarked: "marimby";
+            Cs Plural: "marimb", "marimbam", "marimbach", "marimbami";
+            De Singular: "marimba";
+            De Plural: "marimbas";
+            Fr Singular: "marimba";
+            Fr Plural: "marimbas";
+            It Singular: "marimba";
+            It Plural: "marimbe";
+        ],
+        category: None,
         pitch: pitched(
             0,
             cited(
@@ -777,7 +1183,26 @@ pub(super) const MARIMBA: Instrument = Instrument::new(
 pub(super) const TUBULAR_BELLS: Instrument = Instrument::new(
     InstrumentType::TubularBells,
     InstrumentSpec {
-        name: "Tubular bells",
+        names: Names {
+            en: "Tubular bells",
+            cs: "trubicové zvony",
+            de: "Röhrenglocken",
+            fr: "cloches tubulaires",
+            it: "campane tubolari",
+            abbreviation: "Tub. B.",
+        },
+        aliases: aliases![
+            En Plural: "tubular bells", "chimes", "orchestral chimes", "tubular chimes";
+            En Unmarked: "tub b";
+            Cs Singular: "trubicovy zvon", "trubicoveho zvonu", "trubicovemu zvonu",
+                "trubicovem zvonu", "trubicovym zvonem";
+            Cs Plural: "trubicove zvony", "trubicovych zvonu", "trubicovym zvonum",
+                "trubicovych zvonech", "trubicovymi zvony", "zvony", "zvonu", "zvonum", "zvonech";
+            De Plural: "rohrenglocken", "glocken";
+            Fr Plural: "cloches tubulaires", "cloches";
+            It Plural: "campane tubolari", "campane";
+        ],
+        category: Some(CategoryId::Bells),
         pitch: pitched(
             0,
             cited(
@@ -821,7 +1246,24 @@ pub(super) const TUBULAR_BELLS: Instrument = Instrument::new(
 pub(super) const CROTALES: Instrument = Instrument::new(
     InstrumentType::Crotales,
     InstrumentSpec {
-        name: "Crotales",
+        names: Names {
+            en: "Crotales",
+            cs: "krotaly",
+            de: "Crotales",
+            fr: "crotales",
+            it: "crotali",
+            abbreviation: "Crot.",
+        },
+        aliases: aliases![
+            En Plural: "crotales", "antique cymbals";
+            En Unmarked: "crot";
+            Cs Plural: "krotaly", "krotalu", "krotalum", "krotalech";
+            De Unmarked: "crotales";
+            De Plural: "antike zimbeln";
+            Fr Plural: "crotales", "cymbales antiques";
+            It Plural: "crotali";
+        ],
+        category: Some(CategoryId::Bells),
         pitch: pitched(
             24,
             cited(
@@ -861,10 +1303,33 @@ pub(super) const CROTALES: Instrument = Instrument::new(
     },
 );
 
+// Aliases: "Car." is left out, since it is also an English word.
 pub(super) const CARILLON: Instrument = Instrument::new(
     InstrumentType::Carillon,
     InstrumentSpec {
-        name: "Carillon",
+        names: Names {
+            en: "Carillon",
+            cs: "zvonohra",
+            de: "Carillon",
+            fr: "carillon",
+            it: "carillon",
+            abbreviation: "Car.",
+        },
+        aliases: aliases![
+            En Singular: "carillon";
+            En Plural: "carillons";
+            Cs Singular: "zvonohra", "zvonohre", "zvonohru", "zvonohrou", "vezni zvonkohra",
+                "vezni zvonkohre", "vezni zvonkohru", "vezni zvonkohrou";
+            Cs Unmarked: "zvonohry", "vezni zvonkohry";
+            Cs Plural: "zvonoher", "zvonohram", "zvonohrach", "zvonohrami", "veznich zvonkoher",
+                "veznim zvonkohram", "veznich zvonkohrach", "veznimi zvonkohrami";
+            De Singular: "carillon";
+            De Plural: "carillons";
+            Fr Singular: "carillon";
+            Fr Plural: "carillons";
+            It Unmarked: "carillon";
+        ],
+        category: Some(CategoryId::Bells),
         pitch: pitched(
             0,
             estimate(

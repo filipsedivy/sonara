@@ -7,14 +7,33 @@ use crate::orchestration::articulation::Articulation::{
     Staccato, Sustain, Tenuto, Text, Trill, VibratoOn, Vowel, Whisper,
 };
 use crate::orchestration::ensemble_profile::{EnsembleProfile, Forms};
-use crate::orchestration::id::InstrumentType;
+use crate::orchestration::id::{CategoryId, InstrumentType};
 use crate::orchestration::instrument::{Instrument, InstrumentSpec, Provenance};
+use crate::orchestration::names::Names;
 use crate::orchestration::pitch::Clef;
 
+// Aliases: a solo voice has the singular forms and a choir section the plural ("tenor",
+// "tenors"). "Ten." and "Bar." are left out, since they are also English words.
 pub(super) const VOICE_SOPRANO: Instrument = Instrument::new(
     InstrumentType::VoiceSoprano,
     InstrumentSpec {
-        name: "Soprano",
+        names: Names {
+            en: "Soprano",
+            cs: "Soprán",
+            de: "Sopran",
+            fr: "Soprano",
+            it: "Soprano",
+            abbreviation: "Sopr.",
+        },
+        aliases: aliases![
+            En Singular: "soprano";
+            En Unmarked: "sopr";
+            Cs Singular: "sopran", "sopranu", "sopranem";
+            De Singular: "sopran";
+            Fr Singular: "soprano";
+            It Singular: "soprano";
+        ],
+        category: Some(CategoryId::SoloVoice),
         pitch: pitched(
             0,
             cited(
@@ -90,7 +109,23 @@ pub(super) const VOICE_SOPRANO: Instrument = Instrument::new(
 pub(super) const VOICE_MEZZO_SOPRANO: Instrument = Instrument::new(
     InstrumentType::VoiceMezzoSoprano,
     InstrumentSpec {
-        name: "Mezzo-soprano",
+        names: Names {
+            en: "Mezzo-soprano",
+            cs: "Mezzosoprán",
+            de: "Mezzosopran",
+            fr: "Mezzo-soprano",
+            it: "Mezzosoprano",
+            abbreviation: "M.-sopr.",
+        },
+        aliases: aliases![
+            En Singular: "mezzo soprano", "mezzo";
+            En Unmarked: "m sopr";
+            Cs Singular: "mezzosopran", "mezzosopranu", "mezzosopranem";
+            De Singular: "mezzosopran";
+            Fr Singular: "mezzo soprano";
+            It Singular: "mezzosoprano";
+        ],
+        category: Some(CategoryId::SoloVoice),
         pitch: pitched(
             0,
             cited(
@@ -154,7 +189,23 @@ pub(super) const VOICE_MEZZO_SOPRANO: Instrument = Instrument::new(
 pub(super) const VOICE_ALTO: Instrument = Instrument::new(
     InstrumentType::VoiceAlto,
     InstrumentSpec {
-        name: "Contralto",
+        names: Names {
+            en: "Contralto",
+            cs: "Alt",
+            de: "Alt",
+            fr: "Contralto",
+            it: "Contralto",
+            abbreviation: "C.-alto",
+        },
+        aliases: aliases![
+            En Singular: "contralto", "alto";
+            En Unmarked: "c alto";
+            Cs Singular: "alt", "altu", "altem";
+            De Singular: "alt";
+            Fr Singular: "contralto";
+            It Singular: "contralto";
+        ],
+        category: Some(CategoryId::SoloVoice),
         pitch: pitched(
             0,
             cited(
@@ -232,7 +283,22 @@ pub(super) const VOICE_ALTO: Instrument = Instrument::new(
 pub(super) const VOICE_TENOR: Instrument = Instrument::new(
     InstrumentType::VoiceTenor,
     InstrumentSpec {
-        name: "Tenor",
+        names: Names {
+            en: "Tenor",
+            cs: "Tenor",
+            de: "Tenor",
+            fr: "Ténor",
+            it: "Tenore",
+            abbreviation: "Ten.",
+        },
+        aliases: aliases![
+            En Singular: "tenor";
+            Cs Singular: "tenor", "tenoru", "tenorem", "tenora", "tenorovi";
+            De Singular: "tenor";
+            Fr Singular: "tenor";
+            It Singular: "tenore";
+        ],
+        category: Some(CategoryId::SoloVoice),
         pitch: pitched(
             0,
             cited(
@@ -312,7 +378,22 @@ pub(super) const VOICE_TENOR: Instrument = Instrument::new(
 pub(super) const VOICE_BARITONE: Instrument = Instrument::new(
     InstrumentType::VoiceBaritone,
     InstrumentSpec {
-        name: "Baritone",
+        names: Names {
+            en: "Baritone",
+            cs: "Baryton",
+            de: "Bariton",
+            fr: "Baryton",
+            it: "Baritono",
+            abbreviation: "Bar.",
+        },
+        aliases: aliases![
+            En Singular: "baritone";
+            Cs Singular: "baryton", "barytonu", "barytonem", "barytona", "barytonovi";
+            De Singular: "bariton";
+            Fr Singular: "baryton";
+            It Singular: "baritono";
+        ],
+        category: Some(CategoryId::SoloVoice),
         pitch: pitched(
             0,
             cited(
@@ -379,7 +460,22 @@ pub(super) const VOICE_BARITONE: Instrument = Instrument::new(
 pub(super) const VOICE_BASS: Instrument = Instrument::new(
     InstrumentType::VoiceBass,
     InstrumentSpec {
-        name: "Bass",
+        names: Names {
+            en: "Bass",
+            cs: "Bas",
+            de: "Bass",
+            fr: "Basse",
+            it: "Basso",
+            abbreviation: "B.",
+        },
+        aliases: aliases![
+            En Singular: "bass";
+            Cs Singular: "bas", "basu", "basem", "basa", "basovi";
+            De Singular: "bass";
+            Fr Singular: "basse";
+            It Singular: "basso";
+        ],
+        category: Some(CategoryId::SoloVoice),
         pitch: pitched(
             0,
             cited(
@@ -455,10 +551,28 @@ pub(super) const VOICE_BASS: Instrument = Instrument::new(
     },
 );
 
+// The German section names are compounds with "Chor" ("Chorsopran"): "Sopran" alone is the
+// solo voice's name.
 pub(super) const CHOIR_SOPRANO: Instrument = Instrument::new(
     InstrumentType::ChoirSoprano,
     InstrumentSpec {
-        name: "Sopranos",
+        names: Names {
+            en: "Sopranos",
+            cs: "Soprány",
+            de: "Chorsopran",
+            fr: "Sopranos",
+            it: "Soprani",
+            abbreviation: "S.",
+        },
+        aliases: aliases![
+            En Plural: "sopranos";
+            Cs Plural: "soprany", "sopranu", "sopranum", "sopranech";
+            De Unmarked: "chorsopran";
+            De Plural: "soprane";
+            Fr Plural: "sopranos";
+            It Plural: "soprani";
+        ],
+        category: Some(CategoryId::Choir),
         pitch: pitched(
             0,
             cited(
@@ -563,7 +677,22 @@ pub(super) const CHOIR_SOPRANO: Instrument = Instrument::new(
 pub(super) const CHOIR_ALTO: Instrument = Instrument::new(
     InstrumentType::ChoirAlto,
     InstrumentSpec {
-        name: "Altos",
+        names: Names {
+            en: "Altos",
+            cs: "Alty",
+            de: "Choralt",
+            fr: "Altos",
+            it: "Contralti",
+            abbreviation: "A.",
+        },
+        aliases: aliases![
+            En Plural: "altos", "contraltos";
+            Cs Plural: "alty", "altu", "altum", "altech";
+            De Unmarked: "choralt";
+            Fr Plural: "altos";
+            It Plural: "contralti";
+        ],
+        category: Some(CategoryId::Choir),
         pitch: pitched(
             0,
             cited(
@@ -668,7 +797,23 @@ pub(super) const CHOIR_ALTO: Instrument = Instrument::new(
 pub(super) const CHOIR_TENOR: Instrument = Instrument::new(
     InstrumentType::ChoirTenor,
     InstrumentSpec {
-        name: "Tenors",
+        names: Names {
+            en: "Tenors",
+            cs: "Tenory",
+            de: "Chortenor",
+            fr: "Ténors",
+            it: "Tenori",
+            abbreviation: "T.",
+        },
+        aliases: aliases![
+            En Plural: "tenors";
+            Cs Plural: "tenory", "tenoru", "tenorum", "tenorech", "tenori";
+            De Unmarked: "chortenor";
+            De Plural: "tenore";
+            Fr Plural: "tenors";
+            It Plural: "tenori";
+        ],
+        category: Some(CategoryId::Choir),
         pitch: pitched(
             0,
             cited(
@@ -778,7 +923,23 @@ pub(super) const CHOIR_TENOR: Instrument = Instrument::new(
 pub(super) const CHOIR_BASS: Instrument = Instrument::new(
     InstrumentType::ChoirBass,
     InstrumentSpec {
-        name: "Basses",
+        names: Names {
+            en: "Basses",
+            cs: "Basy",
+            de: "Chorbass",
+            fr: "Basses",
+            it: "Bassi",
+            abbreviation: "B.",
+        },
+        aliases: aliases![
+            En Plural: "basses";
+            Cs Plural: "basy", "basu", "basum", "basech";
+            De Unmarked: "chorbass";
+            De Plural: "basse";
+            Fr Plural: "basses";
+            It Plural: "bassi";
+        ],
+        category: Some(CategoryId::Choir),
         pitch: pitched(
             0,
             cited(

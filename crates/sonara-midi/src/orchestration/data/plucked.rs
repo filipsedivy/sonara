@@ -10,12 +10,35 @@ use crate::orchestration::articulation::Articulation::{
 use crate::orchestration::ensemble_profile::{EnsembleProfile, Forms};
 use crate::orchestration::id::InstrumentType;
 use crate::orchestration::instrument::{Instrument, InstrumentSpec, Provenance};
+use crate::orchestration::names::Names;
 use crate::orchestration::pitch::Clef;
 
 pub(super) const HARP: Instrument = Instrument::new(
     InstrumentType::Harp,
     InstrumentSpec {
-        name: "Harp",
+        names: Names {
+            en: "Harp",
+            cs: "harfa",
+            de: "Harfe",
+            fr: "harpe",
+            it: "arpa",
+            abbreviation: "Hp.",
+        },
+        aliases: aliases![
+            En Singular: "harp", "pedal harp", "concert harp";
+            En Plural: "harps", "pedal harps";
+            En Unmarked: "hrp";
+            Cs Singular: "harfa", "harfe", "harfu", "harfou";
+            Cs Unmarked: "harfy";
+            Cs Plural: "harf", "harfam", "harfach", "harfami";
+            De Singular: "harfe", "pedalharfe";
+            De Plural: "harfen", "pedalharfen";
+            Fr Singular: "harpe";
+            Fr Plural: "harpes";
+            It Singular: "arpa";
+            It Plural: "arpe";
+        ],
+        category: None,
         pitch: pitched(
             0,
             cited(
@@ -85,7 +108,31 @@ pub(super) const HARP: Instrument = Instrument::new(
 pub(super) const GUITAR_CLASSICAL: Instrument = Instrument::new(
     InstrumentType::GuitarClassical,
     InstrumentSpec {
-        name: "Classical guitar",
+        names: Names {
+            en: "Classical guitar",
+            cs: "klasická kytara",
+            de: "klassische Gitarre",
+            fr: "guitare classique",
+            it: "chitarra classica",
+            abbreviation: "Gtr.",
+        },
+        aliases: aliases![
+            En Singular: "classical guitar", "guitar";
+            En Plural: "classical guitars", "guitars";
+            En Unmarked: "gtr";
+            Cs Singular: "klasicka kytara", "klasicke kytare", "klasickou kytaru",
+                "klasickou kytarou", "kytara", "kytare", "kytaru", "kytarou";
+            Cs Unmarked: "klasicke kytary", "kytary";
+            Cs Plural: "klasickych kytar", "klasickym kytaram", "klasickych kytarach",
+                "klasickymi kytarami", "kytar", "kytaram", "kytarach", "kytarami";
+            De Singular: "klassische gitarre", "gitarre";
+            De Plural: "klassische gitarren", "gitarren";
+            Fr Singular: "guitare classique", "guitare";
+            Fr Plural: "guitares classiques", "guitares";
+            It Singular: "chitarra classica", "chitarra";
+            It Plural: "chitarre classiche", "chitarre";
+        ],
+        category: None,
         pitch: pitched(
             -12,
             estimate(
@@ -152,7 +199,28 @@ pub(super) const GUITAR_CLASSICAL: Instrument = Instrument::new(
 pub(super) const LUTE: Instrument = Instrument::new(
     InstrumentType::Lute,
     InstrumentSpec {
-        name: "Lute",
+        names: Names {
+            en: "Lute",
+            cs: "loutna",
+            de: "Laute",
+            fr: "luth",
+            it: "liuto",
+            abbreviation: "Lt.",
+        },
+        aliases: aliases![
+            En Singular: "lute";
+            En Plural: "lutes";
+            Cs Singular: "loutna", "loutne", "loutnu", "loutnou";
+            Cs Unmarked: "loutny";
+            Cs Plural: "loutnam", "loutnach", "loutnami";
+            De Singular: "laute";
+            De Plural: "lauten";
+            Fr Singular: "luth";
+            Fr Plural: "luths";
+            It Singular: "liuto";
+            It Plural: "liuti";
+        ],
+        category: None,
         pitch: pitched(
             -12,
             estimate(
@@ -197,7 +265,29 @@ pub(super) const LUTE: Instrument = Instrument::new(
 pub(super) const MANDOLIN: Instrument = Instrument::new(
     InstrumentType::Mandolin,
     InstrumentSpec {
-        name: "Mandolin",
+        names: Names {
+            en: "Mandolin",
+            cs: "mandolína",
+            de: "Mandoline",
+            fr: "mandoline",
+            it: "mandolino",
+            abbreviation: "Mand.",
+        },
+        aliases: aliases![
+            En Singular: "mandolin", "mandoline";
+            En Plural: "mandolins", "mandolines";
+            En Unmarked: "mand";
+            Cs Singular: "mandolina", "mandoline", "mandolinu", "mandolinou";
+            Cs Unmarked: "mandoliny";
+            Cs Plural: "mandolin", "mandolinam", "mandolinach", "mandolinami";
+            De Singular: "mandoline";
+            De Plural: "mandolinen";
+            Fr Singular: "mandoline";
+            Fr Plural: "mandolines";
+            It Singular: "mandolino";
+            It Plural: "mandolini";
+        ],
+        category: None,
         pitch: pitched(
             0,
             estimate(

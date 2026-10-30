@@ -10,14 +10,37 @@ use crate::orchestration::articulation::Articulation::{
     WahWah,
 };
 use crate::orchestration::ensemble_profile::{EnsembleProfile, Forms};
-use crate::orchestration::id::InstrumentType;
+use crate::orchestration::id::{CategoryId, InstrumentType};
 use crate::orchestration::instrument::{Instrument, InstrumentSpec, Provenance};
+use crate::orchestration::names::Names;
 use crate::orchestration::pitch::Clef;
 
+// Aliases: never the bare Czech "roh", which also means a corner.
 pub(super) const HORN_F: Instrument = Instrument::new(
     InstrumentType::HornF,
     InstrumentSpec {
-        name: "Horn in F",
+        names: Names {
+            en: "Horn in F",
+            cs: "lesní roh",
+            de: "Horn",
+            fr: "cor",
+            it: "corno",
+            abbreviation: "Hn.",
+        },
+        aliases: aliases![
+            En Singular: "horn in f", "horn", "french horn";
+            En Plural: "horns in f", "horns", "french horns";
+            Cs Singular: "lesni roh", "lesniho rohu", "lesnimu rohu", "lesnim rohu", "lesnim rohem";
+            Cs Plural: "lesni rohy", "lesnich rohu", "lesnim rohum", "lesnich rozich",
+                "lesnimi rohy";
+            De Singular: "horn", "waldhorn", "ventilhorn";
+            De Plural: "horner", "waldhorner", "ventilhorner";
+            Fr Singular: "cor", "cor d harmonie", "cor a pistons";
+            Fr Plural: "cors";
+            It Singular: "corno", "corno ventile";
+            It Plural: "corni";
+        ],
+        category: None,
         pitch: pitched(
             -7,
             cited(
@@ -101,7 +124,31 @@ pub(super) const HORN_F: Instrument = Instrument::new(
 pub(super) const WAGNER_TUBA_TENOR: Instrument = Instrument::new(
     InstrumentType::WagnerTubaTenor,
     InstrumentSpec {
-        name: "Tenor Wagner tuba",
+        names: Names {
+            en: "Tenor Wagner tuba",
+            cs: "tenorová Wagnerova tuba",
+            de: "Tenor-Wagnertuba",
+            fr: "tuba wagnérien ténor",
+            it: "tuba wagneriana tenore",
+            abbreviation: "Ten. Tb.",
+        },
+        aliases: aliases![
+            En Singular: "tenor wagner tuba";
+            En Plural: "tenor wagner tubas";
+            En Unmarked: "ten tb";
+            Cs Singular: "tenorova wagnerova tuba", "tenorove wagnerove tube",
+                "tenorovou wagnerovu tubu", "tenorovou wagnerovou tubou";
+            Cs Unmarked: "tenorove wagnerovy tuby";
+            Cs Plural: "tenorovych wagnerovych tub", "tenorovym wagnerovym tubam",
+                "tenorovych wagnerovych tubach", "tenorovymi wagnerovymi tubami";
+            De Singular: "tenor wagnertuba", "tenortuba";
+            De Plural: "tenor wagnertuben", "tenortuben";
+            Fr Singular: "tuba wagnerien tenor";
+            Fr Plural: "tubas wagneriens tenors";
+            It Singular: "tuba wagneriana tenore";
+            It Plural: "tube wagneriane tenori";
+        ],
+        category: Some(CategoryId::WagnerTuba),
         pitch: pitched(
             -2,
             cited(
@@ -171,7 +218,31 @@ pub(super) const WAGNER_TUBA_TENOR: Instrument = Instrument::new(
 pub(super) const WAGNER_TUBA_BASS: Instrument = Instrument::new(
     InstrumentType::WagnerTubaBass,
     InstrumentSpec {
-        name: "Bass Wagner tuba",
+        names: Names {
+            en: "Bass Wagner tuba",
+            cs: "basová Wagnerova tuba",
+            de: "Bass-Wagnertuba",
+            fr: "tuba wagnérien basse",
+            it: "tuba wagneriana bassa",
+            abbreviation: "B. Tb.",
+        },
+        aliases: aliases![
+            En Singular: "bass wagner tuba";
+            En Plural: "bass wagner tubas";
+            En Unmarked: "b tb";
+            Cs Singular: "basova wagnerova tuba", "basove wagnerove tube", "basovou wagnerovu tubu",
+                "basovou wagnerovou tubou";
+            Cs Unmarked: "basove wagnerovy tuby";
+            Cs Plural: "basovych wagnerovych tub", "basovym wagnerovym tubam",
+                "basovych wagnerovych tubach", "basovymi wagnerovymi tubami";
+            De Singular: "bass wagnertuba", "basstuba";
+            De Plural: "bass wagnertuben", "basstuben";
+            Fr Singular: "tuba wagnerien basse";
+            Fr Plural: "tubas wagneriens basses";
+            It Singular: "tuba wagneriana bassa";
+            It Plural: "tube wagneriane basse";
+        ],
+        category: Some(CategoryId::WagnerTuba),
         pitch: pitched(
             -7,
             cited(
@@ -241,7 +312,29 @@ pub(super) const WAGNER_TUBA_BASS: Instrument = Instrument::new(
 pub(super) const TRUMPET_PICCOLO: Instrument = Instrument::new(
     InstrumentType::TrumpetPiccolo,
     InstrumentSpec {
-        name: "Piccolo trumpet",
+        names: Names {
+            en: "Piccolo trumpet",
+            cs: "piccolo trubka",
+            de: "Piccolotrompete",
+            fr: "trompette piccolo",
+            it: "tromba piccola",
+            abbreviation: "P. Tpt. B♭",
+        },
+        aliases: aliases![
+            En Singular: "piccolo trumpet";
+            En Plural: "piccolo trumpets";
+            En Unmarked: "p tpt bb";
+            Cs Singular: "piccolo trubka", "piccolo trubce", "piccolo trubku", "piccolo trubkou";
+            Cs Unmarked: "piccolo trubky";
+            Cs Plural: "piccolo trubek", "piccolo trubkam", "piccolo trubkach", "piccolo trubkami";
+            De Singular: "piccolotrompete", "pikkolotrompete", "kleine trompete";
+            De Plural: "piccolotrompeten", "pikkolotrompeten";
+            Fr Singular: "trompette piccolo";
+            Fr Plural: "trompettes piccolos";
+            It Singular: "tromba piccola", "trombino";
+            It Plural: "trombe piccole";
+        ],
+        category: Some(CategoryId::Trumpet),
         pitch: pitched(
             10,
             cited(
@@ -341,7 +434,31 @@ pub(super) const TRUMPET_PICCOLO: Instrument = Instrument::new(
 pub(super) const TRUMPET_C: Instrument = Instrument::new(
     InstrumentType::TrumpetC,
     InstrumentSpec {
-        name: "Trumpet in C",
+        names: Names {
+            en: "Trumpet in C",
+            cs: "trubka in C",
+            de: "Trompete in C",
+            fr: "trompette en ut",
+            it: "tromba in do",
+            abbreviation: "C Tpt.",
+        },
+        aliases: aliases![
+            En Singular: "trumpet in c", "c trumpet";
+            En Plural: "trumpets in c", "c trumpets";
+            En Unmarked: "c tpt";
+            Cs Singular: "trubka in c", "trubce in c", "trubku in c", "trubkou in c", "c trubka",
+                "c trubce", "c trubku", "c trubkou";
+            Cs Unmarked: "trubky in c", "c trubky";
+            Cs Plural: "trubek in c", "trubkam in c", "trubkach in c", "trubkami in c", "c trubek",
+                "c trubkam", "c trubkach", "c trubkami";
+            De Singular: "trompete in c", "c trompete";
+            De Plural: "trompeten in c", "c trompeten";
+            Fr Singular: "trompette en ut";
+            Fr Plural: "trompettes en ut";
+            It Singular: "tromba in do";
+            It Plural: "trombe in do";
+        ],
+        category: Some(CategoryId::Trumpet),
         pitch: pitched(
             0,
             cited(
@@ -444,7 +561,31 @@ pub(super) const TRUMPET_C: Instrument = Instrument::new(
 pub(super) const TRUMPET_BB: Instrument = Instrument::new(
     InstrumentType::TrumpetBb,
     InstrumentSpec {
-        name: "Trumpet in B♭",
+        names: Names {
+            en: "Trumpet in B♭",
+            cs: "trubka in B",
+            de: "Trompete in B",
+            fr: "trompette en si♭",
+            it: "tromba in si♭",
+            abbreviation: "B♭ Tpt.",
+        },
+        aliases: aliases![
+            En Singular: "trumpet in bb", "trumpet in b flat", "bb trumpet", "b flat trumpet";
+            En Plural: "trumpets in bb", "trumpets in b flat", "bb trumpets", "b flat trumpets";
+            En Unmarked: "bb tpt";
+            Cs Singular: "trubka in b", "trubce in b", "trubku in b", "trubkou in b", "b trubka",
+                "b trubce", "b trubku", "b trubkou";
+            Cs Unmarked: "trubky in b", "b trubky";
+            Cs Plural: "trubek in b", "trubkam in b", "trubkach in b", "trubkami in b", "b trubek",
+                "b trubkam", "b trubkach", "b trubkami";
+            De Singular: "trompete in b", "b trompete";
+            De Plural: "trompeten in b", "b trompeten";
+            Fr Singular: "trompette en sib";
+            Fr Plural: "trompettes en sib";
+            It Singular: "tromba in sib";
+            It Plural: "trombe in sib";
+        ],
+        category: Some(CategoryId::Trumpet),
         pitch: pitched(
             -2,
             cited(
@@ -566,7 +707,29 @@ pub(super) const TRUMPET_BB: Instrument = Instrument::new(
 pub(super) const CORNET: Instrument = Instrument::new(
     InstrumentType::Cornet,
     InstrumentSpec {
-        name: "Cornet in B♭",
+        names: Names {
+            en: "Cornet in B♭",
+            cs: "kornet",
+            de: "Kornett",
+            fr: "cornet à pistons",
+            it: "cornetta",
+            abbreviation: "B♭ Cnt.",
+        },
+        aliases: aliases![
+            En Singular: "cornet in bb", "cornet";
+            En Plural: "cornets in bb", "cornets";
+            En Unmarked: "bb cnt";
+            Cs Singular: "kornet", "kornetem";
+            Cs Unmarked: "kornetu";
+            Cs Plural: "kornety", "kornetum", "kornetech";
+            De Singular: "kornett";
+            De Plural: "kornette";
+            Fr Singular: "cornet a pistons";
+            Fr Plural: "cornets a pistons";
+            It Singular: "cornetta";
+            It Plural: "cornette";
+        ],
+        category: None,
         pitch: pitched(
             -2,
             cited(
@@ -668,7 +831,29 @@ pub(super) const CORNET: Instrument = Instrument::new(
 pub(super) const FLUGELHORN: Instrument = Instrument::new(
     InstrumentType::Flugelhorn,
     InstrumentSpec {
-        name: "Flugelhorn",
+        names: Names {
+            en: "Flugelhorn",
+            cs: "křídlovka",
+            de: "Flügelhorn",
+            fr: "bugle",
+            it: "flicorno soprano",
+            abbreviation: "Flghn.",
+        },
+        aliases: aliases![
+            En Singular: "flugelhorn";
+            En Plural: "flugelhorns";
+            En Unmarked: "flghn";
+            Cs Singular: "kridlovka", "kridlovce", "kridlovku", "kridlovkou";
+            Cs Unmarked: "kridlovky";
+            Cs Plural: "kridlovek", "kridlovkam", "kridlovkach", "kridlovkami";
+            De Singular: "flugelhorn";
+            De Plural: "flugelhorner";
+            Fr Singular: "bugle";
+            Fr Plural: "bugles";
+            It Singular: "flicorno soprano", "flicorno";
+            It Plural: "flicorni soprani", "flicorni";
+        ],
+        category: None,
         pitch: pitched(
             -2,
             cited(
@@ -756,7 +941,33 @@ pub(super) const FLUGELHORN: Instrument = Instrument::new(
 pub(super) const TROMBONE_TENOR: Instrument = Instrument::new(
     InstrumentType::TromboneTenor,
     InstrumentSpec {
-        name: "Tenor trombone",
+        names: Names {
+            en: "Tenor trombone",
+            cs: "tenorový pozoun",
+            de: "Tenorposaune",
+            fr: "trombone ténor",
+            it: "trombone tenore",
+            abbreviation: "Tbn.",
+        },
+        aliases: aliases![
+            En Singular: "tenor trombone";
+            En Plural: "tenor trombones";
+            Cs Singular: "tenorovy pozoun", "tenoroveho pozounu", "tenorovemu pozounu",
+                "tenorovem pozounu", "tenorovym pozounem", "tenorovy trombon",
+                "tenoroveho trombonu", "tenorovemu trombonu", "tenorovem trombonu",
+                "tenorovym trombonem";
+            Cs Plural: "tenorove pozouny", "tenorovych pozounu", "tenorovym pozounum",
+                "tenorovych pozounech", "tenorovymi pozouny", "tenorove trombony",
+                "tenorovych trombonu", "tenorovym trombonum", "tenorovych trombonech",
+                "tenorovymi trombony";
+            De Singular: "tenorposaune";
+            De Plural: "tenorposaunen";
+            Fr Singular: "trombone tenor";
+            Fr Plural: "trombones tenors";
+            It Singular: "trombone tenore";
+            It Plural: "tromboni tenori";
+        ],
+        category: Some(CategoryId::Trombone),
         pitch: pitched(
             0,
             cited(
@@ -839,7 +1050,32 @@ pub(super) const TROMBONE_TENOR: Instrument = Instrument::new(
 pub(super) const TROMBONE_BASS: Instrument = Instrument::new(
     InstrumentType::TromboneBass,
     InstrumentSpec {
-        name: "Bass trombone",
+        names: Names {
+            en: "Bass trombone",
+            cs: "basový pozoun",
+            de: "Bassposaune",
+            fr: "trombone basse",
+            it: "trombone basso",
+            abbreviation: "B. Tbn.",
+        },
+        aliases: aliases![
+            En Singular: "bass trombone";
+            En Plural: "bass trombones";
+            En Unmarked: "b tbn";
+            Cs Singular: "basovy pozoun", "basoveho pozounu", "basovemu pozounu", "basovem pozounu",
+                "basovym pozounem", "basovy trombon", "basoveho trombonu", "basovemu trombonu",
+                "basovem trombonu", "basovym trombonem";
+            Cs Plural: "basove pozouny", "basovych pozounu", "basovym pozounum",
+                "basovych pozounech", "basovymi pozouny", "basove trombony", "basovych trombonu",
+                "basovym trombonum", "basovych trombonech", "basovymi trombony";
+            De Singular: "bassposaune";
+            De Plural: "bassposaunen";
+            Fr Singular: "trombone basse";
+            Fr Plural: "trombones basses";
+            It Singular: "trombone basso";
+            It Plural: "tromboni bassi";
+        ],
+        category: Some(CategoryId::Trombone),
         pitch: pitched(
             0,
             cited(
@@ -925,7 +1161,29 @@ pub(super) const TROMBONE_BASS: Instrument = Instrument::new(
 pub(super) const EUPHONIUM: Instrument = Instrument::new(
     InstrumentType::Euphonium,
     InstrumentSpec {
-        name: "Euphonium",
+        names: Names {
+            en: "Euphonium",
+            cs: "eufonium",
+            de: "Euphonium",
+            fr: "saxhorn basse",
+            it: "eufonio",
+            abbreviation: "Euph.",
+        },
+        aliases: aliases![
+            En Singular: "euphonium", "tenor tuba";
+            En Plural: "euphoniums", "tenor tubas";
+            En Unmarked: "euph";
+            Cs Singular: "eufonium", "eufoniu", "eufoniem";
+            Cs Unmarked: "eufonia";
+            Cs Plural: "eufonii", "eufoniim", "eufoniich";
+            De Singular: "euphonium", "tenortuba", "tenorbasshorn";
+            De Plural: "euphonien", "tenortuben";
+            Fr Singular: "saxhorn basse", "tuba basse";
+            Fr Plural: "saxhorns basses";
+            It Singular: "eufonio";
+            It Plural: "eufoni";
+        ],
+        category: None,
         pitch: pitched(
             0,
             cited(
@@ -996,7 +1254,28 @@ pub(super) const EUPHONIUM: Instrument = Instrument::new(
 pub(super) const TUBA: Instrument = Instrument::new(
     InstrumentType::Tuba,
     InstrumentSpec {
-        name: "Tuba",
+        names: Names {
+            en: "Tuba",
+            cs: "tuba",
+            de: "Tuba",
+            fr: "tuba",
+            it: "tuba",
+            abbreviation: "Tba.",
+        },
+        aliases: aliases![
+            En Singular: "tuba", "bass tuba", "contrabass tuba";
+            En Plural: "tubas", "bass tubas", "contrabass tubas";
+            Cs Singular: "tuba", "tube", "tubu", "tubou";
+            Cs Unmarked: "tuby";
+            Cs Plural: "tub", "tubam", "tubach", "tubami";
+            De Singular: "tuba", "basstuba", "kontrabasstuba";
+            De Plural: "tuben", "basstuben", "kontrabasstuben";
+            Fr Singular: "tuba", "tuba basse", "tuba contrebasse";
+            Fr Plural: "tubas";
+            It Singular: "tuba", "tuba bassa";
+            It Plural: "tube";
+        ],
+        category: None,
         pitch: pitched(
             0,
             cited(
@@ -1062,7 +1341,24 @@ pub(super) const TUBA: Instrument = Instrument::new(
 pub(super) const CIMBASSO: Instrument = Instrument::new(
     InstrumentType::Cimbasso,
     InstrumentSpec {
-        name: "Cimbasso",
+        names: Names {
+            en: "Cimbasso",
+            cs: "cimbasso",
+            de: "Cimbasso",
+            fr: "cimbasso",
+            it: "cimbasso",
+            abbreviation: "Cimb.",
+        },
+        aliases: aliases![
+            En Singular: "cimbasso";
+            En Unmarked: "cimb";
+            Cs Unmarked: "cimbasso";
+            De Singular: "cimbasso";
+            Fr Singular: "cimbasso";
+            It Singular: "cimbasso";
+            It Plural: "cimbassi";
+        ],
+        category: None,
         pitch: pitched(
             0,
             cited(

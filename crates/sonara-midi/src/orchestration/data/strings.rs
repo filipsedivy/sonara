@@ -12,12 +12,33 @@ use crate::orchestration::articulation::Articulation::{
 use crate::orchestration::ensemble_profile::{EnsembleProfile, Forms};
 use crate::orchestration::id::InstrumentType;
 use crate::orchestration::instrument::{Instrument, InstrumentSpec, Provenance};
+use crate::orchestration::names::Names;
 use crate::orchestration::pitch::Clef;
 
 pub(super) const VIOLIN: Instrument = Instrument::new(
     InstrumentType::Violin,
     InstrumentSpec {
-        name: "Violin",
+        names: Names {
+            en: "Violin",
+            cs: "housle",
+            de: "Violine",
+            fr: "violon",
+            it: "violino",
+            abbreviation: "Vn.",
+        },
+        aliases: aliases![
+            En Singular: "violin", "fiddle";
+            En Plural: "violins", "fiddles", "vns";
+            En Unmarked: "vln";
+            Cs Unmarked: "housle", "housli", "houslim", "houslich", "houslemi";
+            De Singular: "violine", "geige";
+            De Plural: "violinen", "geigen";
+            Fr Singular: "violon";
+            Fr Plural: "violons";
+            It Singular: "violino";
+            It Plural: "violini";
+        ],
+        category: None,
         pitch: pitched(
             0,
             cited(
@@ -133,7 +154,29 @@ pub(super) const VIOLIN: Instrument = Instrument::new(
 pub(super) const VIOLA: Instrument = Instrument::new(
     InstrumentType::Viola,
     InstrumentSpec {
-        name: "Viola",
+        names: Names {
+            en: "Viola",
+            cs: "viola",
+            de: "Bratsche",
+            fr: "alto",
+            it: "viola",
+            abbreviation: "Va.",
+        },
+        aliases: aliases![
+            En Singular: "viola";
+            En Plural: "violas";
+            En Unmarked: "vla";
+            Cs Singular: "viola", "viole", "violu", "violou";
+            Cs Unmarked: "violy";
+            Cs Plural: "viol", "violam", "violach", "violami";
+            De Singular: "bratsche", "viola";
+            De Plural: "bratschen", "violen";
+            Fr Singular: "alto";
+            Fr Plural: "altos";
+            It Singular: "viola";
+            It Plural: "viole";
+        ],
+        category: None,
         pitch: pitched(
             0,
             cited(
@@ -246,7 +289,30 @@ pub(super) const VIOLA: Instrument = Instrument::new(
 pub(super) const CELLO: Instrument = Instrument::new(
     InstrumentType::Cello,
     InstrumentSpec {
-        name: "Cello",
+        names: Names {
+            en: "Cello",
+            cs: "violoncello",
+            de: "Violoncello",
+            fr: "violoncelle",
+            it: "violoncello",
+            abbreviation: "Vc.",
+        },
+        aliases: aliases![
+            En Singular: "cello", "violoncello";
+            En Plural: "cellos", "violoncellos";
+            En Unmarked: "vlc";
+            Cs Singular: "violoncello", "violoncellu", "violoncellem", "cello", "cellu", "cellem";
+            Cs Unmarked: "violoncella", "cella";
+            Cs Plural: "violoncell", "violoncellum", "violoncellech", "violoncelly", "cell",
+                "cellum", "cellech", "celly";
+            De Singular: "violoncello", "cello";
+            De Plural: "violoncelli", "celli", "cellos";
+            Fr Singular: "violoncelle";
+            Fr Plural: "violoncelles";
+            It Singular: "violoncello";
+            It Plural: "violoncelli";
+        ],
+        category: None,
         pitch: pitched(
             0,
             cited(
@@ -363,7 +429,28 @@ pub(super) const CELLO: Instrument = Instrument::new(
 pub(super) const DOUBLE_BASS: Instrument = Instrument::new(
     InstrumentType::DoubleBass,
     InstrumentSpec {
-        name: "Double bass",
+        names: Names {
+            en: "Double bass",
+            cs: "kontrabas",
+            de: "Kontrabass",
+            fr: "contrebasse",
+            it: "contrabbasso",
+            abbreviation: "Cb.",
+        },
+        aliases: aliases![
+            En Singular: "double bass", "contrabass", "string bass", "upright bass", "bass";
+            En Plural: "double basses", "contrabasses", "string basses", "upright basses", "basses";
+            Cs Singular: "kontrabas", "kontrabasem";
+            Cs Unmarked: "kontrabasu";
+            Cs Plural: "kontrabasy", "kontrabasum", "kontrabasech";
+            De Singular: "kontrabass";
+            De Plural: "kontrabasse";
+            Fr Singular: "contrebasse";
+            Fr Plural: "contrebasses";
+            It Singular: "contrabbasso";
+            It Plural: "contrabbassi";
+        ],
+        category: None,
         pitch: pitched(
             -12,
             cited(

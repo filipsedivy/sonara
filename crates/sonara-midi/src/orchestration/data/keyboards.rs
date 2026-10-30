@@ -8,14 +8,36 @@ use crate::orchestration::articulation::Articulation::{
     Trill, VibratoOn,
 };
 use crate::orchestration::ensemble_profile::{EnsembleProfile, Forms};
-use crate::orchestration::id::InstrumentType;
+use crate::orchestration::id::{CategoryId, InstrumentType};
 use crate::orchestration::instrument::{Instrument, InstrumentSpec, Provenance};
+use crate::orchestration::names::Names;
 use crate::orchestration::pitch::Clef;
 
 pub(super) const CELESTA: Instrument = Instrument::new(
     InstrumentType::Celesta,
     InstrumentSpec {
-        name: "Celesta",
+        names: Names {
+            en: "Celesta",
+            cs: "celesta",
+            de: "Celesta",
+            fr: "célesta",
+            it: "celesta",
+            abbreviation: "Cel.",
+        },
+        aliases: aliases![
+            En Singular: "celesta", "celeste";
+            En Plural: "celestas";
+            En Unmarked: "cel";
+            Cs Singular: "celesta", "celeste", "celestu", "celestou";
+            Cs Unmarked: "celesty";
+            Cs Plural: "celest", "celestam", "celestach", "celestami";
+            De Singular: "celesta";
+            Fr Singular: "celesta";
+            Fr Plural: "celestas";
+            It Singular: "celesta";
+            It Plural: "celeste";
+        ],
+        category: None,
         pitch: pitched(
             12,
             cited(
@@ -62,7 +84,26 @@ pub(super) const CELESTA: Instrument = Instrument::new(
 pub(super) const PIANO_CONCERT_GRAND: Instrument = Instrument::new(
     InstrumentType::PianoConcertGrand,
     InstrumentSpec {
-        name: "Concert grand piano",
+        names: Names {
+            en: "Concert grand piano",
+            cs: "koncertní křídlo",
+            de: "Konzertflügel",
+            fr: "piano à queue de concert",
+            it: "pianoforte a coda da concerto",
+            abbreviation: "Pno.",
+        },
+        aliases: aliases![
+            En Singular: "concert grand piano", "concert grand";
+            En Plural: "concert grand pianos", "concert grands";
+            Cs Singular: "koncertni kridlo", "koncertniho kridla", "koncertnimu kridlu",
+                "koncertnim kridle", "koncertnim kridlem";
+            Cs Plural: "koncertni kridla", "koncertnich kridel", "koncertnim kridlum",
+                "koncertnich kridlech", "koncertnimi kridly";
+            De Unmarked: "konzertflugel";
+            Fr Singular: "piano a queue de concert", "grand queue de concert";
+            It Singular: "pianoforte a coda da concerto", "gran coda";
+        ],
+        category: Some(CategoryId::Piano),
         pitch: pitched(
             0,
             cited(
@@ -127,7 +168,33 @@ pub(super) const PIANO_CONCERT_GRAND: Instrument = Instrument::new(
 pub(super) const PIANO_STUDIO_GRAND: Instrument = Instrument::new(
     InstrumentType::PianoStudioGrand,
     InstrumentSpec {
-        name: "Studio grand piano",
+        names: Names {
+            en: "Studio grand piano",
+            cs: "křídlo",
+            de: "Studioflügel",
+            fr: "piano à queue",
+            it: "pianoforte a coda",
+            abbreviation: "Pno.",
+        },
+        aliases: aliases![
+            En Singular: "studio grand piano", "studio grand";
+            En Plural: "studio grand pianos", "studio grands";
+            Cs Singular: "kridlo", "kridlu", "kridle", "kridlem", "salonni kridlo",
+                "salonniho kridla", "salonnimu kridlu", "salonnim kridle", "salonnim kridlem",
+                "studiove kridlo", "studioveho kridla", "studiovemu kridlu", "studiovem kridle",
+                "studiovym kridlem";
+            Cs Unmarked: "kridla";
+            Cs Plural: "kridel", "kridlum", "kridlech", "kridly", "salonni kridla",
+                "salonnich kridel", "salonnim kridlum", "salonnich kridlech", "salonnimi kridly",
+                "studiova kridla", "studiovych kridel", "studiovym kridlum", "studiovych kridlech",
+                "studiovymi kridly";
+            De Unmarked: "studioflugel", "salonflugel";
+            Fr Singular: "piano a queue", "demi queue", "trois quarts de queue";
+            Fr Plural: "pianos a queue";
+            It Singular: "pianoforte a coda", "mezza coda", "tre quarti di coda";
+            It Plural: "pianoforti a coda";
+        ],
+        category: Some(CategoryId::Piano),
         pitch: pitched(
             0,
             cited(
@@ -183,7 +250,28 @@ pub(super) const PIANO_STUDIO_GRAND: Instrument = Instrument::new(
 pub(super) const PIANO_UPRIGHT: Instrument = Instrument::new(
     InstrumentType::PianoUpright,
     InstrumentSpec {
-        name: "Upright piano",
+        names: Names {
+            en: "Upright piano",
+            cs: "pianino",
+            de: "Pianino",
+            fr: "piano droit",
+            it: "pianoforte verticale",
+            abbreviation: "Pno.",
+        },
+        aliases: aliases![
+            En Singular: "upright piano";
+            En Plural: "upright pianos";
+            Cs Singular: "pianino", "pianinu", "pianinem";
+            Cs Unmarked: "pianina";
+            Cs Plural: "pianin", "pianinum", "pianinech", "pianiny";
+            De Singular: "pianino", "hochklavier";
+            De Plural: "pianinos", "hochklaviere";
+            Fr Singular: "piano droit";
+            Fr Plural: "pianos droits";
+            It Singular: "pianoforte verticale";
+            It Plural: "pianoforti verticali";
+        ],
+        category: Some(CategoryId::Piano),
         pitch: pitched(
             0,
             cited(
@@ -242,7 +330,31 @@ pub(super) const PIANO_UPRIGHT: Instrument = Instrument::new(
 pub(super) const PIANO_FELT: Instrument = Instrument::new(
     InstrumentType::PianoFelt,
     InstrumentSpec {
-        name: "Felt piano",
+        names: Names {
+            en: "Felt piano",
+            cs: "pianino s moderátorem",
+            de: "Klavier mit Moderator",
+            fr: "piano feutré",
+            it: "pianoforte con feltro",
+            abbreviation: "Pno.",
+        },
+        aliases: aliases![
+            En Singular: "felt piano";
+            En Plural: "felt pianos";
+            Cs Singular: "pianino s moderatorem", "pianinu s moderatorem", "pianinem s moderatorem",
+                "plsteny klavir", "plsteneho klaviru", "plstenemu klaviru", "plstenem klaviru",
+                "plstenym klavirem";
+            Cs Unmarked: "pianina s moderatorem";
+            Cs Plural: "pianin s moderatorem", "pianinum s moderatorem", "pianinech s moderatorem",
+                "pianiny s moderatorem", "plstene klaviry", "plstenych klaviru",
+                "plstenym klavirum", "plstenych klavirech", "plstenymi klaviry";
+            De Singular: "klavier mit moderator", "filzklavier";
+            De Plural: "filzklaviere";
+            Fr Singular: "piano feutre";
+            Fr Plural: "pianos feutres";
+            It Singular: "pianoforte con feltro";
+        ],
+        category: Some(CategoryId::Piano),
         pitch: pitched(
             0,
             cited(
@@ -294,7 +406,29 @@ pub(super) const PIANO_FELT: Instrument = Instrument::new(
 pub(super) const PIANO_PREPARED: Instrument = Instrument::new(
     InstrumentType::PianoPrepared,
     InstrumentSpec {
-        name: "Prepared piano",
+        names: Names {
+            en: "Prepared piano",
+            cs: "preparovaný klavír",
+            de: "präpariertes Klavier",
+            fr: "piano préparé",
+            it: "pianoforte preparato",
+            abbreviation: "Prep. Pno.",
+        },
+        aliases: aliases![
+            En Singular: "prepared piano";
+            En Plural: "prepared pianos";
+            En Unmarked: "prep pno";
+            Cs Singular: "preparovany klavir", "preparovaneho klaviru", "preparovanemu klaviru",
+                "preparovanem klaviru", "preparovanym klavirem";
+            Cs Plural: "preparovane klaviry", "preparovanych klaviru", "preparovanym klavirum",
+                "preparovanych klavirech", "preparovanymi klaviry";
+            De Singular: "prapariertes klavier";
+            De Plural: "praparierte klaviere";
+            Fr Singular: "piano prepare";
+            Fr Plural: "pianos prepares";
+            It Singular: "pianoforte preparato";
+        ],
+        category: Some(CategoryId::Piano),
         pitch: pitched(
             0,
             cited(
@@ -341,7 +475,27 @@ pub(super) const PIANO_PREPARED: Instrument = Instrument::new(
 pub(super) const PIANO_HONKY_TONK: Instrument = Instrument::new(
     InstrumentType::PianoHonkyTonk,
     InstrumentSpec {
-        name: "Honky-tonk piano",
+        names: Names {
+            en: "Honky-tonk piano",
+            cs: "honky-tonk piano",
+            de: "Honky-Tonk-Klavier",
+            fr: "piano honky-tonk",
+            it: "pianoforte honky-tonk",
+            abbreviation: "Pno.",
+        },
+        aliases: aliases![
+            En Singular: "honky tonk piano", "honky tonk";
+            En Plural: "honky tonk pianos";
+            Cs Unmarked: "honky tonk piano";
+            Cs Singular: "rozladene pianino", "rozladeneho pianina", "rozladenemu pianinu",
+                "rozladenem pianinu", "rozladenym pianinem";
+            Cs Plural: "rozladena pianina", "rozladenych pianin", "rozladenym pianinum",
+                "rozladenych pianinech", "rozladenymi pianiny";
+            De Singular: "honky tonk klavier";
+            Fr Singular: "piano honky tonk";
+            It Singular: "pianoforte honky tonk";
+        ],
+        category: Some(CategoryId::Piano),
         pitch: pitched(
             0,
             estimate(
@@ -379,7 +533,29 @@ pub(super) const PIANO_HONKY_TONK: Instrument = Instrument::new(
 pub(super) const HARPSICHORD: Instrument = Instrument::new(
     InstrumentType::Harpsichord,
     InstrumentSpec {
-        name: "Harpsichord",
+        names: Names {
+            en: "Harpsichord",
+            cs: "cembalo",
+            de: "Cembalo",
+            fr: "clavecin",
+            it: "clavicembalo",
+            abbreviation: "Hpschd.",
+        },
+        aliases: aliases![
+            En Singular: "harpsichord";
+            En Plural: "harpsichords";
+            En Unmarked: "hpschd", "cemb";
+            Cs Singular: "cembalo", "cembalu", "cembalem";
+            Cs Unmarked: "cembala";
+            Cs Plural: "cembal", "cembalum", "cembalech", "cembaly";
+            De Singular: "cembalo";
+            De Plural: "cembali", "cembalos";
+            Fr Singular: "clavecin";
+            Fr Plural: "clavecins";
+            It Singular: "clavicembalo", "cembalo";
+            It Plural: "clavicembali", "cembali";
+        ],
+        category: None,
         pitch: pitched(
             0,
             cited(
@@ -427,10 +603,32 @@ pub(super) const HARPSICHORD: Instrument = Instrument::new(
     },
 );
 
+// Aliases: "Clav." names the clavinet, the instrument it abbreviates in current use.
 pub(super) const CLAVICHORD: Instrument = Instrument::new(
     InstrumentType::Clavichord,
     InstrumentSpec {
-        name: "Clavichord",
+        names: Names {
+            en: "Clavichord",
+            cs: "klavichord",
+            de: "Clavichord",
+            fr: "clavicorde",
+            it: "clavicordo",
+            abbreviation: "Clav.",
+        },
+        aliases: aliases![
+            En Singular: "clavichord";
+            En Plural: "clavichords";
+            Cs Singular: "klavichord", "klavichordem";
+            Cs Unmarked: "klavichordu";
+            Cs Plural: "klavichordy", "klavichordum", "klavichordech";
+            De Singular: "clavichord", "klavichord";
+            De Plural: "clavichorde", "klavichorde";
+            Fr Singular: "clavicorde";
+            Fr Plural: "clavicordes";
+            It Singular: "clavicordo";
+            It Plural: "clavicordi";
+        ],
+        category: None,
         pitch: pitched(
             0,
             cited(
@@ -481,7 +679,24 @@ pub(super) const CLAVICHORD: Instrument = Instrument::new(
 pub(super) const ELECTRIC_PIANO_RHODES: Instrument = Instrument::new(
     InstrumentType::ElectricPianoRhodes,
     InstrumentSpec {
-        name: "Rhodes piano",
+        names: Names {
+            en: "Rhodes piano",
+            cs: "Fender Rhodes",
+            de: "Fender Rhodes",
+            fr: "piano Rhodes",
+            it: "Fender Rhodes",
+            abbreviation: "Rhodes",
+        },
+        aliases: aliases![
+            En Singular: "rhodes piano", "fender rhodes", "rhodes";
+            En Plural: "rhodes pianos";
+            Cs Unmarked: "fender rhodes", "rhodes";
+            De Unmarked: "fender rhodes", "rhodes";
+            Fr Singular: "piano rhodes", "rhodes";
+            Fr Plural: "pianos rhodes";
+            It Unmarked: "fender rhodes", "rhodes";
+        ],
+        category: Some(CategoryId::ElectricPiano),
         pitch: pitched(
             0,
             cited(
@@ -533,7 +748,24 @@ pub(super) const ELECTRIC_PIANO_RHODES: Instrument = Instrument::new(
 pub(super) const ELECTRIC_PIANO_WURLITZER: Instrument = Instrument::new(
     InstrumentType::ElectricPianoWurlitzer,
     InstrumentSpec {
-        name: "Wurlitzer electronic piano",
+        names: Names {
+            en: "Wurlitzer electronic piano",
+            cs: "Wurlitzer",
+            de: "Wurlitzer Electronic Piano",
+            fr: "piano électrique Wurlitzer",
+            it: "pianoforte elettrico Wurlitzer",
+            abbreviation: "Wurli.",
+        },
+        aliases: aliases![
+            En Singular: "wurlitzer electronic piano", "wurlitzer electric piano", "wurlitzer",
+                "wurli";
+            En Plural: "wurlitzers";
+            Cs Unmarked: "wurlitzer";
+            De Singular: "wurlitzer electronic piano", "wurlitzer";
+            Fr Singular: "piano electrique wurlitzer", "wurlitzer";
+            It Singular: "pianoforte elettrico wurlitzer", "wurlitzer";
+        ],
+        category: Some(CategoryId::ElectricPiano),
         pitch: pitched(
             0,
             cited(
@@ -581,7 +813,26 @@ pub(super) const ELECTRIC_PIANO_WURLITZER: Instrument = Instrument::new(
 pub(super) const CLAVINET: Instrument = Instrument::new(
     InstrumentType::Clavinet,
     InstrumentSpec {
-        name: "Clavinet",
+        names: Names {
+            en: "Clavinet",
+            cs: "Clavinet",
+            de: "Clavinet",
+            fr: "Clavinet",
+            it: "Clavinet",
+            abbreviation: "Clav.",
+        },
+        aliases: aliases![
+            En Singular: "clavinet";
+            En Plural: "clavinets";
+            En Unmarked: "clav";
+            Cs Unmarked: "clavinet";
+            De Singular: "clavinet";
+            De Plural: "clavinets";
+            Fr Singular: "clavinet";
+            Fr Plural: "clavinets";
+            It Unmarked: "clavinet";
+        ],
+        category: None,
         pitch: pitched(
             0,
             cited(
@@ -627,7 +878,26 @@ pub(super) const CLAVINET: Instrument = Instrument::new(
 pub(super) const ORGAN_PIPE: Instrument = Instrument::new(
     InstrumentType::OrganPipe,
     InstrumentSpec {
-        name: "Pipe organ",
+        names: Names {
+            en: "Pipe organ",
+            cs: "varhany",
+            de: "Orgel",
+            fr: "orgue",
+            it: "organo a canne",
+            abbreviation: "Org.",
+        },
+        aliases: aliases![
+            En Singular: "pipe organ";
+            En Plural: "pipe organs";
+            Cs Unmarked: "varhany", "varhan", "varhanam", "varhanach", "varhanami";
+            De Singular: "orgel";
+            De Plural: "orgeln";
+            Fr Singular: "orgue";
+            Fr Plural: "orgues";
+            It Singular: "organo a canne";
+            It Plural: "organi a canne";
+        ],
+        category: Some(CategoryId::Organ),
         pitch: pitched(
             0,
             cited(
@@ -677,7 +947,28 @@ pub(super) const ORGAN_PIPE: Instrument = Instrument::new(
 pub(super) const ORGAN_HAMMOND: Instrument = Instrument::new(
     InstrumentType::OrganHammond,
     InstrumentSpec {
-        name: "Hammond organ",
+        names: Names {
+            en: "Hammond organ",
+            cs: "Hammondovy varhany",
+            de: "Hammondorgel",
+            fr: "orgue Hammond",
+            it: "organo Hammond",
+            abbreviation: "Hammond Org.",
+        },
+        aliases: aliases![
+            En Singular: "hammond organ", "hammond";
+            En Plural: "hammond organs";
+            En Unmarked: "hammond org";
+            Cs Unmarked: "hammondovy varhany", "hammondovych varhan", "hammondovym varhanam",
+                "hammondovych varhanach", "hammondovymi varhanami";
+            De Singular: "hammondorgel";
+            De Plural: "hammondorgeln";
+            Fr Singular: "orgue hammond";
+            Fr Plural: "orgues hammond";
+            It Singular: "organo hammond";
+            It Plural: "organi hammond";
+        ],
+        category: Some(CategoryId::Organ),
         pitch: pitched(
             0,
             cited(
@@ -720,10 +1011,32 @@ pub(super) const ORGAN_HAMMOND: Instrument = Instrument::new(
     },
 );
 
+// Aliases: "Acc." is left out, since it also abbreviates accent and accelerando.
 pub(super) const ACCORDION: Instrument = Instrument::new(
     InstrumentType::Accordion,
     InstrumentSpec {
-        name: "Accordion",
+        names: Names {
+            en: "Accordion",
+            cs: "akordeon",
+            de: "Akkordeon",
+            fr: "accordéon",
+            it: "fisarmonica",
+            abbreviation: "Acc.",
+        },
+        aliases: aliases![
+            En Singular: "accordion", "piano accordion";
+            En Plural: "accordions";
+            Cs Singular: "akordeon", "akordeonem";
+            Cs Unmarked: "akordeonu";
+            Cs Plural: "akordeony", "akordeonum", "akordeonech";
+            De Singular: "akkordeon";
+            De Plural: "akkordeons";
+            Fr Singular: "accordeon";
+            Fr Plural: "accordeons";
+            It Singular: "fisarmonica";
+            It Plural: "fisarmoniche";
+        ],
+        category: None,
         pitch: pitched(
             0,
             cited(

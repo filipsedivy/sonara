@@ -1,4 +1,5 @@
-//! The instrument type: a typed identifier for every acoustic instrument the metadata knows.
+//! The instrument type: a typed identifier for every acoustic instrument the metadata knows; and
+//! the categories, words that name several types at once.
 //!
 //! The string id (`horn_f`) is the external form, used wherever an id crosses a boundary (TYP-06);
 //! inside the crate, records and references use the enum, so a misspelt id does not compile
@@ -6,7 +7,8 @@
 //! (TYP-07).
 
 use super::data;
-use super::instrument::{Family, Instrument};
+use super::instrument::{Family, Instrument, Provenance};
+use super::names::Alias;
 
 /// An acoustic instrument type, such as the violin or the horn in F.
 ///
@@ -566,4 +568,156 @@ pub(super) const fn same_text(a: &str, b: &str) -> bool {
         i += 1;
     }
     true
+}
+
+/// A category: a group of instrument types that one word names, such as "clarinet" for the four
+/// clarinets or "choir" for the four choir sections. A record names its category
+/// ([`Instrument::category`]), and the category says how to choose among its members
+/// ([`Category::selection`]).
+///
+/// The variants are in score order of their first member.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum CategoryId {
+    /// The clarinets (`clarinet`).
+    Clarinet,
+    /// The saxophones (`saxophone`).
+    Saxophone,
+    /// The Wagner tubas (`wagner_tuba`).
+    WagnerTuba,
+    /// The trumpets, without the cornet (`trumpet`).
+    Trumpet,
+    /// The trombones (`trombone`).
+    Trombone,
+    /// The cymbals (`cymbals`).
+    Cymbals,
+    /// The tuned bells (`bells`).
+    Bells,
+    /// The acoustic pianos (`piano`).
+    Piano,
+    /// The electric pianos (`electric_piano`).
+    ElectricPiano,
+    /// The organs (`organ`).
+    Organ,
+    /// The solo voices (`solo_voice`).
+    SoloVoice,
+    /// The choir sections (`choir`).
+    Choir,
+}
+
+impl CategoryId {
+    /// Every category, in declaration order.
+    pub const ALL: [Self; 12] = [
+        Self::Clarinet,
+        Self::Saxophone,
+        Self::WagnerTuba,
+        Self::Trumpet,
+        Self::Trombone,
+        Self::Cymbals,
+        Self::Bells,
+        Self::Piano,
+        Self::ElectricPiano,
+        Self::Organ,
+        Self::SoloVoice,
+        Self::Choir,
+    ];
+
+    /// The stable identifier, for example `wagner_tuba`: lower-case `snake_case`, never renamed.
+    #[must_use]
+    pub const fn slug(self) -> &'static str {
+        match self {
+            Self::Clarinet => "clarinet",
+            Self::Saxophone => "saxophone",
+            Self::WagnerTuba => "wagner_tuba",
+            Self::Trumpet => "trumpet",
+            Self::Trombone => "trombone",
+            Self::Cymbals => "cymbals",
+            Self::Bells => "bells",
+            Self::Piano => "piano",
+            Self::ElectricPiano => "electric_piano",
+            Self::Organ => "organ",
+            Self::SoloVoice => "solo_voice",
+            Self::Choir => "choir",
+        }
+    }
+
+    /// The category's record.
+    #[must_use]
+    pub fn get(self) -> &'static Category {
+        data::category(self)
+    }
+}
+
+/// How a word that names a category chooses among its members.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Selection {
+    /// The word means this member unless the request says otherwise: "clarinet" is the clarinet
+    /// in B♭.
+    Default(InstrumentType),
+    /// The word means every member together: "choir" is the four sections.
+    All,
+    /// No member is the usual meaning: the one who asked chooses.
+    Ask,
+}
+
+/// A category's record: its selection rule, where the rule comes from and the words that name
+/// it. The members are the records that name the category, in score order
+/// ([`Category::members`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Category {
+    id: CategoryId,
+    selection: Selection,
+    provenance: Provenance,
+    aliases: &'static [Alias],
+}
+
+impl Category {
+    /// The record of `id`. The dataset checks it at compile time: the aliases are folded and
+    /// listed once each, the provenance is stated, and a default is a member.
+    pub(super) const fn new(
+        id: CategoryId,
+        selection: Selection,
+        provenance: Provenance,
+        aliases: &'static [Alias],
+    ) -> Self {
+        Self {
+            id,
+            selection,
+            provenance,
+            aliases,
+        }
+    }
+
+    /// The category's id.
+    #[must_use]
+    pub const fn id(&self) -> CategoryId {
+        self.id
+    }
+
+    /// How a word that names the category chooses among its members.
+    #[must_use]
+    pub const fn selection(&self) -> Selection {
+        self.selection
+    }
+
+    /// What the selection rule rests on.
+    #[must_use]
+    pub const fn provenance(&self) -> Provenance {
+        self.provenance
+    }
+
+    /// The words that name the category as a whole (folded; see [`Alias`]). A member's own
+    /// words are aliases of its record.
+    #[must_use]
+    pub const fn aliases(&self) -> &'static [Alias] {
+        self.aliases
+    }
+
+    /// The members, in score order: every type whose record names this category.
+    pub fn members(&self) -> impl Iterator<Item = InstrumentType> + use<> {
+        let id = self.id;
+        data::INSTRUMENTS
+            .iter()
+            .filter(move |record| record.category() == Some(id))
+            .map(Instrument::instrument_type)
+    }
 }

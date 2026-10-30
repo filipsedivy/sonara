@@ -1,9 +1,10 @@
 # Orchestration metadata
 
 `sonara_midi::orchestration` holds machine-readable facts about orchestral instruments in
-general: pitch range, transposition, family, the articulations they idiomatically play and how
-they appear in ensembles (SON-P06). It is plain Rust data and pure functions. It depends on no audio engine, sample
-library or UI, adds no agent tool and changes no contract (CTR-01).
+general: names and aliases in five languages, categories, pitch range, transposition, family, the
+articulations they idiomatically play and how they appear in ensembles (SON-P06). It is plain
+Rust data and pure functions. It depends on no audio engine, sample library or UI, adds no agent
+tool and changes no contract (CTR-01).
 
 ## Identity
 
@@ -26,6 +27,73 @@ tuned instruments, solo voices before the choir); the order inside the untuned p
 keyboards and the low brass is an estimate. `InstrumentType::ALL` lists the types in that order,
 and each family is one block of it. The order is not stored anywhere, so a later type may be
 inserted anywhere in it.
+
+## Names and aliases
+
+Each record has display names in five languages, English, Czech, German, French and Italian, and
+the abbreviation a score prints (`Instrument::names`; `Names::get(lang)`). A name is the first form
+the sources give, in their spelling and capitalization; the alternates they add in parentheses
+("Violine (Geige)", "Timpani (kettledrums)") are not part of the name. The German choir sections
+are compounds with "Chor" ("Chortenor"), because "Tenor" alone is the solo voice. No two records
+share a name in one language. `name()` is the English name.
+
+Aliases (`Instrument::aliases`) are the forms a person may write to mean an instrument. They are
+matching data, not display text:
+
+- **Folded.** An alias is stored as lower-case ASCII letters and digits, words separated by one
+  space: diacritics are dropped, `ß` is written `ss`, `œ` `oe`, `♭` `b`, and every run of other
+  characters is one space. "Lesní rohy" is `lesni rohy`, "Hörner" `horner`, "Clarinet in B♭"
+  `clarinet in bb`.
+- **Written out, never derived.** English has singular, plural and common synonyms ("French
+  horn", "kettledrums", "chimes"); German, French and Italian singular and plural; Czech every
+  case but the vocative, singular and plural ("lesní roh", "lesních rohů", "lesními rohy",
+  "lesních rozích"). Each alias has a language (`Lang`) and a grammatical number (`Number`):
+  `Singular`, `Plural`, or `Unmarked` for a form that is both, such as "housle", a Czech form
+  shared by a singular and a plural case, or an abbreviation.
+- **Three letters or more.** One- and two-letter abbreviations (`Vn.`, `Hn.`, `S.`) collide with
+  words such as the Czech "a" and are never aliases; longer score abbreviations are (`picc`,
+  `timp`, `glock`). Forms that are also common words are left out: the bare Czech "roh" (also a
+  corner), "Ten." and "Bar." (English words), "Vib." (vibrato) and the like.
+- **Voices and sections.** A solo voice has the singular forms and a choir section the plural:
+  "tenor" names the solo tenor, "tenors" and the Czech "tenory" the section.
+- **Ambiguity is data.** One text may name several targets: `bass` the double bass and the bass
+  voice, `alto` the French viola and the English voice, and folding joins some Czech forms
+  (`tenoru` is "tenoru", of the tenor, and "tenorů", of the tenors). Every target is kept, and the
+  crate's tests list each such text, so a new collision is a deliberate change.
+
+`all_aliases()` lists every alias with its `Target` (an instrument type, a category or a
+family) in data order: the instruments in score order, then the categories, then the families.
+`Family::aliases` holds the words for a whole family ("strings", "smyčce", "Blechbläser",
+"cuivres", "legni"). The checks run when the data is built: an alias that is not folded, has fewer
+than three letters, or appears twice in one language of one record is an error
+(`InstrumentError::AliasNotFolded`, `AliasTooShort`, `DuplicateAlias`).
+
+## Categories
+
+A category is a group of instrument types that one word names (`CategoryId`, with a stable
+`slug()`). A record names its category (`Instrument::category`), and `category(id).members()` are
+the records that name it, in score order. The category's `selection()` says what the bare word
+means, with the reason as its provenance:
+
+| Category | Members | Selection |
+|---|---|---|
+| `clarinet` | E♭, B♭, A and bass clarinet | the clarinet in B♭ |
+| `saxophone` | soprano, alto, tenor, baritone | the alto saxophone |
+| `wagner_tuba` | tenor and bass | all |
+| `trumpet` | piccolo, C and B♭ trumpet | the trumpet in B♭ |
+| `trombone` | tenor and bass trombone | the tenor trombone |
+| `cymbals` | clash and suspended cymbal | the clash cymbals |
+| `bells` | glockenspiel, tubular bells, crotales, carillon | ask |
+| `piano` | the six acoustic pianos | the concert grand |
+| `electric_piano` | Rhodes and Wurlitzer | the Rhodes |
+| `organ` | pipe and Hammond organ | the pipe organ |
+| `solo_voice` | the six solo voices | ask |
+| `choir` | the four choir sections | all |
+
+`Ask` means no member is the usual meaning, so the one who asked chooses. A category's aliases are
+the words for the whole group ("clarinet", "klarinety", "sbor"); a member's own words ("bass
+clarinet") are aliases of its record, and a word that is a member's display name stays with that
+member (the Czech "varhany" is the pipe organ).
 
 ## Pitch conventions
 
