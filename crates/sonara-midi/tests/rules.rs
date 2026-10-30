@@ -2,13 +2,19 @@
 
 use sonara_midi::orchestration::Provenance;
 use sonara_midi::orchestration::rules::{
+    Avoid, DO_NOT_DOUBLE, Forces, Member, NAMED_DOUBLINGS, NamedDoubling, Playing, Prevails,
+    Selector, Spacing, WOODWIND_ORDER, WoodwindOrder,
+};
+use sonara_midi::orchestration::rules::{
     BASS_SPACING, CHARACTERISTIC_COLOUR_SHARE, DynamicBand, FEWEST_FIRST_VIOLINS, LOUD_DIVISI,
     LOW_DISSONANCE, Level, MANY_NOTE_SLUR, MELODY_MARGIN, MIDDLE_GAP, RULES, Rule, RuleError,
     RuleGroup, RuleId, RuleInput, RuleSpec, SOFT_SLUR, SOLO_STRING_ACCOMPANIMENT,
     SUSTAINED_HIGH_BRASS, Severity, UNDOUBLED_HIGH_MELODY, UNDOUBLED_LOW_MELODY, WEAK_CHORD_MEMBER,
     WIND_PHRASE,
 };
-use sonara_midi::orchestration::{MODERATO_BPM, Span};
+use sonara_midi::orchestration::{
+    Articulation, Family, InstrumentType, MODERATO_BPM, PitchModel, PlayerRange, Span,
+};
 
 /// Whether a reader can trace `provenance`: a cited source that names a URL or a page, or an
 /// estimate with a reason.
@@ -556,4 +562,554 @@ fn validator_rejects_each_broken_value() {
     for (spec, error) in cases {
         assert_eq!(Rule::try_new(RuleId::Rng01, spec), Err(error), "{spec:?}");
     }
+}
+
+/// The instruments a selector can cover: its ids, or every type of its family.
+fn covered(selector: Selector) -> Vec<InstrumentType> {
+    match selector {
+        Selector::Family(family) => InstrumentType::ALL
+            .into_iter()
+            .filter(|instrument| instrument.family() == family)
+            .collect(),
+        _ => selector.ids().to_vec(),
+    }
+}
+
+/// The named unison of `a` and `b` played in their ordinary way, as DBL-01 looks it up: a row of
+/// two members, one covering each.
+fn named_unison(a: InstrumentType, b: InstrumentType) -> Option<&'static NamedDoubling> {
+    NAMED_DOUBLINGS.iter().find(|row| {
+        let [first, second] = row.members else {
+            return false;
+        };
+        let covers =
+            |member: &Member, instrument| member.selector.matches(Playing::ordinary(instrument));
+        row.spacings.contains(&Spacing::Unison)
+            && !row.builds_bass
+            && ((covers(first, a) && covers(second, b)) || (covers(first, b) && covers(second, a)))
+    })
+}
+
+/// Which instrument of a two-member row prevails, as the instrument itself.
+fn prevailing(row: &NamedDoubling, a: InstrumentType) -> &'static str {
+    match row.prevails {
+        Prevails::Members(&[index]) => {
+            let member = row.members[usize::from(index)];
+            if member.selector.matches(Playing::ordinary(a)) {
+                "first"
+            } else {
+                "second"
+            }
+        }
+        Prevails::Members(_) => "several",
+        Prevails::Blend => "blend",
+        Prevails::Apart => "apart",
+        Prevails::ByRegister(_) => "by register",
+        Prevails::Unstated => "unstated",
+    }
+}
+
+#[test]
+fn named_unisons_match_the_handbook_pairs() {
+    use InstrumentType::{
+        Bassoon, Cello, ClarinetBb, DoubleBass, EnglishHorn, Flute, Harp, HornF, Oboe, Piccolo,
+        TromboneTenor, TrumpetBb, Tuba, Viola, Violin,
+    };
+    // TST-10: the pairs Rimsky-Korsakov names (Ch. II, pp. 47-61), each with who prevails as he
+    // says it, the first instrument written first: strings prevail over one wind, cellos over
+    // violas and violins, brass over woodwind; horn and cello blend; strings and brass stay apart;
+    // woodwind pairs depend on the register.
+    let cases = [
+        (Violin, Flute, "first"),
+        (Violin, Oboe, "first"),
+        (Viola, ClarinetBb, "first"),
+        (Viola, EnglishHorn, "first"),
+        (Cello, Bassoon, "first"),
+        (DoubleBass, Bassoon, "first"),
+        (Viola, Cello, "second"),
+        (Violin, Cello, "second"),
+        (Violin, Viola, "first"),
+        (HornF, Cello, "blend"),
+        (Violin, TrumpetBb, "apart"),
+        (Viola, HornF, "apart"),
+        (Cello, TromboneTenor, "apart"),
+        (TrumpetBb, Oboe, "first"),
+        (HornF, Bassoon, "first"),
+        (Tuba, Bassoon, "first"),
+        (Flute, Oboe, "by register"),
+        (Oboe, ClarinetBb, "by register"),
+        (Bassoon, ClarinetBb, "by register"),
+    ];
+    for (a, b, expected) in cases {
+        let row = named_unison(a, b).unwrap_or_else(|| panic!("{a:?} + {b:?} is named"));
+        assert_eq!(prevailing(row, a), expected, "{a:?} + {b:?}");
+        // The pair is found in either order.
+        assert!(std::ptr::eq(named_unison(b, a).expect("named"), row));
+    }
+    // TST-03: pairs no handbook names give no row.
+    for (a, b) in [(Tuba, Piccolo), (Harp, Tuba), (Piccolo, DoubleBass)] {
+        assert!(named_unison(a, b).is_none(), "{a:?} + {b:?}");
+    }
+}
+
+#[test]
+fn every_named_doubling_is_valid_and_traceable() {
+    assert_eq!(NAMED_DOUBLINGS.len(), 78);
+    for (i, row) in NAMED_DOUBLINGS.iter().enumerate() {
+        assert_eq!(row.check(), Ok(()), "row {i}");
+        assert!(is_traceable(row.provenance), "row {i}");
+        assert!(!row.effect.trim().is_empty(), "row {i}");
+    }
+    // The bass tables: the cello and double bass in octaves is the usual bass.
+    let basses: Vec<&NamedDoubling> = NAMED_DOUBLINGS
+        .iter()
+        .filter(|row| row.builds_bass)
+        .collect();
+    assert_eq!(basses.len(), 9);
+    assert!(basses.iter().any(|row| {
+        row.spacings == [Spacing::Octaves(1)]
+            && row.members[0].selector == Selector::Ids(&[InstrumentType::Cello])
+            && row.members[1].selector == Selector::Ids(&[InstrumentType::DoubleBass])
+    }));
+}
+
+/// The mean centre of the playable ranges of the pitched instruments a selector covers, in MIDI
+/// notes.
+fn centre_of(selector: Selector) -> f64 {
+    let centres: Vec<f64> = covered(selector)
+        .into_iter()
+        .filter_map(
+            |instrument| match instrument.get().map(|record| *record.pitch()) {
+                Some(PitchModel::Pitched(pitched)) => {
+                    let range = pitched.playable.range;
+                    #[expect(clippy::cast_precision_loss, reason = "MIDI notes are 0-127")]
+                    Some((range.low().get() + range.high().get()) as f64 / 2.0)
+                }
+                _ => None,
+            },
+        )
+        .collect();
+    assert!(
+        !centres.is_empty(),
+        "{selector:?} covers a pitched instrument"
+    );
+    #[expect(clippy::cast_precision_loss, reason = "a handful of instruments")]
+    let count = centres.len() as f64;
+    centres.iter().sum::<f64>() / count
+}
+
+#[test]
+fn octave_doublings_list_their_members_from_the_top() {
+    // TST-07: in an octave doubling each member lies above the next. Instruments of one compass,
+    // such as a horn over a bassoon, can play either part, so the check allows the upper member's
+    // instruments to centre up to a fifth below the next member's; a member listed below its
+    // partner centres an octave or more lower. Its woodwinds never come from a lower branch than
+    // the next member's (DBL-02).
+    for (i, row) in NAMED_DOUBLINGS.iter().enumerate() {
+        if !row
+            .spacings
+            .iter()
+            .any(|spacing| matches!(spacing, Spacing::Octaves(_)))
+        {
+            continue;
+        }
+        for pair in row.members.windows(2) {
+            let (upper, lower) = (pair[0].selector, pair[1].selector);
+            assert!(
+                centre_of(upper) + 7.0 >= centre_of(lower),
+                "row {i}: {upper:?} over {lower:?}"
+            );
+            let ranks = |selector| -> Vec<usize> {
+                covered(selector)
+                    .into_iter()
+                    .filter_map(|instrument| WOODWIND_ORDER.rank(instrument))
+                    .collect()
+            };
+            if let (Some(lowest_branch_above), Some(highest_branch_below)) = (
+                ranks(upper).into_iter().max(),
+                ranks(lower).into_iter().min(),
+            ) {
+                assert!(
+                    lowest_branch_above <= highest_branch_below,
+                    "row {i}: {upper:?} over {lower:?}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn played_selectors_name_articulations_their_instruments_play() {
+    // TST-07: a doubling of a played articulation names one each instrument lists, and each
+    // articulation is played by one of its instruments.
+    for (i, row) in NAMED_DOUBLINGS.iter().enumerate() {
+        for member in row.members {
+            let Selector::Played { ids, articulations } = member.selector else {
+                continue;
+            };
+            for instrument in ids {
+                let listed = instrument.get().expect("record").articulations();
+                assert!(
+                    articulations
+                        .iter()
+                        .any(|articulation| listed.contains(articulation)),
+                    "row {i}: {instrument:?}"
+                );
+            }
+            for articulation in articulations {
+                assert!(
+                    ids.iter().any(|instrument| {
+                        instrument
+                            .get()
+                            .expect("record")
+                            .articulations()
+                            .contains(articulation)
+                    }),
+                    "row {i}: {articulation:?}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn selectors_match_by_instrument_articulation_and_forces() {
+    use InstrumentType::{Cello, Flute, HornF, Violin};
+    let ordinary = Playing::ordinary(Violin);
+    let pizzicato = Playing {
+        articulation: Some(Articulation::Pizzicato),
+        ..ordinary
+    };
+    let solo = Playing {
+        forces: Forces::Solo,
+        ..ordinary
+    };
+    let divided = Playing {
+        forces: Forces::Divided,
+        ..ordinary
+    };
+    let ids = Selector::Ids(&[Violin, Cello]);
+    let played = Selector::Played {
+        ids: &[Violin],
+        articulations: &[Articulation::Pizzicato],
+    };
+    // TST-10: each row is the expected answer for ordinary, pizzicato, solo and divided violins.
+    let cases = [
+        (ids, [true, true, true, true]),
+        (Selector::Family(Family::Strings), [true, true, true, true]),
+        (
+            Selector::Family(Family::Woodwinds),
+            [false, false, false, false],
+        ),
+        (played, [false, true, false, false]),
+        (Selector::Solo(&[Violin]), [false, false, true, false]),
+        (
+            Selector::Divided(&[Violin, Cello]),
+            [false, false, false, true],
+        ),
+        (Selector::Ids(&[Flute, HornF]), [false, false, false, false]),
+    ];
+    for (selector, expected) in cases {
+        let found = [ordinary, pizzicato, solo, divided].map(|playing| selector.matches(playing));
+        assert_eq!(found, expected, "{selector:?}");
+    }
+    assert_eq!(played.ids(), [Violin]);
+    assert_eq!(Selector::Family(Family::Brass).ids(), []);
+}
+
+#[test]
+fn the_warnings_name_the_rules_that_check_them() {
+    // TST-10: the rules written from the catalogue next to each warning; three have no rule.
+    let expected: [&[RuleId]; 12] = [
+        &[RuleId::Dbl07],
+        &[],
+        &[RuleId::Dbl06],
+        &[RuleId::Dbl05],
+        &[RuleId::Dbl03],
+        &[RuleId::Dbl02],
+        &[RuleId::Dbl04],
+        &[RuleId::Spc06, RuleId::Spc07, RuleId::Spc08],
+        &[RuleId::Msk02],
+        &[],
+        &[],
+        &[RuleId::Dbl09],
+    ];
+    assert_eq!(DO_NOT_DOUBLE.len(), expected.len());
+    for (row, rules) in DO_NOT_DOUBLE.iter().zip(expected) {
+        assert_eq!(row.rules, rules, "{}", row.what);
+        assert_eq!(row.check(), Ok(()), "{}", row.what);
+        assert!(is_traceable(row.provenance), "{}", row.what);
+    }
+}
+
+#[test]
+fn the_woodwind_order_ranks_each_branch() {
+    use InstrumentType::{
+        AltoFlute, BassClarinet, BassFlute, Bassoon, ClarinetA, ClarinetBb, ClarinetEb,
+        Contrabassoon, EnglishHorn, Flute, Oboe, OboeDamore, Piccolo, SaxophoneAlto,
+        SaxophoneBaritone, SaxophoneSoprano, SaxophoneTenor,
+    };
+    // TST-10: flutes, oboes, clarinets, bassoons from the top; the saxophones have no branch.
+    let expected = [
+        (Piccolo, Some(0)),
+        (Flute, Some(0)),
+        (AltoFlute, Some(0)),
+        (BassFlute, Some(0)),
+        (Oboe, Some(1)),
+        (OboeDamore, Some(1)),
+        (EnglishHorn, Some(1)),
+        (ClarinetEb, Some(2)),
+        (ClarinetBb, Some(2)),
+        (ClarinetA, Some(2)),
+        (BassClarinet, Some(2)),
+        (SaxophoneSoprano, None),
+        (SaxophoneAlto, None),
+        (SaxophoneTenor, None),
+        (SaxophoneBaritone, None),
+        (Bassoon, Some(3)),
+        (Contrabassoon, Some(3)),
+    ];
+    let woodwinds: Vec<InstrumentType> = InstrumentType::ALL
+        .into_iter()
+        .filter(|instrument| instrument.family() == Family::Woodwinds)
+        .collect();
+    assert_eq!(woodwinds, expected.map(|(instrument, _)| instrument));
+    for (instrument, rank) in expected {
+        assert_eq!(WOODWIND_ORDER.rank(instrument), rank, "{instrument:?}");
+    }
+    assert_eq!(WOODWIND_ORDER.rank(InstrumentType::Violin), None);
+    assert_eq!(WOODWIND_ORDER.check(), Ok(()));
+    assert!(is_traceable(WOODWIND_ORDER.provenance));
+}
+
+const FIXTURE: Provenance = Provenance::Estimate {
+    reason: "test fixture",
+};
+
+const VIOLINS: Member = Member {
+    selector: Selector::Ids(&[InstrumentType::Violin]),
+    players: None,
+};
+
+const TWO_FLUTES: Member = Member {
+    selector: Selector::Ids(&[InstrumentType::Flute]),
+    players: Some(PlayerRange::new(2, 2)),
+};
+
+const NO_FLUTES: Member = Member {
+    selector: Selector::Ids(&[InstrumentType::Flute]),
+    players: Some(PlayerRange::NOT_USED),
+};
+
+const NOBODY: Member = Member {
+    selector: Selector::Ids(&[]),
+    players: None,
+};
+
+fn pair() -> NamedDoubling {
+    NamedDoubling {
+        members: &[VIOLINS, TWO_FLUTES],
+        spacings: &[Spacing::Unison, Spacing::Octaves(1)],
+        builds_bass: false,
+        effect: "a colour",
+        prevails: Prevails::Members(&[0]),
+        provenance: FIXTURE,
+    }
+}
+
+#[test]
+fn doubling_validator_rejects_each_broken_row() {
+    // TST-03: one fixture per failing check of each row type.
+    assert_eq!(pair().check(), Ok(()));
+    let doublings = [
+        (
+            NamedDoubling {
+                members: &[VIOLINS],
+                ..pair()
+            },
+            RuleError::InvalidDoubling,
+        ),
+        (
+            NamedDoubling {
+                members: &[VIOLINS, NO_FLUTES],
+                ..pair()
+            },
+            RuleError::InvalidDoubling,
+        ),
+        (
+            NamedDoubling {
+                members: &[VIOLINS, NOBODY],
+                ..pair()
+            },
+            RuleError::InvalidSelector,
+        ),
+        (
+            NamedDoubling {
+                spacings: &[],
+                ..pair()
+            },
+            RuleError::InvalidDoubling,
+        ),
+        (
+            NamedDoubling {
+                spacings: &[Spacing::Octaves(0)],
+                ..pair()
+            },
+            RuleError::InvalidDoubling,
+        ),
+        (
+            NamedDoubling {
+                spacings: &[Spacing::Unison, Spacing::Unison],
+                ..pair()
+            },
+            RuleError::InvalidDoubling,
+        ),
+        (
+            NamedDoubling {
+                prevails: Prevails::Members(&[2]),
+                ..pair()
+            },
+            RuleError::InvalidDoubling,
+        ),
+        (
+            NamedDoubling {
+                prevails: Prevails::Members(&[]),
+                ..pair()
+            },
+            RuleError::InvalidDoubling,
+        ),
+        (
+            NamedDoubling {
+                prevails: Prevails::ByRegister(&[0]),
+                ..pair()
+            },
+            RuleError::InvalidDoubling,
+        ),
+        (
+            NamedDoubling {
+                effect: " ",
+                ..pair()
+            },
+            RuleError::BlankText,
+        ),
+        (
+            NamedDoubling {
+                provenance: Provenance::Cited { source: "" },
+                ..pair()
+            },
+            RuleError::EmptyProvenance,
+        ),
+    ];
+    for (row, error) in doublings {
+        assert_eq!(row.check(), Err(error), "{row:?}");
+    }
+}
+
+#[test]
+fn selector_validator_rejects_each_broken_selector() {
+    use InstrumentType::Violin;
+    // TST-03: no instrument, one twice, a family no instrument has, no articulation or one twice.
+    let selectors = [
+        Selector::Ids(&[]),
+        Selector::Solo(&[Violin, Violin]),
+        Selector::Divided(&[]),
+        Selector::Family(Family::Other),
+        Selector::Played {
+            ids: &[Violin],
+            articulations: &[],
+        },
+        Selector::Played {
+            ids: &[Violin],
+            articulations: &[Articulation::Pizzicato, Articulation::Pizzicato],
+        },
+        Selector::Played {
+            ids: &[],
+            articulations: &[Articulation::Pizzicato],
+        },
+    ];
+    for selector in selectors {
+        assert_eq!(
+            selector.check(),
+            Err(RuleError::InvalidSelector),
+            "{selector:?}"
+        );
+    }
+    assert_eq!(Selector::Family(Family::Choir).check(), Ok(()));
+}
+
+#[test]
+fn warning_validator_rejects_blank_rows() {
+    let avoid = Avoid {
+        what: "do this",
+        why: "because",
+        rules: &[],
+        provenance: FIXTURE,
+    };
+    assert_eq!(avoid.check(), Ok(()));
+    assert_eq!(
+        Avoid { what: "", ..avoid }.check(),
+        Err(RuleError::BlankText)
+    );
+    assert_eq!(
+        Avoid { why: " ", ..avoid }.check(),
+        Err(RuleError::BlankText)
+    );
+    assert_eq!(
+        Avoid {
+            provenance: Provenance::Estimate { reason: "" },
+            ..avoid
+        }
+        .check(),
+        Err(RuleError::EmptyProvenance)
+    );
+}
+
+#[test]
+fn woodwind_order_validator_rejects_broken_branches() {
+    use InstrumentType::{Flute, Violin};
+    let order = WoodwindOrder {
+        branches: [
+            &[Flute],
+            &[InstrumentType::Oboe],
+            &[InstrumentType::ClarinetBb],
+            &[InstrumentType::Bassoon],
+        ],
+        provenance: FIXTURE,
+    };
+    assert_eq!(order.check(), Ok(()));
+    let broken = [
+        [
+            &[][..],
+            &[InstrumentType::Oboe],
+            &[InstrumentType::ClarinetBb],
+            &[InstrumentType::Bassoon],
+        ],
+        [
+            &[Flute],
+            &[InstrumentType::Oboe],
+            &[Violin],
+            &[InstrumentType::Bassoon],
+        ],
+        [
+            &[Flute],
+            &[InstrumentType::Oboe],
+            &[Flute],
+            &[InstrumentType::Bassoon],
+        ],
+    ];
+    for branches in broken {
+        assert_eq!(
+            WoodwindOrder { branches, ..order }.check(),
+            Err(RuleError::InvalidOrder),
+            "{branches:?}"
+        );
+    }
+    assert_eq!(
+        WoodwindOrder {
+            provenance: Provenance::Cited { source: " " },
+            ..order
+        }
+        .check(),
+        Err(RuleError::EmptyProvenance)
+    );
 }

@@ -3,27 +3,33 @@
 //!
 //! - [`RULES`] holds the 67 rules, keyed by [`RuleId`] (`RNG-01` to `TEX-06`), each with what it
 //!   checks, the inputs it needs, how serious a finding is and where the rule comes from.
+//! - [`NAMED_DOUBLINGS`] lists the doublings the handbooks name and the colour they give,
+//!   [`DO_NOT_DOUBLE`] what not to double, and [`WOODWIND_ORDER`] the natural order of the
+//!   woodwinds from the top.
 //! - Named thresholds, such as [`SUSTAINED_HIGH_BRASS`], hold the numbers the checks compare
 //!   with, each with its own provenance and the rules that use it.
 //!
 //! The rules describe the music, not a sample library or the application: the predicates that
 //! check a project are code elsewhere, and this module holds what they read. Every rule says
 //! whether a source states it (`Cited`) or not (`Estimate`); most numbers are estimates that encode
-//! what the handbooks say in words. The catalogue is checked at compile time, so invalid data does
-//! not build.
+//! what the handbooks say in words. The statics are checked at compile time, so invalid data does
+//! not build; the row types offer the same checks (`check`) for data built at run time.
 //!
 //! Nothing here runs on a real-time thread (RT-01).
 
 use thiserror::Error;
 
+use super::articulation::Articulation;
 use super::data;
-use super::instrument::{Provenance, is_stated};
+use super::ensemble_profile::PlayerRange;
+use super::id::InstrumentType;
+use super::instrument::{Family, Provenance, is_stated};
 
 pub use super::data::rules::{
-    BASS_SPACING, CHARACTERISTIC_COLOUR_SHARE, FEWEST_FIRST_VIOLINS, LOUD_DIVISI, LOW_DISSONANCE,
-    MANY_NOTE_SLUR, MELODY_MARGIN, MIDDLE_GAP, RULES, SOFT_SLUR, SOLO_STRING_ACCOMPANIMENT,
-    SUSTAINED_HIGH_BRASS, UNDOUBLED_HIGH_MELODY, UNDOUBLED_LOW_MELODY, WEAK_CHORD_MEMBER,
-    WIND_PHRASE,
+    BASS_SPACING, CHARACTERISTIC_COLOUR_SHARE, DO_NOT_DOUBLE, FEWEST_FIRST_VIOLINS, LOUD_DIVISI,
+    LOW_DISSONANCE, MANY_NOTE_SLUR, MELODY_MARGIN, MIDDLE_GAP, NAMED_DOUBLINGS, RULES, SOFT_SLUR,
+    SOLO_STRING_ACCOMPANIMENT, SUSTAINED_HIGH_BRASS, UNDOUBLED_HIGH_MELODY, UNDOUBLED_LOW_MELODY,
+    WEAK_CHORD_MEMBER, WIND_PHRASE, WOODWIND_ORDER,
 };
 
 /// The eight groups of rules, by what they check. A rule's code starts with its group's prefix.
@@ -635,10 +641,10 @@ pub struct RuleSpec {
     pub provenance: Provenance,
 }
 
-/// Why a rule is invalid.
+/// Why a rule, or a row of the tables the rules read, is invalid.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Error)]
 pub enum RuleError {
-    /// A title, check or case is empty or blank.
+    /// A title, check, case, effect or warning is empty or blank.
     #[error("a text is empty or blank")]
     BlankText,
     /// A provenance is empty or blank.
@@ -653,6 +659,18 @@ pub enum RuleError {
     /// A graded severity does not rise from its usual level to its raised one.
     #[error("the severity does not rise from its usual level")]
     InvalidSeverity,
+    /// A selector names no instrument or one instrument twice, names a family no instrument has,
+    /// or plays no articulation or one articulation twice.
+    #[error("a selector is invalid")]
+    InvalidSelector,
+    /// A doubling has fewer than two members, a member counted with no players, no spacing, a
+    /// spacing twice or of no octaves, or names a prevailing member it does not have.
+    #[error("a doubling is invalid")]
+    InvalidDoubling,
+    /// The woodwind order has an empty branch, an instrument that is not a woodwind, or one
+    /// instrument twice.
+    #[error("the woodwind order is invalid")]
+    InvalidOrder,
 }
 
 /// A rule of the catalogue: what it checks, the inputs it needs, how serious a finding is and
@@ -766,6 +784,374 @@ const fn has_duplicate_input(inputs: &[RuleInput]) -> bool {
         i += 1;
     }
     false
+}
+
+/// How many play a line.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Forces {
+    /// The usual forces: a section of strings or voices, one wind or percussion player.
+    Usual,
+    /// One player of an instrument usually played by a section, such as a solo violin.
+    Solo,
+    /// A section divided into several parts.
+    Divided,
+}
+
+/// One line as a selector sees it: the instrument, how it is played and by how many.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct Playing {
+    /// The instrument.
+    pub instrument: InstrumentType,
+    /// The articulation, or `None` for the instrument's ordinary sound.
+    pub articulation: Option<Articulation>,
+    /// How many play the line.
+    pub forces: Forces,
+}
+
+impl Playing {
+    /// `instrument` played in its ordinary way by its usual forces.
+    #[must_use]
+    pub const fn ordinary(instrument: InstrumentType) -> Self {
+        Self {
+            instrument,
+            articulation: None,
+            forces: Forces::Usual,
+        }
+    }
+}
+
+/// Which lines a row of a table is about.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Selector {
+    /// Any of these instruments, however played.
+    Ids(&'static [InstrumentType]),
+    /// Any instrument of the family.
+    Family(Family),
+    /// Any of these instruments playing one of these articulations.
+    Played {
+        /// The instruments.
+        ids: &'static [InstrumentType],
+        /// The articulations.
+        articulations: &'static [Articulation],
+    },
+    /// One player of one of these instruments ([`Forces::Solo`]).
+    Solo(&'static [InstrumentType]),
+    /// A divided section of one of these instruments ([`Forces::Divided`]).
+    Divided(&'static [InstrumentType]),
+}
+
+impl Selector {
+    /// Whether the selector covers the line `playing`.
+    #[must_use]
+    pub fn matches(self, playing: Playing) -> bool {
+        match self {
+            Self::Ids(ids) => ids.contains(&playing.instrument),
+            Self::Family(family) => playing.instrument.family() == family,
+            Self::Played { ids, articulations } => {
+                ids.contains(&playing.instrument)
+                    && playing
+                        .articulation
+                        .is_some_and(|articulation| articulations.contains(&articulation))
+            }
+            Self::Solo(ids) => playing.forces == Forces::Solo && ids.contains(&playing.instrument),
+            Self::Divided(ids) => {
+                playing.forces == Forces::Divided && ids.contains(&playing.instrument)
+            }
+        }
+    }
+
+    /// The instruments the selector names; empty for a [`Selector::Family`].
+    #[must_use]
+    pub const fn ids(self) -> &'static [InstrumentType] {
+        match self {
+            Self::Ids(ids) | Self::Solo(ids) | Self::Divided(ids) | Self::Played { ids, .. } => ids,
+            Self::Family(_) => &[],
+        }
+    }
+
+    /// Checks the selector.
+    ///
+    /// # Errors
+    /// [`RuleError::InvalidSelector`] when it names no instrument or one twice, names
+    /// [`Family::Other`], which no instrument has, or plays no articulation or one twice.
+    pub const fn check(self) -> Result<(), RuleError> {
+        let valid = match self {
+            Self::Family(family) => !matches!(family, Family::Other),
+            Self::Played { ids, articulations } => {
+                is_type_set(ids) && is_articulation_set(articulations)
+            }
+            Self::Ids(ids) | Self::Solo(ids) | Self::Divided(ids) => is_type_set(ids),
+        };
+        if valid {
+            Ok(())
+        } else {
+            Err(RuleError::InvalidSelector)
+        }
+    }
+}
+
+/// Whether `ids` is non-empty and names each instrument once.
+const fn is_type_set(ids: &[InstrumentType]) -> bool {
+    if ids.is_empty() {
+        return false;
+    }
+    let mut i = 0;
+    while i < ids.len() {
+        let mut j = i + 1;
+        while j < ids.len() {
+            if ids[i] as u8 == ids[j] as u8 {
+                return false;
+            }
+            j += 1;
+        }
+        i += 1;
+    }
+    true
+}
+
+/// Whether `articulations` is non-empty and names each articulation once.
+const fn is_articulation_set(articulations: &[Articulation]) -> bool {
+    if articulations.is_empty() {
+        return false;
+    }
+    let mut i = 0;
+    while i < articulations.len() {
+        let mut j = i + 1;
+        while j < articulations.len() {
+            if articulations[i] as u8 == articulations[j] as u8 {
+                return false;
+            }
+            j += 1;
+        }
+        i += 1;
+    }
+    true
+}
+
+/// One member of a doubling: the lines it covers and, where the source counts them, how many play.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Member {
+    /// The lines.
+    pub selector: Selector,
+    /// How many players or parts the source counts, such as two oboes; `None` when it does not
+    /// count them.
+    pub players: Option<PlayerRange>,
+}
+
+/// How the members of a doubling lie against each other.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Spacing {
+    /// On the same pitches.
+    Unison,
+    /// Each member this many octaves above the next one in the list: the members are listed from
+    /// the top.
+    Octaves(u8),
+    /// As the notes of a chord rather than one line.
+    Chord,
+}
+
+/// Which members of a doubling the ear hears most.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Prevails {
+    /// The members at these places in the list, which sound as one colour over the rest.
+    Members(&'static [u8]),
+    /// The members blend into one colour.
+    Blend,
+    /// Each member is heard on its own; they do not blend.
+    Apart,
+    /// It depends on the register: the members at these places prevail from the lowest register
+    /// to the highest.
+    ByRegister(&'static [u8]),
+    /// The sources do not say.
+    Unstated,
+}
+
+/// A doubling a source names, with the colour or effect it gives.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct NamedDoubling {
+    /// The members, at least two; from the top when they lie in octaves.
+    pub members: &'static [Member],
+    /// The spacings the source names, each once.
+    pub spacings: &'static [Spacing],
+    /// Whether the doubling builds the bass, such as the cellos and double basses in octaves;
+    /// otherwise it doubles any line.
+    pub builds_bass: bool,
+    /// The colour or effect, in words.
+    pub effect: &'static str,
+    /// Which members the ear hears most.
+    pub prevails: Prevails,
+    /// Where the doubling comes from.
+    pub provenance: Provenance,
+}
+
+impl NamedDoubling {
+    /// Checks the row.
+    ///
+    /// # Errors
+    /// [`RuleError::InvalidSelector`] for an invalid member selector;
+    /// [`RuleError::InvalidDoubling`] for fewer than two members, a member counted with no players,
+    /// no spacing, a spacing listed twice or of no octaves, or a prevailing member it does not
+    /// have; [`RuleError::BlankText`] for a blank effect; [`RuleError::EmptyProvenance`].
+    pub const fn check(&self) -> Result<(), RuleError> {
+        if self.members.len() < 2 {
+            return Err(RuleError::InvalidDoubling);
+        }
+        let mut i = 0;
+        while i < self.members.len() {
+            let member = self.members[i];
+            if let Err(error) = member.selector.check() {
+                return Err(error);
+            }
+            if let Some(players) = member.players
+                && players.min() == 0
+            {
+                return Err(RuleError::InvalidDoubling);
+            }
+            i += 1;
+        }
+        if !are_spacings_valid(self.spacings) || !self.prevails_is_valid() {
+            return Err(RuleError::InvalidDoubling);
+        }
+        if is_blank(self.effect) {
+            return Err(RuleError::BlankText);
+        }
+        if !is_stated(self.provenance) {
+            return Err(RuleError::EmptyProvenance);
+        }
+        Ok(())
+    }
+
+    /// Whether every member the row says prevails is one of its members, named at least once
+    /// (twice for a register-dependent answer).
+    const fn prevails_is_valid(&self) -> bool {
+        let (indices, fewest) = match self.prevails {
+            Prevails::Members(indices) => (indices, 1),
+            Prevails::ByRegister(indices) => (indices, 2),
+            Prevails::Blend | Prevails::Apart | Prevails::Unstated => return true,
+        };
+        if indices.len() < fewest {
+            return false;
+        }
+        let mut i = 0;
+        while i < indices.len() {
+            if indices[i] as usize >= self.members.len() {
+                return false;
+            }
+            i += 1;
+        }
+        true
+    }
+}
+
+/// Whether `spacings` is non-empty, lists each spacing once and has no octave spacing of zero.
+const fn are_spacings_valid(spacings: &[Spacing]) -> bool {
+    if spacings.is_empty() {
+        return false;
+    }
+    let mut i = 0;
+    while i < spacings.len() {
+        if let Spacing::Octaves(0) = spacings[i] {
+            return false;
+        }
+        let mut j = i + 1;
+        while j < spacings.len() {
+            if same_spacing(spacings[i], spacings[j]) {
+                return false;
+            }
+            j += 1;
+        }
+        i += 1;
+    }
+    true
+}
+
+/// Whether two spacings are the same.
+const fn same_spacing(a: Spacing, b: Spacing) -> bool {
+    match (a, b) {
+        (Spacing::Unison, Spacing::Unison) | (Spacing::Chord, Spacing::Chord) => true,
+        (Spacing::Octaves(a), Spacing::Octaves(b)) => a == b,
+        _ => false,
+    }
+}
+
+/// Something a source warns not to double, and why.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Avoid {
+    /// What not to do.
+    pub what: &'static str,
+    /// Why, in words.
+    pub why: &'static str,
+    /// The rules that check it; empty when no rule does.
+    pub rules: &'static [RuleId],
+    /// Where the warning comes from.
+    pub provenance: Provenance,
+}
+
+impl Avoid {
+    /// Checks the row.
+    ///
+    /// # Errors
+    /// [`RuleError::BlankText`] for a blank text; [`RuleError::EmptyProvenance`].
+    pub const fn check(&self) -> Result<(), RuleError> {
+        if is_blank(self.what) || is_blank(self.why) {
+            return Err(RuleError::BlankText);
+        }
+        if !is_stated(self.provenance) {
+            return Err(RuleError::EmptyProvenance);
+        }
+        Ok(())
+    }
+}
+
+/// The natural order of the woodwinds from the top: flutes, oboes, clarinets, bassoons. A doubling
+/// that puts a lower branch above a higher one sounds unnatural.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct WoodwindOrder {
+    /// The four branches, from the top, each with the instruments that belong to it.
+    pub branches: [&'static [InstrumentType]; 4],
+    /// Where the order comes from.
+    pub provenance: Provenance,
+}
+
+impl WoodwindOrder {
+    /// The place of `instrument`'s branch, 0 for the flutes at the top; `None` for an instrument
+    /// in no branch, such as a saxophone.
+    #[must_use]
+    pub fn rank(&self, instrument: InstrumentType) -> Option<usize> {
+        self.branches
+            .iter()
+            .position(|branch| branch.contains(&instrument))
+    }
+
+    /// Checks the order.
+    ///
+    /// # Errors
+    /// [`RuleError::InvalidOrder`] for an empty branch, an instrument that is not a woodwind, or
+    /// an instrument listed twice; [`RuleError::EmptyProvenance`].
+    pub const fn check(&self) -> Result<(), RuleError> {
+        let mut seen = [false; InstrumentType::ALL.len()];
+        let mut b = 0;
+        while b < self.branches.len() {
+            let branch = self.branches[b];
+            if branch.is_empty() {
+                return Err(RuleError::InvalidOrder);
+            }
+            let mut i = 0;
+            while i < branch.len() {
+                let instrument = branch[i];
+                if !matches!(instrument.family(), Family::Woodwinds) || seen[instrument as usize] {
+                    return Err(RuleError::InvalidOrder);
+                }
+                seen[instrument as usize] = true;
+                i += 1;
+            }
+            b += 1;
+        }
+        if !is_stated(self.provenance) {
+            return Err(RuleError::EmptyProvenance);
+        }
+        Ok(())
+    }
 }
 
 /// A number a rule's check compares with, such as two bars for sustained high brass, with the rules
@@ -883,5 +1269,21 @@ mod tests {
             }
             .is_valid()
         );
+    }
+
+    #[test]
+    fn spacings_are_checked() {
+        assert!(are_spacings_valid(&[Spacing::Unison, Spacing::Octaves(1)]));
+        assert!(are_spacings_valid(&[
+            Spacing::Octaves(1),
+            Spacing::Octaves(2)
+        ]));
+        assert!(!are_spacings_valid(&[]));
+        assert!(!are_spacings_valid(&[Spacing::Octaves(0)]));
+        assert!(!are_spacings_valid(&[Spacing::Chord, Spacing::Chord]));
+        assert!(!are_spacings_valid(&[
+            Spacing::Octaves(2),
+            Spacing::Octaves(2)
+        ]));
     }
 }

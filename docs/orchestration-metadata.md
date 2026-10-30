@@ -422,6 +422,28 @@ accepts only an exact code. A rule holds:
   arranging course for the low-bass dissonance), with a remark when a number in it is estimated.
   The two range rules rest on the records' own ranges and say so.
 
+The doubling tables hold what the doubling and masking rules read:
+
+- `NAMED_DOUBLINGS`: 78 doublings the handbooks name, each with its `members` (a `Selector` and,
+  where the source counts them, how many play, such as two oboes), the `spacings` the source names
+  (`Unison`, `Octaves(n)` with the members listed from the top, `Chord`), the colour or effect in
+  words, which members prevail (`Members`, `Blend`, `Apart` for strings and brass that stay
+  separate, `ByRegister` for woodwind pairs whose leader changes with the register, or
+  `Unstated`), whether the doubling builds the bass, and its provenance. They cover strings with
+  woodwind (including the woodwind absorbing one string section), strings with brass, woodwind
+  with brass, the colour doublings of glockenspiel, xylophone, celesta and harp, woodwind unisons
+  and octaves of one branch, strings with strings, mixed brass in octaves, the three-group unisons
+  of a tutti and the ways of building the bass. A unison pair the table does not list is what
+  `DBL-01` reports.
+- A `Selector` covers lines by instrument (`Ids`), by `Family`, by instrument and articulation
+  (`Played`, such as pizzicato strings or stopped horns), or by forces (`Solo`, `Divided`);
+  `matches` takes a `Playing`: the instrument, its articulation and its `Forces` (`Usual`, `Solo`,
+  `Divided`).
+- `DO_NOT_DOUBLE`: twelve warnings (what not to do and why), each with the rules that check it.
+- `WOODWIND_ORDER`: the natural order of the woodwinds from the top, flutes, oboes, clarinets,
+  bassoons, with the auxiliary instruments in their branches; `rank` gives an instrument's branch
+  and `None` for the saxophones, which the order does not place.
+
 `DynamicBand` groups the notated dynamics as the sources compare them: `Soft` (pp, p), `Medium`
 (mp, mf) and `Loud` (f, ff); where mp falls is an estimate.
 
@@ -511,9 +533,17 @@ A rule is a `RuleSpec` checked by `Rule::try_new(id, spec)`, which rejects a bla
 check, no inputs or an input listed twice, a graded severity that does not rise from its usual
 level or names no case, and a blank provenance. The catalogue is built with the panicking
 `Rule::new` in a `static`, and a compile-time check places each rule at its id's place, so an
-invalid rule does not compile. `crates/sonara-midi/tests/rules.rs` compares the codes, grades and
-thresholds with tables written from the sources, checks that every rule is traceable and that an
-estimated threshold backs no error, and rejects a fixture breaking each check.
+invalid rule does not compile. The rows of the tables have a `check` that rejects a selector
+naming no instrument, one twice or the `Other` family, or playing no articulation or one twice; a
+doubling with fewer than two members, a member counted with no players, no spacing, a spacing
+twice or of no octaves, or a prevailing member it does not have; a woodwind order with an empty
+branch, an instrument of another family or one twice; and blank texts or provenance. A
+compile-time check runs it on every shipped row. `crates/sonara-midi/tests/rules.rs` compares the
+codes, grades and thresholds with tables written from the sources, checks that every rule is
+traceable and that an estimated threshold backs no error, compares the named unisons with the
+pairs and leaders Rimsky-Korsakov gives, checks that octave doublings list their members from the
+top in woodwind order and that a played articulation is one its instruments list, and rejects a
+fixture breaking each check.
 
 ## Coverage
 

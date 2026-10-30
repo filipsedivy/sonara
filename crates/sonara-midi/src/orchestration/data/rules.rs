@@ -1,4 +1,5 @@
-//! The rule catalogue, one record per [`RuleId`], and the thresholds its checks compare with.
+//! The rule catalogue, one record per [`RuleId`], the thresholds its checks compare with, and
+//! the doubling tables.
 //!
 //! Each rule cites the handbook passage it comes from; the numbers a check compares with are named
 //! thresholds with their own provenance, most of them estimates that turn a source's words into a
@@ -6,14 +7,26 @@
 //! throughout.
 
 use super::sources::{cite, reason};
-use crate::orchestration::instrument::Provenance;
+use crate::orchestration::articulation::Articulation::{ConSordino, Harmonics, Pizzicato, Stopped};
+use crate::orchestration::ensemble_profile::PlayerRange;
+use crate::orchestration::id::InstrumentType;
+use crate::orchestration::id::InstrumentType::{
+    AltoFlute, BassClarinet, BassFlute, Bassoon, Celesta, Cello, ClarinetA, ClarinetBb, ClarinetEb,
+    Contrabassoon, DoubleBass, EnglishHorn, Flute, Glockenspiel, Harp, HornF, Oboe, OboeDamore,
+    PianoConcertGrand, PianoStudioGrand, PianoUpright, Piccolo, TromboneBass, TromboneTenor,
+    TrumpetBb, TrumpetC, Tuba, Viola, Violin, Xylophone,
+};
+use crate::orchestration::instrument::{Family, Provenance};
 use crate::orchestration::pitch::SoundingPitch;
 use crate::orchestration::playability::Span;
 use crate::orchestration::rules::RuleInput::{
     Articulation, Dynamic, Harmony, HarpPedals, Instrument, Meter, Notes, Part, RegisterFactors,
     Role, Tempo, TimpaniTuning, Weights,
 };
-use crate::orchestration::rules::{Level, Rule, RuleId, RuleInput, RuleSpec, Severity, Threshold};
+use crate::orchestration::rules::{
+    Avoid, Level, Member, NamedDoubling, Prevails, Rule, RuleId, RuleInput, RuleSpec, Selector,
+    Severity, Spacing, Threshold, WoodwindOrder,
+};
 
 const HINT: Severity = Severity::Fixed(Level::Hint);
 const WARNING: Severity = Severity::Fixed(Level::Warning);
@@ -1371,4 +1384,1208 @@ pub const CHARACTERISTIC_COLOUR_SHARE: Threshold<f32> = Threshold {
                 share; most bars, read as more than half",
         ),
     },
+};
+
+// Doubling.
+
+/// The B♭ and A clarinets, which the handbooks call simply the clarinet.
+const CLARINETS: &[InstrumentType] = &[ClarinetBb, ClarinetA];
+
+/// The C and B♭ trumpets, which the handbooks call simply the trumpet.
+const TRUMPETS: &[InstrumentType] = &[TrumpetBb, TrumpetC];
+
+/// The tenor and bass trombones.
+const TROMBONES: &[InstrumentType] = &[TromboneTenor, TromboneBass];
+
+/// The four bowed strings.
+const STRINGS: &[InstrumentType] = &[Violin, Viola, Cello, DoubleBass];
+
+/// A member covering `ids`, uncounted.
+const fn any(ids: &'static [InstrumentType]) -> Member {
+    Member {
+        selector: Selector::Ids(ids),
+        players: None,
+    }
+}
+
+/// A member of `count` players of `ids`.
+const fn players(count: u8, ids: &'static [InstrumentType]) -> Member {
+    Member {
+        selector: Selector::Ids(ids),
+        players: Some(PlayerRange::new(count, count)),
+    }
+}
+
+/// A member covering the lines `selector` selects, uncounted.
+const fn lines(selector: Selector) -> Member {
+    Member {
+        selector,
+        players: None,
+    }
+}
+
+/// A doubling of any line.
+const fn doubling(
+    members: &'static [Member],
+    spacings: &'static [Spacing],
+    effect: &'static str,
+    prevails: Prevails,
+    provenance: Provenance,
+) -> NamedDoubling {
+    NamedDoubling {
+        members,
+        spacings,
+        builds_bass: false,
+        effect,
+        prevails,
+        provenance,
+    }
+}
+
+/// A doubling that builds the bass.
+const fn bass(
+    members: &'static [Member],
+    spacings: &'static [Spacing],
+    effect: &'static str,
+    prevails: Prevails,
+    provenance: Provenance,
+) -> NamedDoubling {
+    NamedDoubling {
+        builds_bass: true,
+        ..doubling(members, spacings, effect, prevails, provenance)
+    }
+}
+
+const UNISON: &[Spacing] = &[Spacing::Unison];
+const OCTAVE: &[Spacing] = &[Spacing::Octaves(1)];
+
+const FIRST: Prevails = Prevails::Members(&[0]);
+const SECOND: Prevails = Prevails::Members(&[1]);
+
+/// Rimsky-Korsakov on the unisons of strings and wind.
+const STRINGS_AND_WIND: Provenance = Provenance::Cited {
+    source: cite!(
+        rimsky_korsakov: "Ch. II, Combination of strings and wind, p. 58: the natural unisons of \
+            strings and wood-wind are violins with flute, oboe or clarinet, violas with oboe, \
+            English horn, clarinet or bassoon, cellos with clarinet, bass clarinet or bassoon, \
+            and double basses with bass clarinet, bassoon or double bassoon; when the two are of \
+            equal power the strings predominate",
+    ),
+};
+
+/// Rimsky-Korsakov on the unisons of strings and brass.
+const STRINGS_AND_BRASS: Provenance = Provenance::Cited {
+    source: cite!(
+        rimsky_korsakov: "Ch. II, Combination of strings and brass, p. 61: when a brass and a \
+            stringed instrument progress in unison each can be heard separately; the best pairs \
+            are those whose registers correspond, violin with trumpet, viola with horn, cellos \
+            or double basses with trombones or tuba for heavy massive effects",
+    ),
+};
+
+/// Rimsky-Korsakov on the unisons of wood-wind and brass.
+const WIND_AND_BRASS: Provenance = Provenance::Cited {
+    source: cite!(
+        rimsky_korsakov: "Ch. II, Combination of wind and brass in unison, pp. 56-57: in a \
+            unison of brass and wood-wind the brass tone predominates, and the wood-wind softens \
+            it and gives it a finer legato",
+    ),
+};
+
+/// Rimsky-Korsakov on two wood-wind instruments in unison.
+const WOODWIND_UNISON: Provenance = Provenance::Cited {
+    source: cite!(
+        rimsky_korsakov: "Ch. II, Combination in unison, pp. 47-48: the colour of each unison of \
+            two or more wood-wind instruments and which predominates in the low and the high \
+            register",
+    ),
+};
+
+/// Rimsky-Korsakov on the instruments of one branch in octaves.
+const SAME_BRANCH: Provenance = Provenance::Cited {
+    source: cite!(
+        rimsky_korsakov: "Ch. II, Combination in octaves, p. 50: instruments of the same branch \
+            playing in octaves, bassoon over double bassoon, clarinet over bass clarinet, oboe \
+            over English horn, small clarinet over clarinet and flute over alto flute, always \
+            produce a good effect",
+    ),
+};
+
+/// Rimsky-Korsakov on strings with strings.
+const STRINGS_WITH_STRINGS: Provenance = Provenance::Cited {
+    source: cite!(
+        rimsky_korsakov: "Ch. II, Grouping in unison, pp. 39-40, and Stringed instruments \
+            doubling in octaves, pp. 40-44: the colour of each unison and octave of the string \
+            sections",
+    ),
+};
+
+/// Rimsky-Korsakov on mixed brass in octaves.
+const BRASS_OCTAVES: Provenance = Provenance::Cited {
+    source: cite!(
+        rimsky_korsakov: "Ch. II, Brass in unison, in octaves, thirds and sixths, pp. 55-56: \
+            mixed brass in octaves works in the normal order of register, trumpet over two \
+            horns, trumpet over trombone, trombone over tuba, two trumpets over two trombones, \
+            two horns over tuba; horns over trombones are not so reliable",
+    ),
+};
+
+/// Every doubling the handbooks name: strings and wind, strings and brass, wood-wind and brass,
+/// the colour doublings of tuned percussion, keyboards and harp, wood-wind unisons and octaves of
+/// one branch, strings with strings, wood-wind with brass in octaves and chords, brass with brass,
+/// the three-group unisons of a tutti, and the ways of building the bass.
+pub static NAMED_DOUBLINGS: [NamedDoubling; 78] = [
+    // Strings with wood-wind.
+    doubling(
+        &[any(&[Violin]), any(&[Flute])],
+        UNISON,
+        "among the best and most natural unisons of strings and wind; the flute adds resonance \
+            and the strings soften it",
+        FIRST,
+        STRINGS_AND_WIND,
+    ),
+    doubling(
+        &[lines(Selector::Solo(&[Violin])), any(&[Flute])],
+        UNISON,
+        "great purity and abundance of tone in the high register, the solo timbre kept",
+        FIRST,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. IV, Soli in the strings, p. 106: a solo violin doubled in \
+                    unison by a flute attains great purity and abundance of tone",
+            ),
+        },
+    ),
+    doubling(
+        &[any(&[Violin]), any(&[Oboe])],
+        UNISON,
+        "a natural pair; one oboe added to the first and second violins only thickens them, the \
+            woodwind timbre being lost",
+        FIRST,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, Comparison of resonance, p. 34: violins I and II with \
+                    one oboe, the wood-wind timbre being lost; Ch. II, Combination of strings \
+                    and wind, p. 58: violins with oboe are a natural unison, the strings \
+                    predominating when the two are of equal power",
+            ),
+        },
+    ),
+    doubling(
+        &[any(&[Violin]), any(&[ClarinetBb, ClarinetA, ClarinetEb])],
+        UNISON,
+        "a natural pair",
+        FIRST,
+        STRINGS_AND_WIND,
+    ),
+    doubling(
+        &[any(&[Viola]), any(CLARINETS)],
+        UNISON,
+        "a natural pair and a point of contact between the groups: the viola's timbre recalls \
+            the clarinet's lowest compass",
+        FIRST,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, Comparison of resonance, p. 34: the viola's timbre is \
+                    vaguely compared to the lowest compass of the clarinet; Ch. II, Combination \
+                    of strings and wind, p. 58: violas with clarinet are a natural unison",
+            ),
+        },
+    ),
+    doubling(
+        &[any(&[Viola]), any(&[Oboe, EnglishHorn, Bassoon])],
+        UNISON,
+        "natural pairs",
+        FIRST,
+        STRINGS_AND_WIND,
+    ),
+    doubling(
+        &[any(&[Cello]), any(&[Bassoon])],
+        UNISON,
+        "a natural pair; one bassoon added to the cellos and double basses only thickens them",
+        FIRST,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, Comparison of resonance, p. 34: cellos and double \
+                    basses with one bassoon; Ch. II, Combination of strings and wind, p. 58: \
+                    cellos with bassoon are a natural unison",
+            ),
+        },
+    ),
+    doubling(
+        &[any(&[Cello]), any(&[ClarinetBb, ClarinetA, BassClarinet])],
+        UNISON,
+        "natural pairs",
+        FIRST,
+        STRINGS_AND_WIND,
+    ),
+    doubling(
+        &[
+            any(&[DoubleBass]),
+            any(&[BassClarinet, Bassoon, Contrabassoon]),
+        ],
+        UNISON,
+        "natural pairs",
+        FIRST,
+        STRINGS_AND_WIND,
+    ),
+    doubling(
+        &[players(2, &[Flute]), players(2, &[Oboe]), any(&[Violin])],
+        UNISON,
+        "the woodwind absorbs one string section: a sweet, coherent quality, the woodwind timbre \
+            still predominating",
+        Prevails::Members(&[0, 1]),
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, Comparison of resonance, p. 34: 2 flutes and 2 oboes \
+                    with the first violins, 2 oboes and 2 clarinets with the violas, 2 clarinets \
+                    and 2 bassoons with the cellos give a sweet coherent quality, the wood-wind \
+                    timbre still predominating",
+            ),
+        },
+    ),
+    doubling(
+        &[players(2, &[Oboe]), players(2, CLARINETS), any(&[Viola])],
+        UNISON,
+        "the woodwind absorbs the violas, its timbre still predominating",
+        Prevails::Members(&[0, 1]),
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, Comparison of resonance, p. 34: 2 oboes and 2 \
+                    clarinets with the violas, the wood-wind timbre still predominating",
+            ),
+        },
+    ),
+    doubling(
+        &[players(2, CLARINETS), players(2, &[Bassoon]), any(&[Cello])],
+        UNISON,
+        "the woodwind absorbs the cellos, its timbre still predominating",
+        Prevails::Members(&[0, 1]),
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, Comparison of resonance, p. 34: 2 clarinets and 2 \
+                    bassoons with the cellos, the wood-wind timbre still predominating",
+            ),
+        },
+    ),
+    doubling(
+        &[any(&[Viola]), any(&[Cello]), players(1, CLARINETS)],
+        UNISON,
+        "one clarinet added to the violas and cellos only thickens them",
+        Prevails::Members(&[0, 1]),
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, Comparison of resonance, p. 34: violas and cellos with \
+                    one clarinet; one wind instrument added to the strings only thickens them",
+            ),
+        },
+    ),
+    doubling(
+        &[
+            lines(Selector::Played {
+                ids: STRINGS,
+                articulations: &[ConSordino],
+            }),
+            lines(Selector::Family(Family::Woodwinds)),
+        ],
+        UNISON,
+        "muted strings do not combine so well with woodwind: the two qualities stay apart",
+        Prevails::Apart,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, Comparison of resonance, p. 34: muted strings do not \
+                    combine so well with wood-wind, as the two tone qualities remain distinct",
+            ),
+        },
+    ),
+    // Strings with brass.
+    doubling(
+        &[any(&[HornF]), any(&[Cello])],
+        UNISON,
+        "a beautifully blended, soft quality of tone",
+        Prevails::Blend,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Combination of strings and brass, p. 61: the \
+                    combination of horns and cellos produces a beautifully blended, soft quality \
+                    of tone",
+            ),
+        },
+    ),
+    doubling(
+        &[any(&[HornF]), lines(Selector::Divided(&[Viola, Cello]))],
+        &[Spacing::Unison, Spacing::Chord],
+        "the splendid effect of horns doubled by divided violas or cellos",
+        Prevails::Blend,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. III, Harmony in combined groups, p. 95: the splendid \
+                    effect of horns doubled by divided violas or cellos",
+            ),
+        },
+    ),
+    doubling(
+        &[any(&[Violin]), any(TRUMPETS)],
+        UNISON,
+        "the best string and brass pair for the top, but each is heard on its own",
+        Prevails::Apart,
+        STRINGS_AND_BRASS,
+    ),
+    doubling(
+        &[any(&[Viola]), any(&[HornF])],
+        UNISON,
+        "the best string and brass pair for the middle, but each is heard on its own",
+        Prevails::Apart,
+        STRINGS_AND_BRASS,
+    ),
+    doubling(
+        &[
+            any(&[Cello, DoubleBass]),
+            any(&[TromboneTenor, TromboneBass, Tuba]),
+        ],
+        UNISON,
+        "for heavy, massive effects; each is heard on its own",
+        Prevails::Apart,
+        STRINGS_AND_BRASS,
+    ),
+    // Wood-wind with brass.
+    doubling(
+        &[any(TRUMPETS), any(&[ClarinetBb, ClarinetA, Oboe, Flute])],
+        UNISON,
+        "the brass tone dominates; the woodwind softens it and gives a finer legato than the \
+            brass alone",
+        FIRST,
+        WIND_AND_BRASS,
+    ),
+    doubling(
+        &[any(&[HornF]), any(&[ClarinetBb, ClarinetA, Bassoon])],
+        UNISON,
+        "the horn dominates, softened by the woodwind",
+        FIRST,
+        WIND_AND_BRASS,
+    ),
+    doubling(
+        &[any(&[TromboneTenor, Tuba]), any(&[Bassoon])],
+        UNISON,
+        "the brass dominates, softened by the bassoon",
+        FIRST,
+        WIND_AND_BRASS,
+    ),
+    doubling(
+        &[
+            lines(Selector::Played {
+                ids: &[HornF, TrumpetBb, TrumpetC],
+                articulations: &[Stopped, ConSordino],
+            }),
+            any(&[Oboe, EnglishHorn]),
+        ],
+        &[Spacing::Unison, Spacing::Chord],
+        "a magnificent tone: stopped notes resemble the oboe and the English horn",
+        Prevails::Blend,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. III, Harmony in combined groups, p. 89: stopped or muted \
+                    horns and trumpets with oboes and English horn give a magnificent tone, \
+                    stopped notes resembling the oboe and English horn",
+            ),
+        },
+    ),
+    doubling(
+        &[
+            lines(Selector::Played {
+                ids: &[HornF],
+                articulations: &[Stopped],
+            }),
+            any(CLARINETS),
+        ],
+        &[Spacing::Chord],
+        "a beautiful dark tone from stopped middle horn notes and low clarinets; with bassoons \
+            instead the effect loses part of its character",
+        Prevails::Blend,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. III, Harmony in combined groups, p. 89: a beautiful dark \
+                    tone is derived from the combination of middle notes of stopped horns and low \
+                    notes of the clarinets",
+            ),
+        },
+    ),
+    doubling(
+        &[
+            players(2, &[Oboe, ClarinetBb, ClarinetA, Flute]),
+            players(1, &[HornF]),
+        ],
+        OCTAVE,
+        "two woodwinds an octave above one horn take the place of a trumpet above it",
+        Prevails::Unstated,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Combination of wind and brass in octaves, p. 57: \
+                    wood-wind often replaces a trumpet above a horn, one horn below 2 oboes, 2 \
+                    clarinets or 2 flutes",
+            ),
+        },
+    ),
+    doubling(
+        &[
+            Member {
+                selector: Selector::Ids(&[Oboe, ClarinetBb, ClarinetA, Flute]),
+                players: Some(PlayerRange::new(3, 4)),
+            },
+            players(2, &[HornF]),
+        ],
+        OCTAVE,
+        "two horns below need three or four woodwinds above, above all in forte",
+        Prevails::Unstated,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Combination of wind and brass in octaves, p. 57: with \
+                    two horns in the lower octave three or four wind instruments are necessary \
+                    above, especially in forte",
+            ),
+        },
+    ),
+    doubling(
+        &[
+            Member {
+                selector: Selector::Ids(&[Flute, Oboe, ClarinetBb, ClarinetA]),
+                players: Some(PlayerRange::new(2, 4)),
+            },
+            any(TRUMPETS),
+        ],
+        OCTAVE,
+        "three or four woodwinds double a trumpet in the upper octave; in the top register two \
+            flutes suffice",
+        Prevails::Unstated,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Combination of wind and brass in octaves, p. 57: to \
+                    double a trumpet in the upper octave three or four wind instruments are \
+                    required, but in the top register two flutes will suffice",
+            ),
+        },
+    ),
+    doubling(
+        &[
+            lines(Selector::Family(Family::Brass)),
+            lines(Selector::Family(Family::Woodwinds)),
+        ],
+        &[Spacing::Chord],
+        "a chord for full brass doubled by the same chord for full woodwind in pairs gives a \
+            magnificent and uniform tone",
+        Prevails::Blend,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. III, Harmony in combined groups, p. 88: a chord for full \
+                    brass doubled by the same chord for full wood-wind in pairs produces a \
+                    magnificent and uniform tone",
+            ),
+        },
+    ),
+    // Tuned percussion, keyboards and harp.
+    doubling(
+        &[any(&[Glockenspiel]), any(&[Flute, Piccolo, Celesta, Harp])],
+        &[
+            Spacing::Unison,
+            Spacing::Octaves(1),
+            Spacing::Octaves(2),
+            Spacing::Octaves(3),
+        ],
+        "the usual colour doublings of a melody, the glockenspiel in unison or one to three \
+            octaves above",
+        FIRST,
+        Provenance::Cited {
+            source: cite!(
+                vsl_academy_glockenspiel: "it doubles a melody in unison or one to three octaves \
+                    above; usual partners are flute, piccolo, celesta and harp",
+                rimsky_korsakov: "Ch. I, Comparison of resonance, p. 33: the glockenspiel will \
+                    easily prevail";
+                "that it prevails in these doublings is an estimate"
+            ),
+        },
+    ),
+    doubling(
+        &[any(&[Xylophone]), any(&[Celesta, Glockenspiel])],
+        UNISON,
+        "the xylophone dominates",
+        FIRST,
+        Provenance::Cited {
+            source: cite!(
+                vsl_academy_xylophone: "it is doubled with celesta and glockenspiel, the \
+                    xylophone dominating",
+            ),
+        },
+    ),
+    doubling(
+        &[
+            any(&[Xylophone]),
+            lines(Selector::Played {
+                ids: &[Violin, Viola],
+                articulations: &[Pizzicato],
+            }),
+        ],
+        &[Spacing::Unison, Spacing::Octaves(1)],
+        "sharpens the pizzicato and accents the top notes of a melody",
+        FIRST,
+        Provenance::Cited {
+            source: cite!(
+                vsl_academy_xylophone: "it doubles violins and violas, sharpening their \
+                    pizzicato, and accents the top notes of a melody",
+            ),
+        },
+    ),
+    doubling(
+        &[
+            any(&[Celesta]),
+            any(&[
+                Flute,
+                Harp,
+                PianoConcertGrand,
+                PianoStudioGrand,
+                PianoUpright,
+            ]),
+        ],
+        UNISON,
+        "duplicates a theme",
+        Prevails::Unstated,
+        Provenance::Cited {
+            source: cite!(
+                wikipedia_celesta: "it often duplicates a theme in the flute, harp or piano",
+            ),
+        },
+    ),
+    doubling(
+        &[
+            any(&[Harp]),
+            lines(Selector::Played {
+                ids: STRINGS,
+                articulations: &[Pizzicato],
+            }),
+        ],
+        UNISON,
+        "the harp and pizzicato strings form one plucked group",
+        Prevails::Blend,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. IV, Tutti pizzicato, p. 103: the strings pizzicato, \
+                    reinforced occasionally by the harp and piano, constitute a particular kind \
+                    of tutti",
+            ),
+        },
+    ),
+    doubling(
+        &[
+            lines(Selector::Played {
+                ids: &[Harp],
+                articulations: &[Harmonics],
+            }),
+            any(&[Flute, ClarinetBb, ClarinetA]),
+        ],
+        UNISON,
+        "a magical colour in the middle register",
+        Prevails::Unstated,
+        Provenance::Cited {
+            source: cite!(
+                berlioz: "harp harmonics with flutes and clarinets in the middle register",
+            ),
+        },
+    ),
+    // Wood-wind with wood-wind.
+    doubling(
+        &[any(&[Flute]), any(&[Oboe])],
+        UNISON,
+        "fuller than the flute, sweeter than the oboe",
+        Prevails::ByRegister(&[0, 1]),
+        WOODWIND_UNISON,
+    ),
+    doubling(
+        &[any(&[Flute]), any(CLARINETS)],
+        UNISON,
+        "fuller than the flute, duller than the clarinet",
+        Prevails::ByRegister(&[0, 1]),
+        WOODWIND_UNISON,
+    ),
+    doubling(
+        &[any(&[Oboe]), any(CLARINETS)],
+        UNISON,
+        "fuller than either: the dark, nasal oboe prevails low, the bright clarinet high; the \
+            closest woodwind stand-in for a trumpet phrase that lies too high",
+        Prevails::ByRegister(&[0, 1]),
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Combination in unison, p. 47: oboe and clarinet give a \
+                    fuller quality than either, the dark, nasal oboe prevailing in the low \
+                    register and the bright clarinet in the high; Ch. IV: a phrase too high for \
+                    the trumpets may be entrusted to the oboes and clarinets in unison, this \
+                    combination possessing the closest resemblance to the trumpet tone both in \
+                    character and power",
+            ),
+        },
+    ),
+    doubling(
+        &[any(&[Flute]), any(&[Oboe]), any(CLARINETS)],
+        UNISON,
+        "very full: the flute prevails low, the oboe in the middle, the clarinet high",
+        Prevails::ByRegister(&[0, 1, 2]),
+        WOODWIND_UNISON,
+    ),
+    doubling(
+        &[any(&[Bassoon]), any(CLARINETS)],
+        UNISON,
+        "very full: the gloomy clarinet prevails low, the bassoon high",
+        Prevails::ByRegister(&[1, 0]),
+        WOODWIND_UNISON,
+    ),
+    doubling(
+        &[any(&[Bassoon]), any(&[Oboe, Flute])],
+        UNISON,
+        "seldom found outside a tutti: more resonance, no new colour; the low flute or oboe \
+            prevails at the bottom, the high bassoon at the top",
+        Prevails::ByRegister(&[1, 0]),
+        WOODWIND_UNISON,
+    ),
+    doubling(
+        &[any(&[Flute]), any(&[Oboe]), any(CLARINETS), any(&[Bassoon])],
+        UNISON,
+        "a rich quality, difficult to define; rare",
+        Prevails::Unstated,
+        WOODWIND_UNISON,
+    ),
+    doubling(
+        &[any(&[Bassoon]), any(&[Contrabassoon])],
+        OCTAVE,
+        "one branch in octaves, always good",
+        Prevails::Unstated,
+        SAME_BRANCH,
+    ),
+    doubling(
+        &[any(CLARINETS), any(&[BassClarinet])],
+        OCTAVE,
+        "one branch in octaves, always good",
+        Prevails::Unstated,
+        SAME_BRANCH,
+    ),
+    doubling(
+        &[any(&[Oboe]), any(&[EnglishHorn])],
+        OCTAVE,
+        "one branch in octaves, always good",
+        Prevails::Unstated,
+        SAME_BRANCH,
+    ),
+    doubling(
+        &[any(&[ClarinetEb]), any(CLARINETS)],
+        OCTAVE,
+        "one branch in octaves, always good",
+        Prevails::Unstated,
+        SAME_BRANCH,
+    ),
+    doubling(
+        &[any(&[Flute]), any(&[AltoFlute])],
+        OCTAVE,
+        "one branch in octaves, always good",
+        Prevails::Unstated,
+        SAME_BRANCH,
+    ),
+    doubling(
+        &[any(&[Piccolo]), any(&[Flute, Oboe, ClarinetBb, ClarinetA])],
+        OCTAVE,
+        "the normal support of the piccolo, which is weak low",
+        Prevails::Unstated,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Combination in octaves, p. 50: the piccolo is doubled \
+                    an octave lower by a flute, an oboe or a clarinet; piccolo over flute is one \
+                    branch in octaves, always good",
+            ),
+        },
+    ),
+    doubling(
+        &[any(&[Piccolo]), any(&[Flute, Oboe, ClarinetBb, ClarinetA])],
+        &[Spacing::Octaves(2)],
+        "the piccolo two octaves above a woodwind phrase, the middle octave left out",
+        Prevails::Unstated,
+        Provenance::Cited {
+            source: cite!(
+                forsyth: "the piccolo sometimes doubles a wood-wind phrase at the sixteenth, \
+                    with the middle octave left out",
+            ),
+        },
+    ),
+    doubling(
+        &[
+            any(&[Piccolo]),
+            any(&[Flute]),
+            any(&[Oboe, ClarinetBb, ClarinetA]),
+            any(&[Bassoon]),
+        ],
+        OCTAVE,
+        "a melody spread over three or four octaves of woodwind in its natural order, such as \
+            piccolo, two flutes, two oboes with a clarinet, and a bassoon",
+        Prevails::Unstated,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Doubling in two, three and four octaves, p. 51: in \
+                    three and four octaves the wood-wind keeps its natural order",
+            ),
+        },
+    ),
+    doubling(
+        &[
+            any(&[Bassoon, ClarinetBb, ClarinetA, BassClarinet]),
+            any(&[Contrabassoon]),
+        ],
+        OCTAVE,
+        "a melody in the extreme bottom doubled an octave higher",
+        Prevails::Unstated,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Combination in octaves, p. 50: the double bassoon is \
+                    doubled an octave higher by the bassoon, clarinet or bass clarinet",
+            ),
+        },
+    ),
+    // Strings with strings.
+    doubling(
+        &[any(&[Violin]), any(&[Violin])],
+        UNISON,
+        "first and second violins in unison: no change of colour, more power; a woodwind \
+            doubling added cannot predominate",
+        Prevails::Blend,
+        STRINGS_WITH_STRINGS,
+    ),
+    doubling(
+        &[any(&[Violin]), any(&[Viola])],
+        UNISON,
+        "rich and full, the violins predominating",
+        FIRST,
+        STRINGS_WITH_STRINGS,
+    ),
+    doubling(
+        &[any(&[Viola]), any(&[Cello])],
+        UNISON,
+        "a rich, full resonance, the cello predominating",
+        SECOND,
+        STRINGS_WITH_STRINGS,
+    ),
+    doubling(
+        &[any(&[Violin]), any(&[Cello])],
+        UNISON,
+        "fuller, the cello tone prevailing",
+        SECOND,
+        STRINGS_WITH_STRINGS,
+    ),
+    doubling(
+        &[any(&[Violin]), any(&[Violin]), any(&[Viola]), any(&[Cello])],
+        UNISON,
+        "first and second violins, violas and cellos in unison, possible only in the alto and \
+            tenor register: very tense and powerful in forte, extremely full and rich in piano",
+        Prevails::Blend,
+        STRINGS_WITH_STRINGS,
+    ),
+    doubling(
+        &[any(&[Cello]), any(&[DoubleBass])],
+        UNISON,
+        "a rich, full resonance, now and then for very low phrases",
+        Prevails::Unstated,
+        STRINGS_WITH_STRINGS,
+    ),
+    doubling(
+        &[any(&[Violin]), any(&[Violin])],
+        OCTAVE,
+        "first violins an octave above the seconds, very common above all very high: it secures \
+            expression, fullness of tone and firmness of timbre",
+        Prevails::Unstated,
+        STRINGS_WITH_STRINGS,
+    ),
+    doubling(
+        &[any(&[Violin]), any(&[Viola])],
+        OCTAVE,
+        "common, above all when the lower octave lies below the violin's G string",
+        Prevails::Unstated,
+        STRINGS_WITH_STRINGS,
+    ),
+    doubling(
+        &[any(&[Viola]), any(&[Cello])],
+        OCTAVE,
+        "for when the violins are busy",
+        Prevails::Unstated,
+        STRINGS_WITH_STRINGS,
+    ),
+    doubling(
+        &[any(&[Violin]), any(&[Cello])],
+        OCTAVE,
+        "for expressive passages with the cellos on their A or D string; more resonant than \
+            violas over cellos",
+        Prevails::Unstated,
+        STRINGS_WITH_STRINGS,
+    ),
+    doubling(
+        &[any(&[Violin]), any(&[Viola, Cello])],
+        OCTAVE,
+        "first and second violins in unison an octave above violas and cellos in unison: a \
+            beautiful quality of tone, somewhat severe, for melodies in the middle range",
+        Prevails::Unstated,
+        STRINGS_WITH_STRINGS,
+    ),
+    doubling(
+        &[any(&[Violin]), any(&[Violin]), any(&[Viola, Cello])],
+        OCTAVE,
+        "first violins, second violins and violas or cellos in double octaves: a very tense \
+            cantabile, best in forte",
+        Prevails::Unstated,
+        STRINGS_WITH_STRINGS,
+    ),
+    // Brass with brass.
+    doubling(
+        &[any(TRUMPETS), players(2, &[HornF])],
+        OCTAVE,
+        "mixed brass in octaves in the normal order of register",
+        Prevails::Unstated,
+        BRASS_OCTAVES,
+    ),
+    doubling(
+        &[any(TRUMPETS), any(TROMBONES)],
+        OCTAVE,
+        "mixed brass in octaves in the normal order of register",
+        Prevails::Unstated,
+        BRASS_OCTAVES,
+    ),
+    doubling(
+        &[any(TROMBONES), any(&[Tuba])],
+        OCTAVE,
+        "mixed brass in octaves in the normal order of register",
+        Prevails::Unstated,
+        BRASS_OCTAVES,
+    ),
+    doubling(
+        &[players(2, &[HornF]), players(1, TROMBONES)],
+        OCTAVE,
+        "horns above a trombone, not so reliable; only in octaves",
+        Prevails::Unstated,
+        BRASS_OCTAVES,
+    ),
+    doubling(
+        &[
+            any(&[HornF]),
+            any(&[TrumpetBb, TrumpetC, TromboneTenor, TromboneBass]),
+        ],
+        &[Spacing::Chord],
+        "horns beside the same chord in trumpets or trombones soften their penetrating timbre",
+        Prevails::Blend,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. III, Duplication in the brass, pp. 85-86: horns added to \
+                    the same chord in trumpets or trombones moderate their penetrating timbre",
+            ),
+        },
+    ),
+    // The three groups in a tutti.
+    doubling(
+        &[
+            any(&[Violin]),
+            any(&[Oboe, Flute, ClarinetBb, ClarinetA]),
+            any(TRUMPETS),
+        ],
+        UNISON,
+        "the most natural unison of the three groups for a melody in a tutti",
+        Prevails::Unstated,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Combination of the three groups, p. 61: violins, oboe \
+                    or flute or clarinet, and trumpet",
+            ),
+        },
+    ),
+    doubling(
+        &[
+            any(&[Viola, Cello]),
+            any(&[ClarinetBb, ClarinetA, EnglishHorn]),
+            any(&[HornF]),
+        ],
+        UNISON,
+        "the natural unison of the three groups for a middle melody in a tutti",
+        Prevails::Unstated,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Combination of the three groups, p. 61: violas or \
+                    cellos, clarinet or English horn, and horn",
+            ),
+        },
+    ),
+    // The bass.
+    bass(
+        &[any(&[Cello]), any(&[DoubleBass])],
+        OCTAVE,
+        "the usual orchestral bass; the double-bass part may be simplified",
+        Prevails::Unstated,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Stringed instruments doubling in octaves, p. 43: \
+                    cellos and double basses in octaves are the usual construction of the bass, \
+                    the double-bass part sometimes simplified",
+            ),
+        },
+    ),
+    bass(
+        &[any(&[Cello, Bassoon]), any(&[DoubleBass])],
+        UNISON,
+        "the double bass rarely plays an independent part except pedal notes and usually doubles \
+            the cellos or a bassoon",
+        Prevails::Unstated,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, Stringed instruments, p. 9: the double bass rarely \
+                    plays an independent part, usually moving with the cellos or doubling the \
+                    bassoon, except for pedal notes",
+            ),
+        },
+    ),
+    bass(
+        &[any(&[Viola]), any(&[DoubleBass])],
+        OCTAVE,
+        "seldom, when the cellos are busy",
+        Prevails::Unstated,
+        STRINGS_WITH_STRINGS,
+    ),
+    bass(
+        &[any(&[Viola]), any(&[DoubleBass])],
+        &[Spacing::Octaves(2)],
+        "the violas two octaves above the double basses reinforce their partials",
+        Prevails::Unstated,
+        Provenance::Cited {
+            source: cite!(
+                vsl_academy_double_bass: "violas often play parallel to the double basses two \
+                    octaves higher, reinforcing their partials",
+            ),
+        },
+    ),
+    bass(
+        &[any(&[DoubleBass]), any(&[Contrabassoon])],
+        UNISON,
+        "depth: the contrabassoon doubles the double basses",
+        Prevails::Unstated,
+        STRINGS_AND_WIND,
+    ),
+    bass(
+        &[any(&[TromboneTenor, TromboneBass]), any(&[Tuba])],
+        OCTAVE,
+        "the bass of a trombone chord: the third trombone or the bass trombone in octaves with \
+            the tuba",
+        Prevails::Unstated,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. III, Harmony in the brass, p. 83: the third trombone and \
+                    the tuba in octaves as the bass",
+                forsyth: "the bass trombone and the tuba in octaves",
+            ),
+        },
+    ),
+    bass(
+        &[players(2, &[HornF]), any(&[Tuba])],
+        OCTAVE,
+        "two horns in unison an octave above the tuba under three trombones: a beautiful full \
+            resonance",
+        Prevails::Unstated,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. III, Harmony in the brass, p. 83: two horns and tuba in \
+                    octaves under three trombones give a beautiful full resonance",
+            ),
+        },
+    ),
+    bass(
+        &[any(&[HornF]), any(&[Bassoon])],
+        OCTAVE,
+        "a bassoon doubles the bass of a four-horn chord an octave below; trombone and tuba are \
+            too resonant for this",
+        Prevails::Unstated,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. III, pp. 83 and 90: the bass of a chord for four horns is \
+                    doubled by a bassoon an octave below, the too resonant trombone and tuba \
+                    seldom being used",
+            ),
+        },
+    ),
+    bass(
+        &[
+            any(&[Cello, DoubleBass]),
+            players(2, &[Bassoon]),
+            players(3, TROMBONES),
+            any(&[Tuba]),
+        ],
+        UNISON,
+        "the heavy bass unison of the three groups",
+        Prevails::Unstated,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Combination of the three groups, p. 61: cellos and \
+                    double basses, two bassoons, three trombones and tuba",
+            ),
+        },
+    ),
+];
+
+/// What the handbooks warn not to double, each with the rules that check it.
+pub static DO_NOT_DOUBLE: [Avoid; 12] = [
+    Avoid {
+        what: "double an expressive solo line",
+        why: "doubling restricts the variety of colour and expression",
+        rules: &[RuleId::Dbl07],
+        provenance: Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Combination in unison, p. 48: phrases demanding \
+                    diversity of expression should be entrusted to solo instruments of simple \
+                    timbre",
+            ),
+        },
+    },
+    Avoid {
+        what: "duplicate the whole woodwind only to balance an oversized string body",
+        why: "a medium string body balances the usual woodwind",
+        rules: &[],
+        provenance: Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, Stringed instruments, p. 6: 20 or 24 first violins \
+                    overpower the customary wood-wind, and it is advisable to rely on a \
+                    medium-sized body of strings; Ch. II, p. 49",
+            ),
+        },
+    },
+    Avoid {
+        what: "divide the first and the second violins in octaves in a small orchestra",
+        why: "it halves the players on each line and loses resonance",
+        rules: &[RuleId::Dbl06],
+        provenance: Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Stringed instruments doubling in octaves, p. 41",
+            ),
+        },
+    },
+    Avoid {
+        what: "put the divided halves of one viola, cello or double-bass section in octaves",
+        why: "the parts lie on strings that do not correspond and unity of tone is impaired; the \
+            violins are the exception",
+        rules: &[RuleId::Dbl05],
+        provenance: Provenance::Cited {
+            source: cite!(rimsky_korsakov: "Ch. II, Note II, p. 44"),
+        },
+    },
+    Avoid {
+        what: "put two winds of one colour in octaves without strings doubling them",
+        why: "playing in different registers, they do not correspond",
+        rules: &[RuleId::Dbl03],
+        provenance: Provenance::Cited {
+            source: cite!(rimsky_korsakov: "Ch. II, Combination in octaves, pp. 49-50"),
+        },
+    },
+    Avoid {
+        what: "invert the woodwind order in a doubling, such as a bassoon above a clarinet or a \
+            flute below an oboe",
+        why: "a far-fetched, unnatural tone",
+        rules: &[RuleId::Dbl02],
+        provenance: Provenance::Cited {
+            source: cite!(rimsky_korsakov: "Ch. II, p. 47"),
+        },
+    },
+    Avoid {
+        what: "double a trombone an octave above with woodwind",
+        why: "trumpets are more suitable",
+        rules: &[RuleId::Dbl04],
+        provenance: Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Combination of wind and brass in octaves, p. 57",
+            ),
+        },
+    },
+    Avoid {
+        what: "double the bass upward or the tenor in wide spacing, double the bass of an \
+            inverted seventh chord in an upper part, or write consecutive octaves between upper \
+            parts",
+        why: "the rules of harmony carry over into orchestration",
+        rules: &[RuleId::Spc06, RuleId::Spc07, RuleId::Spc08],
+        provenance: Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. III, Number of harmonic parts, pp. 64-65",
+            ),
+        },
+    },
+    Avoid {
+        what: "under a voice, double strings with woodwind and brass or brass with woodwind, or \
+            give one harmonic part to two clarinets, two oboes or two horns in unison",
+        why: "such combinations are liable to drown the singer",
+        rules: &[RuleId::Msk02],
+        provenance: Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. V, Transparence of accompaniment, pp. 120-121",
+            ),
+        },
+    },
+    Avoid {
+        what: "replace a missing celesta by the glockenspiel",
+        why: "an upright piano is the better substitute",
+        rules: &[],
+        provenance: Provenance::Cited {
+            source: cite!(rimsky_korsakov: "Ch. I, Piano and Celesta, p. 32"),
+        },
+    },
+    Avoid {
+        what: "use compound timbres all the time",
+        why: "constant mixtures give a dull, neutral texture",
+        rules: &[],
+        provenance: Provenance::Cited {
+            source: cite!(rimsky_korsakov: "Ch. I, Comparison of resonance, p. 35"),
+        },
+    },
+    Avoid {
+        what: "pair strings and brass in unison expecting a blend",
+        why: "each can be heard separately",
+        rules: &[RuleId::Dbl09],
+        provenance: Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Combination of strings and brass, p. 61",
+            ),
+        },
+    },
+];
+
+/// The natural order of the woodwinds from the top, with the auxiliary instruments in their
+/// branches.
+pub const WOODWIND_ORDER: WoodwindOrder = WoodwindOrder {
+    branches: [
+        &[Piccolo, Flute, AltoFlute, BassFlute],
+        &[Oboe, OboeDamore, EnglishHorn],
+        &[ClarinetEb, ClarinetBb, ClarinetA, BassClarinet],
+        &[Bassoon, Contrabassoon],
+    ],
+    provenance: Provenance::Cited {
+        source: cite!(
+            rimsky_korsakov: "Ch. II, p. 47: the normal order of the wood-wind, which produces the \
+                most natural resonance, is flutes, oboes, clarinets, bassoons; p. 50: piccolo \
+                and alto flute with the flutes, English horn with the oboes, small and bass \
+                clarinets with the clarinets, double bassoon with the bassoons";
+            "the bass flute with the flutes and the oboe d'amore with the oboes is an estimate"
+        ),
+    },
+};
+
+// Compile-time checks of the doubling tables.
+const _: () = {
+    let mut i = 0;
+    while i < NAMED_DOUBLINGS.len() {
+        assert!(
+            NAMED_DOUBLINGS[i].check().is_ok(),
+            "a named doubling is invalid"
+        );
+        i += 1;
+    }
+    let mut i = 0;
+    while i < DO_NOT_DOUBLE.len() {
+        assert!(DO_NOT_DOUBLE[i].check().is_ok(), "a warning is invalid");
+        i += 1;
+    }
+    assert!(
+        WOODWIND_ORDER.check().is_ok(),
+        "the woodwind order is invalid"
+    );
 };
