@@ -7,6 +7,7 @@ use crate::orchestration::articulation::Articulation::{
 };
 use crate::orchestration::id::InstrumentType;
 use crate::orchestration::instrument::{Instrument, InstrumentSpec};
+use crate::orchestration::pitch::Clef;
 
 /// The articulations a bowed string instrument idiomatically plays.
 const BOWED: &[Articulation] = &[
@@ -36,6 +37,7 @@ pub(super) const VIOLIN: Instrument = Instrument::new(
             cited(55, 108, WIKI_VIOLIN),
             Some(cited(55, 100, WIKI_VIOLIN)),
         ),
+        clefs: &[Clef::Treble],
         articulations: BOWED,
         articulations_provenance: ARTICULATION_ESTIMATE,
         ..InstrumentSpec::EMPTY
@@ -55,6 +57,7 @@ pub(super) const CELLO: Instrument = Instrument::new(
             ),
             None,
         ),
+        clefs: &[Clef::Bass, Clef::Tenor, Clef::Treble],
         articulations: BOWED,
         articulations_provenance: ARTICULATION_ESTIMATE,
         ..InstrumentSpec::EMPTY
@@ -78,6 +81,7 @@ pub(super) const DOUBLE_BASS: Instrument = Instrument::new(
                 "https://en.wikipedia.org/wiki/Double_bass: orchestral parts rarely exceed E1-G3 (sounding)",
             )),
         ),
+        clefs: &[Clef::Bass, Clef::Tenor, Clef::Treble],
         articulations: BOWED,
         articulations_provenance: ARTICULATION_ESTIMATE,
         ..InstrumentSpec::EMPTY

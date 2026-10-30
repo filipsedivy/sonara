@@ -4,6 +4,7 @@ use super::{ARTICULATION_ESTIMATE, estimate, pitched};
 use crate::orchestration::articulation::Articulation::{self, Marcato, Roll, Staccato, Tremolo};
 use crate::orchestration::id::InstrumentType;
 use crate::orchestration::instrument::{Instrument, InstrumentSpec, PitchModel};
+use crate::orchestration::pitch::Clef;
 
 /// The articulations a mallet instrument idiomatically plays.
 const MALLETS: &[Articulation] = &[Staccato, Marcato, Tremolo];
@@ -15,6 +16,7 @@ pub(super) const SNARE_DRUM: Instrument = Instrument::new(
     InstrumentSpec {
         name: "Snare drum",
         pitch: PitchModel::Unpitched,
+        clefs: &[Clef::SingleLine, Clef::Treble, Clef::Percussion],
         articulations: SNARE,
         articulations_provenance: ARTICULATION_ESTIMATE,
         ..InstrumentSpec::EMPTY
@@ -34,6 +36,7 @@ pub(super) const GLOCKENSPIEL: Instrument = Instrument::new(
             ),
             None,
         ),
+        clefs: &[Clef::Treble],
         articulations: MALLETS,
         articulations_provenance: ARTICULATION_ESTIMATE,
         ..InstrumentSpec::EMPTY
@@ -53,6 +56,7 @@ pub(super) const XYLOPHONE: Instrument = Instrument::new(
             ),
             None,
         ),
+        clefs: &[Clef::Treble],
         articulations: MALLETS,
         articulations_provenance: ARTICULATION_ESTIMATE,
         ..InstrumentSpec::EMPTY

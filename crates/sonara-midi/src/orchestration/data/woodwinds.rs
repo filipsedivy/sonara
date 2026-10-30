@@ -6,6 +6,7 @@ use crate::orchestration::articulation::Articulation::{
 };
 use crate::orchestration::id::InstrumentType;
 use crate::orchestration::instrument::{Instrument, InstrumentSpec};
+use crate::orchestration::pitch::Clef;
 
 /// The articulations a woodwind idiomatically plays.
 const WIND: &[Articulation] = &[
@@ -34,6 +35,7 @@ pub(super) const PICCOLO: Instrument = Instrument::new(
             ),
             None,
         ),
+        clefs: &[Clef::Treble],
         articulations: WIND,
         articulations_provenance: ARTICULATION_ESTIMATE,
         ..InstrumentSpec::EMPTY
@@ -53,6 +55,7 @@ pub(super) const FLUTE: Instrument = Instrument::new(
             ),
             None,
         ),
+        clefs: &[Clef::Treble],
         articulations: WIND,
         articulations_provenance: ARTICULATION_ESTIMATE,
         ..InstrumentSpec::EMPTY
@@ -72,6 +75,7 @@ pub(super) const OBOE: Instrument = Instrument::new(
             ),
             None,
         ),
+        clefs: &[Clef::Treble],
         articulations: WIND,
         articulations_provenance: ARTICULATION_ESTIMATE,
         ..InstrumentSpec::EMPTY
@@ -91,6 +95,7 @@ pub(super) const ENGLISH_HORN: Instrument = Instrument::new(
             ),
             None,
         ),
+        clefs: &[Clef::Treble],
         articulations: WIND,
         articulations_provenance: ARTICULATION_ESTIMATE,
         ..InstrumentSpec::EMPTY
@@ -102,6 +107,7 @@ pub(super) const CLARINET_BB: Instrument = Instrument::new(
     InstrumentSpec {
         name: "Clarinet in Bb",
         pitch: pitched(-2, cited(50, 94, WIKI_CLARINET), None),
+        clefs: &[Clef::Treble],
         articulations: WIND,
         articulations_provenance: ARTICULATION_ESTIMATE,
         ..InstrumentSpec::EMPTY
@@ -125,6 +131,7 @@ pub(super) const BASSOON: Instrument = Instrument::new(
                 "https://en.wikipedia.org/wiki/Bassoon: infobox playing range Bb1-E5",
             )),
         ),
+        clefs: &[Clef::Bass, Clef::Tenor, Clef::Treble],
         articulations: WIND,
         articulations_provenance: ARTICULATION_ESTIMATE,
         ..InstrumentSpec::EMPTY
@@ -144,6 +151,7 @@ pub(super) const CONTRABASSOON: Instrument = Instrument::new(
             ),
             None,
         ),
+        clefs: &[Clef::Bass, Clef::Tenor],
         articulations: WIND,
         articulations_provenance: ARTICULATION_ESTIMATE,
         ..InstrumentSpec::EMPTY

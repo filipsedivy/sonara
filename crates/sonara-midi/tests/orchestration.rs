@@ -1,10 +1,10 @@
 //! Contract tests of the orchestration metadata through its public API (SON-P06).
 
 use sonara_midi::orchestration::{
-    Articulation, ArticulationAvailability, CheckError, EnsembleProfile, Era, EraPlayers, Family,
-    Forms, INSTRUMENTS, Instrument, InstrumentError, InstrumentSpec, InstrumentType, PitchModel,
-    PitchRange, Pitched, PlayerRange, Provenance, RangeCheck, SoundingPitch, SourcedRange,
-    Transposition, WrittenPitch, instrument, instruments,
+    Articulation, ArticulationAvailability, CheckError, Clef, EnsembleProfile, Era, EraPlayers,
+    Family, Forms, INSTRUMENTS, Instrument, InstrumentError, InstrumentSpec, InstrumentType,
+    PitchModel, PitchRange, Pitched, PlayerRange, Provenance, RangeCheck, SoundingPitch,
+    SourcedRange, Transposition, WrittenPitch, instrument, instruments,
 };
 
 const ESTIMATE: Provenance = Provenance::Estimate {
@@ -52,6 +52,26 @@ const VALID: InstrumentSpec = InstrumentSpec {
     ..InstrumentSpec::EMPTY
 };
 
+/// A pitched spec with an estimated playable range and the given clefs.
+fn written_in_clefs(
+    semitones: i8,
+    (low, high): (i64, i64),
+    clefs: &'static [Clef],
+) -> InstrumentSpec {
+    InstrumentSpec {
+        pitch: PitchModel::Pitched(Pitched {
+            transposition: Transposition::new(semitones),
+            playable: SourcedRange {
+                range: PitchRange::new(low, high),
+                provenance: ESTIMATE,
+            },
+            comfortable: None,
+        }),
+        clefs,
+        ..VALID
+    }
+}
+
 fn era_players(players: Option<PlayerRange>, note: &'static str) -> EraPlayers {
     EraPlayers {
         players,
@@ -93,6 +113,13 @@ fn dataset_invariants_hold() {
             instrument.articulations_provenance()
         );
         assert_eq!(spec.ensemble.as_ref(), instrument.ensemble());
+        assert_eq!(spec.clefs, instrument.clefs());
+        // Every record states its clefs, each once.
+        let mut clefs: Vec<&str> = instrument.clefs().iter().map(|clef| clef.slug()).collect();
+        assert!(!clefs.is_empty(), "{}", instrument.id());
+        clefs.sort_unstable();
+        clefs.dedup();
+        assert_eq!(clefs.len(), instrument.clefs().len(), "{}", instrument.id());
         for articulation in instrument.articulations() {
             assert_eq!(
                 Articulation::from_id(articulation.id()),
@@ -110,10 +137,222 @@ fn dataset_invariants_hold() {
                 if let Some(comfortable) = pitched.comfortable {
                     assert!(pitched.playable.range.encloses(comfortable.range));
                 }
+                // Every playable pitch has a written pitch in every listed clef. In a clef without
+                // an octave of its own that is the transposition's, and checking it as written
+                // gives the answer for the sounding pitch.
+                let range = pitched.playable.range;
+                for &clef in instrument.clefs() {
+                    for note in range.low().get()..=range.high().get() {
+                        let pitch = sounding(note);
+                        let in_clef = instrument.written_in(clef, pitch);
+                        assert!(in_clef.is_some(), "{} {clef:?} {note}", instrument.id());
+                        if clef.octave() == 0 {
+                            assert_eq!(in_clef, pitched.transposition.to_written(pitch));
+                            let check = in_clef.map(|w| instrument.check_written(w));
+                            assert_eq!(check, Some(instrument.check_sounding(pitch)));
+                        }
+                    }
+                }
             }
-            PitchModel::Unpitched => assert_eq!(instrument.written_playable(), None),
+            PitchModel::Unpitched => {
+                assert_eq!(instrument.written_playable(), None);
+                for clef in Clef::ALL {
+                    assert_eq!(instrument.written_in(clef, sounding(60)), None, "{clef:?}");
+                }
+            }
         }
     }
+}
+
+/// The clefs of the records, in order of use (TST-10: the expected values are slugs written
+/// independently of the data's `Clef` values).
+#[test]
+fn record_clefs_match_the_expected_slugs() {
+    let table: [(&str, &[&str]); 16] = [
+        ("piccolo", &["treble"]),
+        ("flute", &["treble"]),
+        ("oboe", &["treble"]),
+        ("english_horn", &["treble"]),
+        ("clarinet_bb", &["treble"]),
+        ("bassoon", &["bass", "tenor", "treble"]),
+        ("contrabassoon", &["bass", "tenor"]),
+        ("horn_f", &["treble", "bass"]),
+        ("trumpet_bb", &["treble"]),
+        ("trombone_tenor", &["bass", "tenor", "alto"]),
+        ("snare_drum", &["single_line", "treble", "percussion"]),
+        ("glockenspiel", &["treble"]),
+        ("xylophone", &["treble"]),
+        ("violin", &["treble"]),
+        ("cello", &["bass", "tenor", "treble"]),
+        ("double_bass", &["bass", "tenor", "treble"]),
+    ];
+    assert_eq!(table.len(), INSTRUMENTS.len());
+    for (id, slugs) in table {
+        let clefs: Vec<&str> = get(id).clefs().iter().map(|clef| clef.slug()).collect();
+        assert_eq!(clefs, slugs, "{id}");
+    }
+}
+
+/// A tenor voice is written at transposition 0 and takes its octave from the clef: in
+/// `treble_8vb` its sounding C3 is written C4, and on a bass-clef staff shared with the basses
+/// the same note is written at pitch. The published written ranges in `treble_8vb` (solo C4-D6
+/// for a sounding C3-D5, choir C4-Bb5 for C3-Bb4) are the oracle. The octave stated twice, as a
+/// -12 transposition with `treble_8vb`, is rejected, because it would write the part two octaves
+/// above the sound.
+#[test]
+fn tenor_parts_take_their_octave_from_the_clef() {
+    let solo = Instrument::try_new(
+        InstrumentType::VoiceTenor,
+        written_in_clefs(0, (48, 74), &[Clef::Treble8vb]),
+    )
+    .expect("valid");
+    let choir = Instrument::try_new(
+        InstrumentType::ChoirTenor,
+        written_in_clefs(0, (48, 70), &[Clef::Treble8vb, Clef::Bass]),
+    )
+    .expect("valid");
+    let in_treble_8vb = |voice: &Instrument, note| {
+        voice
+            .written_in(Clef::Treble8vb, sounding(note))
+            .map(WrittenPitch::get)
+    };
+    assert_eq!(in_treble_8vb(&solo, 48), Some(60));
+    assert_eq!(in_treble_8vb(&solo, 74), Some(86));
+    assert_eq!(in_treble_8vb(&choir, 48), Some(60));
+    assert_eq!(in_treble_8vb(&choir, 70), Some(82));
+    for voice in [solo, choir] {
+        assert_eq!(voice.transposition(), Some(Transposition::NONE));
+        for note in [48, 55, 60, 70] {
+            assert_eq!(in_treble_8vb(&voice, note), Some(note + 12), "{note}");
+            assert_eq!(
+                voice.written_in(Clef::Bass, sounding(note)),
+                Some(written(note)),
+                "{note}"
+            );
+        }
+        // The clef-free views keep the sounding octave: the written range is the sounding one,
+        // and a written pitch is checked as the pitch it names.
+        assert_eq!(
+            voice.written_playable().map(|(low, _)| low),
+            Some(written(48))
+        );
+        assert_eq!(voice.check_written(written(48)), Ok(RangeCheck::Within));
+        assert_eq!(
+            voice.check_written(written(47)),
+            Ok(RangeCheck::BelowPlayable)
+        );
+    }
+    for clefs in [&[Clef::Treble8vb][..], &[Clef::Treble8vb, Clef::Bass][..]] {
+        assert_eq!(
+            Instrument::try_new(
+                InstrumentType::ChoirTenor,
+                written_in_clefs(-12, (48, 70), clefs)
+            ),
+            Err(InstrumentError::OctaveClefWithTransposition),
+            "{clefs:?}"
+        );
+    }
+}
+
+/// Each clef check rejects its fixture, in the documented order, and accepts the repaired one
+/// (TST-03).
+#[test]
+fn validator_rejects_broken_clefs() {
+    let check = |instrument_type, spec| Instrument::try_new(instrument_type, spec).map(|_| ());
+    let viola = |semitones, playable, clefs| {
+        check(
+            InstrumentType::Viola,
+            written_in_clefs(semitones, playable, clefs),
+        )
+    };
+    let triangle = |clefs| check(InstrumentType::Triangle, InstrumentSpec { clefs, ..VALID });
+    let cases: [(Result<(), InstrumentError>, Result<(), InstrumentError>); 13] = [
+        (
+            viola(0, (48, 91), &[Clef::Alto, Clef::Treble, Clef::Alto]),
+            Err(InstrumentError::DuplicateClef),
+        ),
+        (
+            triangle(&[Clef::Treble, Clef::Treble]),
+            Err(InstrumentError::DuplicateClef),
+        ),
+        (
+            viola(0, (48, 91), &[Clef::Alto, Clef::Percussion]),
+            Err(InstrumentError::PitchlessClef),
+        ),
+        (
+            viola(0, (48, 91), &[Clef::SingleLine]),
+            Err(InstrumentError::PitchlessClef),
+        ),
+        (
+            viola(-12, (48, 91), &[Clef::Treble8vb]),
+            Err(InstrumentError::OctaveClefWithTransposition),
+        ),
+        (
+            viola(-2, (48, 91), &[Clef::Treble, Clef::Treble8vb]),
+            Err(InstrumentError::OctaveClefWithTransposition),
+        ),
+        (
+            viola(12, (48, 91), &[Clef::Treble8vb]),
+            Err(InstrumentError::OctaveClefWithTransposition),
+        ),
+        // Written an octave up in treble_8vb, a top of 116 leaves MIDI; 115 does not.
+        (
+            viola(0, (48, 116), &[Clef::Treble8vb]),
+            Err(InstrumentError::WrittenOutOfMidi),
+        ),
+        (viola(0, (48, 115), &[Clef::Treble8vb]), Ok(())),
+        (viola(0, (48, 116), &[Clef::Treble]), Ok(())),
+        // Clef by clef in list order: the first clef's failure is reported.
+        (
+            viola(-12, (48, 91), &[Clef::Percussion, Clef::Treble8vb]),
+            Err(InstrumentError::PitchlessClef),
+        ),
+        (
+            viola(-12, (48, 91), &[Clef::Treble8vb, Clef::Percussion]),
+            Err(InstrumentError::OctaveClefWithTransposition),
+        ),
+        // An unpitched instrument may be written on any staff.
+        (
+            triangle(&[Clef::SingleLine, Clef::Treble, Clef::Percussion]),
+            Ok(()),
+        ),
+    ];
+    for (index, (got, expected)) in cases.into_iter().enumerate() {
+        assert_eq!(got, expected, "case {index}");
+    }
+    // A duplicate is reported before a pitchless clef.
+    assert_eq!(
+        viola(0, (48, 91), &[Clef::Percussion, Clef::Percussion]),
+        Err(InstrumentError::DuplicateClef)
+    );
+}
+
+/// The written pitch in a clef that is not listed: a part may use another staff (TST-03 for the
+/// unpitched and out-of-MIDI cases).
+#[test]
+fn written_in_any_clef_and_its_failures() {
+    let clarinet = get("clarinet_bb");
+    // Sounding Bb3 is written C4 in treble, and the bass clef shows the same written pitch.
+    assert_eq!(
+        clarinet.written_in(Clef::Treble, sounding(58)),
+        Some(written(60))
+    );
+    assert_eq!(
+        clarinet.written_in(Clef::Bass, sounding(58)),
+        Some(written(60))
+    );
+    assert_eq!(clarinet.written_in(Clef::Percussion, sounding(58)), None);
+    // The piccolo is written an octave below the sound in every pitched clef.
+    let piccolo = get("piccolo");
+    assert_eq!(
+        piccolo.written_in(Clef::Treble, sounding(84)),
+        Some(written(72))
+    );
+    assert_eq!(piccolo.written_in(Clef::Treble, sounding(11)), None);
+    assert_eq!(
+        get("snare_drum").written_in(Clef::Treble, sounding(60)),
+        None
+    );
 }
 
 #[test]
@@ -157,6 +396,7 @@ fn empty_spec_needs_a_name_and_an_articulation_provenance() {
     assert_eq!(empty.name, "");
     assert_eq!(empty.pitch, PitchModel::Unpitched);
     assert_eq!(empty.articulations, []);
+    assert_eq!(empty.clefs, []);
     assert_eq!(empty.ensemble, None);
     assert_eq!(
         Instrument::try_new(InstrumentType::Triangle, empty),

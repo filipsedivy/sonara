@@ -38,6 +38,27 @@ inserted anywhere in it.
   Octave transposition is the same field. Conversions return `None` outside MIDI 0–127.
 - Range endpoints are inclusive.
 
+## Clefs
+
+Each record lists the clefs its parts are written in, in order of use (`Instrument::clefs`; the
+bassoon's are bass, tenor and treble). `Clef` has seven values with stable slugs: `treble`,
+`treble_8vb`, `bass`, `alto`, `tenor`, `percussion` and `single_line`. The percussion clef and the
+one-line staff show no pitch.
+
+A clef can carry an octave of its own: `Clef::octave` is sounding minus written in octaves, −1 for
+`treble_8vb` (the notes sound an octave lower than written) and 0 for every other clef. That
+octave belongs to the staff, not to the instrument, so the octave is stated once: in the clef or in
+the transposition, never in both. A tenor voice is at transposition 0. In `treble_8vb` its
+sounding C3 (48) is written C4 (60); on a bass-clef staff shared with the basses the same note is
+written at pitch. Instruments that are written whole octaves away from their sound in every clef
+(the piccolo, the double bass, the contrabassoon, the xylophone and, two octaves, the
+glockenspiel) keep those octaves in their transposition.
+
+`Instrument::written_in(clef, sounding)` gives the pitch to write in a clef: the transposition,
+then the clef's octave. The clef need not be one the record lists. It returns `None` for an
+unpitched instrument, for a clef that shows no pitch, and outside MIDI 0–127. `written_playable`
+and `check_written` stay clef-free: they apply the transposition alone.
+
 ## Ranges
 
 | Range | Meaning |
@@ -101,6 +122,9 @@ articulation provenance are empty, so a record that forgets either does not buil
 - an unpitched instrument outside the percussion family (every other family plays definite
   pitches);
 - an articulation listed twice;
+- a clef listed twice; for a pitched instrument, a clef that shows no pitch, a clef with an octave
+  of its own on a transposing instrument (the octave would count twice), and a clef in which the
+  written playable range leaves MIDI;
 - an empty or blank provenance anywhere in the record: a range, the articulation list or an era
   of the ensemble profile.
 

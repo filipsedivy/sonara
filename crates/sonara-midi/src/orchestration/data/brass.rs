@@ -6,6 +6,7 @@ use crate::orchestration::articulation::Articulation::{
 };
 use crate::orchestration::id::InstrumentType;
 use crate::orchestration::instrument::{Instrument, InstrumentSpec};
+use crate::orchestration::pitch::Clef;
 
 /// The articulations a brass instrument idiomatically plays.
 const BRASS: &[Articulation] = &[
@@ -32,6 +33,7 @@ pub(super) const HORN_F: Instrument = Instrument::new(
             ),
             None,
         ),
+        clefs: &[Clef::Treble, Clef::Bass],
         articulations: BRASS,
         articulations_provenance: ARTICULATION_ESTIMATE,
         ..InstrumentSpec::EMPTY
@@ -51,6 +53,7 @@ pub(super) const TRUMPET_BB: Instrument = Instrument::new(
             ),
             None,
         ),
+        clefs: &[Clef::Treble],
         articulations: BRASS,
         articulations_provenance: ARTICULATION_ESTIMATE,
         ..InstrumentSpec::EMPTY
@@ -74,6 +77,7 @@ pub(super) const TROMBONE_TENOR: Instrument = Instrument::new(
                 "https://en.wikipedia.org/wiki/Trombone: more conservative top D5",
             )),
         ),
+        clefs: &[Clef::Bass, Clef::Tenor, Clef::Alto],
         articulations: BRASS,
         articulations_provenance: ARTICULATION_ESTIMATE,
         ..InstrumentSpec::EMPTY

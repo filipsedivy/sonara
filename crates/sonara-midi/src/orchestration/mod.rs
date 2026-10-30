@@ -20,7 +20,7 @@ pub use instrument::{
     CheckError, Family, Instrument, InstrumentError, InstrumentSpec, PitchModel, Pitched,
     Provenance, RangeCheck, SourcedRange,
 };
-pub use pitch::{PitchRange, RangeError, SoundingPitch, Transposition, WrittenPitch};
+pub use pitch::{Clef, PitchRange, RangeError, SoundingPitch, Transposition, WrittenPitch};
 
 /// The instrument with id `id`, or `None` for an unknown id or a type without a record. The id
 /// must match exactly ([`InstrumentType::from_id`]).

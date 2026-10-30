@@ -1,5 +1,5 @@
 //! Pitch conventions of the orchestration metadata: written and sounding pitch as separate types,
-//! the transposition between them, and ranges.
+//! the transposition between them, clefs, and ranges.
 //!
 //! Pitches are MIDI note numbers with middle C = 60 = C4, the convention of `theory`
 //! (`bass_note`: octave 4 starts at 60). The model is in semitones, so enharmonic spelling is
@@ -9,6 +9,9 @@ use thiserror::Error;
 
 /// Highest MIDI note number.
 const MAX_PITCH: i64 = 127;
+
+/// Semitones in an octave.
+const SEMITONES_PER_OCTAVE: i64 = 12;
 
 /// A pitch as it is notated for the player. For a transposing instrument it differs from the pitch
 /// that sounds.
@@ -88,6 +91,110 @@ impl Transposition {
     #[must_use]
     pub const fn to_written(self, sounding: SoundingPitch) -> Option<WrittenPitch> {
         WrittenPitch::new(sounding.get() - self.0 as i64)
+    }
+}
+
+/// The clef a part is written in.
+///
+/// A clef can carry an octave of its own: [`Clef::Treble8vb`] sounds an octave below the written
+/// note. That octave belongs to the staff, not to the instrument. A tenor voice is not a
+/// transposing instrument: in `treble_8vb` its sounding C3 is written C4, and on a bass-clef
+/// staff shared with the basses the same note is written C3. An instrument whose written pitch
+/// differs from the sounding one in every clef, such as the piccolo or the double bass, keeps
+/// that difference in its [`Transposition`] instead.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Clef {
+    /// The treble (G) clef.
+    Treble,
+    /// The treble clef with an 8 below it: the notes sound an octave lower than written. The
+    /// usual clef of tenor voices.
+    Treble8vb,
+    /// The bass (F) clef.
+    Bass,
+    /// The alto (C) clef, middle C on the middle line.
+    Alto,
+    /// The tenor (C) clef, middle C on the fourth line.
+    Tenor,
+    /// The neutral percussion clef: the lines stand for instruments, not for pitches.
+    Percussion,
+    /// A one-line staff, which shows rhythm but no pitch.
+    SingleLine,
+}
+
+impl Clef {
+    /// Every clef, in declaration order.
+    pub const ALL: [Self; 7] = [
+        Self::Treble,
+        Self::Treble8vb,
+        Self::Bass,
+        Self::Alto,
+        Self::Tenor,
+        Self::Percussion,
+        Self::SingleLine,
+    ];
+
+    /// The stable slug, for example `treble_8vb`. It is the external form and is never renamed.
+    #[must_use]
+    pub const fn slug(self) -> &'static str {
+        match self {
+            Self::Treble => "treble",
+            Self::Treble8vb => "treble_8vb",
+            Self::Bass => "bass",
+            Self::Alto => "alto",
+            Self::Tenor => "tenor",
+            Self::Percussion => "percussion",
+            Self::SingleLine => "single_line",
+        }
+    }
+
+    /// The clef with slug `slug`, or `None` for anything else: the match is exact, with no case
+    /// folding or trimming.
+    #[must_use]
+    pub fn from_slug(slug: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|clef| clef.slug() == slug)
+    }
+
+    /// The octave the clef itself adds, as sounding minus written in octaves (the direction of
+    /// [`Transposition`]): −1 for [`Clef::Treble8vb`], whose notes sound an octave lower than
+    /// written, and 0 for every other clef.
+    #[must_use]
+    pub const fn octave(self) -> i8 {
+        match self {
+            Self::Treble8vb => -1,
+            Self::Treble
+            | Self::Bass
+            | Self::Alto
+            | Self::Tenor
+            | Self::Percussion
+            | Self::SingleLine => 0,
+        }
+    }
+
+    /// Whether a note's place on the staff names a pitch. The percussion clef and the one-line
+    /// staff do not.
+    #[must_use]
+    pub const fn shows_pitch(self) -> bool {
+        !matches!(self, Self::Percussion | Self::SingleLine)
+    }
+
+    /// The pitch to write in this clef for `sounding` on an instrument with `transposition`:
+    /// the instrument's transposition, then the clef's own [`octave`](Clef::octave). In a clef
+    /// with octave 0 this equals [`Transposition::to_written`].
+    ///
+    /// `None` when the clef shows no pitch ([`Clef::shows_pitch`]) or the written pitch falls
+    /// outside 0–127.
+    #[must_use]
+    pub const fn to_written(
+        self,
+        transposition: Transposition,
+        sounding: SoundingPitch,
+    ) -> Option<WrittenPitch> {
+        if !self.shows_pitch() {
+            return None;
+        }
+        WrittenPitch::new(
+            sounding.get() - transposition.0 as i64 - SEMITONES_PER_OCTAVE * self.octave() as i64,
+        )
     }
 }
 
@@ -174,7 +281,7 @@ impl PitchRange {
 
 #[cfg(test)]
 mod tests {
-    use super::{PitchRange, RangeError, SoundingPitch, Transposition, WrittenPitch};
+    use super::{Clef, PitchRange, RangeError, SoundingPitch, Transposition, WrittenPitch};
 
     fn written(note: i64) -> WrittenPitch {
         WrittenPitch::new(note).expect("valid note")
@@ -220,6 +327,108 @@ mod tests {
         assert_eq!(down.to_sounding(written(11)), None);
         assert_eq!(down.to_written(sounding(115)), Some(written(127)));
         assert_eq!(down.to_written(sounding(116)), None);
+    }
+
+    #[test]
+    fn clef_slugs_round_trip() {
+        let slugs: Vec<&str> = Clef::ALL.into_iter().map(Clef::slug).collect();
+        assert_eq!(
+            slugs,
+            [
+                "treble",
+                "treble_8vb",
+                "bass",
+                "alto",
+                "tenor",
+                "percussion",
+                "single_line"
+            ]
+        );
+        for (index, clef) in Clef::ALL.into_iter().enumerate() {
+            assert_eq!(clef as usize, index, "{clef:?}");
+            assert_eq!(Clef::from_slug(clef.slug()), Some(clef));
+        }
+    }
+
+    /// `from_slug` takes the exact slug only (TST-03).
+    #[test]
+    fn clef_lookup_is_strict() {
+        for text in [
+            "",
+            "Treble",
+            "treble ",
+            "treble-8vb",
+            "treble8vb",
+            "treble_8va",
+            "g",
+            "neutral",
+            "single line",
+        ] {
+            assert_eq!(Clef::from_slug(text), None, "{text:?}");
+        }
+    }
+
+    #[test]
+    fn only_the_treble_8vb_clef_has_an_octave_and_two_clefs_show_no_pitch() {
+        for clef in Clef::ALL {
+            let octave = if clef == Clef::Treble8vb { -1 } else { 0 };
+            assert_eq!(clef.octave(), octave, "{clef:?}");
+            let shows_pitch = !matches!(clef, Clef::Percussion | Clef::SingleLine);
+            assert_eq!(clef.shows_pitch(), shows_pitch, "{clef:?}");
+        }
+    }
+
+    #[test]
+    fn clefs_write_known_pitches() {
+        // (clef, semitones, sounding, written): a tenor's C3 in treble_8vb and on a bass staff,
+        // a Bb clarinet in treble, a double bass in bass clef.
+        let table = [
+            (Clef::Treble8vb, 0, 48, Some(60)),
+            (Clef::Bass, 0, 48, Some(48)),
+            (Clef::Treble, -2, 58, Some(60)),
+            (Clef::Bass, -12, 28, Some(40)),
+            (Clef::Alto, 0, 60, Some(60)),
+            (Clef::Treble8vb, 0, 115, Some(127)),
+            (Clef::Treble8vb, 0, 116, None),
+            (Clef::Treble, 12, 11, None),
+            (Clef::Percussion, 0, 60, None),
+            (Clef::SingleLine, 0, 60, None),
+        ];
+        for (clef, semitones, s, w) in table {
+            assert_eq!(
+                clef.to_written(Transposition::new(semitones), sounding(s)),
+                w.map(written),
+                "{clef:?} {semitones} {s}"
+            );
+        }
+    }
+
+    /// Against `Transposition::to_written` as the oracle, for every sounding pitch: a clef with
+    /// octave 0 writes what the transposition writes, `treble_8vb` what a transposition an
+    /// octave further down writes, and a clef without pitch writes nothing.
+    #[test]
+    fn clef_writing_agrees_with_the_transposition() {
+        for semitones in -36..=36 {
+            let transposition = Transposition::new(semitones);
+            let octave_lower = Transposition::new(semitones - 12);
+            for note in 0..=127 {
+                let pitch = sounding(note);
+                for clef in Clef::ALL {
+                    let expected = match clef {
+                        Clef::Treble8vb => octave_lower.to_written(pitch),
+                        Clef::Percussion | Clef::SingleLine => None,
+                        Clef::Treble | Clef::Bass | Clef::Alto | Clef::Tenor => {
+                            transposition.to_written(pitch)
+                        }
+                    };
+                    assert_eq!(
+                        clef.to_written(transposition, pitch),
+                        expected,
+                        "{clef:?} {semitones} {note}"
+                    );
+                }
+            }
+        }
     }
 
     #[test]

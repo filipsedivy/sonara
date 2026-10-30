@@ -5,7 +5,7 @@ use thiserror::Error;
 use super::articulation::{Articulation, ArticulationAvailability};
 use super::ensemble_profile::{EnsembleProfile, Era};
 use super::id::InstrumentType;
-use super::pitch::{PitchRange, SoundingPitch, Transposition, WrittenPitch};
+use super::pitch::{Clef, PitchRange, SoundingPitch, Transposition, WrittenPitch};
 
 /// The instrument family. The slugs equal the family slugs of the instrument catalog
 /// (`sonara_app::instruments`), so the two map by string. Voices, solo and choral, are `Choir`;
@@ -122,12 +122,28 @@ pub enum InstrumentError {
     /// The comfortable range is not inside the playable range.
     #[error("comfortable range is not inside the playable range")]
     ComfortableOutsidePlayable,
-    /// The written endpoints of the playable range do not fit MIDI notes.
-    #[error("the transposition moves the playable range outside MIDI notes 0-127")]
+    /// The written endpoints of the playable range do not fit MIDI notes, with the
+    /// transposition alone or in one of the listed clefs.
+    #[error(
+        "the playable range, written with the transposition or in a listed clef, falls outside MIDI notes 0-127"
+    )]
     WrittenOutOfMidi,
     /// An articulation is listed twice.
     #[error("an articulation is listed twice")]
     DuplicateArticulation,
+    /// A clef is listed twice.
+    #[error("a clef is listed twice")]
+    DuplicateClef,
+    /// A pitched instrument lists a clef that shows no pitch: the percussion clef or a one-line
+    /// staff.
+    #[error("a pitched instrument lists a clef that shows no pitch")]
+    PitchlessClef,
+    /// A transposing instrument lists a clef with an octave of its own ([`Clef::octave`] not 0).
+    /// The octave is stated once, in the clef or in the transposition: a tenor voice is at
+    /// transposition 0 and takes its octave from `treble_8vb`, so a −12 transposition as well
+    /// would write it two octaves above the sound.
+    #[error("a transposing instrument lists a clef with an octave of its own")]
+    OctaveClefWithTransposition,
     /// The display name is empty or blank.
     #[error("the display name is empty or blank")]
     EmptyName,
@@ -159,6 +175,9 @@ pub struct InstrumentSpec {
     pub name: &'static str,
     /// The pitch capabilities.
     pub pitch: PitchModel,
+    /// The clefs the instrument's parts are written in, in order of use (the usual one first),
+    /// each at most once; empty when not recorded.
+    pub clefs: &'static [Clef],
     /// The articulations the instrument idiomatically plays (general capability, not any
     /// library's), each at most once.
     pub articulations: &'static [Articulation],
@@ -174,11 +193,12 @@ impl InstrumentSpec {
     /// A record must state `name` and `articulations_provenance`: here they are empty, which
     /// [`Instrument::try_new`] rejects, so a record that forgets one does not build. `pitch` is
     /// [`PitchModel::Unpitched`], which only percussion may keep; a pitched percussion instrument
-    /// states its pitch. The other fields hold their "not known" value: no articulations and no
-    /// ensemble profile.
+    /// states its pitch. The other fields hold their "not known" value: no clefs, no
+    /// articulations and no ensemble profile.
     pub const EMPTY: Self = Self {
         name: "",
         pitch: PitchModel::Unpitched,
+        clefs: &[],
         articulations: &[],
         articulations_provenance: Provenance::Estimate { reason: "" },
         ensemble: None,
@@ -207,9 +227,15 @@ impl Instrument {
     /// [`ComfortableOutsidePlayable`](InstrumentError::ComfortableOutsidePlayable) and
     /// [`WrittenOutOfMidi`](InstrumentError::WrittenOutOfMidi) for ranges that do not fit;
     /// [`DuplicateArticulation`](InstrumentError::DuplicateArticulation) for an articulation
-    /// listed twice; [`EmptyProvenance`](InstrumentError::EmptyProvenance) when any provenance
-    /// of the record (ranges, articulations, ensemble profile) is empty or blank. The first
-    /// failing check in that order is reported.
+    /// listed twice; [`DuplicateClef`](InstrumentError::DuplicateClef) for a clef listed twice;
+    /// then, for a pitched instrument and clef by clef in list order,
+    /// [`PitchlessClef`](InstrumentError::PitchlessClef) for a clef that shows no pitch,
+    /// [`OctaveClefWithTransposition`](InstrumentError::OctaveClefWithTransposition) for a clef
+    /// with an octave of its own on a transposing instrument and
+    /// [`WrittenOutOfMidi`](InstrumentError::WrittenOutOfMidi) when the playable range written
+    /// in the clef leaves MIDI; [`EmptyProvenance`](InstrumentError::EmptyProvenance) when any
+    /// provenance of the record (ranges, articulations, ensemble profile) is empty or blank. The
+    /// first failing check in that order is reported.
     pub const fn try_new(
         instrument_type: InstrumentType,
         spec: InstrumentSpec,
@@ -248,6 +274,9 @@ impl Instrument {
                 j += 1;
             }
             i += 1;
+        }
+        if let Err(error) = check_clefs(&spec) {
+            return Err(error);
         }
         if !provenances_are_stated(&spec) {
             return Err(InstrumentError::EmptyProvenance);
@@ -334,8 +363,15 @@ impl Instrument {
         }
     }
 
-    /// The playable range as written pitches, derived from the sounding range; `None` for an
-    /// unpitched instrument.
+    /// The clefs the instrument's parts are written in, in order of use (the usual one first);
+    /// empty when not recorded.
+    #[must_use]
+    pub const fn clefs(&self) -> &'static [Clef] {
+        self.spec.clefs
+    }
+
+    /// The playable range as written pitches, derived from the sounding range with the
+    /// transposition alone (no clef); `None` for an unpitched instrument.
     #[must_use]
     pub fn written_playable(&self) -> Option<(WrittenPitch, WrittenPitch)> {
         let PitchModel::Pitched(pitched) = &self.spec.pitch else {
@@ -346,6 +382,22 @@ impl Instrument {
             pitched.transposition.to_written(range.low())?,
             pitched.transposition.to_written(range.high())?,
         ))
+    }
+
+    /// The pitch to write for the sounding `pitch` in `clef`: the instrument's transposition,
+    /// then the clef's own octave ([`Clef::to_written`]). A tenor voice's sounding C3 is written
+    /// C4 in [`Clef::Treble8vb`] and C3 in [`Clef::Bass`].
+    ///
+    /// The clef need not be one of [`Instrument::clefs`]: a part may be written in another, such
+    /// as a tenor on a bass-clef staff shared with the basses. `None` for an unpitched
+    /// instrument, for a clef that shows no pitch, and when the written pitch falls outside
+    /// 0–127.
+    #[must_use]
+    pub const fn written_in(&self, clef: Clef, pitch: SoundingPitch) -> Option<WrittenPitch> {
+        match &self.spec.pitch {
+            PitchModel::Pitched(pitched) => clef.to_written(pitched.transposition, pitch),
+            PitchModel::Unpitched => None,
+        }
     }
 
     /// Where the sounding `pitch` lies relative to the instrument's ranges.
@@ -407,6 +459,50 @@ impl Instrument {
             ArticulationAvailability::NotIdiomatic
         }
     }
+}
+
+/// The clef checks of [`Instrument::try_new`], in its documented order: no clef twice; then, for
+/// a pitched instrument and clef by clef, a clef that shows pitch, no octave in both the clef and
+/// the transposition, and a playable range that stays inside MIDI when written in the clef.
+const fn check_clefs(spec: &InstrumentSpec) -> Result<(), InstrumentError> {
+    let clefs = spec.clefs;
+    let mut i = 0;
+    while i < clefs.len() {
+        let mut j = i + 1;
+        while j < clefs.len() {
+            if clefs[i] as u8 == clefs[j] as u8 {
+                return Err(InstrumentError::DuplicateClef);
+            }
+            j += 1;
+        }
+        i += 1;
+    }
+    let PitchModel::Pitched(pitched) = &spec.pitch else {
+        // An unpitched instrument may be written on any staff (a snare drum on a treble staff).
+        return Ok(());
+    };
+    let range = pitched.playable.range;
+    let mut i = 0;
+    while i < clefs.len() {
+        let clef = clefs[i];
+        if !clef.shows_pitch() {
+            return Err(InstrumentError::PitchlessClef);
+        }
+        if clef.octave() != 0 && !pitched.transposition.is_none() {
+            return Err(InstrumentError::OctaveClefWithTransposition);
+        }
+        if clef
+            .to_written(pitched.transposition, range.low())
+            .is_none()
+            || clef
+                .to_written(pitched.transposition, range.high())
+                .is_none()
+        {
+            return Err(InstrumentError::WrittenOutOfMidi);
+        }
+        i += 1;
+    }
+    Ok(())
 }
 
 /// Whether every provenance of `spec` names a source or a reason: not empty, not blank.
