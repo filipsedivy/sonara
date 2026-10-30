@@ -50,6 +50,15 @@ vibrato on CC 21), filters, per-region pan, streaming. The loader reports unsupp
 the load warning when a patch is rendered. Keyswitch keys select an articulation and make no
 sound themselves.
 
+**Known divergences from the SFZ format.** A check of the parser and the sampler against the free
+libraries ([orchestra/sfz-conformance.md](orchestra/sfz-conformance.md); code reading, not yet
+confirmed by renders) found that some patches play wrongly or not at all. Three VSCO 2 CE
+key-switch patches (`ViolinEns-KS`, `Flute-KS`, `Clarinet-KS`) stay silent until a switch key is
+played; most Sonatina key-switch patches play several articulations at once; Sonatina's legato
+patches retrigger instead of joining notes; and the Salamander remap, Sonatina's grand piano and
+the MTG saxophones do not play. Use the single-articulation patches until these are fixed. Not
+every one of these problems appears in the load warning.
+
 ## Memory
 
 A patch's samples are decoded whole into memory (4 bytes per sample, mono or stereo). Pick

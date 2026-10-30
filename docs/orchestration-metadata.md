@@ -75,3 +75,8 @@ bassoon, contrabassoon, horn in F, Bb trumpet, tenor trombone, glockenspiel, xyl
 drum. Not covered: viola, harp, timpani, tuba, bass clarinet, other transposing clarinets and
 trumpets, voices, keyboards, alternative tunings and extended techniques. Absence of an
 instrument means "no metadata", not "unrestricted".
+
+A sourced verification of these 16 entries and research on 85 instruments, with proposed corrections,
+is in [orchestra-research.md](orchestra-research.md) and [orchestra/model.md](orchestra/model.md); the
+proposed extension of this module is in [orchestra-design.md](orchestra-design.md). Neither changes the
+data here yet.
