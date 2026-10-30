@@ -25,6 +25,9 @@
 //!   background; concords within a colour and discords between two (VOI-05), no weak register
 //!   next to a strong one (VOI-06), never three colours in three parts or four in close position
 //!   (VOI-01, VOI-02), never a pair enclosed in one colour (VOI-03).
+//! - [`timpani`]: two drums on the tonic and the dominant, never a third apart (PLY-12) and never
+//!   retuned (PLY-11); hits on the downbeats of chords over a drum's note, rolls on a held pedal
+//!   and on the closing chord.
 //! - [`fit_register`]: moves a harmony line by octaves into the comfortable range (RNG-01,
 //!   RNG-02); a melody is never moved silently, the caller asks instead.
 //!
@@ -43,6 +46,7 @@ mod layout;
 mod melody;
 mod register;
 mod strings;
+mod timpani;
 mod woodwinds;
 
 use std::collections::BTreeSet;
@@ -61,6 +65,7 @@ pub use brass::{brass_chorale, horns};
 pub use melody::{MelodyDoubling, melody_doublings};
 pub use register::{RegisterFit, fit_register};
 pub use strings::strings_divisi;
+pub use timpani::{TimpaniOptions, TimpaniPart, timpani};
 pub use woodwinds::{WindLayout, WindOptions, woodwind_pairs};
 
 /// The velocity a helper writes unless told otherwise, the MIDI generators' default.

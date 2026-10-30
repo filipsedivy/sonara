@@ -3,20 +3,22 @@
 use proptest::prelude::*;
 use sonara_core::ids::SequentialIds;
 use sonara_core::midi::MidiNote;
+use sonara_core::time::{TempoMap, TimeSignatureMap, TimeSignaturePoint};
 use sonara_midi::generators::ChordSlot;
 use sonara_midi::orchestration::rules::{
     LOW_DISSONANCE, LOW_INTERVAL_LIMITS, Limit, NamedDoubling, RuleId, Spacing, WOODWIND_ORDER,
 };
 use sonara_midi::orchestration::{
-    Family, InstrumentType, Part, PitchModel, PitchRange, ensemble, instrument, instruments,
+    Family, InstrumentType, Part, PitchModel, PitchRange, SoundingPitch, ensemble, instrument,
+    instruments,
 };
 use sonara_midi::performance::voicing::{
-    Carrier, ChordOptions, DEFAULT_VELOCITY, Density, MelodyDoubling, RegisterFit, Remark, Voiced,
-    VoicingError, WindLayout, WindOptions, brass_chorale, fit_register, horns, melody_doublings,
-    strings_divisi, woodwind_pairs,
+    Carrier, ChordOptions, DEFAULT_VELOCITY, Density, MelodyDoubling, RegisterFit, Remark,
+    TimpaniOptions, Voiced, VoicingError, WindLayout, WindOptions, brass_chorale, fit_register,
+    horns, melody_doublings, strings_divisi, timpani, woodwind_pairs,
 };
-use sonara_midi::performance::{PartId, PerformanceError, Role};
-use sonara_midi::theory::parse_chord;
+use sonara_midi::performance::{PartId, PerformanceError, Role, ScoreContext};
+use sonara_midi::theory::{parse_chord, parse_key};
 
 fn part(slug: &str) -> PartId {
     PartId::new(slug).expect("a valid part id")
@@ -1328,4 +1330,234 @@ proptest! {
             }
         }
     }
+}
+
+/// A score at 72 BPM with `signatures`, the clip starting at timeline beat `origin`.
+fn score_at(signatures: TimeSignatureMap, origin: f64) -> ScoreContext {
+    ScoreContext::new(
+        TempoMap::constant(72.0).expect("a valid tempo"),
+        signatures,
+        origin,
+    )
+    .expect("a valid origin")
+}
+
+fn timpani_part() -> Carrier {
+    carrier("timpani", InstrumentType::Timpani)
+}
+
+/// The (start, length, pitch, articulation) of every note of `part`.
+fn hits(voiced: &Voiced, part: &str) -> Vec<(f64, f64, i64, Option<String>)> {
+    voiced
+        .notes(part)
+        .expect("the part is in the result")
+        .iter()
+        .map(|note| {
+            (
+                note.start,
+                note.length,
+                i64::from(note.pitch),
+                note.articulation.clone(),
+            )
+        })
+        .collect()
+}
+
+#[test]
+fn timpani_tune_d_and_a_hit_the_tonic_and_dominant_bars_and_roll_the_close() {
+    // TST-10: in D minor the drums are D2 and A2 (Forsyth: two drums on the main harmonic notes);
+    // the chords over D or A get a hit on their downbeat, the closing D minor a roll.
+    let key = parse_key("D minor").expect("a valid key");
+    let part = timpani(
+        &bars(&THEME),
+        &timpani_part(),
+        &score_at(TimeSignatureMap::default(), 0.0),
+        TimpaniOptions::new(key),
+        &mut ids(),
+    )
+    .expect("the timpani play the theme");
+    assert_eq!(part.drums.map(SoundingPitch::get), [38, 45]);
+    let roll = Some("roll".to_owned());
+    assert_eq!(
+        hits(&part.voiced, "timpani"),
+        [
+            (0.0, 1.0, 38, None),
+            (12.0, 1.0, 45, None),
+            (16.0, 1.0, 38, None),
+            (24.0, 1.0, 45, None),
+            (28.0, 4.0, 38, roll),
+        ]
+    );
+    assert_eq!(part.voiced.remarks, []);
+    assert!(
+        part.voiced
+            .notes("timpani")
+            .expect("the timpani play")
+            .iter()
+            .all(|note| note.velocity == DEFAULT_VELOCITY)
+    );
+}
+
+#[test]
+fn timpani_take_the_lowest_fourth_or_fifth_never_a_third() {
+    // PLY-12: in every key the drums are the tonic and the dominant, a fourth or a fifth apart,
+    // inside the comfortable range; C takes G2 and C3, E takes E2 and B2.
+    let range = comfortable(InstrumentType::Timpani);
+    let chords = bars(&["C"]);
+    let score = score_at(TimeSignatureMap::default(), 0.0);
+    for (name, expected) in [
+        ("C", Some([43, 48])),
+        ("E", Some([40, 47])),
+        ("D", Some([38, 45])),
+    ]
+    .into_iter()
+    .chain(
+        ["F", "Gb", "G", "Ab", "A", "Bb", "B", "Db", "Eb"]
+            .into_iter()
+            .map(|name| (name, None)),
+    ) {
+        let key = parse_key(name).expect("a valid key");
+        let part = timpani(
+            &chords,
+            &timpani_part(),
+            &score,
+            TimpaniOptions::new(key),
+            &mut ids(),
+        )
+        .expect("the timpani tune to any key");
+        let [low, high] = part.drums.map(SoundingPitch::get);
+        if let Some(expected) = expected {
+            assert_eq!([low, high], expected, "{name}");
+        }
+        assert!(holds(range, low) && holds(range, high), "{name}");
+        assert!([5, 7].contains(&(high - low)), "{name}");
+        let tonic = key.root;
+        let classes = [low.rem_euclid(12), high.rem_euclid(12)];
+        assert!(
+            classes.contains(&tonic) && classes.contains(&((tonic + 7) % 12)),
+            "{name}"
+        );
+    }
+}
+
+#[test]
+fn timpani_roll_a_held_pedal_and_follow_the_metre_and_the_clip() {
+    let key = parse_key("D minor").expect("a valid key");
+    // A tonic pedal under changing chords is one roll through all of them.
+    let pedal = timpani(
+        &bars(&["Dm", "Gm/D", "A7/D", "Dm"]),
+        &timpani_part(),
+        &score_at(TimeSignatureMap::default(), 0.0),
+        TimpaniOptions::new(key),
+        &mut ids(),
+    )
+    .expect("the timpani play the pedal");
+    assert_eq!(
+        hits(&pedal.voiced, "timpani"),
+        [(0.0, 16.0, 38, Some("roll".to_owned()))]
+    );
+    // In 3/4 a chord of two bars gets a hit on each downbeat; chords over other basses get none.
+    let three_four = TimeSignatureMap::new(vec![
+        TimeSignaturePoint::new(0, 3, 4).expect("a valid metre"),
+    ])
+    .expect("a valid map");
+    let slots = vec![
+        ChordSlot {
+            chord: parse_chord("Dm").expect("a valid chord"),
+            start: 0.0,
+            length: 6.0,
+        },
+        ChordSlot {
+            chord: parse_chord("Bb").expect("a valid chord"),
+            start: 6.0,
+            length: 3.0,
+        },
+        ChordSlot {
+            chord: parse_chord("Gm").expect("a valid chord"),
+            start: 9.0,
+            length: 3.0,
+        },
+    ];
+    let waltz = timpani(
+        &slots,
+        &timpani_part(),
+        &score_at(three_four, 0.0),
+        TimpaniOptions::new(key),
+        &mut ids(),
+    )
+    .expect("the timpani play the waltz");
+    assert_eq!(
+        hits(&waltz.voiced, "timpani"),
+        [(0.0, 1.0, 38, None), (3.0, 1.0, 38, None)]
+    );
+    // A clip starting on timeline beat 2 hits on the next timeline downbeat, content beat 2.
+    let shifted = timpani(
+        &bars(&["Dm", "Gm", "A", "Dm"]),
+        &timpani_part(),
+        &score_at(TimeSignatureMap::default(), 2.0),
+        TimpaniOptions::new(key),
+        &mut ids(),
+    )
+    .expect("the timpani play the chords");
+    assert_eq!(
+        hits(&shifted.voiced, "timpani"),
+        [
+            (2.0, 1.0, 38, None),
+            (10.0, 1.0, 45, None),
+            (12.0, 4.0, 38, Some("roll".to_owned()))
+        ]
+    );
+}
+
+#[test]
+fn timpani_rest_without_their_notes_and_reject_another_instrument() {
+    // TST-03: chords over neither drum leave the timpani silent, and the result says so.
+    let key = parse_key("D minor").expect("a valid key");
+    let score = score_at(TimeSignatureMap::default(), 0.0);
+    let silent = timpani(
+        &bars(&["Bb", "Gm", "C"]),
+        &timpani_part(),
+        &score,
+        TimpaniOptions::new(key),
+        &mut ids(),
+    )
+    .expect("the timpani rest");
+    assert_eq!(
+        silent.voiced.remarks,
+        [Remark::Tacet {
+            part: part("timpani"),
+            rule: None
+        }]
+    );
+    let snare = carrier("snare", InstrumentType::SnareDrum);
+    assert!(matches!(
+        timpani(
+            &bars(&["Dm"]),
+            &snare,
+            &score,
+            TimpaniOptions::new(key),
+            &mut ids()
+        ),
+        Err(VoicingError::WrongInstrument { .. })
+    ));
+    let quiet = TimpaniOptions {
+        velocity: 200,
+        ..TimpaniOptions::new(key)
+    };
+    assert_eq!(
+        timpani(&bars(&["Dm"]), &timpani_part(), &score, quiet, &mut ids()),
+        Err(VoicingError::InvalidVelocity(200))
+    );
+    let mut endless = bars(&["Dm"]);
+    endless[0].length = f64::INFINITY;
+    assert!(matches!(
+        timpani(
+            &endless,
+            &timpani_part(),
+            &score,
+            TimpaniOptions::new(key),
+            &mut ids()
+        ),
+        Err(VoicingError::InvalidSlot { .. })
+    ));
 }
