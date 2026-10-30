@@ -16,6 +16,7 @@ Research records and the proposal for orchestral and keyboard instruments in Son
 | [coverage.md](coverage.md) | Coverage matrices, ranked gaps, a starter kit of user-installed libraries |
 | [open-questions.md](open-questions.md) | 170 triaged open questions: owner decisions, human checks, data disagreements, follow-ups |
 | [design/](design/) | The four layers of the proposal: instrument model, sound source, performance layer, user interface |
+| [implementation-plan.md](implementation-plan.md) | The 111 work items of the four layers as one backlog per milestone, with owner gates, the first audible result and done criteria |
 
 Conventions: MIDI note numbers with C4 = 60; ranges are sounding; transposition = sounding − written. Sonara bundles
 no sample library (ADR 0010).

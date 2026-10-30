@@ -3,6 +3,7 @@
 - **Status:** Proposed (2026-10-30). Nothing here is implemented.
 - **Decision record:** [ADR 0011](decisions/0011-orchestral-instruments-and-performance.md) (proposed)
 - **Research:** [orchestra-research.md](orchestra-research.md) and [orchestra/](orchestra/README.md)
+- **Implementation plan:** [orchestra/implementation-plan.md](orchestra/implementation-plan.md)
 - **Layers:** (a) [instrument model](orchestra/design/instrument-model.md) · (b) [sound source](orchestra/design/sound-source.md)
   · (c) [performance layer](orchestra/design/performance.md) · (d) [user interface](orchestra/design/ui.md)
 
@@ -231,6 +232,9 @@ All except O6 belong to milestone M4 ("breadth") and change no contract.
 The order follows the gaps: O2 unlocks files users already have, O3 makes the product sentence audible, O4 makes it
 reachable by words, O5 makes it visible. Each layer document lists its work items with sizes, dependencies and tests:
 111 in all, 109 active (IM 19, SS 35, PF 21, UI 34; IM-17 and PF-8 are merged into SS items).
+**[orchestra/implementation-plan.md](orchestra/implementation-plan.md)** merges them into one backlog in dependency order,
+with the owner gate and the done criteria of each milestone. The first end-to-end run of the product sentence (the
+Orchestrate… field, PF-15) needs 34 of the 111 items.
 
 ## 4. Contracts and rules
 

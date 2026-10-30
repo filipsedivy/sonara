@@ -2,7 +2,8 @@
 
 - **Status:** Proposed (2026-10-30)
 - **Research:** [orchestra-research.md](../orchestra-research.md) and [orchestra/](../orchestra/README.md)
-- **Design:** [orchestra-design.md](../orchestra-design.md) and its four layer documents
+- **Design:** [orchestra-design.md](../orchestra-design.md), its four layer documents and the
+  [implementation plan](../orchestra/implementation-plan.md)
 - **Amends, if accepted:** [ADR 0010](0010-sample-based-orchestral-instruments.md) decision 4 (the sampler's
   `instrument` parameter) and two of its consequences: a live graph rebuild reuses an unchanged sampler instead of
   restarting its notes, and the 3 GiB cap applies per device
