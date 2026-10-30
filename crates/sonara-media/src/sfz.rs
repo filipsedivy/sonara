@@ -10,9 +10,13 @@
 //! **Supported opcodes:** `sample`, `default_path`, `key`, `lokey`, `hikey`, `pitch_keycenter`,
 //! `lovel`, `hivel`, `lorand`, `hirand`, `seq_length`, `seq_position`, `sw_lokey`, `sw_hikey`,
 //! `sw_default`, `sw_last`, `trigger`, `group`, `off_by`, `off_mode`, `off_time`, `loop_mode`,
-//! `loop_start`, `loop_end`, `offset`, `end`, `tune`, `transpose`, `volume`, `amp_veltrack`,
-//! `xfin_lovel`, `xfin_hivel`, `xfout_lovel`, `xfout_hivel`, `xf_velcurve`, `ampeg_attack`,
-//! `ampeg_release`, and the `#define`/`#include` directives. Every other opcode is recorded in
+//! `loop_start`, `loop_end`, `offset`, `end`, `tune`, `transpose`, `volume`, `amplitude`,
+//! `amp_veltrack`, `xfin_lovel`, `xfin_hivel`, `xfout_lovel`, `xfout_hivel`, `xf_velcurve`,
+//! `ampeg_attack`, `ampeg_release`, the controller opcodes `loccN`, `hiccN`, `on_loccN`,
+//! `on_hiccN`, `xfin_loccN`, `xfin_hiccN`, `xfout_loccN`, `xfout_hiccN`, `xf_cccurve`,
+//! `volume_onccN` (also written `gain_ccN` and `gain_onccN`), `amplitude_onccN` (also
+//! `amplitude_ccN`) and `set_ccN` for the controllers 0 to 127, and the `#define`/`#include`
+//! directives. Every other opcode is recorded in
 //! [`SampleBank::ignored_opcodes`] and has no effect. So is a value of `trigger` other than
 //! `attack`, `release`, `first`, `legato` and `release_key`, of `loop_mode` other than
 //! `no_loop`, `one_shot`, `loop_continuous` and `loop_sustain`, or of `off_mode` other than
@@ -33,9 +37,25 @@
 //! -1) is started by that controller instead of a key, as the SFZ format reads it. Such a region
 //! is loaded with [`Region::on_key`] false and never plays on a key: Salamander's pedal noises
 //! are written this way and used to sound on every note. The deepest scope that writes a key
-//! opcode decides, so a region's own `key=60` under a `<global> lokey=-1` plays on key 60. The
-//! sampler starts no region from a controller yet, so `on_locc*`/`on_hicc*` stay in the
-//! ignored opcodes. Any other key value that names no key is ignored, as before.
+//! opcode decides, so a region's own `key=60` under a `<global> lokey=-1` plays on key 60. Any
+//! other key value that names no key is ignored, as before.
+//!
+//! **Controllers.** `on_loccN`/`on_hiccN` give the range of controller `N` whose events start
+//! the region ([`Region::cc_triggers`]); a bound of -1 or none is the end of the range 0 to
+//! 127, and a region whose bounds are both -1 has no trigger. `loccN`/`hiccN` are its gates
+//! ([`Region::cc_gates`], default 0 and 127): the region starts only while controller `N` lies
+//! in the range. `xfin_loccN`/`xfin_hiccN` and `xfout_loccN`/`xfout_hiccN` fade it in and out
+//! with controller `N` ([`Region::cc_crossfades`]), shaped by `xf_cccurve` (`power`, the
+//! default, or `gain`; any other value is reported and plays as `power`); a region may fade with
+//! several controllers. `volume_onccN` gives the change in dB at value 127 and
+//! `amplitude_onccN` the percentage of the amplitude at value 127 ([`Region::cc_volume`],
+//! [`Region::cc_amplitude`]); where a scope writes more than one spelling of one of them, they
+//! are one opcode and the last written wins. Controller values above 127 are read as 127 and
+//! below 0 as 0; a volume change is kept within ±144 dB, an amplitude within ±100 %, and a value
+//! that is not a number is ignored. `set_ccN` in any scope gives where controller `N` starts,
+//! the last one in the file winning ([`SampleBank::controllers`]). The high-resolution forms
+//! (`lohdccN`, `on_lohdccN`, `set_hdccN` and the like) and controllers above 127 are not
+//! supported and are reported.
 //!
 //! **Directives.** `#include` and `#define` are read wherever a token starts, not only at the
 //! start of a line, as the reference player sfizz reads them: Salamander's
@@ -63,11 +83,12 @@
 //! ([`Region::velocity_gain`]); a value outside -100 to 100 is read as the nearest end, and one
 //! that is not a number as the default 100. `amp_velcurve_N` and the `amp_veltrack_onccN`
 //! modulation are not supported. The velocity crossfade opcodes fade a region in and out over a
-//! velocity range ([`VelocityCrossfade`]), so dynamic layers written as crossfades blend rather
+//! velocity range ([`Crossfade`]), so dynamic layers written as crossfades blend rather
 //! than both sounding (Sonatina's timpani fade their p layer out and their f layer in over
 //! velocities 70 to 90); a velocity above 127 is read as 127, and an `xf_velcurve` other than
-//! `power` and `gain` is reported and plays as `power`. The key and controller crossfades
-//! (`xfin_lokey`, `xfin_loccN` and their kin) and their curves are not supported.
+//! `power` and `gain` is reported and plays as `power`. The key crossfades (`xfin_lokey` and its
+//! kin) and their curve are not supported. `amplitude` (0 to 100 %, default 100) scales the
+//! region's level; a value outside that range is read as the nearest end.
 //!
 //! **Exclusive groups.** A region of `group` switches off the voices whose region names that
 //! group in `off_by`, and `off_mode` says how they fade ([`OffMode`]): `fast` (the default) is
@@ -98,15 +119,15 @@
 //! Where `load_sfz` fails the patch for a sample file that cannot be read, or for the memory
 //! cap, `inspect` reports it and says that the patch does not load.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs;
 use std::io;
 use std::ops::RangeInclusive;
 use std::path::{Path, PathBuf};
 
 use sonara_dsp::bank::{
-    CrossfadeCurve, Keyswitches, LoopMode, OffMode, Region, Sample, SampleBank, Trigger,
-    VelocityCrossfade,
+    CcCrossfade, CcDepth, CcRange, Controllers, Crossfade, CrossfadeCurve, Keyswitches, LoopMode,
+    OffMode, Region, Sample, SampleBank, Trigger,
 };
 
 use crate::error::MediaError;
@@ -157,6 +178,7 @@ pub fn load_sfz(path: &Path) -> Result<SampleBank, MediaError> {
     bank.load_notes = notes;
     bank.samples = content.loader.samples;
     bank.keyswitches = content.keyswitches;
+    bank.controllers = content.controllers;
     bank.tail_seconds = tail_seconds(&bank);
     bank.ignored_opcodes = content.ignored;
     Ok(bank)
@@ -180,7 +202,8 @@ pub struct PatchReport {
     /// attack region, or a `first` or `legato` region, which a press starts with no other key
     /// down or with one down) whose sample has frames and whose `sw_last`, if it writes one, is
     /// a switch key or the default switch. Release regions (`release`, `release_key`), regions no
-    /// key starts and `*silence` do not count.
+    /// key starts and `*silence` do not count. A region with controller gates or crossfades
+    /// counts, since some controller values play it.
     pub sampled: Vec<LayerZone>,
     /// The switch keys and the default switch, as [`load_sfz`] gives them to the sampler. A
     /// switch key that is also in [`PatchReport::sampled`] both switches and sounds.
@@ -380,6 +403,8 @@ struct ReadPatch {
     /// The regions the loader kept, in patch order.
     regions: Vec<Region>,
     keyswitches: Keyswitches,
+    /// Where the controllers start ([`SampleBank::controllers`]).
+    controllers: Controllers,
     /// The ignored opcodes, values and headers, sorted, without duplicates.
     ignored: Vec<String>,
     loader: Loader,
@@ -407,6 +432,7 @@ fn read_patch(path: &Path, reading: Reading) -> Result<ReadPatch, MediaError> {
         written: parsed.regions.len(),
         regions,
         keyswitches: parsed.keyswitches,
+        controllers: parsed.controllers,
         ignored,
         loader,
     })
@@ -416,7 +442,8 @@ fn tail_seconds(bank: &SampleBank) -> f64 {
     bank.regions
         .iter()
         .map(|region| {
-            if region.trigger.is_release() {
+            // A key release or a controller can start the sample after the last release.
+            if region.trigger.is_release() || !region.cc_triggers.is_empty() {
                 bank.samples.get(region.sample).map_or(0.0, |sample| {
                     let frames = sample.frames().saturating_sub(region.offset);
                     f64::from(u32::try_from(frames).unwrap_or(u32::MAX))
@@ -577,6 +604,7 @@ fn strip_block_comments(text: &str) -> String {
 struct Parsed {
     regions: Vec<Opcodes>,
     keyswitches: Keyswitches,
+    controllers: Controllers,
     ignored: Vec<String>,
 }
 
@@ -613,12 +641,14 @@ const SUPPORTED: &[&str] = &[
     "tune",
     "transpose",
     "volume",
+    "amplitude",
     "amp_veltrack",
     "xfin_lovel",
     "xfin_hivel",
     "xfout_lovel",
     "xfout_hivel",
     "xf_velcurve",
+    "xf_cccurve",
     "ampeg_attack",
     "ampeg_release",
 ];
@@ -635,8 +665,7 @@ fn parse(text: &str) -> Parsed {
     let mut current: Option<(usize, String)> = None; // (scope, opcode) being extended
     let mut in_other = false;
     let mut open_scope = 0;
-    // The last valid `sw_default` at any level; no later header clears it.
-    let mut sw_default = None;
+    let mut patch_wide = PatchWide::default();
     let finish =
         |region: &mut Option<Opcodes>, scopes: &[Opcodes; 4], regions: &mut Vec<Opcodes>| {
             if let Some(own) = region.take() {
@@ -681,18 +710,19 @@ fn parse(text: &str) -> Parsed {
             continue;
         }
         if let Some((name, value)) = token.split_once('=') {
-            let name = name.to_ascii_lowercase();
             if in_other {
                 continue;
             }
-            if !SUPPORTED.contains(&name.as_str()) && !HARMLESS.contains(&name.as_str()) {
+            let name = name.to_ascii_lowercase();
+            let controller = cc_opcode(&name);
+            if !SUPPORTED.contains(&name.as_str())
+                && !HARMLESS.contains(&name.as_str())
+                && controller.is_none()
+            {
                 ignored.push(name_without_digits(&name));
             }
-            if name == "sw_default"
-                && let Some(key) = note(value)
-            {
-                sw_default = Some(key);
-            }
+            patch_wide.read(&name, controller, value);
+            let name = canonical_name(name, controller);
             let scope = if region.is_some() { 4 } else { open_scope };
             let target = match scope {
                 4 => region.as_mut(),
@@ -716,7 +746,7 @@ fn parse(text: &str) -> Parsed {
     }
     finish(&mut region, &scopes, &mut regions);
     let mut keyswitches = Keyswitches::NONE;
-    keyswitches.default = sw_default;
+    keyswitches.default = patch_wide.sw_default;
     for opcodes in &regions {
         let range = |name: &str| opcodes.get(name).and_then(|v| note(v));
         if let (Some(lo), Some(hi)) = (range("sw_lokey"), range("sw_hikey")) {
@@ -726,7 +756,32 @@ fn parse(text: &str) -> Parsed {
     Parsed {
         regions,
         keyswitches,
+        controllers: patch_wide.controllers,
         ignored,
+    }
+}
+
+/// What a patch sets for all its regions, from any level: the last valid `sw_default`, and the
+/// last valid `set_ccN` of each controller. No later header clears them.
+#[derive(Default)]
+struct PatchWide {
+    sw_default: Option<u8>,
+    controllers: Controllers,
+}
+
+impl PatchWide {
+    /// Reads the opcode `name` (the controller opcode `controller`, if it is one) with `value`.
+    fn read(&mut self, name: &str, controller: Option<(CcOpcode, u8)>, value: &str) {
+        if name == "sw_default"
+            && let Some(key) = note(value)
+        {
+            self.sw_default = Some(key);
+        }
+        if let Some((CcOpcode::Initial, number)) = controller
+            && let Some(value) = cc_value(value)
+        {
+            self.controllers.set(number, value);
+        }
     }
 }
 
@@ -789,13 +844,201 @@ fn is_controller_trigger(name: &str) -> bool {
         })
 }
 
-/// `locc64` and `hicc64` are one opcode family: report them as `locc*`.
+/// `pan_oncc10` and `pan_oncc64` are one opcode family: report them as `pan_oncc*`.
 fn name_without_digits(name: &str) -> String {
     let trimmed = name.trim_end_matches(|c: char| c.is_ascii_digit());
     if trimmed.len() == name.len() {
         name.to_owned()
     } else {
         format!("{trimmed}*")
+    }
+}
+
+/// A numbered opcode about one MIDI controller that the sampler plays: the opcode, then the
+/// controller number `N` (0 to 127) that ends its name.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CcOpcode {
+    /// `loccN`: the lowest value of the gate.
+    GateLo,
+    /// `hiccN`: the highest value of the gate.
+    GateHi,
+    /// `on_loccN`: the lowest value that starts the region.
+    TriggerLo,
+    /// `on_hiccN`: the highest value that starts the region.
+    TriggerHi,
+    /// `xfin_loccN`: where the fade-in starts.
+    FadeInLo,
+    /// `xfin_hiccN`: where the fade-in is full.
+    FadeInHi,
+    /// `xfout_loccN`: where the fade-out starts.
+    FadeOutLo,
+    /// `xfout_hiccN`: where the fade-out is silent.
+    FadeOutHi,
+    /// `volume_onccN`, `gain_ccN` and `gain_onccN`: the volume change in dB at 127.
+    Volume,
+    /// `amplitude_onccN` and `amplitude_ccN`: the percentage of the amplitude at 127.
+    Amplitude,
+    /// `set_ccN`: where the controller starts.
+    Initial,
+}
+
+/// The name prefixes of the controller opcodes, each followed by the controller number.
+const CC_OPCODES: [(&str, CcOpcode); 14] = [
+    ("locc", CcOpcode::GateLo),
+    ("hicc", CcOpcode::GateHi),
+    ("on_locc", CcOpcode::TriggerLo),
+    ("on_hicc", CcOpcode::TriggerHi),
+    ("xfin_locc", CcOpcode::FadeInLo),
+    ("xfin_hicc", CcOpcode::FadeInHi),
+    ("xfout_locc", CcOpcode::FadeOutLo),
+    ("xfout_hicc", CcOpcode::FadeOutHi),
+    ("volume_oncc", CcOpcode::Volume),
+    ("gain_cc", CcOpcode::Volume),
+    ("gain_oncc", CcOpcode::Volume),
+    ("amplitude_oncc", CcOpcode::Amplitude),
+    ("amplitude_cc", CcOpcode::Amplitude),
+    ("set_cc", CcOpcode::Initial),
+];
+
+/// The controller opcode `name` is and the controller it names; `None` for any other opcode and
+/// for a controller number above 127.
+fn cc_opcode(name: &str) -> Option<(CcOpcode, u8)> {
+    CC_OPCODES.iter().find_map(|(prefix, opcode)| {
+        let number = name.strip_prefix(prefix)?;
+        if number.is_empty() || !number.bytes().all(|b| b.is_ascii_digit()) {
+            return None;
+        }
+        let number = number.parse::<u8>().ok().filter(|n| *n <= 127)?;
+        Some((*opcode, number))
+    })
+}
+
+/// One name for the spellings of one opcode, so that a deeper scope's spelling overrides an
+/// outer one's: `gain_ccN` and `gain_onccN` are `volume_onccN`, `amplitude_ccN` is
+/// `amplitude_onccN`.
+fn canonical_name(name: String, controller: Option<(CcOpcode, u8)>) -> String {
+    match controller {
+        Some((CcOpcode::Volume, number)) => format!("volume_oncc{number}"),
+        Some((CcOpcode::Amplitude, number)) => format!("amplitude_oncc{number}"),
+        _ => name,
+    }
+}
+
+/// A controller value: a number truncated and kept within 0 to 127; `None` for a value that is
+/// not a number.
+fn cc_value(value: &str) -> Option<u8> {
+    let number = value.trim().parse::<f64>().ok().filter(|v| v.is_finite())?;
+    Some(to_u8(Some(number.trunc()), 0).min(127))
+}
+
+/// A finite number kept within `-limit..=limit`; `None` for a value that is not one.
+fn bounded(value: &str, limit: f64) -> Option<f64> {
+    let number = value.trim().parse::<f64>().ok().filter(|v| v.is_finite())?;
+    Some(number.clamp(-limit, limit))
+}
+
+/// The largest volume change a controller gives, in dB either way.
+const MAX_CC_VOLUME_DB: f64 = 144.0;
+/// The largest amplitude a controller gives, in percent either way.
+const MAX_CC_AMPLITUDE: f64 = 100.0;
+
+/// The controller opcodes of a region, gathered by controller so that they come out sorted.
+#[derive(Default)]
+struct RegionControllers {
+    gates: BTreeMap<u8, CcRange>,
+    triggers: BTreeMap<u8, CcRange>,
+    fades: BTreeMap<u8, Crossfade>,
+    volume: BTreeMap<u8, CcDepth>,
+    amplitude: BTreeMap<u8, CcDepth>,
+}
+
+impl RegionControllers {
+    /// Reads the controller opcodes of a region's merged `opcodes`, its crossfades shaped by
+    /// `curve`.
+    fn read(opcodes: &Opcodes, curve: CrossfadeCurve) -> Self {
+        let mut read = Self::default();
+        for (name, value) in opcodes {
+            if let Some((opcode, controller)) = cc_opcode(name) {
+                read.add(opcode, controller, value, curve);
+            }
+        }
+        read
+    }
+
+    /// Adds one opcode about `controller` with its `value`.
+    fn add(&mut self, opcode: CcOpcode, controller: u8, value: &str, curve: CrossfadeCurve) {
+        let full = CcRange {
+            controller,
+            lo: 0,
+            hi: 127,
+        };
+        match opcode {
+            CcOpcode::GateLo | CcOpcode::GateHi => {
+                if let Some(value) = cc_value(value) {
+                    let gate = self.gates.entry(controller).or_insert(full);
+                    set_bound(gate, opcode == CcOpcode::GateLo, value);
+                }
+            }
+            CcOpcode::TriggerLo | CcOpcode::TriggerHi => {
+                // -1 is the format's "no trigger": that bound stays at its end of the range.
+                if !is_minus_one(value)
+                    && let Some(value) = cc_value(value)
+                {
+                    let trigger = self.triggers.entry(controller).or_insert(full);
+                    set_bound(trigger, opcode == CcOpcode::TriggerLo, value);
+                }
+            }
+            CcOpcode::FadeInLo | CcOpcode::FadeInHi | CcOpcode::FadeOutLo | CcOpcode::FadeOutHi => {
+                if let Some(value) = cc_value(value) {
+                    let fade = self.fades.entry(controller).or_insert(Crossfade {
+                        curve,
+                        ..Crossfade::NONE
+                    });
+                    match opcode {
+                        CcOpcode::FadeInLo => fade.in_lo = value,
+                        CcOpcode::FadeInHi => fade.in_hi = value,
+                        CcOpcode::FadeOutLo => fade.out_lo = value,
+                        _ => fade.out_hi = value,
+                    }
+                }
+            }
+            CcOpcode::Volume => {
+                if let Some(depth) = bounded(value, MAX_CC_VOLUME_DB) {
+                    self.volume
+                        .insert(controller, CcDepth { controller, depth });
+                }
+            }
+            CcOpcode::Amplitude => {
+                if let Some(depth) = bounded(value, MAX_CC_AMPLITUDE) {
+                    self.amplitude
+                        .insert(controller, CcDepth { controller, depth });
+                }
+            }
+            // Read for the whole patch by `parse`.
+            CcOpcode::Initial => {}
+        }
+    }
+
+    /// Writes the opcodes into `region`.
+    fn apply(self, region: &mut Region) {
+        region.cc_gates = self.gates.into_values().collect();
+        region.cc_triggers = self.triggers.into_values().collect();
+        region.cc_crossfades = self
+            .fades
+            .into_iter()
+            .map(|(controller, fade)| CcCrossfade { controller, fade })
+            .collect();
+        region.cc_volume = self.volume.into_values().collect();
+        region.cc_amplitude = self.amplitude.into_values().collect();
+    }
+}
+
+/// Sets the low (`low`) or high bound of `range` to `value`.
+fn set_bound(range: &mut CcRange, low: bool, value: u8) {
+    if low {
+        range.lo = value;
+    } else {
+        range.hi = value;
     }
 }
 
@@ -996,12 +1239,15 @@ impl Loader {
             None => off_time.map_or(OffMode::Fast, OffMode::Time),
         };
         region.volume_db = num("volume").unwrap_or(0.0);
+        region.amplitude = num("amplitude")
+            .filter(|v| v.is_finite())
+            .map_or(100.0, |v| v.clamp(0.0, 100.0));
         region.amp_veltrack = num("amp_veltrack")
             .filter(|v| v.is_finite())
             .map_or(100.0, |v| v.clamp(-100.0, 100.0));
         let velocity = |key: &str| int(key).map(|v| to_u8(Some(v), 0).min(127));
-        let none = VelocityCrossfade::NONE;
-        region.velocity_crossfade = VelocityCrossfade {
+        let none = Crossfade::NONE;
+        region.velocity_crossfade = Crossfade {
             in_lo: velocity("xfin_lovel").unwrap_or(none.in_lo),
             in_hi: velocity("xfin_hivel").unwrap_or(none.in_hi),
             out_lo: velocity("xfout_lovel").unwrap_or(none.out_lo),
@@ -1010,6 +1256,10 @@ impl Loader {
                 .value(opcodes, &["xf_velcurve"], parse_crossfade_curve)
                 .unwrap_or_default(),
         };
+        let cc_curve = self
+            .value(opcodes, &["xf_cccurve"], parse_crossfade_curve)
+            .unwrap_or_default();
+        RegionControllers::read(opcodes, cc_curve).apply(&mut region);
         region.tune_cents = num("tune").unwrap_or(0.0) + num("transpose").unwrap_or(0.0) * 100.0;
         region.attack = num("ampeg_attack").unwrap_or(0.0).max(0.0);
         region.release = num("ampeg_release").unwrap_or(0.0).max(0.0);
@@ -1237,7 +1487,8 @@ fn parse_off_mode(value: &str) -> Option<OffMode> {
     }
 }
 
-/// The curve an `xf_velcurve` value names; `None` for a value the sampler does not play.
+/// The curve an `xf_velcurve` or `xf_cccurve` value names; `None` for a value the sampler does
+/// not play.
 fn parse_crossfade_curve(value: &str) -> Option<CrossfadeCurve> {
     match value {
         "power" => Some(CrossfadeCurve::Power),

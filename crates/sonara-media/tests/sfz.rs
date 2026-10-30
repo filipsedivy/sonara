@@ -9,7 +9,8 @@ use std::sync::Arc;
 use sonara_core::model::device::Params;
 use sonara_core::plugins::{SamplerChoices, sampler_descriptor};
 use sonara_dsp::bank::{
-    CrossfadeCurve, Keyswitches, LoopMode, OffMode, SampleBank, Trigger, VelocityCrossfade,
+    CcCrossfade, CcDepth, CcRange, Controllers, Crossfade, CrossfadeCurve, Keyswitches, LoopMode,
+    OffMode, SampleBank, Trigger,
 };
 use sonara_dsp::processor::{BlockContext, DeviceState, EventKind, InstrumentEvent, ProcessSpec};
 use sonara_dsp::processors::{create, param_slots};
@@ -60,7 +61,7 @@ fn library() -> tempfile::TempDir {
         dir.path().join("violin.sfz"),
         "#include \"common.sfz\"\n\
          // keyswitches and defaults\n\
-         <global> sw_lokey=c1 sw_hikey=d1 sw_default=c1 ampeg_release=0.3 cutoff=800 locc1=20\n\
+         <global> sw_lokey=c1 sw_hikey=d1 sw_default=c1 ampeg_release=0.3 cutoff=800 pan_oncc10=50\n\
          <group> lokey=c3 hikey=c5 pitch_keycenter=c4 sw_last=c1 hivel=$SOFT seq_length=2\n\
          <region> sample=soft1.wav seq_position=1\n\
          <region> sample=soft2.wav seq_position=2\n\
@@ -391,7 +392,8 @@ fn other_keys_that_name_no_key_keep_the_full_keyboard() {
 #[test]
 fn controller_triggered_regions_are_not_key_triggered() {
     // A controller trigger replaces the key's. A -1 is the format's "no trigger", and a
-    // `locc`/`hicc` range is a condition, not a trigger.
+    // `locc`/`hicc` range is a gate, not a trigger. A missing bound is the end of the range; the
+    // high-resolution form keeps its region off the keys but starts nothing and is reported.
     let dir = library();
     let bank = load_patch(
         &dir,
@@ -400,17 +402,142 @@ fn controller_triggered_regions_are_not_key_triggered() {
          <region> sample=Samples/soft1.wav on_hicc1=0\n\
          <region> sample=Samples/soft1.wav on_lohdcc11=0.5\n\
          <region> sample=Samples/soft1.wav on_locc64=-1\n\
-         <region> sample=Samples/soft1.wav locc64=0 hicc64=63\n",
+         <region> sample=Samples/soft1.wav locc64=0 hicc64=63\n\
+         <region> sample=Samples/soft1.wav on_locc64=-1 on_hicc64=63\n",
     );
     assert_eq!(
         bank.regions.iter().map(|r| r.on_key).collect::<Vec<_>>(),
-        [false, false, false, true, true]
+        [false, false, false, true, true, false]
+    );
+    let range = |controller, lo, hi| vec![CcRange { controller, lo, hi }];
+    assert_eq!(
+        bank.regions
+            .iter()
+            .map(|r| r.cc_triggers.to_vec())
+            .collect::<Vec<_>>(),
+        [
+            range(64, 127, 127),
+            range(1, 0, 0),
+            vec![],
+            vec![],
+            vec![],
+            range(64, 0, 63),
+        ]
     );
     assert_eq!(
-        bank.ignored_opcodes,
-        ["hicc*", "locc*", "on_hicc*", "on_locc*", "on_lohdcc*"],
-        "the sampler starts no region from a controller yet"
+        *bank.regions[4].cc_gates,
+        [CcRange {
+            controller: 64,
+            lo: 0,
+            hi: 63
+        }]
     );
+    assert_eq!(bank.ignored_opcodes, ["on_lohdcc*"]);
+}
+
+#[test]
+fn controller_opcodes_are_read_with_their_scope() {
+    // Gates, crossfades, volume and amplitude by controller, inherited from the group like any
+    // opcode and sorted by controller. `gain_ccN` and `gain_onccN` are `volume_onccN`, and
+    // `amplitude_ccN` is `amplitude_onccN`, so a region's own spelling overrides its group's.
+    // Values are kept in range; controllers above 127 and high-resolution forms are reported.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<control> default_path=Samples/\n\
+         <group> locc1=20 hicc1=200 hicc7=99 gain_cc1=20 amplitude_cc12=100 xf_cccurve=gain\n\
+         <region> sample=soft1.wav\n\
+         <region> sample=soft1.wav volume_oncc1=-6 amplitude_oncc12=50 locc1=-5\n\
+         <group> xfin_locc1=10 xfin_hicc1=90 xfout_locc2=40 xfout_hicc2=300 xf_cccurve=sine\n\
+         <region> sample=soft1.wav gain_oncc3=500 amplitude_cc4=-300 amplitude=40\n\
+         <region> sample=soft1.wav locc300=1 lohdcc1=0.5 xfin_locc=3 gain_cc1=abc\n",
+    );
+    let gate = |controller, lo, hi| CcRange { controller, lo, hi };
+    assert_eq!(
+        *bank.regions[0].cc_gates,
+        [gate(1, 20, 127), gate(7, 0, 99)]
+    );
+    assert_eq!(*bank.regions[1].cc_gates, [gate(1, 0, 127), gate(7, 0, 99)]);
+    let depth = |controller, depth| CcDepth { controller, depth };
+    assert_eq!(*bank.regions[0].cc_volume, [depth(1, 20.0)]);
+    assert_eq!(*bank.regions[0].cc_amplitude, [depth(12, 100.0)]);
+    assert_eq!(*bank.regions[1].cc_volume, [depth(1, -6.0)]);
+    assert_eq!(*bank.regions[1].cc_amplitude, [depth(12, 50.0)]);
+    assert!(bank.regions[0].cc_crossfades.is_empty());
+    // The second group: two controllers crossfade, and its unknown curve plays as power.
+    let fade = |controller, in_lo, in_hi, out_lo, out_hi| CcCrossfade {
+        controller,
+        fade: Crossfade {
+            in_lo,
+            in_hi,
+            out_lo,
+            out_hi,
+            curve: CrossfadeCurve::Power,
+        },
+    };
+    assert_eq!(
+        *bank.regions[2].cc_crossfades,
+        [fade(1, 10, 90, 127, 127), fade(2, 0, 0, 40, 127)]
+    );
+    assert_eq!(*bank.regions[2].cc_volume, [depth(3, 144.0)]);
+    assert_eq!(*bank.regions[2].cc_amplitude, [depth(4, -100.0)]);
+    assert_eq!(bank.regions[2].amplitude, 40.0);
+    assert_eq!(bank.regions[0].amplitude, 100.0);
+    // The last region: nothing of its own is read.
+    let last = &bank.regions[3];
+    assert!(last.cc_gates.is_empty() && last.cc_volume.is_empty());
+    assert_eq!(
+        bank.ignored_opcodes,
+        ["locc*", "lohdcc*", "xf_cccurve=sine", "xfin_locc"]
+    );
+}
+
+#[test]
+fn a_gain_curve_shapes_the_controller_crossfades() {
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<region> sample=Samples/soft1.wav xfin_locc1=0 xfin_hicc1=127 xf_cccurve=gain\n",
+    );
+    assert_eq!(
+        *bank.regions[0].cc_crossfades,
+        [CcCrossfade {
+            controller: 1,
+            fade: Crossfade {
+                in_lo: 0,
+                in_hi: 127,
+                curve: CrossfadeCurve::Gain,
+                ..Crossfade::NONE
+            },
+        }]
+    );
+    assert!(
+        bank.ignored_opcodes.is_empty(),
+        "{:?}",
+        bank.ignored_opcodes
+    );
+}
+
+#[test]
+fn set_cc_gives_where_the_controllers_start() {
+    // The last `set_ccN` of each controller in the file wins, at any level, and a later
+    // `<control>` does not clear it. A patch without any starts at the initial values.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<control> set_cc12=127 set_cc1=40 set_cc7=100\n\
+         <region> sample=Samples/soft1.wav\n\
+         <control> set_cc1=64 set_cc2=300 set_cc3=x set_hdcc4=0.5\n\
+         <region> sample=Samples/soft1.wav\n",
+    );
+    let mut expected = Controllers::INITIAL;
+    for (number, value) in [(12, 127), (1, 64), (7, 100), (2, 127)] {
+        expected.set(number, value);
+    }
+    assert_eq!(bank.controllers, expected);
+    assert_eq!(bank.ignored_opcodes, ["set_hdcc*"]);
+    let plain = load_patch(&dir, "<region> sample=Samples/soft1.wav\n");
+    assert_eq!(plain.controllers, Controllers::INITIAL);
 }
 
 #[test]
@@ -480,7 +607,7 @@ fn decodes_the_samples_and_reports_what_it_ignores() {
         (44_100, 1, 4_410)
     );
     assert!((f64::from(soft.data[0]) - 3_000.0 / 32_768.0).abs() < 1e-6);
-    assert_eq!(bank.ignored_opcodes, ["cutoff", "locc*"]);
+    assert_eq!(bank.ignored_opcodes, ["cutoff", "pan_oncc*"]);
     // The release sample's whole length is the tail: 4410 frames at 44.1 kHz = 0.1 s,
     // the release time of the attack regions is 0.3 s.
     assert!((bank.tail_seconds - 0.3).abs() < 1e-9);
@@ -635,15 +762,15 @@ fn velocity_crossfades_are_read_with_their_scope() {
     assert_eq!(
         crossfades,
         [
-            VelocityCrossfade {
+            Crossfade {
                 in_lo: 70,
                 in_hi: 90,
-                ..VelocityCrossfade::NONE
+                ..Crossfade::NONE
             },
-            VelocityCrossfade {
+            Crossfade {
                 out_lo: 70,
                 out_hi: 90,
-                ..VelocityCrossfade::NONE
+                ..Crossfade::NONE
             },
         ]
     );
@@ -663,8 +790,8 @@ fn velocity_crossfades_are_read_with_their_scope() {
 #[test]
 fn velocity_crossfade_values_and_curves() {
     // A region's own value overrides its group's; a value above 127 is read as 127; one bound
-    // alone keeps the other's default; an unknown curve is reported and plays as power. The key
-    // and controller crossfades stay unsupported and reported.
+    // alone keeps the other's default; an unknown curve is reported and plays as power. The
+    // controller crossfades are their own, and the key crossfades stay unsupported and reported.
     let dir = library();
     let bank = load_patch(
         &dir,
@@ -677,7 +804,7 @@ fn velocity_crossfade_values_and_curves() {
          <region> sample=soft1.wav xfin_lovel=70 xf_velcurve=sine\n\
          <region> sample=soft1.wav xfin_locc1=0 xfin_hicc1=127 xf_cccurve=gain xfin_lokey=60\n",
     );
-    let crossfade = |in_lo, in_hi, out_lo, curve| VelocityCrossfade {
+    let crossfade = |in_lo, in_hi, out_lo, curve| Crossfade {
         in_lo,
         in_hi,
         out_lo,
@@ -695,19 +822,11 @@ fn velocity_crossfade_values_and_curves() {
             crossfade(10, 127, 127, power),
             crossfade(0, 0, 100, power),
             crossfade(70, 0, 127, power),
-            VelocityCrossfade::NONE,
+            Crossfade::NONE,
         ]
     );
-    assert_eq!(
-        bank.ignored_opcodes,
-        [
-            "xf_cccurve",
-            "xf_velcurve=sine",
-            "xfin_hicc*",
-            "xfin_locc*",
-            "xfin_lokey"
-        ]
-    );
+    assert_eq!(bank.regions[4].cc_crossfades.len(), 1);
+    assert_eq!(bank.ignored_opcodes, ["xf_velcurve=sine", "xfin_lokey"]);
 }
 
 #[test]
@@ -889,6 +1008,27 @@ fn a_sample_that_cannot_be_decoded_still_fails_the_patch() {
 /// entry of `blocks`, each with its note-ons at frame 0. Returns the last block and the voices
 /// still sounding at its end.
 fn play(bank: SampleBank, blocks: &[&[u8]]) -> (Vec<[f64; 2]>, f64) {
+    let blocks: Vec<Vec<InstrumentEvent>> = blocks
+        .iter()
+        .map(|keys| {
+            keys.iter()
+                .map(|key| InstrumentEvent {
+                    offset: 0,
+                    kind: EventKind::NoteOn,
+                    pitch: *key,
+                    velocity: 127,
+                    channel: 0,
+                    value: 0,
+                    number: 0,
+                })
+                .collect()
+        })
+        .collect();
+    play_events(bank, &blocks)
+}
+
+/// Plays `bank` as [`play`] does, with the events of each block as given.
+fn play_events(bank: SampleBank, blocks: &[Vec<InstrumentEvent>]) -> (Vec<[f64; 2]>, f64) {
     let mut sampler = create("sonara.sampler").expect("the sampler exists");
     sampler.prepare(ProcessSpec {
         sample_rate: 44_100,
@@ -906,19 +1046,7 @@ fn play(bank: SampleBank, blocks: &[&[u8]]) -> (Vec<[f64; 2]>, f64) {
     .expect("a patch");
     sampler.set_params(&param_slots(&descriptor, &Params::new()).expect("defaults"));
     let mut buffer = vec![[0.0; 2]; 2_048];
-    for (block, keys) in blocks.iter().enumerate() {
-        let events: Vec<_> = keys
-            .iter()
-            .map(|key| InstrumentEvent {
-                offset: 0,
-                kind: EventKind::NoteOn,
-                pitch: *key,
-                velocity: 127,
-                channel: 0,
-                value: 0,
-                number: 0,
-            })
-            .collect();
+    for (block, events) in blocks.iter().enumerate() {
         buffer.fill([0.0; 2]);
         sampler.process(
             &mut buffer,
@@ -929,7 +1057,7 @@ fn play(bank: SampleBank, blocks: &[&[u8]]) -> (Vec<[f64; 2]>, f64) {
                 bpm: 120.0,
                 playing: true,
                 sidechain: None,
-                events: &events,
+                events,
             },
         );
     }
@@ -1086,6 +1214,60 @@ fn a_release_key_sample_counts_in_the_tail() {
         "{}",
         bank.tail_seconds
     );
+}
+
+/// The sustain pedal (controller 64) at `value` on channel 0, at the block's first frame.
+fn pedal_at(value: i32) -> InstrumentEvent {
+    InstrumentEvent {
+        offset: 0,
+        kind: EventKind::Cc,
+        pitch: 0,
+        velocity: 0,
+        channel: 0,
+        value,
+        number: 64,
+    }
+}
+
+#[test]
+fn salamander_pedal_noises_play_on_the_pedal() {
+    // TST-06: the loaded patch in the player. Pressing the pedal plays one of the two
+    // pedal-down noises at its own pitch and full level (loud1 or loud2, chosen at random),
+    // lifting it the pedal-up noise (tail). Each noise is 4410 frames long, so the first still
+    // sounds when the second starts.
+    let dir = library();
+    let bank = salamander_pedals(&dir);
+    assert!(
+        (bank.tail_seconds - 0.1).abs() < 1e-12,
+        "a noise the pedal starts after the last release is a tail: {}",
+        bank.tail_seconds
+    );
+    let level = |value: i16| f64::from(value) / 32_768.0;
+    let (down, voices) = play_events(bank.clone(), &[vec![pedal_at(127)]]);
+    let noise = down.last().expect("a block")[0];
+    assert!(
+        (noise - level(20_000)).abs() < 1e-6 || (noise - level(24_000)).abs() < 1e-6,
+        "one pedal-down noise: {noise}"
+    );
+    assert_eq!(voices, 1.0);
+    let (up, voices) = play_events(bank, &[vec![pedal_at(127)], vec![pedal_at(0)]]);
+    let both = up.last().expect("a block")[0];
+    assert!((both - noise - level(1_000)).abs() < 1e-6, "{both}");
+    assert_eq!(voices, 2.0);
+}
+
+#[test]
+fn inspect_counts_regions_that_controllers_gate_or_fade() {
+    // Some controller values play them, so their keys sound.
+    let dir = library();
+    let report = inspect_text(
+        &dir,
+        "<control> default_path=Samples/\n\
+         <region> sample=soft1.wav key=60 locc64=64\n\
+         <region> sample=soft1.wav key=61 xfin_locc1=0 xfin_hicc1=127\n\
+         <region> sample=soft1.wav key=62 on_locc64=127\n",
+    );
+    assert_eq!(report.sampled_keys().collect::<Vec<_>>(), [60, 61]);
 }
 
 #[test]
@@ -1402,7 +1584,7 @@ fn inspect_reports_the_structure_the_loader_builds() {
                 layers: layers(&[(0, 63), (64, 127)]),
             }],
             keyswitches: report.keyswitches,
-            ignored_opcodes: vec!["cutoff".to_owned(), "locc*".to_owned()],
+            ignored_opcodes: vec!["cutoff".to_owned(), "pan_oncc*".to_owned()],
             missing_samples: Vec::new(),
             unreadable_samples: Vec::new(),
             notes: Vec::new(),

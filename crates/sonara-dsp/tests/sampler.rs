@@ -1,6 +1,7 @@
 //! `sonara.sampler` against synthetic banks: layers, round robin, release, release triggers,
-//! the sustain pedal, keyswitches, exclusive groups, polyphony and the real-time rules (TST-10:
-//! every check compares against a value that follows from the bank, not "it ran").
+//! the sustain pedal, keyswitches, exclusive groups, controllers, polyphony and the real-time
+//! rules (TST-10: every check compares against a value that follows from the bank, not "it
+//! ran"). Every block runs under `assert_no_alloc` (RT-02).
 //!
 //! The samples are constants, so a voice's steady-state output is its sample value times the
 //! velocity gain `(velocity / 127)²`, which the tests compute independently of the engine.
@@ -12,8 +13,8 @@ use assert_no_alloc::{AllocDisabler, assert_no_alloc};
 use sonara_core::model::device::{ParamValue, Params};
 use sonara_core::plugins::{SamplerChoices, sampler_descriptor};
 use sonara_dsp::bank::{
-    CrossfadeCurve, Keyswitches, LoopMode, OffMode, Region, Sample, SampleBank, Trigger,
-    VelocityCrossfade,
+    CcCrossfade, CcDepth, CcRange, Controllers, Crossfade, CrossfadeCurve, Keyswitches, LoopMode,
+    OffMode, Region, Sample, SampleBank, Trigger,
 };
 use sonara_dsp::processor::{
     BlockContext, DeviceState, EventKind, InstrumentEvent, ProcessSpec, Processor,
@@ -271,28 +272,28 @@ fn a_region_tracked_to_silence_starts_no_voice_but_chokes_its_group() {
 }
 
 /// A fade-in over `lo..hi` with `curve`.
-fn fade_in(lo: u8, hi: u8, curve: CrossfadeCurve) -> VelocityCrossfade {
-    VelocityCrossfade {
+fn fade_in(lo: u8, hi: u8, curve: CrossfadeCurve) -> Crossfade {
+    Crossfade {
         in_lo: lo,
         in_hi: hi,
         curve,
-        ..VelocityCrossfade::NONE
+        ..Crossfade::NONE
     }
 }
 
 /// A fade-out over `lo..hi` with `curve`.
-fn fade_out(lo: u8, hi: u8, curve: CrossfadeCurve) -> VelocityCrossfade {
-    VelocityCrossfade {
+fn fade_out(lo: u8, hi: u8, curve: CrossfadeCurve) -> Crossfade {
+    Crossfade {
         out_lo: lo,
         out_hi: hi,
         curve,
-        ..VelocityCrossfade::NONE
+        ..Crossfade::NONE
     }
 }
 
 /// Checks `crossfade` at each velocity from `first` against `expected`, to the five digits
 /// sfizz's tests give.
-fn assert_fade(crossfade: VelocityCrossfade, first: u8, expected: &[f64]) {
+fn assert_fade(crossfade: Crossfade, first: u8, expected: &[f64]) {
     for (velocity, want) in (first..).zip(expected) {
         let got = crossfade.gain(velocity);
         assert!(
@@ -329,13 +330,10 @@ fn velocity_crossfade_gains_match_sfizz() {
     );
     // Without a crossfade every velocity plays at full gain, and the default curve is power.
     for velocity in 0..=127 {
-        assert_eq!(VelocityCrossfade::NONE.gain(velocity), 1.0, "{velocity}");
+        assert_eq!(Crossfade::NONE.gain(velocity), 1.0, "{velocity}");
     }
-    assert_eq!(VelocityCrossfade::default(), VelocityCrossfade::NONE);
-    assert_eq!(
-        Region::default().velocity_crossfade,
-        VelocityCrossfade::NONE
-    );
+    assert_eq!(Crossfade::default(), Crossfade::NONE);
+    assert_eq!(Region::default().velocity_crossfade, Crossfade::NONE);
     assert_eq!(CrossfadeCurve::default(), CrossfadeCurve::Power);
 }
 
@@ -374,7 +372,7 @@ fn complementary_crossfades_keep_power_or_amplitude() {
     // power with the equal-power curve, and the summed amplitude with the gain curve, at every
     // velocity.
     for velocity in 0..=127 {
-        let power = |fade: VelocityCrossfade| fade.gain(velocity).powi(2);
+        let power = |fade: Crossfade| fade.gain(velocity).powi(2);
         let p = CrossfadeCurve::Power;
         close(power(fade_out(70, 90, p)) + power(fade_in(70, 90, p)), 1.0);
         let g = CrossfadeCurve::Gain;
@@ -1457,4 +1455,615 @@ fn an_empty_sampler_plays_silence() {
     processor.set_params(&slots);
     let out = run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
     assert!(out.iter().flatten().all(|v| *v == 0.0));
+}
+
+// --- Controllers: the table, gates, triggers, crossfades and gains ---
+
+/// Controller `number` set to `value` on `channel`.
+fn cc(number: u8, value: i32, channel: u8) -> InstrumentEvent {
+    InstrumentEvent {
+        number,
+        value,
+        channel,
+        ..event(EventKind::Cc, 0, 0)
+    }
+}
+
+/// A key press on `channel`.
+fn press(key: u8, velocity: u8, channel: u8) -> InstrumentEvent {
+    InstrumentEvent {
+        channel,
+        ..event(EventKind::NoteOn, key, velocity)
+    }
+}
+
+/// One range of `controller`, as a gate or trigger list.
+fn range(controller: u8, lo: u8, hi: u8) -> Box<[CcRange]> {
+    Box::new([CcRange { controller, lo, hi }])
+}
+
+/// Two layers gated by the sustain pedal: sample 0 (0.5) while it is up (0-63), sample 1
+/// (0.25) while it is down (64-127). Velocity does not change their level.
+fn pedal_layers() -> SampleBank {
+    SampleBank {
+        samples: vec![constant(0.5), constant(0.25)],
+        regions: vec![
+            Region {
+                cc_gates: range(64, 0, 63),
+                amp_veltrack: 0.0,
+                ..region(0)
+            },
+            Region {
+                cc_gates: range(64, 64, 127),
+                amp_veltrack: 0.0,
+                ..region(1)
+            },
+        ],
+        ..SampleBank::default()
+    }
+}
+
+/// The number of sounding voices.
+fn voices(processor: &dyn Processor) -> f64 {
+    processor
+        .report()
+        .entries()
+        .iter()
+        .find(|(name, _)| *name == "voices")
+        .map(|(_, value)| *value)
+        .expect("the sampler reports its voices")
+}
+
+#[test]
+fn controllers_start_at_zero_except_volume_and_expression() {
+    let initial = Controllers::INITIAL;
+    assert_eq!(
+        (0..=127)
+            .filter(|n| initial.value(*n) != 0)
+            .collect::<Vec<u8>>(),
+        [7, 11]
+    );
+    assert_eq!((initial.value(7), initial.value(11)), (127, 127));
+    assert_eq!(SampleBank::default().controllers, initial);
+    // A value above 127 is read as 127; a number above 127 names no controller.
+    let mut controllers = initial;
+    controllers.set(1, 200);
+    controllers.set(200, 5);
+    assert_eq!((controllers.value(1), controllers.value(200)), (127, 0));
+}
+
+#[test]
+fn cc_gate_selects_the_layer() {
+    // TST-06: gated regions used to play whatever the controller said, so pedal-up and
+    // pedal-down layers both sounded on every note.
+    let mut processor = sampler(pedal_layers());
+    let up = run(&mut *processor, &[event(EventKind::NoteOn, 60, 100)]);
+    close(level(&up), 0.5);
+    assert_eq!(voices(&*processor), 1.0);
+    // The pedal goes down: the next press plays the other layer, and the held voice sounds on,
+    // since a gate is read only when a region starts.
+    let down = run(
+        &mut *processor,
+        &[pedal(true), event(EventKind::NoteOn, 62, 100)],
+    );
+    close(level(&down), 0.5 + 0.25);
+    assert_eq!(voices(&*processor), 2.0);
+}
+
+#[test]
+fn a_gate_reads_the_controllers_of_the_notes_channel() {
+    let mut processor = sampler(pedal_layers());
+    let out = run(
+        &mut *processor,
+        &[cc(64, 127, 3), press(60, 100, 3), press(62, 100, 0)],
+    );
+    // Channel 3 has its pedal down, channel 0 does not.
+    close(level(&out), 0.25 + 0.5);
+    assert_eq!(voices(&*processor), 2.0);
+}
+
+#[test]
+fn every_gate_of_a_region_must_be_open() {
+    let gated = Region {
+        cc_gates: Box::new([
+            CcRange {
+                controller: 1,
+                lo: 10,
+                hi: 20,
+            },
+            CcRange {
+                controller: 2,
+                lo: 0,
+                hi: 63,
+            },
+        ]),
+        ..region(0)
+    };
+    let mut controllers = Controllers::INITIAL;
+    assert!(!gated.gates_open(&controllers), "controller 1 is at 0");
+    controllers.set(1, 15);
+    assert!(gated.gates_open(&controllers));
+    controllers.set(2, 64);
+    assert!(!gated.gates_open(&controllers));
+    // A range whose high end is below its low end holds no value; no gate is always open.
+    let inverted = Region {
+        cc_gates: range(1, 20, 10),
+        ..region(0)
+    };
+    assert!((0..=127).all(|value| {
+        controllers.set(1, value);
+        !inverted.gates_open(&controllers)
+    }));
+    assert!(Region::default().gates_open(&controllers));
+}
+
+#[test]
+fn the_controllers_start_where_the_patch_sets_them() {
+    // `set_cc64=100`: the pedal-down layer plays until the controller moves, on every channel,
+    // and a reset brings every channel back there.
+    let mut bank = pedal_layers();
+    bank.controllers.set(64, 100);
+    let mut processor = sampler(bank);
+    let first = run(&mut *processor, &[press(60, 100, 5)]);
+    close(level(&first), 0.25);
+    let moved = run(&mut *processor, &[cc(64, 0, 5), press(62, 100, 5)]);
+    close(level(&moved), 0.25 + 0.5);
+    processor.reset();
+    let after_reset = run(&mut *processor, &[press(60, 100, 5)]);
+    close(level(&after_reset), 0.25);
+}
+
+#[test]
+fn all_notes_off_lifts_the_pedal_and_keeps_the_other_controllers() {
+    // Sample 0 needs the pedal down, sample 1 controller 1 at 100 or more.
+    let bank = SampleBank {
+        samples: vec![constant(0.5), constant(0.25)],
+        regions: vec![
+            Region {
+                cc_gates: range(64, 64, 127),
+                amp_veltrack: 0.0,
+                ..region(0)
+            },
+            Region {
+                cc_gates: range(1, 100, 127),
+                amp_veltrack: 0.0,
+                ..region(1)
+            },
+        ],
+        ..SampleBank::default()
+    };
+    let mut processor = sampler(bank);
+    run(
+        &mut *processor,
+        &[
+            pedal(true),
+            cc(1, 110, 0),
+            event(EventKind::AllNotesOff, 0, 0),
+        ],
+    );
+    let out = run(&mut *processor, &[event(EventKind::NoteOn, 60, 100)]);
+    close(level(&out), 0.25);
+}
+
+#[test]
+fn a_gated_release_region_reads_the_controllers_when_it_starts() {
+    // The tail needs controller 2 at 64 or more. It is read at the release, and for a key
+    // released under the pedal at the pedal's lift.
+    let mut bank = note_with_tail(0.125);
+    bank.regions[1].cc_gates = range(2, 64, 127);
+    let tail = 0.125 * gain(80);
+    let mut closed = sampler(bank.clone());
+    run(&mut *closed, &[event(EventKind::NoteOn, 60, 80)]);
+    let out = run(&mut *closed, &[event(EventKind::NoteOff, 60, 0)]);
+    close(level(&out), 0.0);
+    let mut open = sampler(bank.clone());
+    run(&mut *open, &[event(EventKind::NoteOn, 60, 80)]);
+    let out = run(
+        &mut *open,
+        &[cc(2, 127, 0), event(EventKind::NoteOff, 60, 0)],
+    );
+    close(level(&out), tail);
+    let mut pedalled = sampler(bank);
+    run(&mut *pedalled, &[event(EventKind::NoteOn, 60, 80)]);
+    run(
+        &mut *pedalled,
+        &[pedal(true), event(EventKind::NoteOff, 60, 0)],
+    );
+    let out = run(&mut *pedalled, &[cc(2, 127, 0), pedal(false)]);
+    close(level(&out), tail);
+}
+
+/// Salamander's pedal noises: a pedal-down noise on sample 0 (0.5) or 1 (0.25), chosen by
+/// `lorand`/`hirand`, which controller 64 at 127 starts, and a pedal-up noise on sample 2
+/// (0.125), which controller 64 at 0 starts. No key starts them; their keycenter is 48.
+fn pedal_noises() -> SampleBank {
+    let noise = |sample, value, rand_lo, rand_hi| Region {
+        on_key: false,
+        cc_triggers: range(64, value, value),
+        cc_gates: range(64, value, value),
+        rand_lo,
+        rand_hi,
+        pitch_keycenter: 48,
+        ..region(sample)
+    };
+    SampleBank {
+        samples: vec![constant(0.5), constant(0.25), constant(0.125)],
+        regions: vec![
+            noise(0, 127, 0.0, 0.5),
+            noise(1, 127, 0.5, 1.0),
+            noise(2, 0, 0.0, 1.0),
+        ],
+        ..SampleBank::default()
+    }
+}
+
+#[test]
+fn on_locc_region_plays_on_pedal_down() {
+    // TST-06: Salamander's pedal noises used to sound on every key and never on the pedal.
+    let mut processor = sampler(pedal_noises());
+    let down = run(&mut *processor, &[pedal(true)]);
+    // One of the two pedal-down noises, at its full level: no velocity scales it.
+    let noise = level(&down);
+    assert!(
+        (noise - 0.5).abs() < 1e-9 || (noise - 0.25).abs() < 1e-9,
+        "one noise: {noise}"
+    );
+    assert_eq!(voices(&*processor), 1.0);
+    // The pedal goes up: the pedal-up noise starts beside it.
+    let up = run(&mut *processor, &[pedal(false)]);
+    close(level(&up), noise + 0.125);
+    assert_eq!(voices(&*processor), 2.0);
+    // A key press starts none of them, and its release ends none of them.
+    let note = run(
+        &mut *processor,
+        &[
+            event(EventKind::NoteOn, 60, 100),
+            InstrumentEvent {
+                offset: BLOCK / 2,
+                ..event(EventKind::NoteOff, 60, 0)
+            },
+        ],
+    );
+    close(level(&note), noise + 0.125);
+    assert_eq!(voices(&*processor), 2.0);
+}
+
+#[test]
+fn every_controller_event_in_the_range_starts_the_region() {
+    // As the SFZ format reads `on_loccN`: a second pedal-down event starts the noise again, and
+    // all notes off ends what a controller started.
+    let mut processor = sampler(pedal_noises());
+    run(&mut *processor, &[pedal(true)]);
+    run(&mut *processor, &[pedal(true)]);
+    assert_eq!(voices(&*processor), 2.0);
+    let silenced = run(&mut *processor, &[event(EventKind::AllNotesOff, 0, 0)]);
+    close(level(&silenced), 0.0);
+    assert_eq!(voices(&*processor), 0.0);
+}
+
+#[test]
+fn the_random_range_chooses_one_controller_region() {
+    // Over several presses of the pedal both down noises play, never both at once.
+    let mut processor = sampler(pedal_noises());
+    let mut heard = Vec::new();
+    for _ in 0..16 {
+        run(&mut *processor, &[event(EventKind::AllNotesOff, 0, 0)]);
+        heard.push(level(&run(&mut *processor, &[pedal(true)])));
+        assert_eq!(voices(&*processor), 1.0);
+    }
+    let loud = heard.iter().filter(|l| (*l - 0.5).abs() < 1e-9).count();
+    let soft = heard.iter().filter(|l| (*l - 0.25).abs() < 1e-9).count();
+    assert_eq!(loud + soft, heard.len(), "{heard:?}");
+    assert!(loud > 0 && soft > 0, "{heard:?}");
+}
+
+#[test]
+fn a_controller_region_plays_at_its_keycenter() {
+    // A ramp at the output rate: at its own pitch the voice reads one source frame per output
+    // frame, whatever key was pressed last.
+    let ramp = Sample {
+        rate: RATE,
+        channels: 1,
+        data: (0..4_800_u16).map(|i| f32::from(i) / 4_800.0).collect(),
+    };
+    let bank = SampleBank {
+        samples: vec![ramp.clone()],
+        regions: vec![Region {
+            on_key: false,
+            cc_triggers: range(64, 127, 127),
+            pitch_keycenter: 48,
+            end: 4_800,
+            ..region(0)
+        }],
+        ..SampleBank::default()
+    };
+    let mut processor = sampler(bank);
+    let out = run(
+        &mut *processor,
+        &[event(EventKind::NoteOn, 72, 127), pedal(true)],
+    );
+    for frame in [100, 1_000, 2_000] {
+        close(out[frame][0], f64::from(ramp.data[frame]));
+    }
+}
+
+#[test]
+fn closed_gates_and_other_switches_keep_a_controller_region_silent() {
+    // The pedal-down noise needs controller 1 at 64 or more and the keyswitch 24.
+    let bank = SampleBank {
+        samples: vec![constant(0.5)],
+        regions: vec![Region {
+            on_key: false,
+            cc_triggers: range(64, 127, 127),
+            cc_gates: range(1, 64, 127),
+            sw_last: Some(24),
+            ..region(0)
+        }],
+        keyswitches: switches(&[(24, 25)], Some(25)),
+        ..SampleBank::default()
+    };
+    let mut processor = sampler(bank);
+    run(&mut *processor, &[pedal(true)]);
+    assert_eq!(voices(&*processor), 0.0, "controller 1 is at 0");
+    run(&mut *processor, &[cc(1, 100, 0), pedal(true)]);
+    assert_eq!(voices(&*processor), 0.0, "switch 25 is active");
+    let out = run(
+        &mut *processor,
+        &[event(EventKind::NoteOn, 24, 100), pedal(true)],
+    );
+    close(level(&out), 0.5);
+}
+
+#[test]
+fn controllers_leave_the_random_choices_of_notes_alone() {
+    // Two layers split by `lorand`/`hirand`: a patch without controller triggers draws its
+    // random numbers for key presses only, so controller events between the notes change none
+    // of its choices.
+    let bank = SampleBank {
+        samples: vec![constant(0.5), constant(0.25)],
+        regions: vec![
+            Region {
+                rand_hi: 0.5,
+                release: 0.001,
+                ..region(0)
+            },
+            Region {
+                rand_lo: 0.5,
+                release: 0.001,
+                ..region(1)
+            },
+        ],
+        ..SampleBank::default()
+    };
+    let notes = |with_controllers: bool| {
+        let mut processor = sampler(bank.clone());
+        (0..12)
+            .map(|i| {
+                if with_controllers {
+                    run(&mut *processor, &[cc(1, i * 10, 0), pedal(false)]);
+                }
+                let out = run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+                run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+                level(&out)
+            })
+            .collect::<Vec<_>>()
+    };
+    let plain = notes(false);
+    assert!(
+        plain.iter().any(|l| (*l - 0.5).abs() < 1e-9)
+            && plain.iter().any(|l| (*l - 0.25).abs() < 1e-9),
+        "both layers play: {plain:?}"
+    );
+    assert_eq!(notes(true), plain);
+}
+
+/// A fade with controller 1 over 0 to 127, in (`true`) or out, with `curve`.
+fn cc_fade(fade_in: bool, curve: CrossfadeCurve) -> Box<[CcCrossfade]> {
+    let fade = if fade_in {
+        Crossfade {
+            in_lo: 0,
+            in_hi: 127,
+            curve,
+            ..Crossfade::NONE
+        }
+    } else {
+        Crossfade {
+            out_lo: 0,
+            out_hi: 127,
+            curve,
+            ..Crossfade::NONE
+        }
+    };
+    Box::new([CcCrossfade {
+        controller: 1,
+        fade,
+    }])
+}
+
+#[test]
+fn cc_crossfade_follows_the_controller() {
+    // Dynamics on the modulation wheel (Sonatina's choirs): on a held note the soft layer
+    // (sample 0) fades out and the loud one (sample 1) in as controller 1 rises.
+    let bank = SampleBank {
+        samples: vec![constant(0.5), constant(0.25)],
+        regions: vec![
+            Region {
+                cc_crossfades: cc_fade(false, CrossfadeCurve::Power),
+                amp_veltrack: 0.0,
+                ..region(0)
+            },
+            Region {
+                cc_crossfades: cc_fade(true, CrossfadeCurve::Power),
+                amp_veltrack: 0.0,
+                ..region(1)
+            },
+        ],
+        ..SampleBank::default()
+    };
+    let mut processor = sampler(bank);
+    let start = run(&mut *processor, &[event(EventKind::NoteOn, 60, 100)]);
+    // Controller 1 starts at 0: the soft layer alone; the loud layer's voice starts silent, so
+    // that the controller can raise it.
+    close(level(&start), 0.5);
+    assert_eq!(voices(&*processor), 2.0);
+    for value in [32, 64, 127, 0] {
+        // A move within a block reaches the sounding voices from the next block.
+        run(&mut *processor, &[cc(1, value, 0)]);
+        let out = run(&mut *processor, &[]);
+        let x = f64::from(value) / 127.0;
+        close(level(&out), 0.5 * (1.0 - x).sqrt() + 0.25 * x.sqrt());
+    }
+    assert_eq!(voices(&*processor), 2.0);
+}
+
+#[test]
+fn cc_crossfade_is_block_continuous() {
+    // A layer fading in with controller 1 (gain curve): a jump of the controller from 32 to 127
+    // ramps linearly across the next block, from the old gain to the new one on its last frame,
+    // so it never clicks.
+    let bank = SampleBank {
+        samples: vec![constant(0.5)],
+        regions: vec![Region {
+            cc_crossfades: cc_fade(true, CrossfadeCurve::Gain),
+            amp_veltrack: 0.0,
+            ..region(0)
+        }],
+        ..SampleBank::default()
+    };
+    let mut processor = sampler(bank);
+    let from = 32.0 / 127.0;
+    let start = run(
+        &mut *processor,
+        &[cc(1, 32, 0), event(EventKind::NoteOn, 60, 100)],
+    );
+    close(level(&start), 0.5 * from);
+    let held = run(&mut *processor, &[cc(1, 127, 0)]);
+    for frame in &held {
+        close(frame[0], 0.5 * from);
+    }
+    let ramp = run(&mut *processor, &[]);
+    for (i, frame) in (1..=BLOCK).zip(&ramp) {
+        let at = from + (1.0 - from) * f64::from(u32::try_from(i).expect("a block")) / 2_048.0;
+        close(frame[0], 0.5 * at);
+    }
+    close(level(&ramp), 0.5);
+    let after = run(&mut *processor, &[]);
+    for frame in &after {
+        close(frame[0], 0.5);
+    }
+}
+
+#[test]
+fn cc_volume_changes_the_level_in_db() {
+    // `volume_onccN` (`gain_ccN`): -12 dB at 127, in proportion to the value.
+    let bank = SampleBank {
+        samples: vec![constant(0.5)],
+        regions: vec![Region {
+            cc_volume: Box::new([CcDepth {
+                controller: 1,
+                depth: -12.0,
+            }]),
+            amp_veltrack: 0.0,
+            ..region(0)
+        }],
+        ..SampleBank::default()
+    };
+    for value in [0, 64, 127] {
+        let mut processor = sampler(bank.clone());
+        let out = run(
+            &mut *processor,
+            &[cc(1, value, 0), event(EventKind::NoteOn, 60, 100)],
+        );
+        let db = -12.0 * f64::from(value) / 127.0;
+        close(level(&out), 0.5 * 10_f64.powf(db / 20.0));
+    }
+}
+
+#[test]
+fn cc_amplitude_scales_the_level() {
+    // `amplitude_onccN`: a harpsichord's release-level control (`amplitude_oncc12=100`) is
+    // silent at 0 and full at 127; 50 % halves the level at 127. A voice starts even when
+    // silent.
+    for (depth, value) in [(100.0, 0), (100.0, 64), (100.0, 127), (50.0, 127)] {
+        let bank = SampleBank {
+            samples: vec![constant(0.5)],
+            regions: vec![Region {
+                cc_amplitude: Box::new([CcDepth {
+                    controller: 12,
+                    depth,
+                }]),
+                amp_veltrack: 0.0,
+                ..region(0)
+            }],
+            ..SampleBank::default()
+        };
+        let mut processor = sampler(bank);
+        let out = run(
+            &mut *processor,
+            &[cc(12, value, 0), event(EventKind::NoteOn, 60, 100)],
+        );
+        close(level(&out), 0.5 * depth / 100.0 * f64::from(value) / 127.0);
+        assert_eq!(voices(&*processor), 1.0);
+    }
+}
+
+#[test]
+fn controller_gains_multiply() {
+    let both = |controller, fade_in| CcCrossfade {
+        controller,
+        fade: if fade_in {
+            Crossfade {
+                in_lo: 0,
+                in_hi: 127,
+                curve: CrossfadeCurve::Gain,
+                ..Crossfade::NONE
+            }
+        } else {
+            Crossfade {
+                out_lo: 0,
+                out_hi: 127,
+                curve: CrossfadeCurve::Gain,
+                ..Crossfade::NONE
+            }
+        },
+    };
+    let depth = |controller, depth| CcDepth { controller, depth };
+    let modulated = Region {
+        cc_crossfades: Box::new([both(1, true), both(2, false)]),
+        cc_amplitude: Box::new([depth(12, 100.0), depth(13, 50.0)]),
+        cc_volume: Box::new([depth(1, 6.0), depth(2, -6.0)]),
+        ..region(0)
+    };
+    let mut controllers = Controllers::INITIAL;
+    for (number, value) in [(1, 100), (2, 27), (12, 127), (13, 64)] {
+        controllers.set(number, value);
+    }
+    let v = |n: u8| f64::from(controllers.value(n)) / 127.0;
+    let crossfades = v(1) * (1.0 - v(2));
+    let amplitude = v(12) * 0.5 * v(13);
+    let db = 6.0 * v(1) - 6.0 * v(2);
+    close(
+        modulated.controller_gain(&controllers),
+        crossfades * amplitude * 10_f64.powf(db / 20.0),
+    );
+    // A region no controller changes gains exactly 1.
+    assert_eq!(Region::default().controller_gain(&controllers), 1.0);
+}
+
+#[test]
+fn the_amplitude_opcode_scales_the_region() {
+    for (amplitude, voices_started) in [(100.0, 1.0), (50.0, 1.0), (0.0, 0.0)] {
+        let bank = SampleBank {
+            samples: vec![constant(0.5)],
+            regions: vec![Region {
+                amplitude,
+                ..region(0)
+            }],
+            ..SampleBank::default()
+        };
+        let mut processor = sampler(bank);
+        let out = run(&mut *processor, &[event(EventKind::NoteOn, 60, 100)]);
+        close(level(&out), 0.5 * amplitude / 100.0 * gain(100));
+        assert_eq!(voices(&*processor), voices_started, "{amplitude} %");
+    }
 }

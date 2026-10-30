@@ -47,17 +47,45 @@
 //!   one is stolen when all sound (a releasing one first).
 //! - **Controls.** Sustain pedal (CC 64), volume (CC 7), expression (CC 11), pitch bend
 //!   (±2 semitones) and all notes off.
+//! - **Controller table.** The sampler keeps the last value of every controller on each of the
+//!   16 MIDI channels, preallocated, starting where the patch sets them
+//!   ([`SampleBank::controllers`]) and back there on a reset. All notes off lifts the sustain
+//!   pedal, so it sets controller 64 to 0 on every channel; the other values stay. Sustain,
+//!   volume and expression still act on every channel, and start up and full whatever the
+//!   patch sets.
+//! - **Controller gates.** A region with `loccN`/`hiccN` starts only while the controllers of
+//!   the note's channel lie in its ranges ([`Region::gates_open`]), read when the region would
+//!   start: at the key press, at the key release (for a release region under the pedal, at the
+//!   pedal's lift) or at the controller event. A voice that sounds keeps sounding when a
+//!   controller leaves the range, as in the reference player sfizz.
+//! - **Controller triggers.** A region with `on_loccN`/`on_hiccN` starts on every controller
+//!   event of the range whose gates and keyswitch let it, as the SFZ format reads them:
+//!   Salamander's pedal noises start when the pedal goes down and up. It plays at its
+//!   `pitch_keycenter`, without a velocity gain, chooses by `lorand`/`hirand` (a random number is
+//!   drawn only for an event that starts a region, so controllers do not change the random
+//!   choices of patches without such regions) and ignores the round robin. No key release ends
+//!   it: it plays to its sample's end or until all notes off.
+//! - **Controller crossfades and gains.** `xfin_loccN`, `xfout_loccN` and their kin fade a
+//!   region in and out with a controller, `volume_onccN` (`gain_ccN`) changes its level in dB and
+//!   `amplitude_onccN` scales it ([`Region::controller_gain`]), on the voice's channel and while
+//!   it sounds: a swell on controller 1 crossfades the dynamic layers of a held chord. At each
+//!   block start every voice aims at the gain the controllers give it then and reaches it on the
+//!   block's last frame with a linear ramp, so a controller step never clicks; a controller that
+//!   moves within a block reaches sounding voices from the next one. A voice starts at the gain
+//!   of the controllers at its start, and starts even when that gain is 0, since the controller
+//!   may rise while it is held.
 //!
-//! Not supported, and not offered as parameters: CC-driven layers and crossfades, filters,
-//! per-region pan, sample streaming. A patch that uses them plays without them (the loader
-//! reports the opcodes it ignored). A region that no key starts ([`Region::on_key`] is false: a
-//! key of -1, or a region a controller starts) is never started by a key press or release.
+//! Not supported, and not offered as parameters: filters, per-region pan, sample streaming,
+//! high-resolution controllers (`lohdccN` and the like). A patch that uses them plays without
+//! them (the loader reports the opcodes it ignored). A region that no key starts
+//! ([`Region::on_key`] is false: a key of -1, or a region a controller starts) is never started
+//! by a key press or release.
 
 use std::sync::Arc;
 
 use super::DEFAULT_SPEC;
 use super::params::float;
-use crate::bank::{LoopMode, OffMode, Region, SampleBank, Trigger};
+use crate::bank::{Controllers, LoopMode, OffMode, Region, SampleBank, Trigger};
 use crate::filters::db_to_amp;
 use crate::processor::{
     BlockContext, DeviceState, EventKind, InstrumentEvent, ParamSlots, ProcessSpec, Processor,
@@ -74,6 +102,10 @@ const RELEASE_SCALE: usize = 2;
 
 /// Voices that can sound at once.
 const MAX_VOICES: usize = 64;
+/// MIDI channels, each with its own controller values.
+const CHANNELS: usize = 16;
+/// The sustain pedal's controller.
+const SUSTAIN: u8 = 64;
 /// Shortest fade-in, in seconds: prevents clicks on regions without an attack.
 const MIN_ATTACK: f64 = 0.0005;
 /// Shortest fade-out, in seconds: prevents clicks on regions without a release.
@@ -108,7 +140,9 @@ struct Voice {
     active: bool,
     region: usize,
     sample: usize,
-    key: u8,
+    /// The key that started the voice; `None` for a voice a controller started, which no key
+    /// release ends.
+    key: Option<u8>,
     channel: u8,
     /// Position in source frames.
     pos: f64,
@@ -116,6 +150,13 @@ struct Voice {
     step: f64,
     /// Region gain times the gain the note's velocity gives the region.
     gain: f64,
+    /// The gain the controllers give the region ([`Region::controller_gain`]), ramped
+    /// linearly from block to block.
+    cc_gain: f64,
+    /// The change of `cc_gain` per frame in this block.
+    cc_step: f64,
+    /// The value `cc_gain` reaches on this block's last frame.
+    cc_target: f64,
     level: f64,
     attack_step: f64,
     release_step: f64,
@@ -131,11 +172,14 @@ impl Voice {
         active: false,
         region: 0,
         sample: 0,
-        key: 0,
+        key: None,
         channel: 0,
         pos: 0.0,
         step: 0.0,
         gain: 0.0,
+        cc_gain: 1.0,
+        cc_step: 0.0,
+        cc_target: 1.0,
         level: 0.0,
         attack_step: 0.0,
         release_step: 0.0,
@@ -144,6 +188,16 @@ impl Voice {
         off_by: 0,
         age: 0,
     };
+}
+
+/// What starts a voice.
+#[derive(Debug, Clone, Copy)]
+enum Start {
+    /// A key press or release: the key, the velocity it was pressed with and its channel.
+    Key { key: u8, velocity: u8, channel: u8 },
+    /// A controller event on a channel: the region plays at its `pitch_keycenter`, and no
+    /// velocity changes its gain.
+    Controller { channel: u8 },
 }
 
 /// What selects the `trigger=release` regions of a key release.
@@ -168,6 +222,8 @@ pub(crate) struct Sampler {
     /// The keys released while the sustain pedal was down: their release regions start when
     /// the pedal lifts.
     released_under_pedal: [Option<KeyRelease>; 128],
+    /// The last value of every controller, per MIDI channel.
+    controllers: [Controllers; CHANNELS],
     last_switch: Option<u8>,
     round_robin: u32,
     rng: u32,
@@ -190,6 +246,7 @@ impl Sampler {
             key_velocity: [0; 128],
             key_down: [false; 128],
             released_under_pedal: [None; 128],
+            controllers: [Controllers::INITIAL; CHANNELS],
             last_switch: None,
             round_robin: 0,
             rng: RNG_SEED,
@@ -206,6 +263,7 @@ impl Sampler {
         self.key_velocity = [0; 128];
         self.key_down = [false; 128];
         self.released_under_pedal = [None; 128];
+        self.controllers = [self.initial_controllers(); CHANNELS];
         self.last_switch = self.bank.as_ref().and_then(|bank| bank.keyswitches.default);
         self.round_robin = 0;
         self.rng = RNG_SEED;
@@ -213,6 +271,22 @@ impl Sampler {
         self.volume_cc = 1.0;
         self.expression_cc = 1.0;
         self.pedal = false;
+    }
+
+    /// Where the controllers of every channel start: as the patch sets them.
+    fn initial_controllers(&self) -> Controllers {
+        self.bank
+            .as_ref()
+            .map_or(Controllers::INITIAL, |bank| bank.controllers)
+    }
+
+    /// The controller values of `channel`; the initial ones for a channel above 15, which is
+    /// no MIDI channel.
+    fn controllers_of(&self, channel: u8) -> Controllers {
+        self.controllers
+            .get(usize::from(channel))
+            .copied()
+            .unwrap_or_else(|| self.initial_controllers())
     }
 
     /// A uniform number in `[0, 1)` (xorshift32).
@@ -237,6 +311,10 @@ impl Sampler {
                 self.key_down = [false; 128];
                 // Everything stops: the releases under the pedal start no tail.
                 self.released_under_pedal = [None; 128];
+                // The pedal is up, and the controllers say so too.
+                for controllers in &mut self.controllers {
+                    controllers.set(SUSTAIN, 0);
+                }
                 for voice in &mut self.voices {
                     if voice.active {
                         start_release(voice, self.spec.sample_rate, CHOKE_RELEASE);
@@ -247,11 +325,18 @@ impl Sampler {
     }
 
     fn control_change(&mut self, event: &InstrumentEvent) {
-        let value = f64::from(event.value.clamp(0, 127)) / 127.0;
-        match event.number {
+        let number = event.number;
+        let clamped = event.value.clamp(0, 127);
+        // Written first, so the gates of the regions this event starts read the new value.
+        let cc = u8::try_from(clamped).unwrap_or(127);
+        if let Some(controllers) = self.controllers.get_mut(usize::from(event.channel)) {
+            controllers.set(number, cc);
+        }
+        let value = f64::from(clamped) / 127.0;
+        match number {
             7 => self.volume_cc = value,
             11 => self.expression_cc = value,
-            64 => {
+            SUSTAIN => {
                 let down = event.value >= 64;
                 if self.pedal && !down {
                     let rate = self.spec.sample_rate;
@@ -268,6 +353,33 @@ impl Sampler {
                 self.pedal = down;
             }
             _ => {}
+        }
+        self.start_controller_regions(event.channel, number, cc);
+    }
+
+    /// Starts the regions that an event setting controller `number` to `value` on `channel`
+    /// starts ([`Region::starts_on_controller`]), whose gates and keyswitch let them and whose
+    /// random range holds the number drawn for this event. The number is drawn only once a
+    /// region qualifies, so a patch without controller triggers keeps its random sequence.
+    fn start_controller_regions(&mut self, channel: u8, number: u8, value: u8) {
+        let Some(bank) = self.bank.clone() else {
+            return;
+        };
+        let controllers = self.controllers_of(channel);
+        let mut roll = None;
+        for (index, region) in bank.regions.iter().enumerate() {
+            if !region.starts_on_controller(number, value)
+                || !region.gates_open(&controllers)
+                || !in_switch(region, self.last_switch)
+            {
+                continue;
+            }
+            let roll = *roll.get_or_insert_with(|| self.random());
+            if !(region.rand_lo..region.rand_hi).contains(&roll) {
+                continue;
+            }
+            self.choke(&bank, region.group);
+            self.start_voice(&bank, index, region, Start::Controller { channel });
         }
     }
 
@@ -290,10 +402,17 @@ impl Sampler {
         }
         let roll = self.random();
         let counter = self.round_robin;
+        let controllers = self.controllers_of(event.channel);
+        let start = Start::Key {
+            key,
+            velocity: event.velocity,
+            channel: event.channel,
+        };
         let mut advanced = false;
         for (index, region) in bank.regions.iter().enumerate() {
             if !region.trigger.starts_on_press(another_key_down)
                 || !matches_note(region, key, event.velocity, self.last_switch)
+                || !region.gates_open(&controllers)
                 || !(region.rand_lo..region.rand_hi).contains(&roll)
                 || !in_sequence(region, counter)
             {
@@ -301,7 +420,7 @@ impl Sampler {
             }
             advanced |= region.seq_length > 1;
             self.choke(&bank, region.group);
-            self.start_voice(&bank, index, region, event);
+            self.start_voice(&bank, index, region, start);
         }
         if advanced {
             self.round_robin = self.round_robin.wrapping_add(1);
@@ -329,7 +448,7 @@ impl Sampler {
         for voice in &mut self.voices {
             if !voice.active
                 || voice.releasing
-                || voice.key != key
+                || voice.key != Some(key)
                 || voice.channel != event.channel
             {
                 continue;
@@ -392,7 +511,7 @@ impl Sampler {
     }
 
     /// Starts the regions of a trigger that `starts` accepts (the release triggers) that
-    /// `release` of `key` selects.
+    /// `release` of `key` selects and whose gates the controllers of `channel` open now.
     fn start_release_regions(
         &mut self,
         bank: &SampleBank,
@@ -401,19 +520,18 @@ impl Sampler {
         release: KeyRelease,
         starts: fn(Trigger) -> bool,
     ) {
-        let event = InstrumentEvent {
-            offset: 0,
-            kind: EventKind::NoteOff,
-            pitch: key,
+        let controllers = self.controllers_of(channel);
+        let start = Start::Key {
+            key,
             velocity: release.velocity,
             channel,
-            value: 0,
-            number: 0,
         };
         for (index, region) in bank.regions.iter().enumerate() {
-            if starts(region.trigger) && matches_note(region, key, release.velocity, release.switch)
+            if starts(region.trigger)
+                && matches_note(region, key, release.velocity, release.switch)
+                && region.gates_open(&controllers)
             {
-                self.start_voice(bank, index, region, &event);
+                self.start_voice(bank, index, region, start);
             }
         }
     }
@@ -435,40 +553,47 @@ impl Sampler {
         }
     }
 
-    fn start_voice(
-        &mut self,
-        bank: &SampleBank,
-        index: usize,
-        region: &Region,
-        event: &InstrumentEvent,
-    ) {
+    fn start_voice(&mut self, bank: &SampleBank, index: usize, region: &Region, start: Start) {
         let Some(sample) = bank.samples.get(region.sample) else {
             return;
         };
         if sample.frames() == 0 || self.spec.sample_rate == 0 {
             return;
         }
+        let (key, pitch, velocity_gain, channel) = match start {
+            Start::Key {
+                key,
+                velocity,
+                channel,
+            } => (Some(key), key, region.velocity_gain(velocity), channel),
+            Start::Controller { channel } => (None, region.pitch_keycenter, 1.0, channel),
+        };
         let rate = f64::from(self.spec.sample_rate);
-        let cents = (f64::from(event.pitch) - f64::from(region.pitch_keycenter)) * 100.0
-            + region.tune_cents;
+        let cents =
+            (f64::from(pitch) - f64::from(region.pitch_keycenter)) * 100.0 + region.tune_cents;
         let step = f64::from(sample.rate) / rate * (cents / 1200.0).exp2();
-        let gain = db_to_amp(region.volume_db) * region.velocity_gain(event.velocity);
+        let gain = db_to_amp(region.volume_db) * (region.amplitude / 100.0) * velocity_gain;
         if gain.is_nan() || gain <= 0.0 {
             // A voice that would stay silent is not started. A key press has already switched
-            // off the region's exclusive group and counted its round robin (`note_on`).
+            // off the region's exclusive group and counted its round robin (`note_on`). The
+            // controllers are not asked: they can still raise a voice they start silent.
             return;
         }
+        let cc_gain = region.controller_gain(&self.controllers_of(channel));
         let attack = region.attack.max(MIN_ATTACK);
         self.clock = self.clock.wrapping_add(1);
         let voice = Voice {
             active: true,
             region: index,
             sample: region.sample,
-            key: event.pitch,
-            channel: event.channel,
+            key,
+            channel,
             pos: frames_f64(region.offset),
             step,
             gain,
+            cc_gain,
+            cc_step: 0.0,
+            cc_target: cc_gain,
             level: 0.0,
             attack_step: 1.0 / (attack * rate),
             release_step: 0.0,
@@ -559,7 +684,8 @@ impl Sampler {
                     },
                     end,
                 );
-                let amp = voice.gain * voice.level * master;
+                voice.cc_gain += voice.cc_step;
+                let amp = voice.gain * voice.cc_gain * voice.level * master;
                 frame[0] += l * amp * pan_l;
                 frame[1] += r * amp * pan_r;
                 voice.pos += step;
@@ -614,7 +740,12 @@ fn matches_note(region: &Region, key: u8, velocity: u8, switch: Option<u8>) -> b
     region.on_key
         && (region.key_lo..=region.key_hi).contains(&key)
         && (region.vel_lo..=region.vel_hi).contains(&velocity)
-        && region.sw_last.is_none_or(|sw| Some(sw) == switch)
+        && in_switch(region, switch)
+}
+
+/// Whether `region` plays with `switch` as the last keyswitch: it names none, or that one.
+fn in_switch(region: &Region, switch: Option<u8>) -> bool {
+    region.sw_last.is_none_or(|sw| Some(sw) == switch)
 }
 
 /// Whether `region` is the round-robin position that `counter` selects.
@@ -688,6 +819,7 @@ impl Processor for Sampler {
             return;
         };
         let n = buffer.len();
+        self.aim_controller_gains(n);
         let events = ctx.events;
         let (mut next, mut pos) = (0, 0);
         while pos < n {
@@ -704,6 +836,7 @@ impl Processor for Sampler {
             }
             pos = end;
         }
+        self.settle_controller_gains();
     }
 
     fn reset(&mut self) {
@@ -724,6 +857,36 @@ impl Processor for Sampler {
 }
 
 impl Sampler {
+    /// Block start: aims the controller gain of every sounding voice at the gain the
+    /// controllers of its channel give its region now, reached linearly on the last of the
+    /// block's `frames`.
+    fn aim_controller_gains(&mut self, frames: usize) {
+        let Some(bank) = self.bank.as_deref() else {
+            return;
+        };
+        let frames = frames_f64(frames.max(1));
+        for voice in self.voices.iter_mut().filter(|voice| voice.active) {
+            let Some(region) = bank.regions.get(voice.region) else {
+                continue;
+            };
+            let controllers = self
+                .controllers
+                .get(usize::from(voice.channel))
+                .unwrap_or(&bank.controllers);
+            voice.cc_target = region.controller_gain(controllers);
+            voice.cc_step = (voice.cc_target - voice.cc_gain) / frames;
+        }
+    }
+
+    /// Block end: every voice's controller gain is exactly at its target, without the rounding
+    /// of the ramp.
+    fn settle_controller_gains(&mut self) {
+        for voice in &mut self.voices {
+            voice.cc_gain = voice.cc_target;
+            voice.cc_step = 0.0;
+        }
+    }
+
     fn apply_params(&mut self) {
         if let Some(settings) = Settings::from_slots(&self.params) {
             self.settings = Some(settings);

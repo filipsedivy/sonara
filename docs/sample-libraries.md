@@ -92,9 +92,10 @@ follows the velocity as its `amp_veltrack` says: at the default 100 % the gain i
 the response is inverted, as the SFZ format and sfizz define it. Velocity crossfades (`xfin_lovel`/`xfin_hivel`, `xfout_lovel`/`xfout_hivel`, with
 `xf_velcurve` `power`, the default, or `gain`) fade a layer in and out over a range of velocities,
 so dynamic layers written that way blend instead of all sounding at full level on every note; a
-layer a note's velocity leaves silent starts no voice. MIDI: notes, sustain pedal (CC 64), volume
-(CC 7), expression (CC 11), pitch bend (±2 semitones) and all notes off. Parameters: volume, pan,
-release scale, instrument, and instrument type, articulation and dynamics (below).
+layer a note's velocity leaves silent starts no voice. `amplitude` scales a region's level in
+percent. MIDI: notes, sustain pedal (CC 64), volume (CC 7), expression (CC 11), the controllers a
+patch uses (below), pitch bend (±2 semitones) and all notes off. Parameters: volume, pan, release
+scale, instrument, and instrument type, articulation and dynamics (below).
 
 Release samples start when the key is released; for a key released while the sustain pedal is
 down, they start when the pedal lifts, at the velocity the key was pressed with and with the
@@ -120,8 +121,39 @@ patches (`off_mode=time off_time=1`) overlap each note with the next for a secon
 cutting it off. A switch-off never makes a fade already under way longer, and the sustain pedal
 does not hold a note its group has switched off. `off_curve` and `off_shape` are not supported.
 
-Not supported: CC-driven layers and crossfades (for example Sonatina's dynamics on CC 1 and vibrato
-on CC 21), key crossfades, velocity curves (`amp_velcurve_N`), filters, per-region pan, streaming.
+The sampler keeps the last value of every MIDI controller on each of the 16 channels. They start
+at 0, volume (CC 7) and expression (CC 11) at 127, or where the patch sets them with `set_ccN`,
+and a reset of the sampler brings them back there; all notes off lifts the sustain pedal, so CC 64
+reads 0 afterwards. `set_ccN` sets only what the patch's own controller opcodes read: the volume and
+expression the sampler applies start full, and the pedal up, whatever the patch sets. A patch uses
+the controllers in four ways, each on the channel of its note:
+
+- **Gates** (`loccN`/`hiccN`): a region plays only while controller N lies in its range when the
+  region starts, at the key press, at the key release for a release sample (at the pedal's lift
+  for a key released under the pedal) or at the controller event. A note that already sounds is
+  not cut off when the controller moves. Piano layers for pedal up and pedal down are written
+  this way.
+- **Triggers** (`on_loccN`/`on_hiccN`): a controller event in the range starts the region instead
+  of a key, at the sample's own pitch and full level, chosen by `lorand`/`hirand` like any region
+  but outside the round robin. Every such event starts it again. A key release does not end it;
+  it plays to its end or until all notes off. Salamander's pedal noises play this way when the
+  pedal goes down and when it comes up.
+- **Crossfades** (`xfin_loccN`/`xfin_hiccN`, `xfout_loccN`/`xfout_hiccN`, with `xf_cccurve`
+  `power`, the default, or `gain`): a region fades in and out with controller N, also while it
+  sounds, so raising CC 1 crossfades the dynamic layers of a held chord (Sonatina's choirs). A
+  layer the controller fades out entirely still starts its voice, silently, so that the
+  controller can bring it in.
+- **Level** (`volume_onccN`, also written `gain_ccN`, in dB at value 127; `amplitude_onccN` in
+  percent at value 127): the region's level follows the controller, also while it sounds.
+
+Crossfades and level changes reach sounding notes over one audio block with a linear ramp, so a
+jump of the controller does not click; a controller event takes effect on sounding notes from the
+block after it. The high-resolution forms (`lohdccN`, `on_lohdccN`, `set_hdccN` and the like) and
+controllers above 127 are not supported.
+
+Not supported: key crossfades, velocity curves (`amp_velcurve_N`), filters, per-region pan,
+streaming, and controller modulation of anything but the level (for example Sonatina's vibrato on
+CC 21 and filter cutoff on CC 1).
 The loader reports unsupported opcodes in the load warning when a patch is rendered, together with
 the values the sampler does not play (unknown `trigger` values, which play as `attack`, unknown
 `loop_mode` values, which play as `no_loop`, and unknown `off_mode` values, which play as if the
@@ -129,8 +161,8 @@ opcode were absent) and the headers whose opcodes it skips
 (`<curve>`, `<effect>`, `<midi>`, `<sample>`). A keyswitch key selects an articulation; it makes no
 sound unless a region of the patch also covers that key, and then it does both. Regions that the
 patch starts from a controller instead of a key (`on_locc`/`on_hicc`, such as Salamander's pedal
-noises) or that have a key of -1 (`key`, `lokey` or `hikey`) never play on a key; until the sampler
-plays controller triggers they stay silent.
+noises) or that have a key of -1 (`key`, `lokey` or `hikey`) never play on a key; the controller
+starts the former (above).
 
 A region whose sample file is missing, or that names a generator other than `*silence` (`*sine`,
 `*saw` and the like), is left out: the rest of the patch plays, and the load warning names each

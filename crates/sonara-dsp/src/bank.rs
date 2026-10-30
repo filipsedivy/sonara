@@ -7,6 +7,8 @@
 //! and the input of the sampler processor. A bank is immutable once built and shared through
 //! an [`Arc`](std::sync::Arc), so the render thread never frees or grows it (RT-02, RT-09).
 
+use crate::filters::db_to_amp;
+
 /// What starts a region (SFZ `trigger`), as the SFZ format and the reference player sfizz read
 /// it. "Another key down" counts the keys held down that are no keyswitch keys (see
 /// [`Trigger::starts_on_press`]).
@@ -91,7 +93,8 @@ impl OffMode {
     pub const DEFAULT_TIME: f64 = 0.006;
 }
 
-/// The shape of a velocity crossfade (SFZ `xf_velcurve`).
+/// The shape of a crossfade (SFZ `xf_velcurve` for velocity crossfades, `xf_cccurve` for
+/// controller crossfades).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CrossfadeCurve {
     /// Equal power: the gain is the square root of the position in the fade, so two layers that
@@ -113,37 +116,41 @@ impl CrossfadeCurve {
     }
 }
 
-/// How a region fades in and out with the velocity of the note that starts it (SFZ
-/// `xfin_lovel`/`xfin_hivel`, `xfout_lovel`/`xfout_hivel` and `xf_velcurve`), as the SFZ format
-/// describes it; the gains match the reference player sfizz's tests.
+/// How a region fades in and out over the values 0 to 127 of the note's velocity (SFZ
+/// `xfin_lovel`/`xfin_hivel`, `xfout_lovel`/`xfout_hivel` and `xf_velcurve`) or of a controller
+/// (SFZ `xfin_loccN`/`xfin_hiccN`, `xfout_loccN`/`xfout_hiccN` and `xf_cccurve`), as the SFZ
+/// format describes it; the velocity gains match the reference player sfizz's tests.
 ///
-/// The fade-in is silent at velocities at or below `in_lo` and full at or above `in_hi`; the
+/// The fade-in is silent at values at or below `in_lo` and full at or above `in_hi`; the
 /// fade-out is full at or below `out_lo` and silent at or above `out_hi`. In between, the gain
-/// follows `curve` over the position in the fade, `(velocity - lo) / (hi - lo)`. Where the two
+/// follows `curve` over the position in the fade, `(value - lo) / (hi - lo)`. Where the two
 /// bounds of a fade meet or cross, the low bound decides: such a fade-in is silent below `in_lo`
 /// and full from it, and such a fade-out is full up to `out_lo` and silent above it. So
 /// `xfin_lovel=70` alone starts the region at velocity 70, and `xfout_hivel=90` alone, whose
 /// `xfout_lovel` stays 127, fades nothing, as in sfizz.
 ///
-/// Two edges keep the SFZ format's bounds where sfizz differs: a fade whose high bound is 127
-/// reaches its end at 127 (sfizz ends it one velocity early), and a fade-out of no width is silent
-/// above its velocity (sfizz fades nothing).
+/// Two edges keep the SFZ format's bounds where sfizz differs for velocities: a fade whose high
+/// bound is 127 reaches its end at 127 (sfizz ends it one velocity early), and a fade-out of no
+/// width is silent above its value (sfizz fades nothing).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct VelocityCrossfade {
-    /// The velocity at and below which the fade-in is silent (SFZ `xfin_lovel`, default 0).
+pub struct Crossfade {
+    /// The value at and below which the fade-in is silent (SFZ `xfin_lovel`, `xfin_loccN`;
+    /// default 0).
     pub in_lo: u8,
-    /// The velocity from which the fade-in is full (SFZ `xfin_hivel`, default 0).
+    /// The value from which the fade-in is full (SFZ `xfin_hivel`, `xfin_hiccN`; default 0).
     pub in_hi: u8,
-    /// The velocity up to which the fade-out is full (SFZ `xfout_lovel`, default 127).
+    /// The value up to which the fade-out is full (SFZ `xfout_lovel`, `xfout_loccN`; default
+    /// 127).
     pub out_lo: u8,
-    /// The velocity from which the fade-out is silent (SFZ `xfout_hivel`, default 127).
+    /// The value from which the fade-out is silent (SFZ `xfout_hivel`, `xfout_hiccN`; default
+    /// 127).
     pub out_hi: u8,
-    /// The shape of both fades (SFZ `xf_velcurve`).
+    /// The shape of both fades (SFZ `xf_velcurve`, `xf_cccurve`).
     pub curve: CrossfadeCurve,
 }
 
-impl VelocityCrossfade {
-    /// No crossfade, the SFZ defaults: full at every velocity.
+impl Crossfade {
+    /// No crossfade, the SFZ defaults: full at every value.
     pub const NONE: Self = Self {
         in_lo: 0,
         in_hi: 0,
@@ -152,48 +159,133 @@ impl VelocityCrossfade {
         curve: CrossfadeCurve::Power,
     };
 
-    /// The gain of the crossfade at `velocity`, from 0 (silent) to 1 (full): the fade-in's gain
+    /// The gain of the crossfade at `value`, from 0 (silent) to 1 (full): the fade-in's gain
     /// times the fade-out's.
     #[must_use]
-    pub fn gain(self, velocity: u8) -> f64 {
-        self.fade_in(velocity) * self.fade_out(velocity)
+    pub fn gain(self, value: u8) -> f64 {
+        self.fade_in(value) * self.fade_out(value)
     }
 
-    fn fade_in(self, velocity: u8) -> f64 {
+    fn fade_in(self, value: u8) -> f64 {
         let (lo, hi) = (self.in_lo, self.in_hi);
-        if velocity < lo {
+        if value < lo {
             0.0
-        } else if velocity >= hi {
+        } else if value >= hi {
             1.0
         } else {
-            // lo <= velocity < hi: the fade spans at least one step.
-            self.curve.gain(position(velocity, lo, hi))
+            // lo <= value < hi: the fade spans at least one step.
+            self.curve.gain(position(value, lo, hi))
         }
     }
 
-    fn fade_out(self, velocity: u8) -> f64 {
+    fn fade_out(self, value: u8) -> f64 {
         let (lo, hi) = (self.out_lo, self.out_hi);
-        if velocity <= lo {
+        if value <= lo {
             1.0
-        } else if velocity >= hi {
+        } else if value >= hi {
             0.0
         } else {
-            // lo < velocity < hi: the fade spans at least two steps.
-            self.curve.gain(1.0 - position(velocity, lo, hi))
+            // lo < value < hi: the fade spans at least two steps.
+            self.curve.gain(1.0 - position(value, lo, hi))
         }
     }
 }
 
-impl Default for VelocityCrossfade {
+impl Default for Crossfade {
     fn default() -> Self {
         Self::NONE
     }
 }
 
-/// Where `velocity` lies between `lo` (0) and `hi` (1); the callers keep `lo <= velocity < hi`,
-/// so the divisor is positive.
-fn position(velocity: u8, lo: u8, hi: u8) -> f64 {
-    (f64::from(velocity) - f64::from(lo)) / (f64::from(hi) - f64::from(lo))
+/// Where `value` lies between `lo` (0) and `hi` (1); the callers keep `lo <= value < hi`, so the
+/// divisor is positive.
+fn position(value: u8, lo: u8, hi: u8) -> f64 {
+    (f64::from(value) - f64::from(lo)) / (f64::from(hi) - f64::from(lo))
+}
+
+/// The last value of each of the 128 MIDI controllers, 0 to 127: what a region's controller
+/// gates, triggers, crossfades and gains read.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Controllers([u8; 128]);
+
+impl Controllers {
+    /// Where the controllers start when a patch sets none (SFZ `set_ccN`): at 0, as the SFZ
+    /// format starts them, except volume (7) and expression (11), which start at 127 because
+    /// the sampler plays them full until a controller event arrives.
+    pub const INITIAL: Self = {
+        let mut values = [0; 128];
+        values[7] = 127;
+        values[11] = 127;
+        Self(values)
+    };
+
+    /// The value of controller `number`; 0 for a number above 127, which names no MIDI
+    /// controller.
+    #[must_use]
+    pub fn value(&self, number: u8) -> u8 {
+        self.0.get(usize::from(number)).copied().unwrap_or(0)
+    }
+
+    /// Sets controller `number` to `value`, read as 127 when above. A number above 127 names no
+    /// MIDI controller and is ignored.
+    pub fn set(&mut self, number: u8, value: u8) {
+        if let Some(slot) = self.0.get_mut(usize::from(number)) {
+            *slot = value.min(127);
+        }
+    }
+}
+
+impl Default for Controllers {
+    fn default() -> Self {
+        Self::INITIAL
+    }
+}
+
+/// A range of values of one MIDI controller: a region's gate (SFZ `loccN`/`hiccN`) or trigger
+/// (SFZ `on_loccN`/`on_hiccN`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CcRange {
+    /// The controller number, 0 to 127.
+    pub controller: u8,
+    /// The lowest value in the range.
+    pub lo: u8,
+    /// The highest value in the range; a range whose `hi` is below its `lo` holds no value.
+    pub hi: u8,
+}
+
+impl CcRange {
+    /// Whether `value` lies in the range, both ends included.
+    #[must_use]
+    pub fn contains(self, value: u8) -> bool {
+        (self.lo..=self.hi).contains(&value)
+    }
+}
+
+/// How a region fades in and out with one controller (SFZ `xfin_loccN`, `xfin_hiccN`,
+/// `xfout_loccN`, `xfout_hiccN` and `xf_cccurve`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CcCrossfade {
+    /// The controller number, 0 to 127.
+    pub controller: u8,
+    /// The fades over the controller's values.
+    pub fade: Crossfade,
+}
+
+/// How far one controller moves a region's level at its full value 127, in proportion to the
+/// value: decibels for [`Region::cc_volume`], a percentage for [`Region::cc_amplitude`].
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct CcDepth {
+    /// The controller number, 0 to 127.
+    pub controller: u8,
+    /// The change at controller value 127.
+    pub depth: f64,
+}
+
+impl CcDepth {
+    /// The change at the controller's value in `controllers`: `depth * value / 127`.
+    fn at(self, controllers: &Controllers) -> f64 {
+        self.depth * f64::from(controllers.value(self.controller)) / 127.0
+    }
 }
 
 /// One decoded sample: interleaved `f32` frames at the file's own rate.
@@ -229,8 +321,9 @@ pub struct Region {
     pub key_hi: u8,
     /// Whether a key starts the region: a press for an attack region, a release for a
     /// release region. `false` when the patch writes a key of -1 ("no key"), or when a
-    /// controller starts the region instead (SFZ `on_loccN`/`on_hiccN`). A flag rather than an
-    /// empty key range, so the range keeps its meaning (TYP-03).
+    /// controller starts the region instead (SFZ `on_loccN`/`on_hiccN`, see
+    /// [`Region::cc_triggers`]). A flag rather than an empty key range, so the range keeps its
+    /// meaning (TYP-03).
     pub on_key: bool,
     /// Lowest velocity.
     pub vel_lo: u8,
@@ -242,11 +335,34 @@ pub struct Region {
     pub tune_cents: f64,
     /// Region volume in dB.
     pub volume_db: f64,
+    /// Region amplitude in percent of full, 0 to 100 (SFZ `amplitude`, default 100).
+    pub amplitude: f64,
     /// How much the gain follows the note's velocity, in percent (SFZ `amp_veltrack`, -100 to
     /// 100, default 100); see [`Region::velocity_gain`].
     pub amp_veltrack: f64,
     /// How the region fades in and out with the note's velocity.
-    pub velocity_crossfade: VelocityCrossfade,
+    pub velocity_crossfade: Crossfade,
+    /// The controller ranges a region needs to start (SFZ `loccN`/`hiccN`): each controller's
+    /// last value must lie in its range when the key press, key release or controller event
+    /// would start the region. Read only then: a voice that sounds keeps sounding when the
+    /// controller leaves the range. Empty for none, sorted by controller.
+    pub cc_gates: Box<[CcRange]>,
+    /// The controller ranges that start the region (SFZ `on_loccN`/`on_hiccN`): a controller
+    /// event whose value lies in one of them starts it, at its `pitch_keycenter` and without a
+    /// velocity gain. Empty for a region no controller starts, sorted by controller.
+    pub cc_triggers: Box<[CcRange]>,
+    /// How the region fades in and out with controllers, while it sounds. Empty for none,
+    /// sorted by controller.
+    pub cc_crossfades: Box<[CcCrossfade]>,
+    /// The volume change in dB each controller gives the region at value 127, in proportion to
+    /// its value, while it sounds (SFZ `volume_onccN`, also written `gain_ccN` and
+    /// `gain_onccN`). Empty for none, sorted by controller.
+    pub cc_volume: Box<[CcDepth]>,
+    /// The percentage of its amplitude each controller gives the region at value 127, in
+    /// proportion to its value, while it sounds (SFZ `amplitude_onccN`, also written
+    /// `amplitude_ccN`): 100 plays it full at 127 and silences it at 0. Empty for none, sorted by
+    /// controller.
+    pub cc_amplitude: Box<[CcDepth]>,
     /// What starts the region.
     pub trigger: Trigger,
     /// Round-robin length (SFZ `seq_length`); 1 means no round robin.
@@ -293,8 +409,14 @@ impl Default for Region {
             pitch_keycenter: 60,
             tune_cents: 0.0,
             volume_db: 0.0,
+            amplitude: 100.0,
             amp_veltrack: 100.0,
-            velocity_crossfade: VelocityCrossfade::NONE,
+            velocity_crossfade: Crossfade::NONE,
+            cc_gates: Box::default(),
+            cc_triggers: Box::default(),
+            cc_crossfades: Box::default(),
+            cc_volume: Box::default(),
+            cc_amplitude: Box::default(),
             trigger: Trigger::Attack,
             seq_length: 1,
             seq_position: 1,
@@ -318,7 +440,7 @@ impl Default for Region {
 impl Region {
     /// The gain a note of `velocity` (1 to 127) gives the region, from 0 to 1, before its
     /// volume: its velocity tracking times its velocity crossfade
-    /// ([`VelocityCrossfade::gain`]).
+    /// ([`Crossfade::gain`]).
     ///
     /// Velocity tracking (`amp_veltrack`) follows the SFZ format and the reference player
     /// sfizz: with `v = velocity / 127` and `t = amp_veltrack / 100`, the gain is
@@ -346,6 +468,48 @@ impl Region {
         } else {
             -track * (1.0 - curve)
         }
+    }
+
+    /// Whether `controllers` open the region's gates ([`Region::cc_gates`]): every gated
+    /// controller lies in its range. A region without gates is always open.
+    #[must_use]
+    pub fn gates_open(&self, controllers: &Controllers) -> bool {
+        self.cc_gates
+            .iter()
+            .all(|gate| gate.contains(controllers.value(gate.controller)))
+    }
+
+    /// Whether an event that sets controller `number` to `value` starts the region
+    /// ([`Region::cc_triggers`]), before its gates are checked.
+    #[must_use]
+    pub fn starts_on_controller(&self, number: u8, value: u8) -> bool {
+        self.cc_triggers
+            .iter()
+            .any(|trigger| trigger.controller == number && trigger.contains(value))
+    }
+
+    /// The gain `controllers` give the sounding region, from 0 up: its controller crossfades
+    /// ([`Crossfade::gain`]), times the amplitude of [`Region::cc_amplitude`] (each controller's
+    /// `depth / 100 * value / 127`, multiplied together), times the gain of the volume change of
+    /// [`Region::cc_volume`] (the sum of each controller's `depth * value / 127` dB). Exactly 1
+    /// for a region no controller changes.
+    #[must_use]
+    pub fn controller_gain(&self, controllers: &Controllers) -> f64 {
+        let crossfades = self.cc_crossfades.iter().fold(1.0, |gain, crossfade| {
+            gain * crossfade.fade.gain(controllers.value(crossfade.controller))
+        });
+        let amplitude = self
+            .cc_amplitude
+            .iter()
+            .fold(1.0, |gain, depth| gain * depth.at(controllers) / 100.0);
+        if self.cc_volume.is_empty() {
+            return crossfades * amplitude;
+        }
+        let db = self
+            .cc_volume
+            .iter()
+            .fold(0.0, |db, depth| db + depth.at(controllers));
+        crossfades * amplitude * db_to_amp(db)
     }
 }
 
@@ -408,15 +572,19 @@ pub struct SampleBank {
     pub regions: Vec<Region>,
     /// The patch's keyswitches; [`Keyswitches::NONE`] when it has none.
     pub keyswitches: Keyswitches,
+    /// Where the controllers start on every MIDI channel when the instrument is loaded or
+    /// reset: [`Controllers::INITIAL`] with the values the patch sets (SFZ `set_ccN`).
+    pub controllers: Controllers,
     /// How long the instrument can keep sounding after the last key release, in seconds: the
     /// longest release, the longest timed fade of a region that an exclusive group can switch
     /// off ([`OffMode::Time`]: a press just before the last release may have started it), and
-    /// the longest sample a key release starts (`trigger=release` and `release_key`).
+    /// the longest sample a key release (`trigger=release` and `release_key`) or a controller
+    /// (such as a pedal lifted after the last note) starts.
     pub tail_seconds: f64,
     /// What the patch writes that the sampler does not play, sorted, without duplicates: the
-    /// names of unsupported SFZ opcodes (a numbered family as one entry, `locc*`), the values of
-    /// supported opcodes it plays as if they were absent (`loop_mode=loop_forever`), and the
-    /// headers whose opcodes are skipped (`<curve>`).
+    /// names of unsupported SFZ opcodes (a numbered family as one entry, `pan_oncc*`), the
+    /// values of supported opcodes it plays as if they were absent (`loop_mode=loop_forever`),
+    /// and the headers whose opcodes are skipped (`<curve>`).
     pub ignored_opcodes: Vec<String>,
     /// The regions the loader left out and why, one note per sample they name, in the order the
     /// patch first names it: a sample file that does not exist, or a generator the sampler does
