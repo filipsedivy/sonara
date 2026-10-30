@@ -61,10 +61,19 @@
 //!
 //! Samples are decoded whole, at their own rate, into `f32` (no streaming yet): memory is the
 //! decoded size of the samples the patch names, capped at [`MAX_BANK_BYTES`].
+//!
+//! **Inspection without decoding.** [`inspect`] reads a patch as [`load_sfz`] does, with the same
+//! regions, but opens each sample file only for its header (format, channels and length) and
+//! decodes no audio, so it is cheap enough to run over whole libraries. Its [`PatchReport`] gives
+//! the regions, the keys and velocity layers a key press sounds, the keyswitches, what the
+//! sampler ignores, the samples it cannot play and the memory the decoded samples would take.
+//! Where `load_sfz` fails the patch for a sample file that cannot be read, or for the memory
+//! cap, `inspect` reports it and says that the patch does not load.
 
 use std::collections::HashMap;
 use std::fs;
 use std::io;
+use std::ops::RangeInclusive;
 use std::path::{Path, PathBuf};
 
 use sonara_dsp::bank::{Keyswitches, LoopMode, Region, Sample, SampleBank, Trigger};
@@ -102,19 +111,9 @@ type Opcodes = HashMap<String, String>;
 ///   [`MediaError::Malformed`] and [`MediaError::Decode`] for a sample file that cannot be
 ///   decoded or has more than two channels.
 pub fn load_sfz(path: &Path) -> Result<SampleBank, MediaError> {
-    let dir = path.parent().unwrap_or_else(|| Path::new("."));
-    let text = read_preprocessed(path, dir, &mut HashMap::new(), 0)?;
-    let parsed = parse(&text);
-    let mut ignored = parsed.ignored;
-    let mut loader = Loader::default();
-    let mut bank = SampleBank::default();
-    for opcodes in &parsed.regions {
-        let region = loader.region(dir, opcodes, path)?;
-        bank.regions.extend(region);
-    }
-    ignored.append(&mut loader.ignored);
-    let notes = loader.notes();
-    if bank.regions.is_empty() {
+    let content = read_patch(path, Reading::Decode)?;
+    let notes = content.loader.notes();
+    if content.regions.is_empty() {
         let message = if notes.is_empty() {
             "the patch has no playable region".to_owned()
         } else {
@@ -122,14 +121,246 @@ pub fn load_sfz(path: &Path) -> Result<SampleBank, MediaError> {
         };
         return Err(MediaError::malformed(path, message));
     }
+    let mut bank = SampleBank::default();
+    bank.regions = content.regions;
     bank.load_notes = notes;
-    bank.samples = loader.samples;
-    bank.keyswitches = parsed.keyswitches;
+    bank.samples = content.loader.samples;
+    bank.keyswitches = content.keyswitches;
     bank.tail_seconds = tail_seconds(&bank);
+    bank.ignored_opcodes = content.ignored;
+    Ok(bank)
+}
+
+/// What [`inspect`] finds in a patch without decoding its samples.
+///
+/// The regions are the ones [`load_sfz`] builds, so the report describes what the sampler plays
+/// when the patch loads.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PatchReport {
+    /// The `<region>` headers after the includes are read, whether they can play or not. A
+    /// patch without any is not an instrument.
+    pub regions: usize,
+    /// The regions the sampler would load: those that name a sample file that is there and
+    /// can be read, or `*silence`, and are not disabled. [`load_sfz`] loads exactly these when
+    /// the patch loads.
+    pub playable_regions: usize,
+    /// The keys a press sounds on, ascending, as runs of neighbouring keys with the same
+    /// velocity layers. A key sounds when a loaded attack region covers it whose sample has
+    /// frames and whose `sw_last`, if it writes one, is a switch key or the default switch.
+    /// Release regions, regions no key starts and `*silence` do not count.
+    pub sampled: Vec<LayerZone>,
+    /// The switch keys and the default switch, as [`load_sfz`] gives them to the sampler. A
+    /// switch key that is also in [`PatchReport::sampled`] both switches and sounds.
+    pub keyswitches: Keyswitches,
+    /// What the patch writes that the sampler does not play, as
+    /// [`SampleBank::ignored_opcodes`] holds it: unsupported opcodes, unsupported `trigger` and
+    /// `loop_mode` values, and skipped headers.
+    pub ignored_opcodes: Vec<String>,
+    /// The sample files the regions name that do not exist, in the order the patch first
+    /// names them. Their regions are left out.
+    pub missing_samples: Vec<PathBuf>,
+    /// The sample files that exist but whose header cannot be read, or that are not mono or
+    /// stereo, in the order the patch first names them. Their regions are left out here;
+    /// [`load_sfz`] fails the whole patch on them.
+    pub unreadable_samples: Vec<PathBuf>,
+    /// One note per sample the regions left out name, with the number of regions: the notes of
+    /// [`SampleBank::load_notes`], and a note for each unreadable sample.
+    pub notes: Vec<String>,
+    /// The memory the decoded samples would take, in bytes: frames × channels × 4 for each
+    /// sample file read, counted once per file, as [`load_sfz`] counts it against
+    /// [`MAX_BANK_BYTES`].
+    pub decoded_bytes: usize,
+}
+
+impl PatchReport {
+    /// Whether [`load_sfz`] is expected to load the patch: at least one region can play, no
+    /// sample file is unreadable, and the decoded samples fit in [`MAX_BANK_BYTES`]. Loading can
+    /// still fail on a sample whose header reads but whose audio does not decode.
+    #[must_use]
+    pub fn is_loadable(&self) -> bool {
+        self.playable_regions > 0
+            && self.unreadable_samples.is_empty()
+            && self.decoded_bytes <= MAX_BANK_BYTES
+    }
+
+    /// The keys a press sounds on, ascending.
+    pub fn sampled_keys(&self) -> impl Iterator<Item = u8> + '_ {
+        self.sampled.iter().flat_map(|zone| zone.keys.clone())
+    }
+}
+
+/// A run of neighbouring keys that sound with the same velocity layers.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LayerZone {
+    /// The keys, lowest to highest.
+    pub keys: RangeInclusive<u8>,
+    /// The velocity layers, ascending: the velocity ranges within which the same regions play,
+    /// across every switch and round-robin position. A new layer starts wherever a region's
+    /// velocity range starts or ends, so overlapping ranges give a layer for each part; a
+    /// velocity no region covers lies in no layer.
+    pub layers: Vec<VelocityLayer>,
+}
+
+/// The velocities `lo..=hi`, within which the same regions of a key play.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct VelocityLayer {
+    /// The lowest velocity of the layer.
+    pub lo: u8,
+    /// The highest velocity of the layer.
+    pub hi: u8,
+}
+
+/// Reads the SFZ file `path` and the headers of the samples it names, without decoding them.
+///
+/// A region whose sample file is missing or cannot be read, or that names a generator the
+/// sampler does not play, is left out and noted in the report, as is the memory the samples
+/// would take; none of these fails the call (see [`PatchReport::is_loadable`]).
+///
+/// # Errors
+///
+/// - [`MediaError::Io`] when the patch or an included file cannot be opened or read;
+/// - [`MediaError::Malformed`] when an `#include` is too deep.
+pub fn inspect(path: &Path) -> Result<PatchReport, MediaError> {
+    let content = read_patch(path, Reading::Header)?;
+    let keyswitches = content.keyswitches;
+    let sounding: Vec<&Region> = content
+        .regions
+        .iter()
+        .filter(|region| {
+            sounds_on_press(
+                region,
+                content.loader.frames_of(region.sample),
+                &keyswitches,
+            )
+        })
+        .collect();
+    Ok(PatchReport {
+        regions: content.written,
+        playable_regions: content.regions.len(),
+        sampled: layer_zones(&sounding),
+        keyswitches,
+        ignored_opcodes: content.ignored,
+        missing_samples: content.loader.skipped_files(|cause| match cause {
+            Unplayable::Missing(file) => Some(file),
+            _ => None,
+        }),
+        unreadable_samples: content.loader.skipped_files(|cause| match cause {
+            Unplayable::Unreadable { file, .. } => Some(file),
+            _ => None,
+        }),
+        notes: content.loader.notes(),
+        decoded_bytes: content.loader.bytes,
+    })
+}
+
+/// Whether a press can sound `region`, whose sample has `frames` frames: an attack region a key
+/// starts, with some velocity, a sample that plays, and a `sw_last` the sampler can reach (a
+/// switch key, or the default switch it starts with).
+fn sounds_on_press(region: &Region, frames: usize, keyswitches: &Keyswitches) -> bool {
+    region.trigger == Trigger::Attack
+        && region.on_key
+        && region.vel_lo <= region.vel_hi
+        && frames > 0
+        && region.sw_last.is_none_or(|switch| {
+            keyswitches.contains(switch) || keyswitches.default == Some(switch)
+        })
+}
+
+/// The keys `regions` sound on, as runs of neighbouring keys with the same velocity layers.
+fn layer_zones(regions: &[&Region]) -> Vec<LayerZone> {
+    let mut zones: Vec<LayerZone> = Vec::new();
+    for key in 0..=127_u8 {
+        let on_key: Vec<&Region> = regions
+            .iter()
+            .copied()
+            .filter(|region| (region.key_lo..=region.key_hi).contains(&key))
+            .collect();
+        let layers = velocity_layers(&on_key);
+        if layers.is_empty() {
+            continue;
+        }
+        match zones.last_mut() {
+            Some(zone) if zone.layers == layers && zone.keys.end().checked_add(1) == Some(key) => {
+                zone.keys = *zone.keys.start()..=key;
+            }
+            _ => zones.push(LayerZone {
+                keys: key..=key,
+                layers,
+            }),
+        }
+    }
+    zones
+}
+
+/// The velocity layers of the regions of one key: the ranges within which the same regions
+/// play. A layer ends where a region's range starts or ends, or where no region plays.
+fn velocity_layers(regions: &[&Region]) -> Vec<VelocityLayer> {
+    let mut layers = Vec::new();
+    let mut start = None;
+    for velocity in 0..=127_u8 {
+        let sounds = regions
+            .iter()
+            .any(|region| (region.vel_lo..=region.vel_hi).contains(&velocity));
+        let changes = regions.iter().any(|region| {
+            region.vel_lo == velocity || region.vel_hi.checked_add(1) == Some(velocity)
+        });
+        if let Some(lo) = start
+            && (changes || !sounds)
+        {
+            // The layer started at a lower velocity, so `velocity` is at least 1.
+            layers.push(VelocityLayer {
+                lo,
+                hi: velocity.saturating_sub(1),
+            });
+            start = None;
+        }
+        if sounds && start.is_none() {
+            start = Some(velocity);
+        }
+    }
+    if let Some(lo) = start {
+        layers.push(VelocityLayer { lo, hi: 127 });
+    }
+    layers
+}
+
+/// A patch read with its regions built: what [`load_sfz`] and [`inspect`] share.
+struct ReadPatch {
+    /// The `<region>` headers after preprocessing.
+    written: usize,
+    /// The regions the loader kept, in patch order.
+    regions: Vec<Region>,
+    keyswitches: Keyswitches,
+    /// The ignored opcodes, values and headers, sorted, without duplicates.
+    ignored: Vec<String>,
+    loader: Loader,
+}
+
+/// Reads the patch `path` and builds its regions, reading their samples as `reading` says.
+///
+/// # Errors
+///
+/// The errors of [`read_preprocessed`] and of [`Loader::region`].
+fn read_patch(path: &Path, reading: Reading) -> Result<ReadPatch, MediaError> {
+    let dir = path.parent().unwrap_or_else(|| Path::new("."));
+    let text = read_preprocessed(path, dir, &mut HashMap::new(), 0)?;
+    let parsed = parse(&text);
+    let mut loader = Loader::new(reading);
+    let mut regions = Vec::new();
+    for opcodes in &parsed.regions {
+        regions.extend(loader.region(dir, opcodes, path)?);
+    }
+    let mut ignored = parsed.ignored;
+    ignored.append(&mut loader.ignored);
     ignored.sort();
     ignored.dedup();
-    bank.ignored_opcodes = ignored;
-    Ok(bank)
+    Ok(ReadPatch {
+        written: parsed.regions.len(),
+        regions,
+        keyswitches: parsed.keyswitches,
+        ignored,
+        loader,
+    })
 }
 
 fn tail_seconds(bank: &SampleBank) -> f64 {
@@ -536,12 +767,27 @@ fn note(value: &str) -> Option<u8> {
 
 // --- Regions and samples ---
 
-#[derive(Default)]
+/// What the loader reads of a sample file.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Reading {
+    /// The whole file, decoded ([`load_sfz`]): a file that cannot be decoded fails the patch,
+    /// and the samples may not take more than [`MAX_BANK_BYTES`].
+    Decode,
+    /// Only the header ([`inspect`]): a file that cannot be read leaves out its regions with a
+    /// note, and the decoded size is counted without a cap.
+    Header,
+}
+
 struct Loader {
+    reading: Reading,
+    /// The decoded samples, by index; empty when only headers are read.
     samples: Vec<Sample>,
-    /// Each sample file named so far: its index in `samples`, or its note when it is missing.
+    /// The frames of each sample, by index, in both readings: the decoded frames, or the
+    /// header's count. The regions are built from these, so both readings build the same ones.
+    frames: Vec<usize>,
+    /// Each sample file named so far: its index, or its note when it cannot be played.
     files: HashMap<PathBuf, FileState>,
-    /// The index in `samples` of the silent sample, once a region names `*silence`.
+    /// The index of the silent sample, once a region names `*silence`.
     silence: Option<usize>,
     /// Each generator the sampler does not play, named so far: the index of its note.
     generators: HashMap<String, usize>,
@@ -549,22 +795,39 @@ struct Loader {
     skipped: Vec<Skipped>,
     /// The values of supported opcodes that the sampler does not play, as `name=value`.
     ignored: Vec<String>,
+    /// The decoded size of the sample files read so far, in bytes.
     bytes: usize,
 }
 
 /// A sample file the loader has looked for.
 #[derive(Debug, Clone, Copy)]
 enum FileState {
-    /// Decoded: its index in [`Loader::samples`].
-    Decoded(usize),
-    /// Not there: the index of its note in [`Loader::skipped`].
-    Missing(usize),
+    /// Read: its sample's index.
+    Read(usize),
+    /// Not playable: the index of its note in [`Loader::skipped`].
+    Skipped(usize),
+}
+
+/// Why regions name a sample the sampler cannot play.
+enum Unplayable {
+    /// The sample file does not exist.
+    Missing(PathBuf),
+    /// The sample file exists, but its header cannot be read, or it is not mono or stereo
+    /// (only when headers are read; decoding fails the patch instead).
+    Unreadable {
+        /// The file.
+        file: PathBuf,
+        /// The reader's error.
+        error: String,
+    },
+    /// A generator other than `*silence`.
+    Generator(String),
 }
 
 /// A sample that regions name but the sampler cannot play, and how many regions name it.
 struct Skipped {
-    /// Why it cannot be played, naming the sample.
-    reason: String,
+    /// Why it cannot be played.
+    cause: Unplayable,
     /// The regions left out because of it.
     regions: usize,
 }
@@ -572,16 +835,40 @@ struct Skipped {
 impl Skipped {
     /// The note for [`SampleBank::load_notes`].
     fn note(&self) -> String {
+        let reason = match &self.cause {
+            Unplayable::Missing(file) => format!("sample {} is missing", file.display()),
+            Unplayable::Unreadable { file, error } => {
+                format!("sample {} cannot be read: {error}", file.display())
+            }
+            Unplayable::Generator(name) => {
+                format!("the sampler does not play the generator {name}")
+            }
+        };
         if self.regions == 1 {
-            format!("{} (1 region left out)", self.reason)
+            format!("{reason} (1 region left out)")
         } else {
-            format!("{} ({} regions left out)", self.reason, self.regions)
+            format!("{reason} ({} regions left out)", self.regions)
         }
     }
 }
 
 impl Loader {
-    /// The region `opcodes` describe, with its sample loaded; `None` for a disabled region
+    /// A loader that reads sample files as `reading` says.
+    fn new(reading: Reading) -> Self {
+        Self {
+            reading,
+            samples: Vec::new(),
+            frames: Vec::new(),
+            files: HashMap::new(),
+            silence: None,
+            generators: HashMap::new(),
+            skipped: Vec::new(),
+            ignored: Vec::new(),
+            bytes: 0,
+        }
+    }
+
+    /// The region `opcodes` describe, with its sample read; `None` for a disabled region
     /// (`end=-1`), one without a sample, and one whose sample cannot be played (noted).
     fn region(
         &mut self,
@@ -613,7 +900,7 @@ impl Loader {
         let Some(sample) = sample else {
             return Ok(None);
         };
-        let frames = self.samples.get(sample).map_or(0, Sample::frames);
+        let frames = self.frames_of(sample);
         let num = |key: &str| opcodes.get(key).and_then(|v| v.trim().parse::<f64>().ok());
         let int = |key: &str| num(key).map(|v| v.max(0.0).trunc());
         let key_of = |key: &str| opcodes.get(key).and_then(|v| note(v));
@@ -681,24 +968,37 @@ impl Loader {
         parsed
     }
 
+    /// The frames of the sample at `index`; 0 for an index the loader has not given out.
+    fn frames_of(&self, index: usize) -> usize {
+        self.frames.get(index).copied().unwrap_or(0)
+    }
+
+    /// Adds a sample of `frames` frames and returns its index. `sample` is its decoded data,
+    /// kept only when decoding.
+    fn push(&mut self, sample: Option<Sample>, frames: usize) -> usize {
+        self.samples.extend(sample);
+        self.frames.push(frames);
+        self.frames.len() - 1
+    }
+
     /// The index of the sample of the generator `name`: the shared silent sample for
     /// `*silence`. Any other generator is not played: `None`, and the region is noted.
     fn generator(&mut self, name: &str) -> Option<usize> {
         if name == SILENCE {
             if self.silence.is_none() {
-                self.samples.push(Sample {
+                let sample = (self.reading == Reading::Decode).then(|| Sample {
                     rate: SILENCE_RATE,
                     channels: 1,
                     data: Vec::new(),
                 });
-                self.silence = Some(self.samples.len() - 1);
+                self.silence = Some(self.push(sample, 0));
             }
             return self.silence;
         }
         let at = if let Some(at) = self.generators.get(name) {
             *at
         } else {
-            let at = self.note(format!("the sampler does not play the generator {name}"));
+            let at = self.note(Unplayable::Generator(name.to_owned()));
             self.generators.insert(name.to_owned(), at);
             at
         };
@@ -706,47 +1006,48 @@ impl Loader {
         None
     }
 
-    /// The index of the sample in `file`, decoding it on first use. A file that does not exist
-    /// gives `None`, and the region is noted.
+    /// The index of the sample in `file`, read on first use. A file that does not exist, or,
+    /// when only headers are read, one that cannot be read, gives `None`, and the region is
+    /// noted.
     ///
     /// # Errors
     ///
-    /// The errors of [`Loader::decode`], except that the file does not exist.
+    /// The errors of [`Loader::read`] when decoding, except that the file does not exist.
     fn file(&mut self, file: &Path, patch: &Path) -> Result<Option<usize>, MediaError> {
         match self.files.get(file).copied() {
-            Some(FileState::Decoded(index)) => return Ok(Some(index)),
-            Some(FileState::Missing(at)) => {
+            Some(FileState::Read(index)) => return Ok(Some(index)),
+            Some(FileState::Skipped(at)) => {
                 self.count(at);
                 return Ok(None);
             }
             None => {}
         }
-        match self.decode(file, patch) {
-            Ok(sample) => {
-                let index = self.samples.len();
-                self.samples.push(sample);
-                self.files
-                    .insert(file.to_owned(), FileState::Decoded(index));
-                Ok(Some(index))
+        let cause = match self.read(file, patch) {
+            Ok(index) => {
+                self.files.insert(file.to_owned(), FileState::Read(index));
+                return Ok(Some(index));
             }
             Err(MediaError::Io {
                 operation: "open",
                 source,
                 ..
-            }) if source.kind() == io::ErrorKind::NotFound => {
-                let at = self.note(format!("sample {} is missing", file.display()));
-                self.count(at);
-                self.files.insert(file.to_owned(), FileState::Missing(at));
-                Ok(None)
-            }
-            Err(error) => Err(error),
-        }
+            }) if source.kind() == io::ErrorKind::NotFound => Unplayable::Missing(file.to_owned()),
+            Err(error) if self.reading == Reading::Header => Unplayable::Unreadable {
+                file: file.to_owned(),
+                error: error.to_string(),
+            },
+            Err(error) => return Err(error),
+        };
+        let at = self.note(cause);
+        self.count(at);
+        self.files.insert(file.to_owned(), FileState::Skipped(at));
+        Ok(None)
     }
 
     /// Starts a note about a sample that cannot be played, with no region counted yet; returns
     /// its index.
-    fn note(&mut self, reason: String) -> usize {
-        self.skipped.push(Skipped { reason, regions: 0 });
+    fn note(&mut self, cause: Unplayable) -> usize {
+        self.skipped.push(Skipped { cause, regions: 0 });
         self.skipped.len() - 1
     }
 
@@ -762,16 +1063,28 @@ impl Loader {
         self.skipped.iter().map(Skipped::note).collect()
     }
 
-    /// Decodes the sample in `file`, counting its memory against [`MAX_BANK_BYTES`].
+    /// The files of the samples left out that `pick` selects, in the order the patch first
+    /// names them.
+    fn skipped_files(&self, pick: impl Fn(&Unplayable) -> Option<&PathBuf>) -> Vec<PathBuf> {
+        self.skipped
+            .iter()
+            .filter_map(|skipped| pick(&skipped.cause).cloned())
+            .collect()
+    }
+
+    /// Reads the sample in `file` and returns its index: its header, and, when decoding, its
+    /// audio. Its decoded size is counted, against [`MAX_BANK_BYTES`] when decoding.
     ///
     /// # Errors
     ///
     /// [`MediaError::Io`] when the file cannot be opened or read; [`MediaError::Malformed`] when
-    /// it has more than two channels or no length, or the patch's samples exceed
-    /// [`MAX_BANK_BYTES`]; the reader's errors for a file it cannot decode.
-    fn decode(&mut self, file: &Path, patch: &Path) -> Result<Sample, MediaError> {
+    /// it has more than two channels or no length, or, when decoding, the patch's samples
+    /// exceed [`MAX_BANK_BYTES`]; the reader's errors for a file it cannot decode.
+    fn read(&mut self, file: &Path, patch: &Path) -> Result<usize, MediaError> {
         let opened = AudioStream::open(file)?;
         let mut stream = opened.stream;
+        // Makes the decoder without decoding, so a codec the loader cannot decode is found from
+        // the header too.
         stream.check_decodable()?;
         let channels = stream.channels();
         if !(1..=2).contains(&channels) {
@@ -787,6 +1100,9 @@ impl Loader {
         self.bytes = self
             .bytes
             .saturating_add(frames.saturating_mul(channels).saturating_mul(4));
+        if self.reading == Reading::Header {
+            return Ok(self.push(None, frames));
+        }
         if self.bytes > MAX_BANK_BYTES {
             return Err(MediaError::malformed(
                 patch,
@@ -805,11 +1121,13 @@ impl Loader {
             }
             data.extend(chunk.iter().take(read * channels).copied().map(to_f32));
         }
-        Ok(Sample {
+        let sample = Sample {
             rate: stream.sample_rate(),
             channels,
             data,
-        })
+        };
+        let frames = sample.frames();
+        Ok(self.push(Some(sample), frames))
     }
 }
 

@@ -11,7 +11,8 @@ use sonara_core::plugins::sampler_descriptor;
 use sonara_dsp::bank::{Keyswitches, LoopMode, SampleBank, Trigger};
 use sonara_dsp::processor::{BlockContext, DeviceState, EventKind, InstrumentEvent, ProcessSpec};
 use sonara_dsp::processors::{create, param_slots};
-use sonara_media::{MediaError, sfz::load_sfz};
+use sonara_media::MediaError;
+use sonara_media::sfz::{LayerZone, MAX_BANK_BYTES, PatchReport, VelocityLayer, inspect, load_sfz};
 
 /// A 16-bit mono PCM WAV of `frames` frames of the constant `value`.
 fn wav(path: &Path, rate: u32, frames: u32, value: i16) {
@@ -1056,4 +1057,335 @@ fn includes_of_a_patch_in_a_subfolder_resolve_against_that_folder() {
     let bank = load_sfz(&path).expect("loads");
     assert_eq!(bank.regions.len(), 1);
     assert!((first_value(&bank, 0) - 1_000.0 / 32_768.0).abs() < 1e-6);
+}
+
+// --- Inspection without decoding ---
+
+/// The velocity layers `lo..=hi` of `ranges`.
+fn layers(ranges: &[(u8, u8)]) -> Vec<VelocityLayer> {
+    ranges
+        .iter()
+        .map(|&(lo, hi)| VelocityLayer { lo, hi })
+        .collect()
+}
+
+/// Writes `text` as a patch beside the fixture's `Samples` folder and inspects it.
+fn inspect_text(dir: &tempfile::TempDir, text: &str) -> PatchReport {
+    let path = dir.path().join("patch.sfz");
+    fs::write(&path, text).expect("write");
+    inspect(&path).expect("inspects")
+}
+
+/// Checks `report` against the bank the loader builds from the same patch: the same regions,
+/// keyswitches, ignored opcodes and notes, and the decoded size of the samples it decoded.
+fn assert_agrees_with_the_loader(report: &PatchReport, bank: &SampleBank) {
+    assert_eq!(report.playable_regions, bank.regions.len());
+    assert_eq!(report.keyswitches, bank.keyswitches);
+    assert_eq!(report.ignored_opcodes, bank.ignored_opcodes);
+    assert_eq!(report.notes, bank.load_notes);
+    let decoded: usize = bank.samples.iter().map(|s| s.data.len() * 4).sum();
+    assert_eq!(report.decoded_bytes, decoded);
+    assert!(report.is_loadable());
+}
+
+/// The header of a PCM WAV file of `frames` frames, `channels` channels and `bytes` bytes per
+/// sample; its data chunk follows.
+fn wav_header(channels: u16, bytes: u16, frames: u32) -> Vec<u8> {
+    let rate = 44_100_u32;
+    let block = u32::from(channels) * u32::from(bytes);
+    let data_len = frames * block;
+    let mut header = Vec::new();
+    header.extend_from_slice(b"RIFF");
+    header.extend_from_slice(&(36 + data_len).to_le_bytes());
+    header.extend_from_slice(b"WAVEfmt ");
+    header.extend_from_slice(&16_u32.to_le_bytes());
+    header.extend_from_slice(&1_u16.to_le_bytes());
+    header.extend_from_slice(&channels.to_le_bytes());
+    header.extend_from_slice(&rate.to_le_bytes());
+    header.extend_from_slice(&(rate * block).to_le_bytes());
+    header.extend_from_slice(&u16::try_from(block).expect("a small block").to_le_bytes());
+    header.extend_from_slice(&(bytes * 8).to_le_bytes());
+    header.extend_from_slice(b"data");
+    header.extend_from_slice(&data_len.to_le_bytes());
+    header
+}
+
+#[test]
+fn inspect_reports_the_structure_the_loader_builds() {
+    // The fixture: two velocity layers with round robin on c3-c5, a release group, three switch
+    // keys from c1 with c1 as the default, and two opcodes the sampler ignores.
+    let dir = library();
+    let path = dir.path().join("violin.sfz");
+    let report = inspect(&path).expect("inspects");
+    assert_eq!(
+        report,
+        PatchReport {
+            regions: 5,
+            playable_regions: 5,
+            sampled: vec![LayerZone {
+                keys: 48..=72,
+                layers: layers(&[(0, 63), (64, 127)]),
+            }],
+            keyswitches: report.keyswitches,
+            ignored_opcodes: vec!["cutoff".to_owned(), "locc*".to_owned()],
+            missing_samples: Vec::new(),
+            unreadable_samples: Vec::new(),
+            notes: Vec::new(),
+            // Five mono files of 4410 frames, 4 bytes per decoded sample.
+            decoded_bytes: 5 * 4_410 * 4,
+        }
+    );
+    assert_eq!(report.keyswitches.keys().collect::<Vec<_>>(), [24, 25, 26]);
+    assert_eq!(report.keyswitches.default, Some(24));
+    assert_eq!(
+        report.sampled_keys().collect::<Vec<_>>(),
+        (48..=72).collect::<Vec<_>>()
+    );
+    assert_agrees_with_the_loader(&report, &load_sfz(&path).expect("loads"));
+}
+
+#[test]
+fn inspect_agrees_with_the_loader_on_skipped_and_ignored_parts() {
+    // Generators, a missing sample, unsupported values and skipped headers: the report and the
+    // bank come from the same regions.
+    let dir = library();
+    for text in [
+        "<region> sample=Samples/soft1.wav lokey=c3 hikey=c5\n\
+         <region> sample=*sine key=c6\n\
+         <region> sample=*silence key=d6 group=1\n\
+         <region> sample=Samples/absent.wav key=e6\n",
+        "<control> default_path=Samples/\n\
+         <curve> curve_index=7 v000=0 v127=1\n\
+         <group> lokey=c3 hikey=c5 cutoff=500\n\
+         <region> sample=soft1.wav loop_mode=loop_forever trigger=legato\n\
+         <region> sample=soft1.wav trigger=release\n\
+         <region> sample=gone.wav trigger=first\n",
+    ] {
+        let report = inspect_text(&dir, text);
+        let bank = load_patch(&dir, text);
+        assert_agrees_with_the_loader(&report, &bank);
+    }
+}
+
+#[test]
+fn inspect_reports_the_velocity_layers_of_each_key() {
+    let dir = library();
+    let report = inspect_text(
+        &dir,
+        "<control> default_path=Samples/\n\
+         <region> sample=soft1.wav lokey=48 hikey=59 lovel=1 hivel=62\n\
+         <region> sample=loud1.wav lokey=48 hikey=59 lovel=63 hivel=127\n\
+         <group> lokey=60 hikey=64 seq_length=2\n\
+         <region> sample=soft2.wav seq_position=1\n\
+         <region> sample=loud2.wav seq_position=2\n\
+         <group>\n\
+         <region> sample=loud2.wav key=65 lovel=64\n\
+         <region> sample=soft1.wav key=67 hivel=80\n\
+         <region> sample=loud1.wav key=67 lovel=40\n\
+         <region> sample=soft1.wav key=69 lovel=1 hivel=62\n\
+         <region> sample=loud1.wav key=69 lovel=63\n",
+    );
+    assert_eq!(
+        report.sampled,
+        [
+            // Two layers.
+            LayerZone {
+                keys: 48..=59,
+                layers: layers(&[(1, 62), (63, 127)]),
+            },
+            // Round-robin positions share one layer.
+            LayerZone {
+                keys: 60..=64,
+                layers: layers(&[(0, 127)]),
+            },
+            // Velocities below 64 sound nothing.
+            LayerZone {
+                keys: 65..=65,
+                layers: layers(&[(64, 127)]),
+            },
+            // Overlapping ranges: one layer for each part.
+            LayerZone {
+                keys: 67..=67,
+                layers: layers(&[(0, 39), (40, 80), (81, 127)]),
+            },
+            // The layers of 48-59 again, but not next to them.
+            LayerZone {
+                keys: 69..=69,
+                layers: layers(&[(1, 62), (63, 127)]),
+            },
+        ]
+    );
+    assert_eq!(
+        report.sampled_keys().collect::<Vec<_>>(),
+        (48..=65).chain([67, 69]).collect::<Vec<_>>()
+    );
+}
+
+#[test]
+fn inspect_counts_only_the_keys_a_press_sounds() {
+    // Release regions, regions no key starts, silent regions, empty samples or velocity
+    // ranges, and a `sw_last` that no switch reaches sound nothing on a press. A switch key
+    // with a region both switches and sounds (VSCO's CelloEns-KS has such keys).
+    let dir = library();
+    wav(&dir.path().join("Samples/empty.wav"), 44_100, 0, 0);
+    let report = inspect_text(
+        &dir,
+        "<control> default_path=Samples/\n\
+         <global> sw_lokey=c1 sw_hikey=d1 sw_default=c1\n\
+         <region> sample=soft1.wav key=25\n\
+         <region> sample=soft1.wav key=70 trigger=release\n\
+         <region> sample=soft1.wav key=-1\n\
+         <region> sample=soft1.wav key=71 on_locc64=127 on_hicc64=127\n\
+         <region> sample=*silence key=72\n\
+         <region> sample=soft1.wav key=73 sw_last=c0\n\
+         <region> sample=soft1.wav key=74 sw_last=d1\n\
+         <region> sample=soft1.wav key=75 lovel=100 hivel=20\n\
+         <region> sample=*sine key=76\n\
+         <region> sample=soft1.wav key=77\n\
+         <region> sample=empty.wav key=78\n",
+    );
+    assert_eq!(report.sampled_keys().collect::<Vec<_>>(), [25, 74, 77]);
+    assert_eq!(report.keyswitches.keys().collect::<Vec<_>>(), [24, 25, 26]);
+    assert_eq!((report.regions, report.playable_regions), (11, 10));
+    // A key of -1 from the scope is overridden by nothing: the same patch, loaded, agrees.
+    let bank = load_patch(
+        &dir,
+        &fs::read_to_string(dir.path().join("patch.sfz")).expect("read"),
+    );
+    assert_eq!(report.playable_regions, bank.regions.len());
+}
+
+#[test]
+fn inspect_lists_the_samples_the_sampler_cannot_play() {
+    // TST-03: a missing file and a generator leave out their regions, as when loading; a file
+    // that is there but cannot be read fails the load, but is a note in the report, so a library
+    // scan still sees the rest of the patch.
+    let dir = library();
+    let samples = dir.path().join("Samples");
+    fs::write(samples.join("bad.wav"), b"RIFF not really a wave file").expect("write");
+    let mut three = wav_header(3, 2, 10);
+    three.extend_from_slice(&[0; 60]);
+    fs::write(samples.join("three.wav"), three).expect("write");
+    let text = "<control> default_path=Samples/\n\
+                <region> sample=soft1.wav lokey=c3 hikey=c5\n\
+                <region> sample=bad.wav key=c6\n\
+                <region> sample=absent.wav key=d6\n\
+                <region> sample=*saw key=e6\n\
+                <region> sample=three.wav key=f6\n\
+                <region> sample=bad.wav key=g6\n";
+    let report = inspect_text(&dir, text);
+    assert_eq!((report.regions, report.playable_regions), (6, 1));
+    assert_eq!(report.missing_samples, [samples.join("absent.wav")]);
+    assert_eq!(
+        report.unreadable_samples,
+        [samples.join("bad.wav"), samples.join("three.wav")]
+    );
+    assert_eq!(report.notes.len(), 4, "{:?}", report.notes);
+    let bad = format!(
+        "sample {} cannot be read: ",
+        samples.join("bad.wav").display()
+    );
+    assert!(
+        report.notes[0].starts_with(&bad) && report.notes[0].ends_with("(2 regions left out)"),
+        "{}",
+        report.notes[0]
+    );
+    assert_eq!(
+        report.notes[1],
+        format!(
+            "sample {} is missing (1 region left out)",
+            samples.join("absent.wav").display()
+        )
+    );
+    assert_eq!(
+        report.notes[2],
+        "the sampler does not play the generator *saw (1 region left out)"
+    );
+    assert!(
+        report.notes[3].contains("mono or stereo samples, this has 3 channels"),
+        "{}",
+        report.notes[3]
+    );
+    assert_eq!(
+        report.decoded_bytes,
+        4_410 * 4,
+        "only the file that was read"
+    );
+    assert_eq!(
+        report.sampled_keys().collect::<Vec<_>>(),
+        (48..=72).collect::<Vec<_>>()
+    );
+    assert!(
+        !report.is_loadable(),
+        "the loader fails on the unreadable files"
+    );
+    assert!(load_sfz_text(&dir, text).is_err());
+}
+
+#[test]
+fn inspect_reports_a_patch_without_regions() {
+    // TST-03: the loader refuses a patch with no region, or none left; the report says why.
+    let dir = library();
+    let report = inspect_text(&dir, "<group> lokey=c3 hikey=c5\n");
+    assert_eq!((report.regions, report.playable_regions), (0, 0));
+    assert_eq!(report.sampled, []);
+    assert!(!report.is_loadable());
+    assert!(matches!(
+        load_sfz_text(&dir, "<group> lokey=c3 hikey=c5\n"),
+        Err(MediaError::Malformed { .. })
+    ));
+    let report = inspect_text(&dir, "<region> sample=Samples/absent.wav\n");
+    assert_eq!((report.regions, report.playable_regions), (1, 0));
+    assert_eq!(
+        report.missing_samples,
+        [dir.path().join("Samples/absent.wav")]
+    );
+    assert!(!report.is_loadable());
+}
+
+#[test]
+fn inspect_counts_the_memory_of_a_patch_over_the_cap() {
+    // An 8-bit mono file one frame over the cap once decoded to 4-byte samples, written sparse:
+    // the report counts it from the header, where the loader refuses the patch.
+    let dir = library();
+    let frames = u32::try_from(MAX_BANK_BYTES / 4 + 1).expect("fits a WAV header");
+    let path = dir.path().join("Samples/huge.wav");
+    fs::write(&path, wav_header(1, 1, frames)).expect("write");
+    let file = fs::OpenOptions::new()
+        .write(true)
+        .open(&path)
+        .expect("open");
+    file.set_len(44 + u64::from(frames)).expect("extend");
+    let text = "<region> sample=Samples/huge.wav\n";
+    let report = inspect_text(&dir, text);
+    assert_eq!(report.decoded_bytes, MAX_BANK_BYTES + 4);
+    assert_eq!(report.playable_regions, 1);
+    assert!(!report.is_loadable());
+    let result = load_sfz_text(&dir, text);
+    assert!(
+        matches!(&result, Err(MediaError::Malformed { message, .. })
+            if message == "the samples need more than 3072 MiB of memory"),
+        "{result:?}"
+    );
+}
+
+#[test]
+fn inspect_fails_only_when_the_patch_cannot_be_read() {
+    // TST-03: the patch's own errors, as when loading.
+    let dir = library();
+    assert!(matches!(
+        inspect(&dir.path().join("nothing.sfz")),
+        Err(MediaError::Io {
+            operation: "read",
+            ..
+        })
+    ));
+    let path = dir.path().join("patch.sfz");
+    fs::write(&path, "#include \"missing.txt\"\n").expect("write");
+    assert!(matches!(inspect(&path), Err(MediaError::Io { .. })));
+    fs::write(&path, "#include \"patch.sfz\"\n").expect("write");
+    assert!(matches!(
+        inspect(&path),
+        Err(MediaError::Malformed { message, .. }) if message == "#include nesting is too deep"
+    ));
 }
