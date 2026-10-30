@@ -1,13 +1,16 @@
 //! Keyboard records.
 
 use super::sources::{cite, reason};
-use super::{PLAYERS_ESTIMATE, cited, estimate, not_used, pitched, players};
+use super::{
+    PLAYERS_ESTIMATE, cited, estimate, gm_program, gm_substitute, not_used, pitched, players,
+};
 use crate::orchestration::articulation::Articulation::{
     Accent, AirTone, CrescendoSwell, Damped, Glissando, Harmonics, Legato, LetRing, Marcato,
     PalmMute, Pizzicato, Portato, Sforzando, Staccatissimo, Staccato, Sustain, Tenuto, Tremolo,
     Trill, VibratoOn,
 };
 use crate::orchestration::ensemble_profile::{EnsembleProfile, Forms};
+use crate::orchestration::general_midi::{GmVoice, SubstituteFit};
 use crate::orchestration::id::{CategoryId, InstrumentType};
 use crate::orchestration::instrument::{Instrument, InstrumentSpec, Provenance};
 use crate::orchestration::names::Names;
@@ -78,6 +81,7 @@ pub(super) const CELESTA: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(9),
     },
 );
 
@@ -162,6 +166,7 @@ pub(super) const PIANO_CONCERT_GRAND: Instrument = Instrument::new(
             film: players(0, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(1),
     },
 );
 
@@ -244,6 +249,16 @@ pub(super) const PIANO_STUDIO_GRAND: Instrument = Instrument::new(
             film: players(0, 1, "the recording studio piano", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute(
+            2,
+            SubstituteFit::Approximate,
+            reason!(
+                "GM1 defines piano sounds, not piano sizes (",
+                wikipedia_general_midi,
+                "). 2 Bright Acoustic Piano is the choice for the studio grand, with 1 Acoustic \
+                    Grand Piano equally defensible",
+            ),
+        ),
     },
 );
 
@@ -324,6 +339,16 @@ pub(super) const PIANO_UPRIGHT: Instrument = Instrument::new(
             film: players(0, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute(
+            1,
+            SubstituteFit::Approximate,
+            reason!(
+                "GM1 has no upright piano: programs 1-8 are grand, electric and harpsichord \
+                    sounds (",
+                wikipedia_general_midi,
+                "). 1 Acoustic Grand Piano is the nearest acoustic piano",
+            ),
+        ),
     },
 );
 
@@ -400,6 +425,16 @@ pub(super) const PIANO_FELT: Instrument = Instrument::new(
             ),
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute(
+            1,
+            SubstituteFit::Weak,
+            reason!(
+                "GM1 has no felt piano (",
+                wikipedia_general_midi,
+                "). 1 Acoustic Grand Piano at a low velocity is the nearest acoustic piano, \
+                    without the muffled colour of the felt",
+            ),
+        ),
     },
 );
 
@@ -469,6 +504,7 @@ pub(super) const PIANO_PREPARED: Instrument = Instrument::new(
             film: players(0, 1, "texture and percussion", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "solo and ensemble works after 1940", PLAYERS_ESTIMATE),
         }),
+        gm: GmVoice::NoEquivalent,
     },
 );
 
@@ -527,6 +563,7 @@ pub(super) const PIANO_HONKY_TONK: Instrument = Instrument::new(
             film: players(1, 1, "western saloon, period scenes", PLAYERS_ESTIMATE),
             chamber: not_used("", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(4),
     },
 );
 
@@ -600,6 +637,7 @@ pub(super) const HARPSICHORD: Instrument = Instrument::new(
             film: players(0, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(7),
     },
 );
 
@@ -673,6 +711,16 @@ pub(super) const CLAVICHORD: Instrument = Instrument::new(
                 PLAYERS_ESTIMATE,
             ),
         }),
+        gm: gm_substitute(
+            8,
+            SubstituteFit::Weak,
+            reason!(
+                "GM1 has no clavichord; its piano group lists 7 Harpsichord and 8 Clavi (",
+                wikipedia_general_midi,
+                "). 8 Clavi, a struck-string sound, is the nearest, with 7 Harpsichord the \
+                    alternative",
+            ),
+        ),
     },
 );
 
@@ -742,6 +790,7 @@ pub(super) const ELECTRIC_PIANO_RHODES: Instrument = Instrument::new(
             film: players(1, 1, "a keyboard player", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(5),
     },
 );
 
@@ -807,6 +856,7 @@ pub(super) const ELECTRIC_PIANO_WURLITZER: Instrument = Instrument::new(
             film: players(1, 1, "a keyboard player", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(5),
     },
 );
 
@@ -872,6 +922,7 @@ pub(super) const CLAVINET: Instrument = Instrument::new(
             film: players(1, 1, "a keyboard player", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(8),
     },
 );
 
@@ -941,6 +992,7 @@ pub(super) const ORGAN_PIPE: Instrument = Instrument::new(
             film: players(0, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(20),
     },
 );
 
@@ -1008,6 +1060,7 @@ pub(super) const ORGAN_HAMMOND: Instrument = Instrument::new(
             film: players(0, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "jazz, gospel, rock band", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(17),
     },
 );
 
@@ -1080,5 +1133,6 @@ pub(super) const ACCORDION: Instrument = Instrument::new(
             film: players(0, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(22),
     },
 );

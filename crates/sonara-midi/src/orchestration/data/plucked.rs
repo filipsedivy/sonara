@@ -1,13 +1,16 @@
 //! Harp and plucked string records.
 
 use super::sources::{cite, reason};
-use super::{PLAYERS_ESTIMATE, cited, estimate, not_used, pitched, players};
+use super::{
+    PLAYERS_ESTIMATE, cited, estimate, gm_program, gm_substitute, not_used, pitched, players,
+};
 use crate::orchestration::articulation::Articulation::{
     BartokPizzicato, Bisbigliando, Damped, Glissando, Harmonics, HarmonicsArtificial,
     HarmonicsNatural, Legato, LetRing, PalmMute, Portamento, PresDeLaTable, Staccato,
     SulPonticello, SulTasto, Tremolo, Trill, VibratoOn, Xylophonic,
 };
 use crate::orchestration::ensemble_profile::{EnsembleProfile, Forms};
+use crate::orchestration::general_midi::SubstituteFit;
 use crate::orchestration::id::InstrumentType;
 use crate::orchestration::instrument::{Instrument, InstrumentSpec, Provenance};
 use crate::orchestration::names::Names;
@@ -102,6 +105,7 @@ pub(super) const HARP: Instrument = Instrument::new(
             film: players(1, 2, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(47),
     },
 );
 
@@ -193,6 +197,7 @@ pub(super) const GUITAR_CLASSICAL: Instrument = Instrument::new(
             film: players(0, 1, "often recorded separately", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(25),
     },
 );
 
@@ -259,6 +264,17 @@ pub(super) const LUTE: Instrument = Instrument::new(
             film: players(0, 1, "period and fantasy scores", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "Baroque continuo", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute(
+            25,
+            SubstituteFit::Weak,
+            reason!(
+                "GM1 has no lute program (",
+                wikipedia_general_midi,
+                ") and GM2 no lute variation (",
+                wikipedia_general_midi_level_2,
+                "). 25 Acoustic Guitar (nylon) is the closest plucked timbre",
+            ),
+        ),
     },
 );
 
@@ -337,5 +353,17 @@ pub(super) const MANDOLIN: Instrument = Instrument::new(
             film: players(0, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute(
+            26,
+            SubstituteFit::Weak,
+            reason!(
+                "GM1 has no mandolin (",
+                wikipedia_general_midi,
+                "), and GM2 has it as a variation of program 26 (",
+                wikipedia_general_midi_level_2,
+                "), so 26 Acoustic Guitar (steel) is what a GM2 device plays when the \
+                    variation is missing",
+            ),
+        ),
     },
 );

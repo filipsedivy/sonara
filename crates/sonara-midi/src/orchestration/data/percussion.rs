@@ -1,13 +1,17 @@
 //! Percussion records.
 
 use super::sources::{cite, reason};
-use super::{PLAYERS_ESTIMATE, cited, estimate, not_used, pitched, players, unstated};
+use super::{
+    PLAYERS_ESTIMATE, cited, estimate, gm_program, gm_substitute, gm_substitute_keys, not_used,
+    pitched, players, unstated,
+};
 use crate::orchestration::articulation::Articulation::{
     Bowed, Choke, ConSordino, CrescendoSwell, Damped, DeadStroke, Drag, Flam, Fortepiano,
     Glissando, LetRing, Marcato, NonVibrato, Portamento, Rim, Rimshot, Roll, Scrape, ShakeStroke,
     SnaresOff, Staccato, Tremolo, TremoloMeasured, Trill, VibratoOn,
 };
 use crate::orchestration::ensemble_profile::{EnsembleProfile, Forms};
+use crate::orchestration::general_midi::{GmVoice, SubstituteFit};
 use crate::orchestration::id::{CategoryId, InstrumentType};
 use crate::orchestration::instrument::{Instrument, InstrumentSpec, PitchModel, Provenance};
 use crate::orchestration::names::Names;
@@ -108,6 +112,7 @@ pub(super) const TIMPANI: Instrument = Instrument::new(
             film: players(1, 1, "1 timpanist, 4-5 drums", PLAYERS_ESTIMATE),
             chamber: not_used("usually none", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(48),
     },
 );
 
@@ -169,6 +174,7 @@ pub(super) const BASS_DRUM: Instrument = Instrument::new(
             ),
             chamber: unstated("rare", PLAYERS_ESTIMATE),
         }),
+        gm: GmVoice::Percussion(gm_keys![35, 36]),
     },
 );
 
@@ -232,6 +238,7 @@ pub(super) const SNARE_DRUM: Instrument = Instrument::new(
                 PLAYERS_ESTIMATE,
             ),
         }),
+        gm: GmVoice::Percussion(gm_keys![38]),
     },
 );
 
@@ -279,6 +286,16 @@ pub(super) const CLASH_CYMBALS: Instrument = Instrument::new(
             film: players(1, 1, "several pairs in samples", PLAYERS_ESTIMATE),
             chamber: unstated("rare", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute_keys(
+            gm_keys![49, 57],
+            SubstituteFit::Approximate,
+            reason!(
+                "the GM1 percussion key map has no clash cymbals; 49 Crash Cymbal 1 and 57 Crash \
+                    Cymbal 2 are drum-kit crashes, the nearest cymbal sound (",
+                midi_gm1_sound_set_2021_01,
+                ")",
+            ),
+        ),
     },
 );
 
@@ -341,6 +358,16 @@ pub(super) const SUSPENDED_CYMBAL: Instrument = Instrument::new(
             film: players(1, 2, "swells are a staple", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute_keys(
+            gm_keys![49],
+            SubstituteFit::Approximate,
+            reason!(
+                "the GM1 percussion key map has no suspended cymbal; a stick stroke is nearest to \
+                    49 Crash Cymbal 1, the crash of a drum kit (",
+                midi_gm1_sound_set_2021_01,
+                ")",
+            ),
+        ),
     },
 );
 
@@ -406,6 +433,7 @@ pub(super) const TAM_TAM: Instrument = Instrument::new(
             ),
             chamber: unstated("rare", PLAYERS_ESTIMATE),
         }),
+        gm: GmVoice::NoEquivalent,
     },
 );
 
@@ -459,6 +487,7 @@ pub(super) const TRIANGLE: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
+        gm: GmVoice::Percussion(gm_keys![81, 80]),
     },
 );
 
@@ -512,6 +541,7 @@ pub(super) const TAMBOURINE: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
+        gm: GmVoice::Percussion(gm_keys![54]),
     },
 );
 
@@ -554,6 +584,15 @@ pub(super) const CASTANETS: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute_keys(
+            gm_keys![75],
+            SubstituteFit::Weak,
+            reason!(
+                "the GM1 percussion key map has no castanets (",
+                midi_gm1_sound_set_2021_01,
+                "). 75 Claves is the nearest dry wooden click, a different instrument",
+            ),
+        ),
     },
 );
 
@@ -606,6 +645,7 @@ pub(super) const WOOD_BLOCK: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
+        gm: GmVoice::Percussion(gm_keys![76, 77]),
     },
 );
 
@@ -661,6 +701,15 @@ pub(super) const TEMPLE_BLOCKS: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute_keys(
+            gm_keys![76, 77],
+            SubstituteFit::Approximate,
+            reason!(
+                "the GM1 percussion key map has no temple blocks (",
+                midi_gm1_sound_set_2021_01,
+                "). 76 Hi Wood Block and 77 Low Wood Block are the nearest hollow wooden blocks",
+            ),
+        ),
     },
 );
 
@@ -715,6 +764,15 @@ pub(super) const SLEIGH_BELLS: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: unstated("rare", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute_keys(
+            gm_keys![54],
+            SubstituteFit::Weak,
+            reason!(
+                "the GM1 percussion key map has no sleigh bells (",
+                midi_gm1_sound_set_2021_01,
+                "). 54 Tambourine is the nearest jingle sound, a different instrument",
+            ),
+        ),
     },
 );
 
@@ -767,6 +825,7 @@ pub(super) const MARACAS: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
+        gm: GmVoice::Percussion(gm_keys![70]),
     },
 );
 
@@ -820,6 +879,15 @@ pub(super) const SHAKER: Instrument = Instrument::new(
             film: players(1, 1, "common in hybrid scores", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute_keys(
+            gm_keys![70, 69],
+            SubstituteFit::Approximate,
+            reason!(
+                "the GM1 percussion key map has no shaker (",
+                midi_gm1_sound_set_2021_01,
+                "). 70 Maracas and 69 Cabasa are the nearest shaken sounds",
+            ),
+        ),
     },
 );
 
@@ -879,6 +947,7 @@ pub(super) const WHIP: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
+        gm: GmVoice::NoEquivalent,
     },
 );
 
@@ -958,6 +1027,7 @@ pub(super) const GLOCKENSPIEL: Instrument = Instrument::new(
             film: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(10),
     },
 );
 
@@ -1035,6 +1105,7 @@ pub(super) const XYLOPHONE: Instrument = Instrument::new(
             ),
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(14),
     },
 );
 
@@ -1109,6 +1180,7 @@ pub(super) const VIBRAPHONE: Instrument = Instrument::new(
             film: players(0, 1, "a percussionist", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(12),
     },
 );
 
@@ -1177,6 +1249,7 @@ pub(super) const MARIMBA: Instrument = Instrument::new(
             film: players(0, 1, "a percussionist", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a solo and ensemble instrument", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(13),
     },
 );
 
@@ -1240,6 +1313,7 @@ pub(super) const TUBULAR_BELLS: Instrument = Instrument::new(
             film: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(15),
     },
 );
 
@@ -1300,6 +1374,15 @@ pub(super) const CROTALES: Instrument = Instrument::new(
             film: players(0, 1, "a percussionist", PLAYERS_ESTIMATE),
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute(
+            10,
+            SubstituteFit::Approximate,
+            reason!(
+                "none of the 128 GM1 programs is crotales (",
+                midi_gm1_sound_set_2012,
+                "). 10 Glockenspiel is the nearest timbre, with 113 Tinkle Bell the alternative",
+            ),
+        ),
     },
 );
 
@@ -1368,5 +1451,16 @@ pub(super) const CARILLON: Instrument = Instrument::new(
             film: unstated("a sampled or recorded tower", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a carillonneur; a solo instrument", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute(
+            15,
+            SubstituteFit::Approximate,
+            reason!(
+                "GM1 has no carillon (",
+                midi_gm1_sound_set_2012,
+                "), and GM2 has Carillon Bells as a variation of program 15 (",
+                wikipedia_general_midi_level_2,
+                "), so 15 Tubular Bells, the orchestral substitute, is the nearest",
+            ),
+        ),
     },
 );

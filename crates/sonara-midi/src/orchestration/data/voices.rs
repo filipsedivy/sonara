@@ -1,16 +1,29 @@
 //! Voice records.
 
 use super::sources::{cite, reason};
-use super::{PLAYERS_ESTIMATE, cited, pitched, players, unstated};
+use super::{PLAYERS_ESTIMATE, cited, gm_program, gm_substitute, pitched, players, unstated};
 use crate::orchestration::articulation::Articulation::{
     CrescendoSwell, Falsetto, Humming, Legato, Marcato, NonVibrato, Portamento, Sforzando,
     Staccato, Sustain, Tenuto, Text, Trill, VibratoOn, Vowel, Whisper,
 };
 use crate::orchestration::ensemble_profile::{EnsembleProfile, Forms};
+use crate::orchestration::general_midi::{GmVoice, SubstituteFit};
 use crate::orchestration::id::{CategoryId, InstrumentType};
 use crate::orchestration::instrument::{Instrument, InstrumentSpec, Provenance};
 use crate::orchestration::names::Names;
 use crate::orchestration::pitch::Clef;
+
+/// The GM voice of every solo voice: GM1 has no solo-voice program.
+const SOLO_VOICE_GM: GmVoice = gm_substitute(
+    54,
+    SubstituteFit::Approximate,
+    reason!(
+        "GM1 has no solo-voice program: its ensemble group holds choir and synth voices only, and \
+            54 Voice Oohs is the nearest (",
+        wikipedia_general_midi,
+        ")",
+    ),
+);
 
 // Aliases: a solo voice has the singular forms and a choir section the plural ("tenor",
 // "tenors"). "Ten." and "Bar." are left out, since they are also English words.
@@ -103,6 +116,7 @@ pub(super) const VOICE_SOPRANO: Instrument = Instrument::new(
             ),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: SOLO_VOICE_GM,
     },
 );
 
@@ -183,6 +197,7 @@ pub(super) const VOICE_MEZZO_SOPRANO: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: SOLO_VOICE_GM,
     },
 );
 
@@ -277,6 +292,7 @@ pub(super) const VOICE_ALTO: Instrument = Instrument::new(
             ),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: SOLO_VOICE_GM,
     },
 );
 
@@ -372,6 +388,7 @@ pub(super) const VOICE_TENOR: Instrument = Instrument::new(
             ),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: SOLO_VOICE_GM,
     },
 );
 
@@ -454,6 +471,7 @@ pub(super) const VOICE_BARITONE: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: SOLO_VOICE_GM,
     },
 );
 
@@ -548,6 +566,7 @@ pub(super) const VOICE_BASS: Instrument = Instrument::new(
             ),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: SOLO_VOICE_GM,
     },
 );
 
@@ -671,6 +690,7 @@ pub(super) const CHOIR_SOPRANO: Instrument = Instrument::new(
                 },
             ),
         }),
+        gm: gm_program(53),
     },
 );
 
@@ -791,6 +811,7 @@ pub(super) const CHOIR_ALTO: Instrument = Instrument::new(
                 },
             ),
         }),
+        gm: gm_program(53),
     },
 );
 
@@ -917,6 +938,7 @@ pub(super) const CHOIR_TENOR: Instrument = Instrument::new(
                 },
             ),
         }),
+        gm: gm_program(53),
     },
 );
 
@@ -1040,5 +1062,6 @@ pub(super) const CHOIR_BASS: Instrument = Instrument::new(
                 },
             ),
         }),
+        gm: gm_program(53),
     },
 );

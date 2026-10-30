@@ -9,6 +9,11 @@
 //!
 //! Each record also holds its display names in five languages and its aliases, and the categories
 //! and families hold the words that name them as a whole, in `categories`.
+//!
+//! Each record states its General MIDI voice. A GM1 program or key is exact when its GM1 name
+//! names the instrument or its class; otherwise the record names the nearest program or keys as a
+//! substitute, an `Estimate` whose reason cites the GM1 list it was read from and says why that
+//! target is the nearest, or states that GM1 has no equivalent.
 
 /// A list of aliases, written folded: `aliases![En Plural: "horns"; Cs Plural: "lesni rohy",
 /// "lesnich rohu";]` gives each text with the language and the number before its colon. Defined
@@ -21,6 +26,16 @@ macro_rules! aliases {
             number: $crate::orchestration::names::Number::$number,
         }),+),+]
     };
+}
+
+/// A list of GM1 channel-10 keys as a `&'static [GmNote]`, the preferred key first:
+/// `gm_keys![81, 80]`. A key outside the GM1 percussion key map (35–81) does not compile.
+macro_rules! gm_keys {
+    ($($key:literal),+ $(,)?) => {{
+        const KEYS: &[$crate::orchestration::general_midi::GmNote] =
+            &[$($crate::orchestration::data::gm_key($key)),+];
+        KEYS
+    }};
 }
 
 mod brass;
@@ -36,6 +51,7 @@ mod woodwinds;
 pub(super) use categories::{FAMILY_ALIASES, category, family_aliases};
 
 use super::ensemble_profile::{EraPlayers, PlayerRange};
+use super::general_midi::{GmNote, GmProgram, GmTarget, GmVoice, SubstituteFit};
 use super::id::InstrumentType;
 use super::instrument::{Instrument, PitchModel, Pitched, Provenance, SourcedRange};
 use super::pitch::{PitchRange, Transposition};
@@ -97,6 +113,50 @@ const fn unstated(note: &'static str, provenance: Provenance) -> EraPlayers {
         players: None,
         note,
         provenance,
+    }
+}
+
+/// The GM1 program `number`; one outside 1–128 in a `const` item is a compile error.
+const fn gm_program_number(number: u8) -> GmProgram {
+    match GmProgram::new(number) {
+        Some(program) => program,
+        None => panic!("GM1 programs are numbered 1-128"),
+    }
+}
+
+/// The GM1 channel-10 key `key`, for [`gm_keys!`]; one outside 35–81 in a `const` item is a
+/// compile error.
+const fn gm_key(key: u8) -> GmNote {
+    match GmNote::new(key) {
+        Some(note) => note,
+        None => panic!("GM1 channel-10 keys are 35-81"),
+    }
+}
+
+/// The exact GM1 program `number`: its name names the instrument or its class.
+const fn gm_program(number: u8) -> GmVoice {
+    GmVoice::Program(gm_program_number(number))
+}
+
+/// The GM1 program `number` as a substitute that fits as `fit`, chosen for `reason`.
+const fn gm_substitute(number: u8, fit: SubstituteFit, reason: &'static str) -> GmVoice {
+    GmVoice::Substitute {
+        target: GmTarget::Program(gm_program_number(number)),
+        fit,
+        provenance: Provenance::Estimate { reason },
+    }
+}
+
+/// The GM1 channel-10 `keys` as a substitute that fits as `fit`, chosen for `reason`.
+const fn gm_substitute_keys(
+    keys: &'static [GmNote],
+    fit: SubstituteFit,
+    reason: &'static str,
+) -> GmVoice {
+    GmVoice::Substitute {
+        target: GmTarget::Notes(keys),
+        fit,
+        provenance: Provenance::Estimate { reason },
     }
 }
 

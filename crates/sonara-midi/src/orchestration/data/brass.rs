@@ -1,7 +1,10 @@
 //! Brass records.
 
 use super::sources::{cite, reason};
-use super::{PLAYERS_ESTIMATE, cited, estimate, not_used, pitched, players, unstated};
+use super::{
+    PLAYERS_ESTIMATE, cited, estimate, gm_program, gm_substitute, not_used, pitched, players,
+    unstated,
+};
 use crate::orchestration::articulation::Articulation::{
     Accent, BellsUp, ConSordino, CrescendoSwell, Cuivre, Doit, Fall, FlutterTongue, Fortepiano,
     Glissando, Growl, HalfValve, Legato, Marcato, MultiTongue, Multiphonic, MuteBucket, MuteCup,
@@ -10,6 +13,7 @@ use crate::orchestration::articulation::Articulation::{
     WahWah,
 };
 use crate::orchestration::ensemble_profile::{EnsembleProfile, Forms};
+use crate::orchestration::general_midi::SubstituteFit;
 use crate::orchestration::id::{CategoryId, InstrumentType};
 use crate::orchestration::instrument::{Instrument, InstrumentSpec, Provenance};
 use crate::orchestration::names::Names;
@@ -118,6 +122,7 @@ pub(super) const HORN_F: Instrument = Instrument::new(
             ),
             chamber: players(1, 1, "wind quintet, brass quintet", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(61),
     },
 );
 
@@ -212,6 +217,16 @@ pub(super) const WAGNER_TUBA_TENOR: Instrument = Instrument::new(
             film: unstated("rare; 2 when used", PLAYERS_ESTIMATE),
             chamber: not_used("", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute(
+            61,
+            SubstituteFit::Weak,
+            reason!(
+                "GM1 has no Wagner tuba: its brass programs are 57 Trumpet to 64 SynthBrass 2 (",
+                midi_gm1_sound_set_2021_01,
+                "). 61 French Horn shares the horn mouthpiece and players and is closer than 59 \
+                    Tuba, but it is a different instrument",
+            ),
+        ),
     },
 );
 
@@ -306,6 +321,16 @@ pub(super) const WAGNER_TUBA_BASS: Instrument = Instrument::new(
             film: unstated("rare; 2 when used", PLAYERS_ESTIMATE),
             chamber: not_used("", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute(
+            61,
+            SubstituteFit::Weak,
+            reason!(
+                "GM1 has no Wagner tuba (",
+                midi_gm1_sound_set_2021_01,
+                "). 61 French Horn shares the horn mouthpiece and players; 59 Tuba would \
+                    misrepresent the mouthpiece and the timbre",
+            ),
+        ),
     },
 );
 
@@ -428,6 +453,15 @@ pub(super) const TRUMPET_PICCOLO: Instrument = Instrument::new(
                 },
             ),
         }),
+        gm: gm_substitute(
+            57,
+            SubstituteFit::Approximate,
+            reason!(
+                "GM1 has no piccolo trumpet; 57 Trumpet is the nearest program (",
+                midi_gm1_specification,
+                ")",
+            ),
+        ),
     },
 );
 
@@ -555,6 +589,7 @@ pub(super) const TRUMPET_C: Instrument = Instrument::new(
                 },
             ),
         }),
+        gm: gm_program(57),
     },
 );
 
@@ -701,6 +736,7 @@ pub(super) const TRUMPET_BB: Instrument = Instrument::new(
                 },
             ),
         }),
+        gm: gm_program(57),
     },
 );
 
@@ -825,6 +861,15 @@ pub(super) const CORNET: Instrument = Instrument::new(
                 },
             ),
         }),
+        gm: gm_substitute(
+            57,
+            SubstituteFit::Approximate,
+            reason!(
+                "GM1 has no cornet; 57 Trumpet is the nearest program (",
+                midi_gm1_specification,
+                ")",
+            ),
+        ),
     },
 );
 
@@ -935,6 +980,16 @@ pub(super) const FLUGELHORN: Instrument = Instrument::new(
                 },
             ),
         }),
+        gm: gm_substitute(
+            57,
+            SubstituteFit::Weak,
+            reason!(
+                "GM1 has no flugelhorn (",
+                midi_gm1_specification,
+                "). 57 Trumpet is the nearest by family, with 61 French Horn the alternative for \
+                    its soft colour",
+            ),
+        ),
     },
 );
 
@@ -1044,6 +1099,7 @@ pub(super) const TROMBONE_TENOR: Instrument = Instrument::new(
             film: players(2, 3, "tenors, plus 1-2 bass trombones", PLAYERS_ESTIMATE),
             chamber: players(0, 1, "brass quintet", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(58),
     },
 );
 
@@ -1155,6 +1211,7 @@ pub(super) const TROMBONE_BASS: Instrument = Instrument::new(
             film: players(1, 2, "Spitfire records a2", PLAYERS_ESTIMATE),
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(58),
     },
 );
 
@@ -1248,6 +1305,18 @@ pub(super) const EUPHONIUM: Instrument = Instrument::new(
                 PLAYERS_ESTIMATE,
             ),
         }),
+        gm: gm_substitute(
+            59,
+            SubstituteFit::Approximate,
+            reason!(
+                "GM1 has no euphonium (",
+                wikipedia_general_midi,
+                "; ",
+                printmusic_2010_gm_table,
+                "). 59 Tuba is the nearest conical, tuba-family timbre, while 58 Trombone \
+                    matches the register better",
+            ),
+        ),
     },
 );
 
@@ -1335,6 +1404,7 @@ pub(super) const TUBA: Instrument = Instrument::new(
             film: players(1, 2, "often with a cimbasso", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "brass quintet", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(59),
     },
 );
 
@@ -1419,5 +1489,18 @@ pub(super) const CIMBASSO: Instrument = Instrument::new(
             film: players(1, 1, "often beside a tuba", PLAYERS_ESTIMATE),
             chamber: not_used("", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute(
+            58,
+            SubstituteFit::Approximate,
+            reason!(
+                "GM1 has no cimbasso: its brass group 57-64 is Trumpet, Trombone, Tuba, Muted \
+                    Trumpet, French Horn, Brass Section and two synth brass (",
+                wikipedia_general_midi,
+                "; ",
+                printmusic_2010_gm_table,
+                "). 58 Trombone is the nearest, because the sound belongs to the trombone bass; \
+                    59 Tuba is the second choice",
+            ),
+        ),
     },
 );

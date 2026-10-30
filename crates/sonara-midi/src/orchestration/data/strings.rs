@@ -1,7 +1,7 @@
 //! Bowed string records.
 
 use super::sources::{cite, reason};
-use super::{cited, pitched, players};
+use super::{cited, gm_program, pitched, players};
 use crate::orchestration::articulation::Articulation::{
     BartokPizzicato, ColLegno, ColLegnoBattuto, ColLegnoTratto, ConSordino, CrescendoSwell,
     Flautando, Fortepiano, Glissando, Harmonics, HarmonicsArtificial, HarmonicsNatural, Legato,
@@ -148,6 +148,7 @@ pub(super) const VIOLIN: Instrument = Instrument::new(
                 },
             ),
         }),
+        gm: gm_program(41),
     },
 );
 
@@ -283,6 +284,7 @@ pub(super) const VIOLA: Instrument = Instrument::new(
                 },
             ),
         }),
+        gm: gm_program(42),
     },
 );
 
@@ -423,6 +425,7 @@ pub(super) const CELLO: Instrument = Instrument::new(
                 },
             ),
         }),
+        gm: gm_program(43),
     },
 );
 
@@ -562,5 +565,6 @@ pub(super) const DOUBLE_BASS: Instrument = Instrument::new(
                 },
             ),
         }),
+        gm: gm_program(44),
     },
 );

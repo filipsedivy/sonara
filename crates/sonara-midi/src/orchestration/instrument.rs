@@ -5,6 +5,7 @@ use thiserror::Error;
 use super::articulation::{Articulation, ArticulationAvailability, Request, RequestAvailability};
 use super::data;
 use super::ensemble_profile::{EnsembleProfile, Era};
+use super::general_midi::{GmTarget, GmVoice};
 use super::id::{CategoryId, InstrumentType};
 use super::names::{Alias, Names, alias_fault};
 use super::pitch::{Clef, PitchRange, SoundingPitch, Transposition, WrittenPitch};
@@ -182,6 +183,20 @@ pub enum InstrumentError {
     /// An alias is listed twice in one language.
     #[error("alias {0:?} is listed twice in one language")]
     DuplicateAlias(&'static str),
+    /// A GM voice of channel-10 keys, exact or substitute, lists none.
+    /// [`InstrumentSpec::EMPTY`] holds such a voice, so a record that does not state its GM voice
+    /// is rejected with this error.
+    #[error("a GM voice of channel-10 keys lists none")]
+    NoGmKeys,
+    /// A GM voice lists a channel-10 key twice.
+    #[error("a GM voice lists a channel-10 key twice")]
+    DuplicateGmKey,
+    /// The GM voice does not fit the pitch model: a pitched instrument plays a program, an
+    /// unpitched one channel-10 keys, whether exact or substitute.
+    #[error(
+        "the GM voice does not fit the pitch: a pitched instrument takes a program, an unpitched one channel-10 keys"
+    )]
+    GmVoiceMismatch,
 }
 
 /// The values of an instrument record, checked by [`Instrument::try_new`].
@@ -212,13 +227,16 @@ pub struct InstrumentSpec {
     pub articulations_provenance: Provenance,
     /// How the instrument appears in ensembles; `None` when not recorded.
     pub ensemble: Option<EnsembleProfile>,
+    /// The General MIDI Level 1 voice: an exact program or channel-10 keys, a substitute, or none.
+    pub gm: GmVoice,
 }
 
 impl InstrumentSpec {
     /// The base of every record literal.
     ///
-    /// A record must state `names` and `articulations_provenance`: here they are empty, which
-    /// [`Instrument::try_new`] rejects, so a record that forgets one does not build. `pitch` is
+    /// A record must state `names`, `articulations_provenance` and `gm`: here the first two are
+    /// empty and `gm` is a percussion voice with no key, which [`Instrument::try_new`] rejects, so
+    /// a record that forgets one does not build. `pitch` is
     /// [`PitchModel::Unpitched`], which only percussion may keep; a pitched percussion instrument
     /// states its pitch. The other fields hold their "not known" value: no aliases, no category,
     /// no clefs, no articulations and no ensemble profile.
@@ -238,6 +256,7 @@ impl InstrumentSpec {
         articulations: &[],
         articulations_provenance: Provenance::Estimate { reason: "" },
         ensemble: None,
+        gm: GmVoice::Percussion(&[]),
     };
 }
 
@@ -271,12 +290,17 @@ impl Instrument {
     /// with an octave of its own on a transposing instrument and
     /// [`WrittenOutOfMidi`](InstrumentError::WrittenOutOfMidi) when the playable range written
     /// in the clef leaves MIDI; [`EmptyProvenance`](InstrumentError::EmptyProvenance) when any
-    /// provenance of the record (ranges, articulations, ensemble profile) is empty or blank;
+    /// provenance of the record (ranges, articulations, ensemble profile, GM substitute) is empty
+    /// or blank;
     /// then, alias by alias in list order, [`AliasNotFolded`](InstrumentError::AliasNotFolded)
     /// for a text that is not folded and [`AliasTooShort`](InstrumentError::AliasTooShort) for
-    /// one with fewer than three letters, and last
+    /// one with fewer than three letters, and
     /// [`DuplicateAlias`](InstrumentError::DuplicateAlias) for a text listed twice in one
-    /// language. The first failing check in that order is reported.
+    /// language; last, for the GM voice, [`NoGmKeys`](InstrumentError::NoGmKeys) for a voice of
+    /// channel-10 keys that lists none, [`DuplicateGmKey`](InstrumentError::DuplicateGmKey) for a
+    /// key listed twice and [`GmVoiceMismatch`](InstrumentError::GmVoiceMismatch) for a program on
+    /// an unpitched instrument or keys on a pitched one. The first failing check in that order is
+    /// reported.
     pub const fn try_new(
         instrument_type: InstrumentType,
         spec: InstrumentSpec,
@@ -323,6 +347,9 @@ impl Instrument {
             return Err(InstrumentError::EmptyProvenance);
         }
         if let Some(error) = alias_fault(spec.aliases) {
+            return Err(error);
+        }
+        if let Err(error) = check_gm(&spec) {
             return Err(error);
         }
         Ok(Self {
@@ -414,6 +441,13 @@ impl Instrument {
     #[must_use]
     pub const fn ensemble(&self) -> Option<&EnsembleProfile> {
         self.spec.ensemble.as_ref()
+    }
+
+    /// The General MIDI Level 1 voice: an exact program or channel-10 keys, a substitute, or
+    /// [`GmVoice::NoEquivalent`].
+    #[must_use]
+    pub const fn gm(&self) -> GmVoice {
+        self.spec.gm
     }
 
     /// The transposition, or `None` for an unpitched instrument.
@@ -599,6 +633,45 @@ const fn check_clefs(spec: &InstrumentSpec) -> Result<(), InstrumentError> {
     Ok(())
 }
 
+/// The GM voice checks of [`Instrument::try_new`], in its documented order: a voice of channel-10
+/// keys lists at least one and none twice; then a pitched instrument takes a program and an
+/// unpitched one keys.
+const fn check_gm(spec: &InstrumentSpec) -> Result<(), InstrumentError> {
+    let plays_keys = match spec.gm {
+        GmVoice::Percussion(_)
+        | GmVoice::Substitute {
+            target: GmTarget::Notes(_),
+            ..
+        } => true,
+        GmVoice::Program(_)
+        | GmVoice::Substitute {
+            target: GmTarget::Program(_),
+            ..
+        } => false,
+        GmVoice::NoEquivalent => return Ok(()),
+    };
+    let keys = spec.gm.keys();
+    if plays_keys && keys.is_empty() {
+        return Err(InstrumentError::NoGmKeys);
+    }
+    let mut i = 0;
+    while i < keys.len() {
+        let mut j = i + 1;
+        while j < keys.len() {
+            if keys[i].get() == keys[j].get() {
+                return Err(InstrumentError::DuplicateGmKey);
+            }
+            j += 1;
+        }
+        i += 1;
+    }
+    let pitched = matches!(spec.pitch, PitchModel::Pitched(_));
+    if pitched == plays_keys {
+        return Err(InstrumentError::GmVoiceMismatch);
+    }
+    Ok(())
+}
+
 /// Whether every provenance of `spec` names a source or a reason: not empty, not blank.
 const fn provenances_are_stated(spec: &InstrumentSpec) -> bool {
     if let PitchModel::Pitched(pitched) = &spec.pitch {
@@ -622,6 +695,11 @@ const fn provenances_are_stated(spec: &InstrumentSpec) -> bool {
             }
             i += 1;
         }
+    }
+    if let GmVoice::Substitute { provenance, .. } = spec.gm
+        && !is_stated(provenance)
+    {
+        return false;
     }
     true
 }

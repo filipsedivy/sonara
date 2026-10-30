@@ -2,7 +2,8 @@
 
 `sonara_midi::orchestration` holds machine-readable facts about orchestral instruments in
 general: names and aliases in five languages, categories, pitch range, transposition, family, the
-articulations they idiomatically play and how they appear in ensembles (SON-P06). It is plain
+articulations they idiomatically play, how they appear in ensembles and their General MIDI voice
+(SON-P06). It is plain
 Rust data and pure functions. It depends on no audio engine, sample library or UI, adds no agent
 tool and changes no contract (CTR-01).
 
@@ -158,7 +159,8 @@ tower instrument.
 ## Provenance
 
 Every range, every articulation list and every count of players is `Cited { source }` or
-`Estimate { reason }`. Cited means a source that was read states it. Each source the dataset
+`Estimate { reason }`; every General MIDI substitute is an `Estimate { reason }`, since a source
+states only that GM1 has no voice for the instrument, not which one to play instead. Cited means a source that was read states it. Each source the dataset
 cites is written out once, in the dataset's source list
 (`crates/sonara-midi/src/orchestration/data/sources.rs`): its author or publisher, its title (with
 the edition for a book) and where it was read, a URL or, for a printed book without one, a page.
@@ -239,12 +241,48 @@ score, all parts together: a Romantic orchestra's violins, 16 first and 14 secon
 Die Walküre), count as 30 to 32, while a choir section counts the singers of its one part. The
 section sizes of a particular orchestra are ensemble data, not part of the profile.
 
+## General MIDI voice
+
+Every record states its General MIDI Level 1 voice as a `GmVoice` (`Instrument::gm`). GM1 numbers
+its programs 1-128 (`GmProgram`; `program_change()` gives the 0-127 value a program change
+carries) and assigns the channel-10 keys 35-81 to percussion sounds (`GmNote`). A key outside that
+map, such as the Roland GS castanets on 85, has no `GmNote`. An exact voice and a substitute are
+separate variants, so a caller cannot mistake one for the other:
+
+- `Program`: the GM1 program whose name names the instrument or its class at its register, such as
+  41 Violin, 61 French Horn, or 72 Clarinet for the clarinets in B♭ and A. 43 records.
+- `Percussion`: the GM1 channel-10 keys whose names name the instrument, the preferred key first:
+  the bass drum 35 and 36, the snare drum 38, the triangle 81 and 80, the tambourine 54, the wood
+  block 76 and 77 and the maracas 70.
+- `Substitute { target, fit, provenance }`: GM1 has no voice for the instrument, and `target` is the
+  nearest program (a pitched instrument) or channel-10 keys (an unpitched one). `fit` says how
+  close it comes: `Approximate` for a near relative or another size, such as 74 Flute for the alto
+  flute or 54 Voice Oohs for a solo voice, and `Weak` for a different instrument that shares only
+  part of the sound, such as 61 French Horn for a Wagner tuba or 75 Claves for the castanets. The
+  provenance is an estimate that cites the GM list read and says why the target is the nearest.
+  33 records, among them every pitched instrument GM1 has no program for, the cornet, flugelhorn
+  and piccolo trumpet (57 Trumpet), the E♭ and bass clarinets (72 Clarinet), the studio grand (2
+  Bright Acoustic Piano) and the clash and suspended cymbals (49 Crash Cymbal 1, a drum-kit
+  crash).
+- `NoEquivalent`: GM1 has nothing that would not misrepresent the instrument: the tam-tam, the
+  whip and the prepared piano.
+
+Whether a substitute is ever played is the caller's decision.
+
+`ORCHESTRAL_PERCUSSION_MAP` lists every GM1 key that names an orchestral percussion instrument,
+with that instrument, in key order, and `percussion_instrument(key)` looks a key up. It is built
+from the records' exact keys at compile time, and a compile-time check proves that no key names
+two instruments; substitute keys have no entry. It sits beside the drum kit's map
+(`sonara_midi::gm::GM_MAP`), which it does not change: the drum kit's sounds are recorded golden
+data (GLD-01), and its map has, for example, no triangle (80, 81).
+
 ## Validation
 
 A record is an `InstrumentSpec` checked by `Instrument::try_new(instrument_type, spec)`. Records
 are written as literals; one that leaves fields out ends in `..InstrumentSpec::EMPTY`, which
 gives them their "not known" value. `EMPTY` itself is not a valid record: its name and its
-articulation provenance are empty, so a record that forgets either does not build.
+articulation provenance are empty and its GM voice is a percussion voice with no key, so a record
+that forgets any of them does not build.
 
 `PitchRange::try_new`, `PlayerRange::try_new` and `Instrument::try_new` reject:
 
@@ -258,8 +296,10 @@ articulation provenance are empty, so a record that forgets either does not buil
 - a clef listed twice; for a pitched instrument, a clef that shows no pitch, a clef with an octave
   of its own on a transposing instrument (the octave would count twice), and a clef in which the
   written playable range leaves MIDI;
-- an empty or blank provenance anywhere in the record: a range, the articulation list or an era
-  of the ensemble profile.
+- an empty or blank provenance anywhere in the record: a range, the articulation list, an era of
+  the ensemble profile or a GM substitute;
+- a GM voice of channel-10 keys that lists none or one key twice, and a GM voice that does not fit
+  the pitch: a pitched instrument takes a program and an unpitched one channel-10 keys.
 
 A record is keyed by its `InstrumentType`, so its id cannot be malformed. The shipped data is
 built with the panicking `new` in a `static`, so invalid data is a compile error.
@@ -272,7 +312,8 @@ order.
 written list, provenance, the score-order conventions above, that every record rebuilds from its
 spec, and that a fixture breaking each check is rejected. It also compares every record's ranges,
 transposition, written range, clefs, forms and articulations with tables written out
-independently of the data.
+independently of the data, and every record's GM voice and the orchestral percussion map with
+tables written from the GM1 lists.
 
 ## Coverage
 

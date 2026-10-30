@@ -1,7 +1,10 @@
 //! Woodwind records.
 
 use super::sources::{cite, reason};
-use super::{PLAYERS_ESTIMATE, cited, estimate, not_used, pitched, players, unstated};
+use super::{
+    PLAYERS_ESTIMATE, cited, estimate, gm_program, gm_substitute, not_used, pitched, players,
+    unstated,
+};
 use crate::orchestration::articulation::Articulation::{
     AirTone, Bisbigliando, ConSordino, CrescendoSwell, Doit, Fall, FlutterTongue, Fortepiano,
     Glissando, Growl, Harmonics, KeyClick, Legato, Marcato, MultiTongue, Multiphonic, NonVibrato,
@@ -9,6 +12,7 @@ use crate::orchestration::articulation::Articulation::{
     TrillHalf, TrillWhole, VibratoOn,
 };
 use crate::orchestration::ensemble_profile::{EnsembleProfile, Forms};
+use crate::orchestration::general_midi::SubstituteFit;
 use crate::orchestration::id::{CategoryId, InstrumentType};
 use crate::orchestration::instrument::{Instrument, InstrumentSpec, Provenance};
 use crate::orchestration::names::Names;
@@ -111,6 +115,7 @@ pub(super) const PICCOLO: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(0, 1, "rare", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(73),
     },
 );
 
@@ -215,6 +220,7 @@ pub(super) const FLUTE: Instrument = Instrument::new(
             film: players(3, 3, "a3 section patches", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(74),
     },
 );
 
@@ -304,6 +310,16 @@ pub(super) const ALTO_FLUTE: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute(
+            74,
+            SubstituteFit::Approximate,
+            reason!(
+                "the GM1 program list has no alto flute; its pipe group runs from 73 Piccolo to 80 \
+                    Ocarina (",
+                wikipedia_general_midi,
+                "). 74 Flute is the nearest, played at sounding pitch",
+            ),
+        ),
     },
 );
 
@@ -384,6 +400,16 @@ pub(super) const BASS_FLUTE: Instrument = Instrument::new(
             film: players(0, 1, "", PLAYERS_ESTIMATE),
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute(
+            74,
+            SubstituteFit::Approximate,
+            reason!(
+                "the GM1 program list has no bass flute (",
+                wikipedia_general_midi,
+                "). 74 Flute is the nearest, played at sounding pitch; a GM flute may not reach \
+                    the lowest notes",
+            ),
+        ),
     },
 );
 
@@ -502,6 +528,7 @@ pub(super) const OBOE: Instrument = Instrument::new(
                 },
             ),
         }),
+        gm: gm_program(69),
     },
 );
 
@@ -609,6 +636,16 @@ pub(super) const OBOE_DAMORE: Instrument = Instrument::new(
                 },
             ),
         }),
+        gm: gm_substitute(
+            69,
+            SubstituteFit::Approximate,
+            reason!(
+                "GM1 has no oboe d'amore: its reed group lists only the saxophones, Oboe, English \
+                    Horn, Bassoon and Clarinet (",
+                midi_gm1_sound_set_2021_10,
+                "). 69 Oboe is the nearest, played at sounding pitch",
+            ),
+        ),
     },
 );
 
@@ -730,6 +767,7 @@ pub(super) const ENGLISH_HORN: Instrument = Instrument::new(
                 },
             ),
         }),
+        gm: gm_program(70),
     },
 );
 
@@ -817,6 +855,16 @@ pub(super) const CLARINET_EB: Instrument = Instrument::new(
             film: players(1, 1, "colour", PLAYERS_ESTIMATE),
             chamber: unstated("rare", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute(
+            72,
+            SubstituteFit::Approximate,
+            reason!(
+                "GM1 has no E-flat or other sopranino clarinet; 72 Clarinet is the nearest \
+                    program (",
+                wikipedia_general_midi,
+                ")",
+            ),
+        ),
     },
 );
 
@@ -907,6 +955,7 @@ pub(super) const CLARINET_BB: Instrument = Instrument::new(
             film: players(1, 3, "solo or an a3 section", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(72),
     },
 );
 
@@ -1000,6 +1049,7 @@ pub(super) const CLARINET_A: Instrument = Instrument::new(
             ),
             chamber: players(1, 1, "Mozart and Brahms quintets", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(72),
     },
 );
 
@@ -1095,6 +1145,16 @@ pub(super) const BASS_CLARINET: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "rare", PLAYERS_ESTIMATE),
         }),
+        gm: gm_substitute(
+            72,
+            SubstituteFit::Approximate,
+            reason!(
+                "GM1 has no bass clarinet: its reed group has only 72 Clarinet and 71 Bassoon \
+                    (",
+                wikipedia_general_midi,
+                "). 72 is the nearest timbre, 71 the alternative for the register",
+            ),
+        ),
     },
 );
 
@@ -1212,6 +1272,7 @@ pub(super) const SAXOPHONE_SOPRANO: Instrument = Instrument::new(
                 PLAYERS_ESTIMATE,
             ),
         }),
+        gm: gm_program(65),
     },
 );
 
@@ -1326,6 +1387,7 @@ pub(super) const SAXOPHONE_ALTO: Instrument = Instrument::new(
             ),
             chamber: players(1, 1, "in the SATB saxophone quartet", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(66),
     },
 );
 
@@ -1434,6 +1496,7 @@ pub(super) const SAXOPHONE_TENOR: Instrument = Instrument::new(
             ),
             chamber: players(1, 1, "in the SATB saxophone quartet", PLAYERS_ESTIMATE),
         }),
+        gm: gm_program(67),
     },
 );
 
@@ -1548,6 +1611,7 @@ pub(super) const SAXOPHONE_BARITONE: Instrument = Instrument::new(
                 PLAYERS_ESTIMATE,
             ),
         }),
+        gm: gm_program(68),
     },
 );
 
@@ -1672,6 +1736,7 @@ pub(super) const BASSOON: Instrument = Instrument::new(
                 },
             ),
         }),
+        gm: gm_program(71),
     },
 );
 
@@ -1782,5 +1847,16 @@ pub(super) const CONTRABASSOON: Instrument = Instrument::new(
                 },
             ),
         }),
+        gm: gm_substitute(
+            71,
+            SubstituteFit::Approximate,
+            reason!(
+                "GM1 has no contrabassoon: its reed group lists the bassoon only, and 44 \
+                    Contrabass is a string (",
+                midi_gm1_sound_set_2021_10,
+                "). 71 Bassoon is the nearest, played at sounding pitch, though GM does not state \
+                    how low a bassoon program reaches",
+            ),
+        ),
     },
 );

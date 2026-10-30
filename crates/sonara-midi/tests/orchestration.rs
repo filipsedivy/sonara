@@ -4,13 +4,15 @@ use std::ops::Range;
 
 use proptest::collection::vec;
 use proptest::prelude::*;
+use sonara_midi::gm::GM_MAP;
 use sonara_midi::orchestration::{
     Alias, Articulation, ArticulationAvailability, Axis, CategoryId, CheckError, Clef,
-    EnsembleProfile, Era, EraPlayers, Family, Forms, INSTRUMENTS, Instrument, InstrumentError,
-    InstrumentSpec, InstrumentType, Kind, Lang, Mute, Names, Number, PitchModel, PitchRange,
-    Pitched, PlayerRange, Provenance, RangeCheck, Request, RequestAvailability, RequestError,
-    Selection, SoundingPitch, SourcedRange, Target, Transposition, Vibrato, WrittenPitch,
-    all_aliases, category, fold, instrument, instruments, resolve,
+    EnsembleProfile, Era, EraPlayers, Family, Forms, GmNote, GmProgram, GmTarget, GmVoice,
+    INSTRUMENTS, Instrument, InstrumentError, InstrumentSpec, InstrumentType, Kind, Lang, Mute,
+    Names, Number, ORCHESTRAL_PERCUSSION_MAP, PitchModel, PitchRange, Pitched, PlayerRange,
+    Provenance, RangeCheck, Request, RequestAvailability, RequestError, Selection, SoundingPitch,
+    SourcedRange, SubstituteFit, Target, Transposition, Vibrato, WrittenPitch, all_aliases,
+    category, fold, instrument, instruments, percussion_instrument, resolve,
 };
 
 const ESTIMATE: Provenance = Provenance::Estimate {
@@ -61,12 +63,25 @@ const NAMES: Names = Names {
     abbreviation: "Fx.",
 };
 
-/// A valid unpitched spec: the base of the fixtures that break one field each.
+/// A valid unpitched spec: the base of the fixtures that break one field each. Its GM voice,
+/// `NoEquivalent`, fits a pitched and an unpitched instrument alike.
 const VALID: InstrumentSpec = InstrumentSpec {
     names: NAMES,
     articulations_provenance: ESTIMATE,
+    gm: GmVoice::NoEquivalent,
     ..InstrumentSpec::EMPTY
 };
+
+/// The GM1 channel-10 key `number`; a fixture outside 35-81 does not compile.
+const fn key(number: u8) -> GmNote {
+    match GmNote::new(number) {
+        Some(note) => note,
+        None => panic!("GM1 channel-10 keys are 35-81"),
+    }
+}
+
+/// 81 Open Triangle, then 80 Mute Triangle.
+const TRIANGLE_KEYS: &[GmNote] = &[key(81), key(80)];
 
 /// A pitched spec with an estimated playable range and the given clefs.
 fn written_in_clefs(
@@ -121,6 +136,9 @@ fn provenances(instrument: &Instrument) -> Vec<Provenance> {
     }
     if let Some(profile) = instrument.ensemble() {
         all.extend(Era::ALL.map(|era| profile.players(era).provenance));
+    }
+    if let GmVoice::Substitute { provenance, .. } = instrument.gm() {
+        all.push(provenance);
     }
     all
 }
@@ -180,6 +198,7 @@ fn dataset_invariants_hold() {
             instrument.articulations_provenance()
         );
         assert_eq!(spec.ensemble.as_ref(), instrument.ensemble());
+        assert_eq!(spec.gm, instrument.gm());
         assert_eq!(spec.clefs, instrument.clefs());
         // Every record states its clefs, each once.
         let mut clefs: Vec<&str> = instrument.clefs().iter().map(|clef| clef.slug()).collect();
@@ -544,7 +563,7 @@ fn validator_rejects_broken_metadata() {
 /// `EMPTY` is the base of a record, not a record: the fields a record must state are rejected
 /// until it states them (TST-03).
 #[test]
-fn empty_spec_needs_a_name_and_an_articulation_provenance() {
+fn empty_spec_needs_a_name_an_articulation_provenance_and_a_gm_voice() {
     let empty = InstrumentSpec::EMPTY;
     for lang in Lang::ALL {
         assert_eq!(empty.names.get(lang), "");
@@ -556,6 +575,7 @@ fn empty_spec_needs_a_name_and_an_articulation_provenance() {
     assert_eq!(empty.articulations, []);
     assert_eq!(empty.clefs, []);
     assert_eq!(empty.ensemble, None);
+    assert_eq!(empty.gm, GmVoice::Percussion(&[]));
     assert_eq!(
         Instrument::try_new(InstrumentType::Triangle, empty),
         Err(InstrumentError::EmptyName)
@@ -575,15 +595,24 @@ fn empty_spec_needs_a_name_and_an_articulation_provenance() {
         Instrument::try_new(InstrumentType::Triangle, named),
         Err(InstrumentError::EmptyProvenance)
     );
-    let stated = InstrumentSpec {
+    let provenance_stated = InstrumentSpec {
         articulations_provenance: ESTIMATE,
         ..named
+    };
+    assert_eq!(
+        Instrument::try_new(InstrumentType::Triangle, provenance_stated),
+        Err(InstrumentError::NoGmKeys)
+    );
+    let stated = InstrumentSpec {
+        gm: GmVoice::Percussion(TRIANGLE_KEYS),
+        ..provenance_stated
     };
     let triangle = Instrument::try_new(InstrumentType::Triangle, stated).expect("valid");
     assert_eq!(triangle.name(), "Triangle");
     assert_eq!(triangle.spec(), stated);
     assert_eq!(triangle.ensemble(), None);
     assert_eq!(triangle.written_playable(), None);
+    assert_eq!(triangle.gm(), GmVoice::Percussion(TRIANGLE_KEYS));
 }
 
 /// Each of the five names and the abbreviation must be stated (TST-03).
@@ -3731,5 +3760,374 @@ proptest! {
             }
         }
         prop_assert!(end <= words.len());
+    }
+}
+
+/// The GM voice of every record (TST-10: written from the researched GM numbers, not from the
+/// data). A row holds the id, then `program n` for an exact GM1 program, `keys k ...` for exact
+/// channel-10 keys, the fit (`approximate` or `weak`) followed by the program or by `keys k ...`
+/// for a substitute, or `none`. A program counts 1-128; keys come preferred first.
+const GM_VOICES: [&str; 85] = [
+    "piccolo program 73",
+    "flute program 74",
+    "alto_flute approximate 74",
+    "bass_flute approximate 74",
+    "oboe program 69",
+    "oboe_damore approximate 69",
+    "english_horn program 70",
+    "clarinet_eb approximate 72",
+    "clarinet_bb program 72",
+    "clarinet_a program 72",
+    "bass_clarinet approximate 72",
+    "saxophone_soprano program 65",
+    "saxophone_alto program 66",
+    "saxophone_tenor program 67",
+    "saxophone_baritone program 68",
+    "bassoon program 71",
+    "contrabassoon approximate 71",
+    "horn_f program 61",
+    "wagner_tuba_tenor weak 61",
+    "wagner_tuba_bass weak 61",
+    "trumpet_piccolo approximate 57",
+    "trumpet_c program 57",
+    "trumpet_bb program 57",
+    "cornet approximate 57",
+    "flugelhorn weak 57",
+    "trombone_tenor program 58",
+    "trombone_bass program 58",
+    "euphonium approximate 59",
+    "tuba program 59",
+    "cimbasso approximate 58",
+    "timpani program 48",
+    "bass_drum keys 35 36",
+    "snare_drum keys 38",
+    "clash_cymbals approximate keys 49 57",
+    "suspended_cymbal approximate keys 49",
+    "tam_tam none",
+    "triangle keys 81 80",
+    "tambourine keys 54",
+    "castanets weak keys 75",
+    "wood_block keys 76 77",
+    "temple_blocks approximate keys 76 77",
+    "sleigh_bells weak keys 54",
+    "maracas keys 70",
+    "shaker approximate keys 70 69",
+    "whip none",
+    "glockenspiel program 10",
+    "xylophone program 14",
+    "vibraphone program 12",
+    "marimba program 13",
+    "tubular_bells program 15",
+    "crotales approximate 10",
+    "carillon approximate 15",
+    "harp program 47",
+    "guitar_classical program 25",
+    "lute weak 25",
+    "mandolin weak 26",
+    "celesta program 9",
+    "piano_concert_grand program 1",
+    "piano_studio_grand approximate 2",
+    "piano_upright approximate 1",
+    "piano_felt weak 1",
+    "piano_prepared none",
+    "piano_honky_tonk program 4",
+    "harpsichord program 7",
+    "clavichord weak 8",
+    "electric_piano_rhodes program 5",
+    "electric_piano_wurlitzer program 5",
+    "clavinet program 8",
+    "organ_pipe program 20",
+    "organ_hammond program 17",
+    "accordion program 22",
+    "voice_soprano approximate 54",
+    "voice_mezzo_soprano approximate 54",
+    "voice_alto approximate 54",
+    "voice_tenor approximate 54",
+    "voice_baritone approximate 54",
+    "voice_bass approximate 54",
+    "choir_soprano program 53",
+    "choir_alto program 53",
+    "choir_tenor program 53",
+    "choir_bass program 53",
+    "violin program 41",
+    "viola program 42",
+    "cello program 43",
+    "double_bass program 44",
+];
+
+/// A GM voice written as in [`GM_VOICES`].
+fn describe(voice: GmVoice) -> String {
+    let keys = |keys: &[GmNote]| {
+        keys.iter()
+            .map(|key| key.get().to_string())
+            .collect::<Vec<_>>()
+            .join(" ")
+    };
+    match voice {
+        GmVoice::Program(program) => format!("program {}", program.number()),
+        GmVoice::Percussion(notes) => format!("keys {}", keys(notes)),
+        GmVoice::Substitute { target, fit, .. } => {
+            let fit = match fit {
+                SubstituteFit::Approximate => "approximate",
+                SubstituteFit::Weak => "weak",
+            };
+            match target {
+                GmTarget::Program(program) => format!("{fit} {}", program.number()),
+                GmTarget::Notes(notes) => format!("{fit} keys {}", keys(notes)),
+            }
+        }
+        GmVoice::NoEquivalent => "none".to_owned(),
+    }
+}
+
+/// Every record states the GM voice of the researched table: exact programs and keys only where
+/// the GM1 name names the instrument, every other GM number a substitute (TST-05, TST-10).
+#[test]
+fn gm_voices_match_the_researched_values() {
+    let mut ids = Vec::new();
+    for row in GM_VOICES {
+        let (id, voice) = row.split_once(' ').expect("an id and a voice");
+        assert_eq!(describe(get(id).gm()), voice, "{id}");
+        ids.push(id);
+    }
+    ids.sort_unstable();
+    ids.dedup();
+    assert_eq!(ids.len(), INSTRUMENTS.len(), "every record once");
+
+    let count = |matches: fn(&GmVoice) -> bool| {
+        INSTRUMENTS
+            .iter()
+            .filter(|instrument| matches(&instrument.gm()))
+            .count()
+    };
+    assert_eq!(count(|voice| matches!(voice, GmVoice::Program(_))), 43);
+    assert_eq!(count(|voice| matches!(voice, GmVoice::Percussion(_))), 6);
+    assert_eq!(
+        count(|voice| matches!(voice, GmVoice::Substitute { .. })),
+        33
+    );
+    assert_eq!(count(|voice| matches!(voice, GmVoice::NoEquivalent)), 3);
+    // A pitched record takes a program and an unpitched one channel-10 keys, exact or not.
+    for instrument in &INSTRUMENTS {
+        let pitched = matches!(instrument.pitch(), PitchModel::Pitched(_));
+        let plays_keys = !instrument.gm().keys().is_empty();
+        if instrument.gm() != GmVoice::NoEquivalent {
+            assert_ne!(pitched, plays_keys, "{}", instrument.id());
+        }
+    }
+    // The program change message carries the program number minus one ("Acoustic Grand Piano",
+    // program 1, is sent as 0; "Violin", 41, as 40).
+    let sent = |id| match get(id).gm() {
+        GmVoice::Program(program) => program.program_change(),
+        other => panic!("{id} has an exact program, not {other:?}"),
+    };
+    assert_eq!((sent("piano_concert_grand"), sent("violin")), (0, 40));
+}
+
+/// A substitute is an estimate: its reason cites the GM list that has no voice for the
+/// instrument and names the program or keys it chose (TST-10).
+#[test]
+fn gm_substitutes_are_estimates_naming_their_gm_list_and_target() {
+    let mut substitutes = 0;
+    for instrument in &INSTRUMENTS {
+        let GmVoice::Substitute {
+            target, provenance, ..
+        } = instrument.gm()
+        else {
+            continue;
+        };
+        substitutes += 1;
+        let id = instrument.id();
+        let Provenance::Estimate { reason } = provenance else {
+            panic!("{id}: a substitute is a choice, so its provenance is an estimate");
+        };
+        assert!(reason.contains("https://"), "{id}: {reason}");
+        assert!(
+            [
+                "General_MIDI",
+                "gm-level-1-sound-set",
+                "gm1sound",
+                "1TTM2HI2JAp_XiTJYEJ8gPNvuJpIjJiTP"
+            ]
+            .iter()
+            .any(|list| reason.contains(list)),
+            "{id} cites a GM1 list: {reason}"
+        );
+        let numbers: Vec<u8> = match target {
+            GmTarget::Program(program) => vec![program.number()],
+            GmTarget::Notes(keys) => keys.iter().map(|key| key.get()).collect(),
+        };
+        for number in numbers {
+            assert!(
+                reason.contains(&format!(" {number} ")),
+                "{id} names {number}: {reason}"
+            );
+        }
+    }
+    assert_eq!(substitutes, 33);
+}
+
+/// The GM voice checks of `try_new`, each failure and its valid counterpart (TST-03, TST-07).
+#[test]
+fn validator_rejects_broken_gm_voices() {
+    const EMPTY_KEYS: &[GmNote] = &[];
+    const KEY_TWICE: &[GmNote] = &[key(81), key(81)];
+    const KEY_TWICE_APART: &[GmNote] = &[key(80), key(81), key(80)];
+    let program = GmProgram::new(48).expect("a GM1 program");
+    let substitute = |target, provenance| GmVoice::Substitute {
+        target,
+        fit: SubstituteFit::Approximate,
+        provenance,
+    };
+    let blank = Provenance::Estimate { reason: " " };
+    let unpitched =
+        |gm| Instrument::try_new(InstrumentType::Triangle, InstrumentSpec { gm, ..VALID });
+    let pitched = |gm| {
+        Instrument::try_new(
+            InstrumentType::Timpani,
+            InstrumentSpec {
+                gm,
+                ..written_in_clefs(0, (45, 57), &[Clef::Bass])
+            },
+        )
+    };
+
+    for (gm, error) in [
+        (GmVoice::Percussion(EMPTY_KEYS), InstrumentError::NoGmKeys),
+        (
+            substitute(GmTarget::Notes(EMPTY_KEYS), ESTIMATE),
+            InstrumentError::NoGmKeys,
+        ),
+        (
+            GmVoice::Percussion(KEY_TWICE),
+            InstrumentError::DuplicateGmKey,
+        ),
+        (
+            substitute(GmTarget::Notes(KEY_TWICE_APART), ESTIMATE),
+            InstrumentError::DuplicateGmKey,
+        ),
+        (GmVoice::Program(program), InstrumentError::GmVoiceMismatch),
+        (
+            substitute(GmTarget::Program(program), ESTIMATE),
+            InstrumentError::GmVoiceMismatch,
+        ),
+        (
+            substitute(GmTarget::Notes(TRIANGLE_KEYS), blank),
+            InstrumentError::EmptyProvenance,
+        ),
+    ] {
+        assert_eq!(unpitched(gm), Err(error), "unpitched {gm:?}");
+    }
+    for (gm, error) in [
+        // A pitched record that does not state its voice keeps `EMPTY`'s keyless one.
+        (GmVoice::Percussion(EMPTY_KEYS), InstrumentError::NoGmKeys),
+        (
+            GmVoice::Percussion(TRIANGLE_KEYS),
+            InstrumentError::GmVoiceMismatch,
+        ),
+        (
+            substitute(GmTarget::Notes(TRIANGLE_KEYS), ESTIMATE),
+            InstrumentError::GmVoiceMismatch,
+        ),
+        (
+            substitute(GmTarget::Program(program), blank),
+            InstrumentError::EmptyProvenance,
+        ),
+    ] {
+        assert_eq!(pitched(gm), Err(error), "pitched {gm:?}");
+    }
+
+    for gm in [
+        GmVoice::Percussion(TRIANGLE_KEYS),
+        substitute(GmTarget::Notes(TRIANGLE_KEYS), ESTIMATE),
+        GmVoice::NoEquivalent,
+    ] {
+        assert_eq!(unpitched(gm).map(|record| record.gm()), Ok(gm));
+    }
+    for gm in [
+        GmVoice::Program(program),
+        substitute(GmTarget::Program(program), ESTIMATE),
+        GmVoice::NoEquivalent,
+    ] {
+        assert_eq!(pitched(gm).map(|record| record.gm()), Ok(gm));
+    }
+    // The GM checks come after the alias checks.
+    assert_eq!(
+        Instrument::try_new(
+            InstrumentType::Triangle,
+            InstrumentSpec {
+                aliases: TWICE,
+                gm: GmVoice::Percussion(EMPTY_KEYS),
+                ..VALID
+            },
+        ),
+        Err(InstrumentError::DuplicateAlias("viola"))
+    );
+}
+
+/// The orchestral percussion map: GM1 key and the id it names (TST-10: written from the GM1
+/// percussion key map, not from the data).
+const ORCHESTRAL_KEYS: [(u8, &str); 9] = [
+    (35, "bass_drum"),
+    (36, "bass_drum"),
+    (38, "snare_drum"),
+    (54, "tambourine"),
+    (70, "maracas"),
+    (76, "wood_block"),
+    (77, "wood_block"),
+    (80, "triangle"),
+    (81, "triangle"),
+];
+
+/// The orchestral percussion map holds the exact keys of the records and no substitute, and it
+/// sits beside the drum kit's map without changing it (TST-05, TST-07).
+#[test]
+fn orchestral_percussion_map_holds_the_exact_keys_only() {
+    let map: Vec<(u8, &str)> = ORCHESTRAL_PERCUSSION_MAP
+        .iter()
+        .map(|(key, instrument_type)| (key.get(), instrument_type.id()))
+        .collect();
+    assert_eq!(map, ORCHESTRAL_KEYS);
+    for number in GmNote::LOWEST..=GmNote::HIGHEST {
+        let expected = ORCHESTRAL_KEYS
+            .iter()
+            .find(|(key, _)| *key == number)
+            .map(|(_, id)| *id);
+        assert_eq!(
+            percussion_instrument(key(number)).map(InstrumentType::id),
+            expected,
+            "{number}"
+        );
+    }
+    for instrument in &INSTRUMENTS {
+        let own = Some(instrument.instrument_type());
+        match instrument.gm() {
+            GmVoice::Percussion(keys) => {
+                for &key in keys {
+                    assert_eq!(percussion_instrument(key), own, "{}", instrument.id());
+                }
+            }
+            GmVoice::Substitute {
+                target: GmTarget::Notes(keys),
+                ..
+            } => {
+                for &key in keys {
+                    assert_ne!(percussion_instrument(key), own, "{}", instrument.id());
+                }
+            }
+            GmVoice::Program(_) | GmVoice::Substitute { .. } | GmVoice::NoEquivalent => {}
+        }
+    }
+    // The kit crashes and the claves stand in for orchestral instruments but name none.
+    for number in [49, 57, 75] {
+        assert_eq!(percussion_instrument(key(number)), None, "{number}");
+    }
+    // The drum kit's map has no triangle; a GM1 triangle key still names the orchestral one.
+    for number in [80, 81] {
+        assert!(GM_MAP.iter().all(|(note, _)| *note != number), "{number}");
+        assert_eq!(
+            percussion_instrument(key(number)),
+            Some(InstrumentType::Triangle)
+        );
     }
 }
