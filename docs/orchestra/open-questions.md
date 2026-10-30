@@ -42,7 +42,13 @@ Conventions:
 
 ## A. Owner decisions
 
+**Decided on 2026-10-30.** The owner accepted [ADR 0011](../decisions/0011-orchestral-instruments-and-performance.md)
+together with the phase-2 contract core, and decided A1, A3, A4, A5, A6, A12, A14, A16 and A17 (marked below). The other
+A items stay open; [implementation-plan.md](implementation-plan.md) shows which work items wait for which of them.
+
 ### A1. Where an instrument's identity and part live in a project
+
+**Decided 2026-10-30 by the owner:** accepted with ADR 0011: project schema v2 with an optional track `part`, written only when a document needs it (milestone O2).
 
 - **Question.** Project v1 tracks have no field for the orchestration id, the part (Violins I, Horn 3), the
   player, solo or section, divisi, mute, role or notated dynamic. Range, doubling and balance checks need
@@ -69,6 +75,8 @@ Conventions:
 
 ### A3. How articulations reach a library
 
+**Decided 2026-10-30 by the owner:** both: the sampler's `articulation` parameter as the track state, and a per-note `articulation` in schema v2 and agent API 1.1 on top (option c with option b).
+
 - **Question.** A note carries no articulation, and no tool writes program changes or CC into a clip.
 - **Options.** (a) The planner or the agent writes key-switch notes into clips with today's note tools.
   They appear in the user's MIDI, and the switch note must be held through the passage, because a seek or
@@ -86,6 +94,8 @@ Conventions:
 
 ### A4. Dynamics: an automatable sampler parameter or a CC-writing tool
 
+**Decided 2026-10-30 by the owner:** both: a CC-writing tool (agent API 1.1) for dynamics in clips, and the sampler's `dynamics` parameter as a track-level trim.
+
 - **Question.** Libraries put dynamics on CC1 crossfades (Spitfire, Sonatina Performance). The sampler acts
   on CC 7, 11 and 64 only, and no tool writes CC into a clip.
 - **Options.** (a) A CC-writing agent tool and a CC lane (CTR-01). (b) An automatable `dynamics` float on
@@ -101,6 +111,8 @@ Conventions:
 
 ### A5. The sampler's `instrument` parameter: absolute paths or preset ids
 
+**Decided 2026-10-30 by the owner:** yes: preset ids, with absolute paths of older projects mapped on load; ADR 0010 decision 4 is amended.
+
 - **Question.** The parameter's choices are file paths, the configured library root joined with each
   patch (absolute when the setting is), and the project stores that path (ADR 0010 decision 4). A project
   therefore does not play on a machine whose library sits elsewhere.
@@ -113,6 +125,8 @@ Conventions:
   rank 4; [sfz-conformance.md](sfz-conformance.md) C1, C4.
 
 ### A6. Library mapping data: where it lives, what it holds, whether Sonara ships it
+
+**Decided 2026-10-30 by the owner:** Sonara ships its own profiles for VSCO 2 CE and VCSL v1.2.2-RC (no samples).
 
 - **Question.** No manifest field maps a preset to an orchestration id, solo or section, part, key
   switches, CC or GM program, so an agent cannot find "the horn section, legato".
@@ -231,6 +245,8 @@ Conventions:
 
 ### A12. Articulation vocabulary: the merges and `col_legno`
 
+**Decided 2026-10-30 by the owner:** `col_legno_battuto` stays apart from `col_legno`; the five applied spelling merges stand.
+
 - **Question.** Confirm the five merges already applied to the card json blocks: `multitongue`,
   `double_tonguing` and `triple_tonguing` into `multi_tongue`; `muted_string` into `palm_mute`;
   `pitch_bend` into `portamento`. Decide the sixth, `col_legno_battuto` into `col_legno`, which is not
@@ -271,6 +287,8 @@ Conventions:
 
 ### A14. Articulation vocabulary: the ordinary note, and ids used in two meanings
 
+**Decided 2026-10-30 by the owner:** no id means ordinario, the instrument's ordinary sound; `sustain` keeps its meaning as the long patch.
+
 - **Question.** Several cards use `sustain` (pianos, harpsichord, celesta, harp, guitar, lute, mandolin)
   or `staccato` (xylophone, marimba) for the instrument's ordinary note, so that library default patches
   match; tuned percussion writes `let_ring` instead. `damped`, `tremolo` and `staccato` also carry a
@@ -299,6 +317,8 @@ Conventions:
 
 ### A16. Articulation vocabulary: flat list or separate axes (mutes, beaters, vowels, shapes)
 
+**Decided 2026-10-30 by the owner:** shape B: one primary id per note, with mute and vibrato as passage states.
+
 - **Question.** One articulation per note (Logic's flat list), or a primary articulation plus states such
   as the mute? The brass cards ask for a mute field (straight, cup, harmon, plunger, bucket) instead of
   `mute_*` ids, the low-brass card treats the mute type as a parameter of `con_sordino`, the
@@ -318,6 +338,8 @@ Conventions:
   OQ14; [cards/clarinets.md](cards/clarinets.md) OQ14.
 
 ### A17. Licences: recommending and supporting Sonatina-, Iowa- or Philharmonia-derived libraries
+
+**Decided 2026-10-30 by the owner:** no shipped profile for Sonatina or for CC BY libraries; users can write their own manifest.
 
 - **Question.** Does recommending a user-installed library make it a dependency under LIC-01? Could Sonara
   ship a downloader or mapping data for Sonatina without that counting as distribution under ADR 0010
@@ -732,3 +754,4 @@ Triage of 2026-10-30. What this file did with its inputs:
    11 research follow-ups (D1-D11): 170 items.
 - C113 and C114 updated after the cards were corrected (VCSL SFZ in the tag; the Wurlitzer licence caveat).
 - A24 and C124: the correction of `docs/orchestral-audio-engine-research.md` is done.
+- Recorded the owner's decisions of 2026-10-30 (A1, A3, A4, A5, A6, A12, A14, A16, A17).

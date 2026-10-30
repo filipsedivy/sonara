@@ -2,8 +2,8 @@
 
 - **Status:** Accepted (2026-10-27)
 - **Research:** [orchestral-audio-engine-research.md](../orchestral-audio-engine-research.md)
-- **Amendment proposed:** [ADR 0011](0011-orchestral-instruments-and-performance.md) (proposed) would amend decision 4
-  and two consequences (live rebuilds, the memory cap)
+- **Amended by:** [ADR 0011](0011-orchestral-instruments-and-performance.md) (accepted 2026-10-30): decision 4 and two
+  consequences (live rebuilds, the memory cap); the marked passages below say how
 
 ## Context
 
@@ -35,7 +35,8 @@ samples. The constraints that decide the design are rules, not taste:
    a configured library holds at least one patch. The instrument is the enum parameter
    `instrument` (the choices are the installed patches' absolute paths), so `list_plugins` and
    `set_instrument` select it and the project stores it with the other parameters: no new tool,
-   no schema change.
+   no schema change. _Amended by ADR 0011 decision 4: the choices become catalog preset ids
+   (`<library>/<patch path without .sfz>`); absolute paths of older projects are mapped to ids on load._
 5. **Failure is soft.** A patch that is missing or unreadable, or an `instrument` that is not
    installed on this machine, renders as silence with a warning; it does not fail the render.
 6. **Not built, and why:**
@@ -51,7 +52,8 @@ samples. The constraints that decide the design are rules, not taste:
 ## Consequences
 
 - A live graph rebuild recreates sampler devices, so sounding notes restart on an edit during
-  playback (the loaded bank is cached; no file is read again).
+  playback (the loaded bank is cached; no file is read again). _Amended by ADR 0011: an unchanged
+  sampler is reused on a live rebuild._
 - Supported SFZ: velocity and key ranges, `seq_*` round robin, `lorand`/`hirand`, keyswitches,
   `trigger=release`, `group`/`off_by`, `loop_mode`, `ampeg_attack`/`release`, `tune`, `volume`,
   `offset`/`end`, `#include`/`#define`/`default_path`. CC-driven layers and crossfades, filters,
@@ -59,7 +61,8 @@ samples. The constraints that decide the design are rules, not taste:
   the loader lists the ignored opcodes. Sonatina's performance patches need CC 1 and CC 21, so
   they play only partly.
 - Samples are decoded whole: a patch needs RAM for its samples (capped at 3 GiB). Streaming from
-  disk is future work.
+  disk is future work. _Amended by ADR 0011: the cap applies per device, which may hold an
+  articulation set of several patches._
 - The sampler has no prototype, so no golden data covers it. `sonara-dsp/tests/sampler.rs`,
   `sonara-media/tests/sfz.rs` and `sonara-engine/tests/sampler.rs` pin it with generated
   fixtures.

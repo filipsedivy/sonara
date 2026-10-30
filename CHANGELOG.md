@@ -17,9 +17,11 @@ break the API. The project format is versioned independently, see
   ensemble templates, doubling and balance rules, a harmonized articulation vocabulary, the mapping of instruments to
   free sample libraries with their licences, a coverage and gap analysis, and a check of the SFZ sampler against those
   libraries (eleven confirmed divergences from the SFZ specification and seven further findings). The four-layer design
-  (instrument model, sound source, performance layer, user interface) and ADR 0011 are **proposed**; nothing is
-  implemented, and no tool, schema or contract changes. See [docs/orchestra-research.md](docs/orchestra-research.md) and
-  [docs/orchestra-design.md](docs/orchestra-design.md).
+  (instrument model, sound source, performance layer, user interface), its implementation plan and ADR 0011, which the
+  owner accepted together with a future project schema 2 and agent API 1.1, are recorded. Nothing is implemented yet, so
+  no tool, schema or contract changes in this release. See [docs/orchestra-research.md](docs/orchestra-research.md),
+  [docs/orchestra-design.md](docs/orchestra-design.md) and
+  [docs/orchestra/implementation-plan.md](docs/orchestra/implementation-plan.md).
 
 ## [0.1.12] — 2026-10-30
 

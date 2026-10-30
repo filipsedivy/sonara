@@ -1,7 +1,7 @@
 # Orchestra and keyboard instruments: research summary
 
 _Date: 2026-10-30 · Status: research complete · Design: [orchestra-design.md](orchestra-design.md) and
-[ADR 0011](decisions/0011-orchestral-instruments-and-performance.md) (both proposed) · Detail:
+[ADR 0011](decisions/0011-orchestral-instruments-and-performance.md) (accepted 2026-10-30) · Detail:
 [docs/orchestra/](orchestra/README.md)_
 
 **Reading guide.** Every fact in the research records is tagged **Cited** (a source that was opened states it; the

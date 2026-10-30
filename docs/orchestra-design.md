@@ -1,7 +1,7 @@
 # Orchestral instruments in Sonara: design proposal
 
-- **Status:** Proposed (2026-10-30). Nothing here is implemented.
-- **Decision record:** [ADR 0011](decisions/0011-orchestral-instruments-and-performance.md) (proposed)
+- **Status:** Accepted by the owner on 2026-10-30 (ADR 0011), with the phase-2 contract core. Nothing is implemented yet.
+- **Decision record:** [ADR 0011](decisions/0011-orchestral-instruments-and-performance.md) (accepted)
 - **Research:** [orchestra-research.md](orchestra-research.md) and [orchestra/](orchestra/README.md)
 - **Implementation plan:** [orchestra/implementation-plan.md](orchestra/implementation-plan.md)
 - **Layers:** (a) [instrument model](orchestra/design/instrument-model.md) · (b) [sound source](orchestra/design/sound-source.md)
@@ -86,8 +86,8 @@ The vocabulary grows from 15 to 96 ids (95 if `col_legno_battuto` merges), each 
 keep their spelling, and the list only ever grows at the end. A request is one primary id (none means ordinario: the
 instrument's ordinary sound) plus the passage states mute and vibrato, as players and libraries treat them;
 `con_sordino` stays as an id. A combination a library did not record falls back by dropping the state, and the user is
-told. Owner: the merges and invented ids (A12, A13), the ordinario rule (A14), mallet rolls (A15), shape B against a flat
-list (A16).
+told. Decided (2026-10-30): shape B (A16), no id means ordinario (A14), `col_legno_battuto` stays apart from
+`col_legno` (A12). Open: the invented ids and candidate merges (A13), mallet rolls (A15).
 
 ### S3. Where identity lives in a project
 
@@ -97,17 +97,17 @@ list (A16).
   tracks) > none. The sampler is not one of the twelve golden built-ins (ADR 0010 decision 4), so its descriptor can grow;
   the application passes the id choices in, because `sonara-core` may not depend on `sonara-midi`. Part names ("Violins
   I") live in track names. Poly Synth and Drum Kit tracks carry no identity; a match by track name is shown as inferred.
-- **Phase 2 (owner, CTR-01):** project schema v2 adds an optional track `part` (instrument, name, players, solo, the
+- **Phase 2 (accepted 2026-10-30, CTR-01, versioned; milestone O2):** project schema v2 adds an optional track `part` (instrument, name, players, solo, the
   doubling player, and a per-part notation override) and an optional note `articulation`, with a v1 → v2 migration and
   the required features `parts` and `note-articulations`. The writer writes the lowest version a document needs, because
   the bytes of the rich test project and all five golden workflows are version 1, and an unchanged v1 document opens
   without a reported migration (`open_project` keeps answering `migrated_from_schema: null`, as golden coverage step 164
-  records) (GLD-01, CTR-01). Owner: A1.
+  records) (GLD-01, CTR-01). Decided: A1.
 - A doubled instrument (Flute 3 on piccolo) gets its own track in phase 1: one track per part (A2).
 
-### S4. Articulation and dynamics reach the library through sampler parameters first
+### S4. Articulation and dynamics: a track state in the sampler, and per note and per clip on top
 
-- **Phase 1 (owner: A3 option c, against the research's option a of key-switch notes in clips):** two automatable
+- **The track state (accepted; A3):** two automatable
   sampler parameters, written with the existing `create_automation`.
   - `articulation` is an enum with **one frozen, append-only choice list for every preset**: `auto`, `ordinario`, then the
     vocabulary. A per-preset list is impossible, because a parameter belongs to the plugin descriptor and automation
@@ -124,10 +124,13 @@ list (A16).
   - Timing: the engine samples device parameters once per block, so a change takes effect at the next block start, up
     to one block late (`crates/sonara-engine/src/automation.rs`). The performance layer writes changes two blocks early.
     One state per track: divisi parts with different articulations go on separate tracks.
-- **Phase 2 (owner, CTR-01):** a per-note `articulation` in the schema and in `NoteInput`, and a tool that writes MIDI CC
-  into clips. Owner: A3, A4.
+- **Per note and per clip (phase 2, accepted 2026-10-30; CTR-01, versioned):** a per-note `articulation` in the schema
+  and in `NoteInput`, and a tool that writes MIDI CC into clips (agent API 1.1, additive). A note's own articulation
+  overrides the track state at that note, sample-accurately; CC 1 and CC 11 in clips drive the dynamics, move with the
+  clip and also serve hosted plugins (M5); the `dynamics` parameter remains a track-level trim. Scheduled in O2 (schema),
+  O3 (engine and sampler, SS-36), O4 (API 1.1, PF-23, PF-18, PF-21) and O5 (piano roll, UI-33). Decided: A3, A4.
 
-### S5. The sampler stores preset ids (owner: amends ADR 0010 decision 4)
+### S5. The sampler stores preset ids (accepted; amends ADR 0010 decision 4)
 
 The `instrument` parameter's choices become catalog preset ids (`<library>/<patch path without .sfz>`, and
 `<library>/@<set>` for an articulation set), resolved to files by the application through a resolver it gives the media provider. Absolute paths
@@ -135,7 +138,7 @@ from older projects are mapped to ids when a project loads. A library that match
 id instead of its folder slug, so renaming a folder no longer changes ids (sfz-conformance C4); this lands in O2, before
 any project stores a preset id. Discovery skips include fragments (sfz-conformance C8). The amendment also changes two
 consequences of ADR 0010: a live graph rebuild reuses an unchanged sampler instead of restarting its notes (SS-17), and
-the 3 GiB cap applies per device, which may hold an articulation set. Owner: A5.
+the 3 GiB cap applies per device, which may hold an articulation set. Decided: A5.
 
 ### S6. Sampler engine work (recommended; pure Rust, real-time safe, no new dependency)
 
@@ -166,8 +169,8 @@ from a structural check of the SFZ file always win; among claims, from lowest: t
 manifest (field by field). Version 1 manifests keep working; an older Sonara reports a version 2 manifest as invalid and
 scans the library without it. Sonara ships
 profiles for **VSCO 2 CE** and **VCSL v1.2.2-RC** (CC0), embedded in `sonara-app` at build time: its own data, no samples,
-LIC-01 clean. Owner: shipping profiles at all (A6); no profile for Sonatina (a retired licence and Philharmonia-derived
-samples whose terms exclude sampler instruments) or for CC BY libraries; users can write their own (A17).
+LIC-01 clean. Decided (A6, A17): profiles ship for these two only; none for Sonatina (a retired licence and
+Philharmonia-derived samples whose terms exclude sampler instruments) or for CC BY libraries; users can write their own.
 
 ### S8. A degradation chain that always says what it did
 
@@ -188,7 +191,7 @@ exactly as it is (GLD-01). Phase 1: the GUI's New Project, Add Ensemble… and O
 the planner; MCP agents and the AI Composer build ensembles themselves from existing tools, guided by the orchestration
 reference (S10). Owner (CTR-01): extend the `create_project` enum or add ensemble and orchestrate tools in O6 (A7).
 
-### S10. Agents learn the orchestra without new tools first
+### S10. Agents learn the orchestra
 
 - The AI Composer's system prompt gets an orchestration reference generated from the model (ids, ranges, roles, the key
   doubling and balance rules, the sampler parameters and how to automate them), at most 24,000 characters, with a size
@@ -200,7 +203,8 @@ reference (S10). Owner (CTR-01): extend the `create_project` enum or add ensembl
 - `sonara_app::quality` reports orchestration findings by rule id; the first wave of rules needs only the instrument,
   notes, tempo and lanes ([performance.md](orchestra/design/performance.md) section 6 lists it). Humanization is on by
   default when the layer writes parts (owner, P2).
-- New tools (orchestrate, check, a CC writer, an ensemble tool) are phase 2 and need the owner. Detail:
+- Agent API 1.1 (accepted) adds `NoteInput.articulation`, a `part` argument on `create_track` and a CC-writing tool
+  (O4). Orchestrate, check and ensemble tools still need the owner (A7). Detail:
   [layer (c)](orchestra/design/performance.md).
 
 ### S11. An instrument-aware interface (recommended)
@@ -218,29 +222,31 @@ pages use an allow-list (owner, U2). Every new canvas element is measured agains
 
 ### S12. Milestones
 
-All except O6 belong to milestone M4 ("breadth") and change no contract.
+O1–O5 belong to milestone M4 ("breadth"). O2 and O4 carry the two accepted, versioned contract changes (project schema 2,
+agent API 1.1); O6 holds what is still undecided.
 
 | # | Milestone | Delivers | Contract impact |
 |---|---|---|---|
 | O1 | Instrument model | 85 ids with corrections, vocabulary with kinds, aliases, GM voices, ensembles and rule tables as data; one family enum | none |
-| O2 | Sampler conformance | S6.1, preset ids and profile ids (S5), and the sampler's instrument choice shown as preset names grouped by library (UI-1) | ADR 0010 amendment (owner) |
-| O3 | Sound mapping and expression | Library profiles, catalog mapping, degradation chain; `instrument_type`, `articulation`, `dynamics`; S6.2–S6.4 | none |
-| O4 | Performance and agents | Articulation inference, dynamics shaping, humanization, checks; ensembles service; planner and AI Composer knowledge; quality findings | none (P1 changes a documented guarantee) |
-| O5 | Interface | Library browser, family panels, track header, piano-roll lanes and shading, ensembles | none |
-| O6 | Contract v2 (owner) | Schema v2 `part` and note `articulation`, a CC-writing tool, an ensemble tool, orchestrate and check tools; GM fallback; plugin hosting (M5) drives the same articulation maps | CTR-01, versioned |
+| O2 | Sampler conformance and schema 2 | S6.1, preset ids and profile ids (S5), the sampler's instrument choice shown as preset names grouped by library (UI-1); project schema 2 with track `part` and note `articulation` (IM-19) | ADR 0010 amended; project schema 2 (accepted) |
+| O3 | Sound mapping and expression | Library profiles, catalog mapping, degradation chain; `instrument_type`, `articulation`, `dynamics`; S6.2–S6.4; per-note articulation in the engine and the sampler (SS-36) | none |
+| O4 | Performance, agents and API 1.1 | Articulation inference, dynamics shaping, humanization, checks; ensembles service; planner and AI Composer knowledge; quality findings; agent API 1.1 with `NoteInput.articulation`, a `part` argument on `create_track` and a CC-writing tool (PF-23, PF-18, PF-21) | agent API 1.1 (accepted); P1 changes a documented guarantee |
+| O5 | Interface | Library browser, family panels, track header, piano-roll lanes and shading, ensembles; per-note articulation and part editing (UI-33) | none |
+| O6 | Open decisions | Ensemble, orchestrate and check tools (A7); a GM fallback engine (A10); plugin hosting (M5) drives the same articulation maps | CTR-01, versioned, when decided |
 
 The order follows the gaps: O2 unlocks files users already have, O3 makes the product sentence audible, O4 makes it
 reachable by words, O5 makes it visible. Each layer document lists its work items with sizes, dependencies and tests:
-111 in all, 109 active (IM 19, SS 35, PF 21, UI 34; IM-17 and PF-8 are merged into SS items).
+111 in all, 109 active (IM 19, SS 35, PF 21, UI 34; IM-17 and PF-8 are merged into SS items), plus SS-36 and PF-23,
+added when the owner accepted phase 2.
 **[orchestra/implementation-plan.md](orchestra/implementation-plan.md)** merges them into one backlog in dependency order,
 with the owner gate and the done criteria of each milestone. The first end-to-end run of the product sentence (the
-Orchestrate… field, PF-15) needs 34 of the 111 items.
+Orchestrate… field, PF-15) needs 34 of the 113 items.
 
 ## 4. Contracts and rules
 
 | Rule | How the proposal holds it |
 |---|---|
-| CTR-01 | O1–O5 add no tool, tool field, schema field, IPC message or CLI command; everything that would is in O6 and needs the owner |
+| CTR-01 | The accepted contract changes are versioned: project schema 2 (written only when a document needs it) and agent API 1.1 (additive; pinned as golden 1.0 plus the recorded additions); every other tool, schema, IPC or CLI change waits for a decision (A7, A10) |
 | GLD-01 | The descriptors and outputs of the twelve golden built-ins are unchanged (the Poly Synth's processor only gains an empty match arm for the new key-switch event), as are the golden `orchestral` template and the golden transforms; the sampler is not golden; schema v2 writes version 1 whenever it can and does not report a v1 open as a migration |
 | RT-01..RT-05 | Sample playback and, for sampler tracks, the schedule's chase are the only new audio-thread work; maps and banks are built off it and preloaded; every new real-time path has `assert_no_alloc` tests |
 | RT-10 | No `unsafe`, no FFI engine |
@@ -252,21 +258,23 @@ Orchestrate… field, PF-15) needs 34 of the 111 items.
 
 ## 5. Owner decisions
 
+The owner decided on 2026-10-30 where the row says **Decided**; the other rows keep their recommendation and stay open.
+
 | Question | Recommendation | Ids |
 |---|---|---|
-| Accept phase 1 (S1–S11) with no contract change | Yes | ADR 0011 |
-| Schema v2 with a track `part` and a note `articulation` | After O1–O5 prove the model; versioned; lowest-version writer | A1, A3 (b) |
+| Accept the design (S1–S11) | **Decided:** accepted with ADR 0011, together with the phase-2 contract core | ADR 0011 |
+| Schema v2 with a track `part` and a note `articulation` | **Decided:** now, versioned, lowest-version writer (O2) | A1, A3 (b) |
 | A doubled instrument: its own track or a switch | Its own track (one track per part), in phase 1 | A2 |
-| Articulations through an automatable sampler parameter, not key-switch notes | Yes (option c) | A3 (c) |
-| Dynamics through a sampler parameter or a CC tool | The parameter first; a CC tool with schema v2 | A4 |
-| Preset ids in the sampler (ADR 0010 decision 4) | Yes, with old paths mapped on load | A5 |
-| Ship library profiles; which libraries | Yes for VSCO 2 CE and VCSL; not for Sonatina or CC BY libraries | A6, A17 |
+| Articulations through an automatable sampler parameter, not key-switch notes | **Decided:** the parameter as the track state, per-note articulation on top | A3 (c) |
+| Dynamics through a sampler parameter or a CC tool | **Decided:** both; CC in clips drives dynamics, the parameter is a trim | A4 |
+| Preset ids in the sampler (ADR 0010 decision 4) | **Decided:** yes, with old paths mapped on load | A5 |
+| Ship library profiles; which libraries | **Decided:** VSCO 2 CE and VCSL; not Sonatina or CC BY libraries | A6, A17 |
 | Ensemble templates for agents | Planner first; the `create_project` enum or a tool later, versioned | A7 |
 | Fix the SFZ divergences; follow ARIA/sfizz where the spec is silent | Yes, in O2, with the named regression tests | A8 |
 | Legato | Overlap crossfade on sustains first, after a listening check; recorded legato through M5 | A9 |
 | GM numbers: exact programs and substitutes kept apart | Yes, before O1 (`GmVoice`) | A11 |
 | A GM fallback engine | Decide in O6 with a fresh count | A10, A25 |
-| Articulation vocabulary | As in S2 | A12–A16 |
+| Articulation vocabulary | **Decided:** shape B, no id = ordinario, `col_legno_battuto` kept apart; open: invented ids (A13), mallet rolls (A15) | A12–A16 |
 | Range semantics, notation (tenor at transposition 0 with a treble-8 clef), new ids, controls | As layer (a) proposes | A18–A22 |
 | The catalog's missing family keywords | Close them in O3 through the shared alias resolver | A24 |
 | Apply the data.rs corrections | Yes, in O1 | A23 |
@@ -280,8 +288,8 @@ Orchestrate… field, PF-15) needs 34 of the 111 items.
 - **Sound quality is unknown.** Nothing was listened to; the free libraries may disappoint even when they play
   correctly. The first step after O2 is a listening test (open question B1).
 - **Legato built from sustains** may not satisfy "legato melody"; the honest fallback is plugin hosting (M5).
-- **Track-level articulation** (phase 1) cannot give divisi different articulations on one track, and a change lands up
-  to one block late; the ensemble service puts divisi on separate tracks and the performance layer writes changes early.
+- **The track-level articulation state** is one per track and lands up to one block late; per-note articulations
+  (accepted with phase 2) cover the cases it cannot, and the ensemble service still puts divisi on separate tracks.
 - **The frozen articulation list** cannot shrink once projects store its indices; the vocabulary decisions (A12–A16) must
   come before the first release that writes `articulation` automation.
 - **Memory:** articulation sets hold several patches per device; the 3 GiB cap and the RAM needs per profile must be

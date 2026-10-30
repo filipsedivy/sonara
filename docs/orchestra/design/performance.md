@@ -1,6 +1,6 @@
 # Performance layer: from notes to music
 
-_Status: proposed (2026-10-30). Part of the orchestra design; decisions in [../../orchestra-design.md](../../orchestra-design.md)._
+_Status: accepted with ADR 0011 (2026-10-30). Part of the orchestra design; decisions in [../../orchestra-design.md](../../orchestra-design.md). The owner also accepted the phase-2 contract core (schema v2 with track `part` and note `articulation`, agent API 1.1 with per-note articulation and a CC-writing tool): where this document calls those items phase 2 or O6, [../implementation-plan.md](../implementation-plan.md) now schedules them in O2–O5._
 
 ## Summary
 
