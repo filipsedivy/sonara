@@ -3,17 +3,16 @@
 
 use std::ffi::OsStr;
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use crate::chat::provider::{Availability, Provider, ProviderStatus, SYSTEM_PROMPT_ADDENDUM, Turn};
 use crate::chat::providers::probe::run_bounded;
 use crate::chat::task::ProviderId;
 use crate::composer::invocation::{BuildOptions, search_path};
-use crate::composer::locate::MIN_VERSION;
+use crate::composer::locate::{MIN_VERSION, candidates, locate_in};
 use crate::composer::{
     ClaudeParser, Invocation, LineParser, LocateError, Located, StopPolicy, Workspace, build_with,
-    locate,
 };
 
 /// The name of the provider in the window.
@@ -26,9 +25,58 @@ pub const STATELESS_FLAG: &str = "--no-session-persistence";
 /// How long `claude --help` gets.
 pub const HELP_TIMEOUT: Duration = Duration::from_secs(15);
 
-/// Claude Code, found through [`locate()`]. The same executable and boundaries as the composer.
+/// How long `claude --version` gets.
+pub const VERSION_TIMEOUT: Duration = Duration::from_secs(5);
+
+/// Claude Code, found like the composer finds it (the same places and the same minimum
+/// version), but with every question to the CLI bounded: [`locate_bounded`]. The same
+/// executable and boundaries as the composer.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ClaudeProvider;
+
+/// The output of `<program> --version`, run with the `PATH` of a chat run and at most `timeout`.
+///
+/// # Errors
+///
+/// The error of starting or bounding the process, or one that says the exit status was not
+/// success.
+pub fn probe_version(
+    program: &Path,
+    path_var: Option<&OsStr>,
+    timeout: Duration,
+) -> io::Result<String> {
+    let answer = run_bounded(
+        program,
+        &["--version"],
+        &search_path(program, path_var),
+        timeout,
+    )?;
+    if answer.status.success() {
+        Ok(answer.stdout)
+    } else {
+        Err(io::Error::other(format!(
+            "`--version` exited with {}",
+            answer.status
+        )))
+    }
+}
+
+/// [`crate::composer::locate::locate`] for the chat: the first `claude` of `places` that exists,
+/// asked for its version with a deadline of `timeout` (it is killed with its process group), so
+/// that a `claude` that hangs on `--version` makes detection fail instead of never return.
+///
+/// # Errors
+///
+/// As [`locate_in`]; a `claude` that does not answer in time is [`LocateError::Unusable`].
+pub fn locate_bounded(
+    places: &[PathBuf],
+    path_var: Option<&OsStr>,
+    timeout: Duration,
+) -> Result<Located, LocateError> {
+    locate_in(places, Path::is_file, |path| {
+        probe_version(path, path_var, timeout)
+    })
+}
 
 impl ClaudeProvider {
     /// What `located`, the outcome of a search for Claude Code, means for the window.
@@ -177,8 +225,11 @@ impl Provider for ClaudeProvider {
     }
 
     fn detect(&self) -> ProviderStatus {
+        let home = std::env::var_os("HOME").map(PathBuf::from);
         let path_var = std::env::var_os("PATH");
-        Self::status_checked(locate(), |found| {
+        let places = candidates(home.as_deref(), path_var.as_deref());
+        let located = locate_bounded(&places, path_var.as_deref(), VERSION_TIMEOUT);
+        Self::status_checked(located, |found| {
             probe_help(&found.path, path_var.as_deref(), HELP_TIMEOUT)
         })
     }
@@ -221,7 +272,6 @@ mod tests {
 
     use super::*;
     use crate::composer::invocation::{DENIED_TOOLS, SYSTEM_PROMPT};
-    use crate::composer::locate::{candidates, locate_in};
 
     fn workspace() -> (tempfile::TempDir, Workspace) {
         let source = tempfile::tempdir().unwrap();
@@ -491,5 +541,79 @@ mod tests {
             assert!(run.args.iter().any(|arg| arg == flag), "{flag}");
         }
         assert!(!run.args.iter().any(|arg| arg == "--bare"));
+    }
+
+    #[cfg(unix)]
+    mod bounded_detection {
+        use std::os::unix::fs::PermissionsExt;
+        use std::time::Instant;
+
+        use super::*;
+
+        fn fake_claude(body: &str) -> (tempfile::TempDir, PathBuf) {
+            let directory = tempfile::tempdir().unwrap();
+            let path = directory.path().join("claude");
+            fs::write(&path, format!("#!/bin/sh\n{body}\n")).unwrap();
+            fs::set_permissions(&path, fs::Permissions::from_mode(0o755)).unwrap();
+            (directory, path)
+        }
+
+        #[test]
+        fn a_claude_that_hangs_on_version_does_not_hang_detection() {
+            // The helper holds the stdout pipe open, as a wrapper script that waits would.
+            let (_directory, path) = fake_claude("sleep 30 &\nsleep 30");
+            let started = Instant::now();
+            let error = locate_bounded(
+                std::slice::from_ref(&path),
+                Some(OsStr::new("/usr/bin:/bin")),
+                Duration::from_millis(300),
+            )
+            .unwrap_err();
+            assert!(
+                started.elapsed() < Duration::from_secs(5),
+                "detection returned: {:?}",
+                started.elapsed()
+            );
+            let LocateError::Unusable {
+                path: found,
+                reason,
+            } = &error
+            else {
+                panic!("{error}");
+            };
+            assert_eq!(found, &path);
+            assert!(reason.contains("did not answer"), "{reason}");
+            let status = ClaudeProvider::status(Err(error));
+            assert_eq!(status.availability, Availability::Unsupported);
+            assert!(status.located.is_none(), "a hanging claude is never run");
+        }
+
+        #[test]
+        fn a_claude_that_answers_is_located_through_the_bounded_probe() {
+            let (_directory, path) = fake_claude("echo '2.1.312 (Claude Code)'");
+            let found = locate_bounded(
+                std::slice::from_ref(&path),
+                Some(OsStr::new("/usr/bin:/bin")),
+                Duration::from_secs(10),
+            )
+            .unwrap();
+            assert_eq!(found.path, path);
+            assert_eq!(found.version.to_string(), "2.1.312");
+        }
+
+        #[test]
+        fn a_claude_that_fails_on_version_is_unusable_with_its_status() {
+            let (_directory, path) = fake_claude("exit 4");
+            let error = locate_bounded(
+                std::slice::from_ref(&path),
+                Some(OsStr::new("/usr/bin:/bin")),
+                Duration::from_secs(10),
+            )
+            .unwrap_err();
+            assert!(
+                matches!(&error, LocateError::Unusable { reason, .. } if reason.contains("exited with")),
+                "{error}"
+            );
+        }
     }
 }
