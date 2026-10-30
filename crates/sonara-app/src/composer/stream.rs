@@ -119,6 +119,26 @@ pub enum Event {
     },
 }
 
+/// Turns the lines of a provider's standard output into [`Event`]s, one line at a time.
+///
+/// A parser may keep state between lines (a provider that reports a tool call in several
+/// lines needs that); it is called from the thread that reads the output, in line order, and
+/// never from two threads at once.
+pub trait LineParser: Send {
+    /// The events of `line`; none for a line that has no use for the panel.
+    fn parse(&mut self, line: &str) -> Vec<Event>;
+}
+
+/// The parser of Claude Code's `stream-json` output: a stateless wrapper over [`parse_line`].
+#[derive(Debug, Clone, Copy, Default)]
+pub struct ClaudeParser;
+
+impl LineParser for ClaudeParser {
+    fn parse(&mut self, line: &str) -> Vec<Event> {
+        parse_line(line)
+    }
+}
+
 /// The events of one line of the stream; none for a line the panel has no use for.
 #[must_use]
 pub fn parse_line(line: &str) -> Vec<Event> {

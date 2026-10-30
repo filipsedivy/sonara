@@ -1,4 +1,5 @@
-//! Running a headless Claude Code and streaming what it reports.
+//! Running a headless agent CLI (Claude Code, or another provider's) and streaming what it
+//! reports.
 //!
 //! **Threads.** The process is read by four threads, none of them real-time: one per output pipe,
 //! one that writes the prompt, and one that waits for the exit. Their events go through one
@@ -21,18 +22,14 @@ use crossbeam_channel::{Sender, unbounded};
 use rustix::process::{Pid, Signal, kill_process, kill_process_group};
 
 use super::invocation::{Invocation, Workspace};
-use super::stream::{Event, parse_line};
+use super::stop::StopPolicy;
+use super::stream::{ClaudeParser, Event, LineParser};
 
-/// How long a run gets to finish after `SIGINT`, before `SIGTERM`.
-const INTERRUPT_GRACE: Duration = Duration::from_secs(10);
-
-/// How long it gets after `SIGTERM`, before `SIGKILL`.
-const TERMINATE_GRACE: Duration = Duration::from_secs(5);
-
-/// A running Claude Code.
+/// A running agent process (Claude Code, or another provider's CLI).
 #[derive(Debug)]
 pub struct Run {
     pid: u32,
+    stop_policy: StopPolicy,
     stop_requested: Arc<AtomicBool>,
     finished: Arc<AtomicBool>,
 }
@@ -55,8 +52,8 @@ pub enum RunError {
 }
 
 impl Run {
-    /// Starts `invocation` and delivers its events to `sink` on a thread of its own, until
-    /// [`Event::Exited`]. The `workspace` is removed after the process has ended.
+    /// Starts a run of Claude Code: [`Run::start_with`] with Claude's parser and
+    /// [`StopPolicy::CLAUDE`].
     ///
     /// # Errors
     ///
@@ -64,6 +61,32 @@ impl Run {
     pub fn start<F>(
         invocation: &Invocation,
         workspace: Workspace,
+        sink: F,
+    ) -> Result<Self, RunError>
+    where
+        F: FnMut(Event) + Send + 'static,
+    {
+        Self::start_with(
+            invocation,
+            workspace,
+            Box::new(ClaudeParser),
+            StopPolicy::CLAUDE,
+            sink,
+        )
+    }
+
+    /// Starts `invocation` and delivers its events to `sink` on a thread of its own, until
+    /// [`Event::Exited`]. The lines of its standard output go through `parser`; a stop follows
+    /// `stop_policy`. The `workspace` is removed after the process has ended.
+    ///
+    /// # Errors
+    ///
+    /// [`RunError`] when the process or one of the threads cannot be started.
+    pub fn start_with<F>(
+        invocation: &Invocation,
+        workspace: Workspace,
+        mut parser: Box<dyn LineParser>,
+        stop_policy: StopPolicy,
         mut sink: F,
     ) -> Result<Self, RunError>
     where
@@ -106,8 +129,8 @@ impl Run {
                         log::debug!("composer: cannot write the prompt: {error}");
                     }
                 })?;
-            let out = spawn_reader("composer-stdout", stdout, events.clone(), |line| {
-                parse_line(&line)
+            let out = spawn_reader("composer-stdout", stdout, events.clone(), move |line| {
+                parser.parse(&line)
             })?;
             let err = spawn_reader("composer-stderr", stderr, events.clone(), |line| {
                 let line = line.trim_end().to_owned();
@@ -158,6 +181,7 @@ impl Run {
         }
         Ok(Self {
             pid,
+            stop_policy,
             stop_requested,
             finished,
         })
@@ -172,14 +196,16 @@ impl Run {
         self.stop_requested.store(true, Ordering::Release);
         signal(self.pid, Signal::INT);
         let pid = self.pid;
+        let policy = self.stop_policy;
         let finished = Arc::clone(&self.finished);
         let escalation = thread::Builder::new()
             .name("composer-stop".to_owned())
             .spawn(move || {
-                for (grace, signal) in [
-                    (INTERRUPT_GRACE, Signal::TERM),
-                    (TERMINATE_GRACE, Signal::KILL),
-                ] {
+                let steps: [(Duration, Signal); 2] = [
+                    (policy.interrupt_grace, Signal::TERM),
+                    (policy.terminate_grace, Signal::KILL),
+                ];
+                for (grace, signal) in steps {
                     thread::sleep(grace);
                     if finished.load(Ordering::Acquire) {
                         return;
@@ -209,9 +235,10 @@ fn spawn_reader<R, P>(
 ) -> io::Result<JoinHandle<()>>
 where
     R: io::Read + Send + 'static,
-    P: Fn(String) -> Vec<Event> + Send + 'static,
+    P: FnMut(String) -> Vec<Event> + Send + 'static,
 {
     thread::Builder::new().name(name.to_owned()).spawn(move || {
+        let mut parse = parse;
         for line in BufReader::new(source).lines() {
             let Ok(line) = line else { break };
             for event in parse(line) {
@@ -409,5 +436,183 @@ while true; do sleep 0.05; done"#,
         run.program = directory.path().join("no-such-claude");
         let error = Run::start(&run, workspace(directory.path()), drop).unwrap_err();
         assert!(matches!(error, RunError::Spawn { .. }), "{error}");
+    }
+}
+
+#[cfg(test)]
+mod provider_seam_tests {
+    use std::fs;
+    use std::os::unix::fs::PermissionsExt;
+    use std::path::Path;
+    use std::sync::mpsc;
+    use std::time::Instant;
+
+    use super::*;
+
+    fn script(directory: &Path, body: &str) -> Invocation {
+        let path = directory.join("agent");
+        fs::write(&path, format!("#!/bin/sh\n{body}\n")).unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o755)).unwrap();
+        Invocation {
+            program: "/bin/sh".into(),
+            args: vec![path.into_os_string()],
+            cwd: directory.to_path_buf(),
+            env: Vec::new(),
+            stdin: String::new(),
+        }
+    }
+
+    fn workspace(directory: &Path) -> Workspace {
+        let file = directory.join("session-1.json");
+        fs::write(&file, "{}").unwrap();
+        Workspace::create(&file).unwrap()
+    }
+
+    fn until_exit(rx: &mpsc::Receiver<Event>) -> Vec<Event> {
+        let mut events = Vec::new();
+        loop {
+            let event = rx.recv_timeout(Duration::from_secs(20)).expect("an event");
+            let exited = matches!(event, Event::Exited { .. });
+            events.push(event);
+            if exited {
+                return events;
+            }
+        }
+    }
+
+    /// Numbers the lines it gets, which a stateless parser cannot do, and turns two special
+    /// lines into several events and into none.
+    struct Counting {
+        seen: usize,
+    }
+
+    impl LineParser for Counting {
+        fn parse(&mut self, line: &str) -> Vec<Event> {
+            self.seen += 1;
+            match line {
+                "skip" => Vec::new(),
+                "twice" => (1..=2)
+                    .map(|n| Event::Text {
+                        text: format!("{}:{line}:{n}", self.seen),
+                    })
+                    .collect(),
+                _ => vec![Event::Text {
+                    text: format!("{}:{line}", self.seen),
+                }],
+            }
+        }
+    }
+
+    #[test]
+    fn the_parser_of_the_provider_sees_every_stdout_line_in_order() {
+        let directory = tempfile::tempdir().unwrap();
+        let invocation = script(
+            directory.path(),
+            "echo first\necho skip\necho twice\necho 'err line' >&2\necho last",
+        );
+        let (tx, rx) = mpsc::channel();
+        let _run = Run::start_with(
+            &invocation,
+            workspace(directory.path()),
+            Box::new(Counting { seen: 0 }),
+            StopPolicy::CLAUDE,
+            move |event| {
+                tx.send(event).ok();
+            },
+        )
+        .unwrap();
+        let events = until_exit(&rx);
+        let texts: Vec<&str> = events
+            .iter()
+            .filter_map(|event| match event {
+                Event::Text { text } => Some(text.as_str()),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(texts, ["1:first", "3:twice:1", "3:twice:2", "4:last"]);
+        assert!(
+            events.contains(&Event::Stderr {
+                line: "err line".into()
+            }),
+            "stderr bypasses the parser"
+        );
+        assert_eq!(
+            events.last(),
+            Some(&Event::Exited {
+                code: Some(0),
+                stopped: false
+            })
+        );
+    }
+
+    #[test]
+    fn start_is_start_with_the_claude_parser() {
+        let directory = tempfile::tempdir().unwrap();
+        let invocation = script(
+            directory.path(),
+            r#"echo '{"type":"result","subtype":"success","is_error":false,"result":"hi"}'
+echo 'plain text'"#,
+        );
+        let (tx, rx) = mpsc::channel();
+        let _run = Run::start(&invocation, workspace(directory.path()), move |event| {
+            tx.send(event).ok();
+        })
+        .unwrap();
+        let events = until_exit(&rx);
+        assert!(matches!(
+            events.first(),
+            Some(Event::Result { success: true, text, .. }) if text == "hi"
+        ));
+        assert!(events.contains(&Event::Output {
+            line: "plain text".into()
+        }));
+    }
+
+    #[test]
+    fn the_stop_policy_of_the_provider_decides_how_fast_a_stubborn_run_is_ended() {
+        let directory = tempfile::tempdir().unwrap();
+        // Ignores both polite signals, so only SIGKILL ends it.
+        let invocation = script(
+            directory.path(),
+            "trap '' INT TERM\necho ready\nwhile true; do sleep 0.05; done",
+        );
+        let (tx, rx) = mpsc::channel();
+        let run = Run::start_with(
+            &invocation,
+            workspace(directory.path()),
+            Box::new(ClaudeParser),
+            StopPolicy {
+                interrupt_grace: Duration::from_millis(150),
+                terminate_grace: Duration::from_millis(150),
+            },
+            move |event| {
+                tx.send(event).ok();
+            },
+        )
+        .unwrap();
+        assert!(matches!(
+            rx.recv_timeout(Duration::from_secs(10)).unwrap(),
+            Event::Output { .. }
+        ));
+        let started = Instant::now();
+        run.stop();
+        let events = until_exit(&rx);
+        let elapsed = started.elapsed();
+        assert_eq!(
+            events.last(),
+            Some(&Event::Exited {
+                code: None,
+                stopped: true
+            }),
+            "ended by a signal, on request"
+        );
+        assert!(
+            elapsed >= Duration::from_millis(300),
+            "both graces were waited: {elapsed:?}"
+        );
+        assert!(
+            elapsed < Duration::from_secs(8),
+            "the 10 s and 5 s of Claude's policy were not used: {elapsed:?}"
+        );
     }
 }

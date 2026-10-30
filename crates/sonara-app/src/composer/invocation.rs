@@ -225,12 +225,51 @@ pub fn mcp_config(sonara_cli: &Path, workspace: &Workspace) -> String {
     .to_string()
 }
 
+/// What a caller may change in the command line of a run of Claude Code. The default is the
+/// composer panel's run.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BuildOptions<'a> {
+    /// Whether Claude Code keeps the session on disk (`false` adds `--no-session-persistence`).
+    pub persist_session: bool,
+    /// Text appended to [`SYSTEM_PROMPT`] in the same `--append-system-prompt` value.
+    pub system_prompt_addendum: Option<&'a str>,
+}
+
+impl Default for BuildOptions<'_> {
+    fn default() -> Self {
+        Self {
+            persist_session: true,
+            system_prompt_addendum: None,
+        }
+    }
+}
+
 /// The command line of a run of `claude` that composes from `prompt` in `workspace`.
 ///
 /// `prompt` goes through stdin, so that a prompt which begins with `-` is not read as a flag.
+/// Same as [`build_with`] with the default [`BuildOptions`].
 #[must_use]
 pub fn build(claude: &Path, sonara_cli: &Path, workspace: &Workspace, prompt: &str) -> Invocation {
-    let args = [
+    build_with(
+        claude,
+        sonara_cli,
+        workspace,
+        prompt,
+        &BuildOptions::default(),
+    )
+}
+
+/// [`build`] with `options`: the tool boundaries, the isolation and the pinned session are the
+/// same whatever the options say.
+#[must_use]
+pub fn build_with(
+    claude: &Path,
+    sonara_cli: &Path,
+    workspace: &Workspace,
+    prompt: &str,
+    options: &BuildOptions<'_>,
+) -> Invocation {
+    let mut args = vec![
         "-p".to_owned(),
         "--output-format".to_owned(),
         "stream-json".to_owned(),
@@ -249,9 +288,16 @@ pub fn build(claude: &Path, sonara_cli: &Path, workspace: &Workspace, prompt: &s
         DENIED_TOOLS.join(","),
         "--max-turns".to_owned(),
         MAX_TURNS.to_string(),
-        "--append-system-prompt".to_owned(),
-        SYSTEM_PROMPT.to_owned(),
     ];
+    if !options.persist_session {
+        args.push("--no-session-persistence".to_owned());
+    }
+    // One flag only: a second `--append-system-prompt` would replace the first.
+    args.push("--append-system-prompt".to_owned());
+    args.push(match options.system_prompt_addendum {
+        Some(addendum) => format!("{SYSTEM_PROMPT}\n{addendum}"),
+        None => SYSTEM_PROMPT.to_owned(),
+    });
     Invocation {
         program: claude.to_path_buf(),
         args: args.into_iter().map(OsString::from).collect(),
@@ -467,5 +513,150 @@ mod tests {
         ] {
             assert!(SYSTEM_PROMPT.contains(needle), "{needle}");
         }
+    }
+}
+
+#[cfg(test)]
+mod build_options_tests {
+    use super::*;
+
+    fn workspace() -> (tempfile::TempDir, Workspace) {
+        let source = tempfile::tempdir().unwrap();
+        let file = source.path().join("session-4242.json");
+        fs::write(&file, "{}").unwrap();
+        let workspace = Workspace::create(&file).unwrap();
+        (source, workspace)
+    }
+
+    fn strings(invocation: &Invocation) -> Vec<&str> {
+        invocation
+            .args
+            .iter()
+            .map(|arg| arg.to_str().unwrap())
+            .collect()
+    }
+
+    #[test]
+    fn the_composer_command_line_is_exactly_what_it_was() {
+        let (_source, workspace) = workspace();
+        let run = build(
+            Path::new("/bin/claude"),
+            Path::new("/App/sonara"),
+            &workspace,
+            "p",
+        );
+        let config = mcp_config(Path::new("/App/sonara"), &workspace);
+        let allowed = ALLOWED_TOOLS.join(",");
+        let denied = DENIED_TOOLS.join(",");
+        let expected = [
+            "-p",
+            "--output-format",
+            "stream-json",
+            "--verbose",
+            "--include-partial-messages",
+            "--strict-mcp-config",
+            "--mcp-config",
+            &config,
+            "--permission-mode",
+            "dontAsk",
+            "--permission-prompts",
+            "none",
+            "--allowedTools",
+            &allowed,
+            "--disallowedTools",
+            &denied,
+            "--max-turns",
+            "200",
+            "--append-system-prompt",
+            SYSTEM_PROMPT,
+        ];
+        assert_eq!(strings(&run), expected);
+    }
+
+    #[test]
+    fn the_default_options_change_nothing() {
+        let (_source, workspace) = workspace();
+        let plain = build(
+            Path::new("/bin/claude"),
+            Path::new("/App/sonara"),
+            &workspace,
+            "p",
+        );
+        let with = build_with(
+            Path::new("/bin/claude"),
+            Path::new("/App/sonara"),
+            &workspace,
+            "p",
+            &BuildOptions::default(),
+        );
+        assert_eq!(plain, with);
+        assert!(BuildOptions::default().persist_session);
+    }
+
+    #[test]
+    fn an_unpersisted_session_adds_one_flag_and_nothing_else() {
+        let (_source, workspace) = workspace();
+        let plain = build(
+            Path::new("/bin/claude"),
+            Path::new("/App/sonara"),
+            &workspace,
+            "p",
+        );
+        let chat = build_with(
+            Path::new("/bin/claude"),
+            Path::new("/App/sonara"),
+            &workspace,
+            "p",
+            &BuildOptions {
+                persist_session: false,
+                system_prompt_addendum: None,
+            },
+        );
+        let mut without = strings(&chat);
+        let position = without
+            .iter()
+            .position(|arg| *arg == "--no-session-persistence")
+            .expect("the flag is there");
+        without.remove(position);
+        assert_eq!(without, strings(&plain));
+    }
+
+    #[test]
+    fn the_addendum_extends_the_one_system_prompt_flag() {
+        let (_source, workspace) = workspace();
+        let run = build_with(
+            Path::new("/bin/claude"),
+            Path::new("/App/sonara"),
+            &workspace,
+            "-- keep this off the command line",
+            &BuildOptions {
+                persist_session: false,
+                system_prompt_addendum: Some("# Addendum marker"),
+            },
+        );
+        let args = strings(&run);
+        assert_eq!(
+            args.iter()
+                .filter(|arg| **arg == "--append-system-prompt")
+                .count(),
+            1,
+            "a second flag would replace the first"
+        );
+        let position = args
+            .iter()
+            .position(|arg| *arg == "--append-system-prompt")
+            .unwrap();
+        let prompt = args[position + 1];
+        assert!(prompt.starts_with(SYSTEM_PROMPT));
+        assert!(prompt.ends_with("# Addendum marker"));
+        assert!(prompt.contains("composer inside Sonara"));
+        assert!(!args.iter().any(|arg| arg.contains("keep this off")));
+        assert_eq!(run.stdin, "-- keep this off the command line");
+        assert!(!args.contains(&"--bare"));
+        // The deny list and the isolation are intact.
+        let denied = args[args.iter().position(|a| *a == "--disallowedTools").unwrap() + 1];
+        assert_eq!(denied, DENIED_TOOLS.join(","));
+        assert!(args.contains(&"--strict-mcp-config"));
+        assert!(args.contains(&"dontAsk"));
     }
 }
