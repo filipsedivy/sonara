@@ -37,6 +37,7 @@ pub use general_midi::{
     GmNote, GmProgram, GmTarget, GmVoice, ORCHESTRAL_PERCUSSION_MAP, SubstituteFit,
     percussion_instrument,
 };
+pub(crate) use id::is_snake_case;
 pub use id::{Category, CategoryId, InstrumentType, Selection};
 pub use instrument::{
     CheckError, Family, Instrument, InstrumentError, InstrumentSpec, PitchModel, Pitched,

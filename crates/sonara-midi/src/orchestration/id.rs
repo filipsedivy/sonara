@@ -537,8 +537,9 @@ const _: () = {
     }
 };
 
-/// Whether `id` is non-empty and holds only `a-z`, `0-9` and `_`.
-pub(super) const fn is_snake_case(id: &str) -> bool {
+/// Whether `id` is non-empty and holds only `a-z`, `0-9` and `_`: the form of every slug in the
+/// orchestration data, which the performance layer's part ids share.
+pub(crate) const fn is_snake_case(id: &str) -> bool {
     let bytes = id.as_bytes();
     if bytes.is_empty() {
         return false;
