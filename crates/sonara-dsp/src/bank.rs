@@ -31,6 +31,107 @@ pub enum LoopMode {
     Sustain,
 }
 
+/// The shape of a velocity crossfade (SFZ `xf_velcurve`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum CrossfadeCurve {
+    /// Equal power: the gain is the square root of the position in the fade, so two layers that
+    /// fade across each other keep their summed power (SFZ `power`, the default).
+    #[default]
+    Power,
+    /// Linear gain: the gain is the position in the fade, so two phase-aligned layers keep their
+    /// summed amplitude (SFZ `gain`).
+    Gain,
+}
+
+impl CrossfadeCurve {
+    /// The gain at `position` in a fade, from 0 (silent) to 1 (full).
+    fn gain(self, position: f64) -> f64 {
+        match self {
+            Self::Power => position.sqrt(),
+            Self::Gain => position,
+        }
+    }
+}
+
+/// How a region fades in and out with the velocity of the note that starts it (SFZ
+/// `xfin_lovel`/`xfin_hivel`, `xfout_lovel`/`xfout_hivel` and `xf_velcurve`), as the SFZ format
+/// describes it and the reference player sfizz plays it.
+///
+/// The fade-in is silent at velocities at or below `in_lo` and full at or above `in_hi`; the
+/// fade-out is full at or below `out_lo` and silent at or above `out_hi`. In between, the gain
+/// follows `curve` over the position in the fade, `(velocity - lo) / (hi - lo)`. Where the two
+/// bounds of a fade meet or cross, the low bound decides: such a fade-in is silent below `in_lo`
+/// and full from it, and such a fade-out is full up to `out_lo` and silent above it. So
+/// `xfin_lovel=70` alone starts the region at velocity 70, and `xfout_hivel=90` alone, whose
+/// `xfout_lovel` stays 127, fades nothing, as in sfizz.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct VelocityCrossfade {
+    /// The velocity at and below which the fade-in is silent (SFZ `xfin_lovel`, default 0).
+    pub in_lo: u8,
+    /// The velocity from which the fade-in is full (SFZ `xfin_hivel`, default 0).
+    pub in_hi: u8,
+    /// The velocity up to which the fade-out is full (SFZ `xfout_lovel`, default 127).
+    pub out_lo: u8,
+    /// The velocity from which the fade-out is silent (SFZ `xfout_hivel`, default 127).
+    pub out_hi: u8,
+    /// The shape of both fades (SFZ `xf_velcurve`).
+    pub curve: CrossfadeCurve,
+}
+
+impl VelocityCrossfade {
+    /// No crossfade, the SFZ defaults: full at every velocity.
+    pub const NONE: Self = Self {
+        in_lo: 0,
+        in_hi: 0,
+        out_lo: 127,
+        out_hi: 127,
+        curve: CrossfadeCurve::Power,
+    };
+
+    /// The gain of the crossfade at `velocity`, from 0 (silent) to 1 (full): the fade-in's gain
+    /// times the fade-out's.
+    #[must_use]
+    pub fn gain(self, velocity: u8) -> f64 {
+        self.fade_in(velocity) * self.fade_out(velocity)
+    }
+
+    fn fade_in(self, velocity: u8) -> f64 {
+        let (lo, hi) = (self.in_lo, self.in_hi);
+        if velocity < lo {
+            0.0
+        } else if velocity >= hi {
+            1.0
+        } else {
+            // lo <= velocity < hi: the fade spans at least one step.
+            self.curve.gain(position(velocity, lo, hi))
+        }
+    }
+
+    fn fade_out(self, velocity: u8) -> f64 {
+        let (lo, hi) = (self.out_lo, self.out_hi);
+        if velocity <= lo {
+            1.0
+        } else if velocity >= hi {
+            0.0
+        } else {
+            // lo < velocity < hi: the fade spans at least two steps.
+            self.curve.gain(1.0 - position(velocity, lo, hi))
+        }
+    }
+}
+
+impl Default for VelocityCrossfade {
+    fn default() -> Self {
+        Self::NONE
+    }
+}
+
+/// Where `velocity` lies between `lo` (0) and `hi` (1); the callers keep `lo <= velocity < hi`,
+/// so the divisor is positive.
+fn position(velocity: u8, lo: u8, hi: u8) -> f64 {
+    (f64::from(velocity) - f64::from(lo)) / (f64::from(hi) - f64::from(lo))
+}
+
 /// One decoded sample: interleaved `f32` frames at the file's own rate.
 ///
 /// A sample without frames plays nothing: a region that names one starts no voice, but its note
@@ -80,6 +181,8 @@ pub struct Region {
     /// How much the gain follows the note's velocity, in percent (SFZ `amp_veltrack`, -100 to
     /// 100, default 100); see [`Region::velocity_gain`].
     pub amp_veltrack: f64,
+    /// How the region fades in and out with the note's velocity.
+    pub velocity_crossfade: VelocityCrossfade,
     /// What starts the region.
     pub trigger: Trigger,
     /// Round-robin length (SFZ `seq_length`); 1 means no round robin.
@@ -125,6 +228,7 @@ impl Default for Region {
             tune_cents: 0.0,
             volume_db: 0.0,
             amp_veltrack: 100.0,
+            velocity_crossfade: VelocityCrossfade::NONE,
             trigger: Trigger::Attack,
             seq_length: 1,
             seq_position: 1,
@@ -146,7 +250,8 @@ impl Default for Region {
 
 impl Region {
     /// The gain a note of `velocity` (1 to 127) gives the region, from 0 to 1, before its
-    /// volume.
+    /// volume: its velocity tracking times its velocity crossfade
+    /// ([`VelocityCrossfade::gain`]).
     ///
     /// Velocity tracking (`amp_veltrack`) follows the SFZ format and the reference player
     /// sfizz: with `v = velocity / 127` and `t = amp_veltrack / 100`, the gain is
@@ -156,6 +261,11 @@ impl Region {
     /// number as 100.
     #[must_use]
     pub fn velocity_gain(&self, velocity: u8) -> f64 {
+        self.tracking_gain(velocity) * self.velocity_crossfade.gain(velocity)
+    }
+
+    /// The velocity tracking part of [`Region::velocity_gain`].
+    fn tracking_gain(&self, velocity: u8) -> f64 {
         let v = f64::from(velocity.min(127)) / 127.0;
         let curve = v * v;
         let track = if self.amp_veltrack.is_nan() {

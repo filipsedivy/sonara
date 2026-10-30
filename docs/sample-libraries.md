@@ -84,12 +84,15 @@ If `sonara.sampler` is not listed, no configured directory holds a `.sfz` file.
 ## What the sampler plays
 
 Velocity layers, round robin (`seq_length`/`seq_position`, `lorand`/`hirand`), keyswitches
-(`sw_*`), release samples (`trigger=release`), exclusive groups (`group`/`off_by`), loops,
-attack and release times, tuning and volume. A region's level follows the velocity as its
-`amp_veltrack` says: at the default 100 % the gain is `(velocity / 127)²`, at 0 % (organs,
-harpsichords) every velocity plays at full level, and below 0 the response is inverted, as the
-SFZ format and sfizz define it. MIDI: notes, sustain pedal (CC 64), volume (CC 7),
-expression (CC 11), pitch bend (±2 semitones) and all notes off. Parameters: volume, pan,
+(`sw_*`), release samples (`trigger=release`), exclusive groups (`group`/`off_by`), loops, attack
+and release times, tuning and volume. A region's level follows the velocity as its `amp_veltrack`
+says: at the default 100 % the gain is `(velocity / 127)²`, at 0 % (organs, harpsichords) every
+velocity plays at full level, and below 0 the response is inverted, as the SFZ format and sfizz
+define it. Velocity crossfades (`xfin_lovel`/`xfin_hivel`, `xfout_lovel`/`xfout_hivel`, with
+`xf_velcurve` `power`, the default, or `gain`) fade a layer in and out over a range of velocities,
+so dynamic layers written that way blend instead of all sounding at full level on every note; a
+layer a note's velocity leaves silent starts no voice. MIDI: notes, sustain pedal (CC 64), volume
+(CC 7), expression (CC 11), pitch bend (±2 semitones) and all notes off. Parameters: volume, pan,
 release scale, instrument, and instrument type, articulation and dynamics (below).
 
 Release samples start when the key is released; for a key released while the sustain pedal is
@@ -97,16 +100,16 @@ down, they start when the pedal lifts, at the velocity the key was pressed with 
 keyswitch that was active at the release. All notes off drops the releases still waiting for the
 pedal.
 
-Not supported: CC-driven layers and crossfades (for example Sonatina's dynamics on CC 1 and
-vibrato on CC 21), filters, per-region pan, streaming. The loader reports unsupported opcodes in
-the load warning when a patch is rendered, together with the values the sampler does not play
-(`trigger=first`, `legato` or `release_key`, which play on every key press for now, and unknown
-`loop_mode` values, which play as `no_loop`) and the headers whose opcodes it skips (`<curve>`,
-`<effect>`, `<midi>`, `<sample>`). A keyswitch key selects an articulation; it makes no sound
-unless a region of the patch also covers that key, and then it does both. Regions that the patch
-starts from a controller instead of a key
-(`on_locc`/`on_hicc`, such as Salamander's pedal noises) or that have a key of -1 (`key`, `lokey`
-or `hikey`) never play on a key; until the sampler plays controller triggers they stay silent.
+Not supported: CC-driven layers and crossfades (for example Sonatina's dynamics on CC 1 and vibrato
+on CC 21), key crossfades, velocity curves (`amp_velcurve_N`), filters, per-region pan, streaming.
+The loader reports unsupported opcodes in the load warning when a patch is rendered, together with
+the values the sampler does not play (`trigger=first`, `legato` or `release_key`, which play on
+every key press for now, and unknown `loop_mode` values, which play as `no_loop`) and the headers
+whose opcodes it skips (`<curve>`, `<effect>`, `<midi>`, `<sample>`). A keyswitch key selects an
+articulation; it makes no sound unless a region of the patch also covers that key, and then it does
+both. Regions that the patch starts from a controller instead of a key (`on_locc`/`on_hicc`, such
+as Salamander's pedal noises) or that have a key of -1 (`key`, `lokey` or `hikey`) never play on a
+key; until the sampler plays controller triggers they stay silent.
 
 A region whose sample file is missing, or that names a generator other than `*silence` (`*sine`,
 `*saw` and the like), is left out: the rest of the patch plays, and the load warning names each

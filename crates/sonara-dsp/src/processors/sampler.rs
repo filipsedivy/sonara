@@ -9,8 +9,12 @@
 //!   patch's keyswitch keys makes it the active switch; the patch's default switch is active
 //!   until then, also when the patch has no keyswitch keys.
 //! - **Velocity.** A region's gain follows the note's velocity as its `amp_veltrack` says: the
-//!   curve `(velocity / 127)²` at the default 100 %, constant at 0 %, inverted below 0
-//!   ([`Region::velocity_gain`]). A region that a note would start at zero gain starts no voice.
+//!   curve `(velocity / 127)²` at the default 100 %, constant at 0 %, inverted below 0. Its
+//!   velocity crossfade (`xfin_*vel`, `xfout_*vel`, `xf_velcurve`) scales it too, so dynamic
+//!   layers that overlap in velocity blend instead of both sounding at full gain
+//!   ([`Region::velocity_gain`]). The gain is set when the voice starts and costs nothing per
+//!   sample. A region that a note would start at zero gain, such as a layer outside its
+//!   crossfade, starts no voice.
 //! - **Round robin.** `seq_length`/`seq_position` follow one counter that advances on each
 //!   key press that matched a round-robin region. `lorand`/`hirand` use a fixed-seed generator,
 //!   so a render is deterministic (TST-04).

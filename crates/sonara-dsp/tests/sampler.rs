@@ -5,12 +5,15 @@
 //! The samples are constants, so a voice's steady-state output is its sample value times the
 //! velocity gain `(velocity / 127)²`, which the tests compute independently of the engine.
 
+use std::f64::consts::FRAC_1_SQRT_2;
 use std::sync::Arc;
 
 use assert_no_alloc::{AllocDisabler, assert_no_alloc};
 use sonara_core::model::device::Params;
 use sonara_core::plugins::{SamplerChoices, sampler_descriptor};
-use sonara_dsp::bank::{Keyswitches, LoopMode, Region, Sample, SampleBank, Trigger};
+use sonara_dsp::bank::{
+    CrossfadeCurve, Keyswitches, LoopMode, Region, Sample, SampleBank, Trigger, VelocityCrossfade,
+};
 use sonara_dsp::processor::{
     BlockContext, DeviceState, EventKind, InstrumentEvent, ProcessSpec, Processor,
 };
@@ -259,6 +262,221 @@ fn a_region_tracked_to_silence_starts_no_voice_but_chokes_its_group() {
     let out = run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
     close(level(&out), 0.0);
     assert_eq!(processor.report().entries(), [("voices", 0.0)]);
+}
+
+/// A fade-in over `lo..hi` with `curve`.
+fn fade_in(lo: u8, hi: u8, curve: CrossfadeCurve) -> VelocityCrossfade {
+    VelocityCrossfade {
+        in_lo: lo,
+        in_hi: hi,
+        curve,
+        ..VelocityCrossfade::NONE
+    }
+}
+
+/// A fade-out over `lo..hi` with `curve`.
+fn fade_out(lo: u8, hi: u8, curve: CrossfadeCurve) -> VelocityCrossfade {
+    VelocityCrossfade {
+        out_lo: lo,
+        out_hi: hi,
+        curve,
+        ..VelocityCrossfade::NONE
+    }
+}
+
+/// Checks `crossfade` at each velocity from `first` against `expected`, to the five digits
+/// sfizz's tests give.
+fn assert_fade(crossfade: VelocityCrossfade, first: u8, expected: &[f64]) {
+    for (velocity, want) in (first..).zip(expected) {
+        let got = crossfade.gain(velocity);
+        assert!(
+            (got - want).abs() < 1e-5,
+            "{crossfade:?} at {velocity}: {got}, not {want}"
+        );
+    }
+}
+
+#[test]
+fn velocity_crossfade_gains_match_sfizz() {
+    // sfizz's tests of `xfin_lovel=20 xfin_hivel=24` and `xfout_lovel=51 xfout_hivel=55`, with
+    // the default equal-power curve and with `xf_velcurve=gain`: silent at or below the fade-in's
+    // low velocity, full from its high one, and the other way round for the fade-out.
+    assert_fade(
+        fade_in(20, 24, CrossfadeCurve::Power),
+        19,
+        &[0.0, 0.0, 0.5, FRAC_1_SQRT_2, 0.86603, 1.0, 1.0],
+    );
+    assert_fade(
+        fade_in(20, 24, CrossfadeCurve::Gain),
+        19,
+        &[0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0],
+    );
+    assert_fade(
+        fade_out(51, 55, CrossfadeCurve::Power),
+        50,
+        &[1.0, 1.0, 0.86603, FRAC_1_SQRT_2, 0.5, 0.0, 0.0],
+    );
+    assert_fade(
+        fade_out(51, 55, CrossfadeCurve::Gain),
+        50,
+        &[1.0, 1.0, 0.75, 0.5, 0.25, 0.0, 0.0],
+    );
+    // Without a crossfade every velocity plays at full gain, and the default curve is power.
+    for velocity in 0..=127 {
+        assert_eq!(VelocityCrossfade::NONE.gain(velocity), 1.0, "{velocity}");
+    }
+    assert_eq!(VelocityCrossfade::default(), VelocityCrossfade::NONE);
+    assert_eq!(
+        Region::default().velocity_crossfade,
+        VelocityCrossfade::NONE
+    );
+    assert_eq!(CrossfadeCurve::default(), CrossfadeCurve::Power);
+}
+
+#[test]
+fn where_a_fades_bounds_meet_or_cross_the_low_bound_decides() {
+    let power = CrossfadeCurve::Power;
+    // `xfin_lovel=70` alone (its high bound stays 0) and a fade-in of no width are steps at 70.
+    for crossfade in [fade_in(70, 0, power), fade_in(70, 70, power)] {
+        assert_fade(crossfade, 69, &[0.0, 1.0, 1.0]);
+        assert_eq!(crossfade.gain(127), 1.0);
+    }
+    // `xfout_hivel=90` alone (its low bound stays 127) fades nothing, as in sfizz.
+    for velocity in 0..=127 {
+        assert_eq!(fade_out(127, 90, power).gain(velocity), 1.0, "{velocity}");
+    }
+    // A fade-out of no width, or one whose bounds cross, is full up to its low bound.
+    assert_fade(fade_out(60, 60, power), 59, &[1.0, 1.0, 0.0, 0.0]);
+    assert_fade(fade_out(90, 70, power), 89, &[1.0, 1.0, 0.0]);
+}
+
+#[test]
+fn complementary_crossfades_keep_power_or_amplitude() {
+    // TST-07: a layer that fades out over the velocities another fades in over keeps the summed
+    // power with the equal-power curve, and the summed amplitude with the gain curve, at every
+    // velocity.
+    for velocity in 0..=127 {
+        let power = |fade: VelocityCrossfade| fade.gain(velocity).powi(2);
+        let p = CrossfadeCurve::Power;
+        close(power(fade_out(70, 90, p)) + power(fade_in(70, 90, p)), 1.0);
+        let g = CrossfadeCurve::Gain;
+        close(
+            fade_out(70, 90, g).gain(velocity) + fade_in(70, 90, g).gain(velocity),
+            1.0,
+        );
+    }
+}
+
+/// Sonatina's timpani: the soft layer (sample 0) fades out and the loud one (sample 1) fades in
+/// over velocities 70 to 90, with `curve`. Neither writes a velocity range.
+fn timpani(curve: CrossfadeCurve) -> SampleBank {
+    SampleBank {
+        samples: vec![constant(0.5), constant(0.25)],
+        regions: vec![
+            Region {
+                velocity_crossfade: fade_out(70, 90, curve),
+                ..region(0)
+            },
+            Region {
+                velocity_crossfade: fade_in(70, 90, curve),
+                ..region(1)
+            },
+        ],
+        ..SampleBank::default()
+    }
+}
+
+#[test]
+fn velocity_crossfade_scales_each_layer() {
+    // TST-06: both layers used to sound at full gain on every hit. Inside the crossfade each
+    // sounds at its share; outside it only one starts a voice.
+    let position = |velocity: u8| (f64::from(velocity) - 70.0) / 20.0;
+    for (curve, share) in [
+        (CrossfadeCurve::Power, f64::sqrt as fn(f64) -> f64),
+        (CrossfadeCurve::Gain, |x| x),
+    ] {
+        for (velocity, voices) in [
+            (60, 1.0),
+            (70, 1.0),
+            (75, 2.0),
+            (80, 2.0),
+            (90, 1.0),
+            (110, 1.0),
+        ] {
+            let mut processor = sampler(timpani(curve));
+            let out = run(&mut *processor, &[event(EventKind::NoteOn, 60, velocity)]);
+            let x = position(velocity).clamp(0.0, 1.0);
+            let expected = gain(velocity) * (0.5 * share(1.0 - x) + 0.25 * share(x));
+            close(level(&out), expected);
+            assert_eq!(
+                processor.report().entries(),
+                [("voices", voices)],
+                "{curve:?} at {velocity}"
+            );
+        }
+    }
+}
+
+#[test]
+fn velocity_tracking_and_crossfade_multiply() {
+    let bank = SampleBank {
+        samples: vec![constant(0.5)],
+        regions: vec![Region {
+            amp_veltrack: 0.0,
+            velocity_crossfade: fade_in(70, 90, CrossfadeCurve::Gain),
+            ..region(0)
+        }],
+        ..SampleBank::default()
+    };
+    let mut processor = sampler(bank);
+    let out = run(&mut *processor, &[event(EventKind::NoteOn, 60, 85)]);
+    close(level(&out), 0.5 * 0.75);
+}
+
+#[test]
+fn a_layer_outside_its_crossfade_still_counts_its_round_robin() {
+    // The first position fades in only above velocity 100: a soft press selects it, starts no
+    // voice, and the next press moves on to the second position.
+    let bank = SampleBank {
+        samples: vec![constant(0.5), constant(0.25)],
+        regions: vec![
+            Region {
+                seq_length: 2,
+                seq_position: 1,
+                velocity_crossfade: fade_in(100, 110, CrossfadeCurve::Power),
+                ..region(0)
+            },
+            Region {
+                seq_length: 2,
+                seq_position: 2,
+                ..region(1)
+            },
+        ],
+        ..SampleBank::default()
+    };
+    let mut processor = sampler(bank);
+    let first = run(&mut *processor, &[event(EventKind::NoteOn, 60, 50)]);
+    close(level(&first), 0.0);
+    assert_eq!(processor.report().entries(), [("voices", 0.0)]);
+    let second = run(&mut *processor, &[event(EventKind::NoteOn, 62, 50)]);
+    close(level(&second), 0.25 * gain(50));
+}
+
+#[test]
+fn release_samples_follow_the_velocity_crossfade() {
+    // A release region fades with the velocity the key was pressed with, like the attack.
+    let mut bank = note_with_tail(0.125);
+    bank.regions[1].velocity_crossfade = fade_in(70, 90, CrossfadeCurve::Gain);
+    for (velocity, tail) in [
+        (60, 0.0),
+        (85, 0.125 * gain(85) * 0.75),
+        (100, 0.125 * gain(100)),
+    ] {
+        let mut processor = sampler(bank.clone());
+        run(&mut *processor, &[event(EventKind::NoteOn, 60, velocity)]);
+        let out = run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+        close(level(&out), tail);
+    }
 }
 
 #[test]

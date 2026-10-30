@@ -8,7 +8,9 @@ use std::sync::Arc;
 
 use sonara_core::model::device::Params;
 use sonara_core::plugins::{SamplerChoices, sampler_descriptor};
-use sonara_dsp::bank::{Keyswitches, LoopMode, SampleBank, Trigger};
+use sonara_dsp::bank::{
+    CrossfadeCurve, Keyswitches, LoopMode, SampleBank, Trigger, VelocityCrossfade,
+};
 use sonara_dsp::processor::{BlockContext, DeviceState, EventKind, InstrumentEvent, ProcessSpec};
 use sonara_dsp::processors::{create, param_slots};
 use sonara_media::MediaError;
@@ -593,6 +595,97 @@ fn amp_veltrack_is_read_with_its_scope_and_kept_in_range() {
     assert_eq!(
         bank.ignored_opcodes,
         ["amp_velcurve_*", "amp_veltrack_oncc*"]
+    );
+}
+
+/// Sonatina's timpani layout (TST-06): the f group fades in and the p group fades out over
+/// velocities 70 to 90, neither with a velocity range, so both used to sound on every hit.
+const TIMPANI: &str = "<control> default_path=Samples/\n\
+     <group> xfin_lovel=70 xfin_hivel=90 lokey=c3 hikey=c5\n\
+     <region> sample=loud1.wav\n\
+     <group> xfout_lovel=70 xfout_hivel=90 lokey=c3 hikey=c5\n\
+     <region> sample=soft1.wav\n";
+
+#[test]
+fn velocity_crossfades_are_read_with_their_scope() {
+    let dir = library();
+    let bank = load_patch(&dir, TIMPANI);
+    let crossfades: Vec<_> = bank.regions.iter().map(|r| r.velocity_crossfade).collect();
+    assert_eq!(
+        crossfades,
+        [
+            VelocityCrossfade {
+                in_lo: 70,
+                in_hi: 90,
+                ..VelocityCrossfade::NONE
+            },
+            VelocityCrossfade {
+                out_lo: 70,
+                out_hi: 90,
+                ..VelocityCrossfade::NONE
+            },
+        ]
+    );
+    assert!(
+        bank.ignored_opcodes.is_empty(),
+        "{:?}",
+        bank.ignored_opcodes
+    );
+    assert!(
+        bank.regions
+            .iter()
+            .all(|r| (r.vel_lo, r.vel_hi) == (0, 127)),
+        "a crossfade does not narrow the velocity range"
+    );
+}
+
+#[test]
+fn velocity_crossfade_values_and_curves() {
+    // A region's own value overrides its group's; a value above 127 is read as 127; one bound
+    // alone keeps the other's default; an unknown curve is reported and plays as power. The key
+    // and controller crossfades stay unsupported and reported.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<control> default_path=Samples/\n\
+         <group> xfin_lovel=10 xfin_hivel=30 xf_velcurve=gain\n\
+         <region> sample=soft1.wav\n\
+         <region> sample=soft1.wav xfin_hivel=200 xf_velcurve=power\n\
+         <group>\n\
+         <region> sample=soft1.wav xfout_lovel=100\n\
+         <region> sample=soft1.wav xfin_lovel=70 xf_velcurve=sine\n\
+         <region> sample=soft1.wav xfin_locc1=0 xfin_hicc1=127 xf_cccurve=gain xfin_lokey=60\n",
+    );
+    let crossfade = |in_lo, in_hi, out_lo, curve| VelocityCrossfade {
+        in_lo,
+        in_hi,
+        out_lo,
+        out_hi: 127,
+        curve,
+    };
+    let (power, gain) = (CrossfadeCurve::Power, CrossfadeCurve::Gain);
+    assert_eq!(
+        bank.regions
+            .iter()
+            .map(|r| r.velocity_crossfade)
+            .collect::<Vec<_>>(),
+        [
+            crossfade(10, 30, 127, gain),
+            crossfade(10, 127, 127, power),
+            crossfade(0, 0, 100, power),
+            crossfade(70, 0, 127, power),
+            VelocityCrossfade::NONE,
+        ]
+    );
+    assert_eq!(
+        bank.ignored_opcodes,
+        [
+            "xf_cccurve",
+            "xf_velcurve=sine",
+            "xfin_hicc*",
+            "xfin_locc*",
+            "xfin_lokey"
+        ]
     );
 }
 
@@ -1258,6 +1351,22 @@ fn inspect_reports_the_velocity_layers_of_each_key() {
         report.sampled_keys().collect::<Vec<_>>(),
         (48..=65).chain([67, 69]).collect::<Vec<_>>()
     );
+}
+
+#[test]
+fn inspect_splits_the_velocity_layers_at_a_crossfade() {
+    // The timpani's p layer plays up to velocity 89 and the f layer from 71: below the
+    // crossfade only p plays, inside it both, above it only f.
+    let dir = library();
+    let report = inspect_text(&dir, TIMPANI);
+    assert_eq!(
+        report.sampled,
+        [LayerZone {
+            keys: 48..=72,
+            layers: layers(&[(0, 70), (71, 89), (90, 127)]),
+        }]
+    );
+    assert_agrees_with_the_loader(&report, &load_patch(&dir, TIMPANI));
 }
 
 #[test]

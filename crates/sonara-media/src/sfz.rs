@@ -10,8 +10,9 @@
 //! **Supported opcodes:** `sample`, `default_path`, `key`, `lokey`, `hikey`, `pitch_keycenter`,
 //! `lovel`, `hivel`, `lorand`, `hirand`, `seq_length`, `seq_position`, `sw_lokey`, `sw_hikey`,
 //! `sw_default`, `sw_last`, `trigger`, `group`, `off_by`, `loop_mode`, `loop_start`, `loop_end`,
-//! `offset`, `end`, `tune`, `transpose`, `volume`, `amp_veltrack`, `ampeg_attack`,
-//! `ampeg_release`, and the `#define`/`#include` directives. Every other opcode is recorded in
+//! `offset`, `end`, `tune`, `transpose`, `volume`, `amp_veltrack`, `xfin_lovel`, `xfin_hivel`,
+//! `xfout_lovel`, `xfout_hivel`, `xf_velcurve`, `ampeg_attack`, `ampeg_release`, and the
+//! `#define`/`#include` directives. Every other opcode is recorded in
 //! [`SampleBank::ignored_opcodes`] and has no effect. So is a value of `trigger` other than
 //! `attack` and `release`, or of `loop_mode` other than `no_loop`, `one_shot`, `loop_continuous`
 //! and `loop_sustain`, as `trigger=legato`: the region plays as if the opcode were absent, so a
@@ -54,7 +55,12 @@
 //! **Velocity.** `amp_veltrack` sets how much a region's gain follows the velocity
 //! ([`Region::velocity_gain`]); a value outside -100 to 100 is read as the nearest end, and one
 //! that is not a number as the default 100. `amp_velcurve_N` and the `amp_veltrack_onccN`
-//! modulation are not supported.
+//! modulation are not supported. The velocity crossfade opcodes fade a region in and out over a
+//! velocity range ([`VelocityCrossfade`]), so dynamic layers written as crossfades blend rather
+//! than both sounding (Sonatina's timpani fade their p layer out and their f layer in over
+//! velocities 70 to 90); a velocity above 127 is read as 127, and an `xf_velcurve` other than
+//! `power` and `gain` is reported and plays as `power`. The key and controller crossfades
+//! (`xfin_lokey`, `xfin_loccN` and their kin) and their curves are not supported.
 //!
 //! **Samples a region cannot play.** `sample=*silence` is a region that plays nothing; its note
 //! still switches off the exclusive group it belongs to, which is what patches write it for. The
@@ -81,7 +87,9 @@ use std::io;
 use std::ops::RangeInclusive;
 use std::path::{Path, PathBuf};
 
-use sonara_dsp::bank::{Keyswitches, LoopMode, Region, Sample, SampleBank, Trigger};
+use sonara_dsp::bank::{
+    CrossfadeCurve, Keyswitches, LoopMode, Region, Sample, SampleBank, Trigger, VelocityCrossfade,
+};
 
 use crate::error::MediaError;
 use crate::stream::AudioStream;
@@ -200,9 +208,12 @@ pub struct LayerZone {
     /// The keys, lowest to highest.
     pub keys: RangeInclusive<u8>,
     /// The velocity layers, ascending: the velocity ranges within which the same regions play,
-    /// across every switch and round-robin position. A new layer starts wherever a region's
-    /// velocity range starts or ends, so overlapping ranges give a layer for each part; a
-    /// velocity no region covers lies in no layer.
+    /// across every switch and round-robin position. A region plays at the velocities its
+    /// velocity range covers, less those its velocity crossfade silences. A new layer starts
+    /// wherever a region starts or stops playing, so overlapping ranges give a layer for each
+    /// part, and the zone where two crossfaded layers blend is a layer of its own; a velocity no
+    /// region plays at lies in no layer. Velocity tracking (`amp_veltrack`) changes a region's
+    /// gain, not the layers.
     pub layers: Vec<VelocityLayer>,
 }
 
@@ -298,19 +309,20 @@ fn layer_zones(regions: &[&Region]) -> Vec<LayerZone> {
 }
 
 /// The velocity layers of the regions of one key: the ranges within which the same regions
-/// play. A layer ends where a region's range starts or ends, or where no region plays.
+/// play. A layer ends where a region starts or stops playing, or where no region plays.
 fn velocity_layers(regions: &[&Region]) -> Vec<VelocityLayer> {
+    // Bit `v` of a mask: whether the region plays at velocity `v`.
+    let masks: Vec<u128> = regions.iter().map(|region| plays_at(region)).collect();
+    let sounding = masks.iter().fold(0, |all, mask| all | mask);
+    // Bit `v`: whether some region plays at `v` but not at `v - 1`, or the other way round.
+    let edges = masks.iter().fold(0, |all, mask| all | (mask ^ (mask << 1)));
     let mut layers = Vec::new();
     let mut start = None;
     for velocity in 0..=127_u8 {
-        let sounds = regions
-            .iter()
-            .any(|region| (region.vel_lo..=region.vel_hi).contains(&velocity));
-        let changes = regions.iter().any(|region| {
-            region.vel_lo == velocity || region.vel_hi.checked_add(1) == Some(velocity)
-        });
+        let bit = 1_u128 << velocity;
+        let sounds = sounding & bit != 0;
         if let Some(lo) = start
-            && (changes || !sounds)
+            && (edges & bit != 0 || !sounds)
         {
             // The layer started at a lower velocity, so `velocity` is at least 1.
             layers.push(VelocityLayer {
@@ -327,6 +339,17 @@ fn velocity_layers(regions: &[&Region]) -> Vec<VelocityLayer> {
         layers.push(VelocityLayer { lo, hi: 127 });
     }
     layers
+}
+
+/// The velocities at which `region` plays, as bit `v` for velocity `v`: those its velocity range
+/// covers, less those its velocity crossfade silences.
+fn plays_at(region: &Region) -> u128 {
+    (0..=127_u8)
+        .filter(|velocity| {
+            (region.vel_lo..=region.vel_hi).contains(velocity)
+                && region.velocity_crossfade.gain(*velocity) > 0.0
+        })
+        .fold(0, |mask, velocity| mask | (1 << velocity))
 }
 
 /// A patch read with its regions built: what [`load_sfz`] and [`inspect`] share.
@@ -564,6 +587,11 @@ const SUPPORTED: &[&str] = &[
     "transpose",
     "volume",
     "amp_veltrack",
+    "xfin_lovel",
+    "xfin_hivel",
+    "xfout_lovel",
+    "xfout_hivel",
+    "xf_velcurve",
     "ampeg_attack",
     "ampeg_release",
 ];
@@ -936,6 +964,17 @@ impl Loader {
         region.amp_veltrack = num("amp_veltrack")
             .filter(|v| v.is_finite())
             .map_or(100.0, |v| v.clamp(-100.0, 100.0));
+        let velocity = |key: &str| int(key).map(|v| to_u8(Some(v), 0).min(127));
+        let none = VelocityCrossfade::NONE;
+        region.velocity_crossfade = VelocityCrossfade {
+            in_lo: velocity("xfin_lovel").unwrap_or(none.in_lo),
+            in_hi: velocity("xfin_hivel").unwrap_or(none.in_hi),
+            out_lo: velocity("xfout_lovel").unwrap_or(none.out_lo),
+            out_hi: velocity("xfout_hivel").unwrap_or(none.out_hi),
+            curve: self
+                .value(opcodes, &["xf_velcurve"], parse_crossfade_curve)
+                .unwrap_or_default(),
+        };
         region.tune_cents = num("tune").unwrap_or(0.0) + num("transpose").unwrap_or(0.0) * 100.0;
         region.attack = num("ampeg_attack").unwrap_or(0.0).max(0.0);
         region.release = num("ampeg_release").unwrap_or(0.0).max(0.0);
@@ -1145,6 +1184,15 @@ fn parse_trigger(value: &str) -> Option<Trigger> {
     match value {
         "attack" => Some(Trigger::Attack),
         "release" => Some(Trigger::Release),
+        _ => None,
+    }
+}
+
+/// The curve an `xf_velcurve` value names; `None` for a value the sampler does not play.
+fn parse_crossfade_curve(value: &str) -> Option<CrossfadeCurve> {
+    match value {
+        "power" => Some(CrossfadeCurve::Power),
+        "gain" => Some(CrossfadeCurve::Gain),
         _ => None,
     }
 }
