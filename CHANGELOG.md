@@ -18,6 +18,8 @@ break the API. The project format is versioned independently, see
 ### Internal
 
 - CI checks that the AI Composer panel's page tests are part of the frontend run.
+- `docs/smoke-tests.md` has the steps for checking the native AI menu and the AI Composer in the
+  bundled app by hand.
 
 ## [0.1.11] — 2026-10-29
 

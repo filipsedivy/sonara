@@ -34,8 +34,9 @@ These need hardware or a person and are never CI gates (HW-01). Their results be
 - VoiceOver, the microphone prompt and the native menus in the bundled app;
 - dropping a WAV file from the Finder onto the timeline;
 - Claude Code against `sonara mcp`;
-- the AI Composer in the bundled app, started from the Finder (the live test uses `sonara serve`
-  and a terminal environment, so the desktop path is not exercised end to end);
+- the AI menu and the AI Composer in the bundled app, started from the Finder (the live test uses
+  `sonara serve` and a terminal environment, so the desktop path is not exercised end to end):
+  the steps are in [smoke-tests.md](smoke-tests.md#by-hand-the-ai-menu-and-the-ai-composer-in-the-bundled-app-owner);
 - the sampler with a real library (VSCO 2 CE): listen, check the GUI device editor, measure the
   render load and memory.
 
