@@ -447,14 +447,43 @@ The doubling tables hold what the doubling and masking rules read:
 `DynamicBand` groups the notated dynamics as the sources compare them: `Soft` (pp, p), `Medium`
 (mp, mf) and `Loud` (f, ff); where mp falls is an estimate.
 
+The balance tables hold what the balance and masking rules read:
+
+- `WEIGHTS`: how strongly a line sounds against the others at each band, in Rimsky-Korsakov's
+  additive arithmetic. The unit is one flute, oboe, clarinet or bassoon in its middle register;
+  a horn weighs 2 and a trumpet, trombone or tuba 4 in forte, one string section of the medium
+  orchestra 2 in forte and 1 in piano, every wind 1 in piano; the mf weights, the saxophones,
+  Wagner tubas, euphonium, flugelhorn, cornet, solo and pizzicato strings, harp, celesta, soft
+  piano, tuned percussion, timpani and voices are estimates. `weight_row` finds the first row a
+  `Playing` matches, so a solo or a pizzicato string takes its own row before the section's; an
+  instrument without a row (the untuned percussion, the other keyboards and plucked strings) has
+  no weight. `section_weight` scales a string section's weight by its players against the medium
+  orchestra (12, 10, 8, 6, 4), an estimate.
+- `HEAVY_PERCUSSION`: the bass drum, clash cymbals, tam-tam and a snare-drum roll, which together
+  at fortissimo overpower any tutti; a flag, not a weight.
+- `REGISTER_FACTORS`: thirteen registers that change an instrument's weight, such as the flute's
+  weak low notes (0.5) and bright top (1.5), the clarinets' throat (0.5), the horn's bottom fifth
+  (0.5) and the contrabassoon's deep notes in piano (1.5). A factor may apply always, only in one
+  band, or only in fast figures (the harp below C5); `register_factor` finds the row for a note,
+  and none means a factor of 1. The factors are estimates that encode what the handbooks say in
+  words, and the spans lie inside the instruments' playable ranges.
+- `RegisterBand`: seven bands, an octave each from C2 to C7, that say which notes lie near each
+  other (Rimsky-Korsakov's octaves, read as scientific octave n + 1, an estimate).
+- `LOW_INTERVAL_LIMITS`: for each interval from the minor second to the major ninth, the lowest
+  note its lower note may lie on (E3 for a minor second, B♭1 for a fifth; none for the octave), an
+  estimate of the commonly taught guideline, since the charts that were found are images and
+  disagree.
+
 The numbers a check compares with are named thresholds, `Threshold<T>`, each with the rules that
 use it and its own provenance: `SUSTAINED_HIGH_BRASS` (two bars of moderate 4/4),
 `UNDOUBLED_HIGH_MELODY` and `UNDOUBLED_LOW_MELODY` (MIDI 90 and 42), `LOW_DISSONANCE` (D3, MIDI
 50), `BASS_SPACING` and `MIDDLE_GAP` (an octave), `WEAK_CHORD_MEMBER` (half the strongest part),
 `MELODY_MARGIN` (1.5 times the accompaniment), `SOLO_STRING_ACCOMPANIMENT` (2 units),
 `FEWEST_FIRST_VIOLINS` (8), `LOUD_DIVISI` (four ways), `WIND_PHRASE` (eight bars of moderate
-4/4), `SOFT_SLUR` and `MANY_NOTE_SLUR` (four and two bars of moderate time) and
-`CHARACTERISTIC_COLOUR_SHARE` (more than half the bars). Most of them turn a source's words into
+4/4), `SOFT_SLUR` and `MANY_NOTE_SLUR` (four and two bars of moderate time),
+`CHARACTERISTIC_COLOUR_SHARE` (more than half the bars), `DYNAMIC_STEP` (one marked step is a
+weight factor of 2), `WEAK_REGISTER` and `STRONG_REGISTER` (factors 0.5 and 1.25) and
+`MASKING_ACCOMPANIMENT` (a weight of 1). Most of them turn a source's words into
 a number and are estimates; a rule that compares with an estimated threshold is never stronger
 than a warning. Durations are `Span`s and convert at `MODERATO_BPM`, as the playability facts do.
 
@@ -537,13 +566,18 @@ invalid rule does not compile. The rows of the tables have a `check` that reject
 naming no instrument, one twice or the `Other` family, or playing no articulation or one twice; a
 doubling with fewer than two members, a member counted with no players, no spacing, a spacing
 twice or of no octaves, or a prevailing member it does not have; a woodwind order with an empty
-branch, an instrument of another family or one twice; and blank texts or provenance. A
-compile-time check runs it on every shipped row. `crates/sonara-midi/tests/rules.rs` compares the
+branch, an instrument of another family or one twice; a weight row with no weight or one that is
+not a positive finite number; a register factor that is not; low-interval limits that do not run
+from one semitone upward without a gap; a combination of fewer than two members; and blank texts
+or provenance. A compile-time check runs it on every shipped row and keeps an instrument's
+registers from overlapping. `crates/sonara-midi/tests/rules.rs` compares the
 codes, grades and thresholds with tables written from the sources, checks that every rule is
 traceable and that an estimated threshold backs no error, compares the named unisons with the
 pairs and leaders Rimsky-Korsakov gives, checks that octave doublings list their members from the
-top in woodwind order and that a played articulation is one its instruments list, and rejects a
-fixture breaking each check.
+top in woodwind order and that a played articulation is one its instruments list, compares the
+weights of every instrument, the register factors and the low-interval limits with tables written
+from the sources, checks that every sustaining instrument has a weight, that registers lie inside
+the playable range and that the bands cover MIDI, and rejects a fixture breaking each check.
 
 ## Coverage
 

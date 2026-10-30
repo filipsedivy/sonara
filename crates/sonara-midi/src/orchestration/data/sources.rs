@@ -234,6 +234,8 @@ define_sources! {
     wikipedia_piccolo_trumpet => "Wikipedia, Piccolo trumpet, \
         https://en.wikipedia.org/wiki/Piccolo_trumpet",
     wikipedia_pipe_organ => "Wikipedia, Pipe organ, https://en.wikipedia.org/wiki/Pipe_organ",
+    wikipedia_register_music => "Wikipedia, Register (music), \
+        https://en.wikipedia.org/wiki/Register_(music)",
     wikipedia_prepared_piano => "Wikipedia, Prepared piano, \
         https://en.wikipedia.org/wiki/Prepared_piano",
     wikipedia_rhodes_piano => "Wikipedia, Rhodes piano, \
@@ -290,6 +292,7 @@ define_sources! {
     wikipedia_xylophone => "Wikipedia, Xylophone, https://en.wikipedia.org/wiki/Xylophone",
     wikipedia_cs_hlasovy_obor => "Czech Wikipedia, Hlasový obor, \
         https://cs.wikipedia.org/wiki/Hlasov%C3%BD_obor",
+    wikipedia_cs_klarinet => "Czech Wikipedia, Klarinet, https://cs.wikipedia.org/wiki/Klarinet",
     wikipedia_cs_pozoun => "Czech Wikipedia, Pozoun, https://cs.wikipedia.org/wiki/Pozoun",
     wikipedia_cs_trubka => "Czech Wikipedia, Trubka, https://cs.wikipedia.org/wiki/Trubka",
     wikipedia_de_oboe_d_amore => "German Wikipedia, Oboe d’amore, \

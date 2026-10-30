@@ -2,6 +2,12 @@
 
 use sonara_midi::orchestration::Provenance;
 use sonara_midi::orchestration::rules::{
+    Applies, Combination, DYNAMIC_STEP, HEAVY_PERCUSSION, IntervalLimit, IntervalLimits,
+    LOW_INTERVAL_LIMITS, Limit, MASKING_ACCOMPANIMENT, REGISTER_FACTORS, RegisterBand,
+    RegisterFactor, STRONG_REGISTER, WEAK_REGISTER, WEIGHTS, WeightRow, register_factor,
+    section_weight, weight_row,
+};
+use sonara_midi::orchestration::rules::{
     Avoid, DO_NOT_DOUBLE, Forces, Member, NAMED_DOUBLINGS, NamedDoubling, Playing, Prevails,
     Selector, Spacing, WOODWIND_ORDER, WoodwindOrder,
 };
@@ -13,7 +19,8 @@ use sonara_midi::orchestration::rules::{
     WIND_PHRASE,
 };
 use sonara_midi::orchestration::{
-    Articulation, Family, InstrumentType, MODERATO_BPM, PitchModel, PlayerRange, Span,
+    Articulation, Family, InstrumentType, MODERATO_BPM, PitchModel, PitchRange, PlayerRange,
+    SoundingPitch, Span, StringSection,
 };
 
 /// Whether a reader can trace `provenance`: a cited source that names a URL or a page, or an
@@ -265,103 +272,47 @@ fn rules_list_the_inputs_their_checks_name() {
     }
 }
 
-/// Every threshold as its name, rules, value written as text, and whether it is cited.
+/// One threshold as its name, rules, value written as text by `text`, and provenance.
+macro_rules! threshold {
+    ($name:ident, $text:expr) => {
+        (
+            stringify!($name),
+            $name.rules,
+            $text($name.value),
+            $name.provenance,
+        )
+    };
+}
+
+/// Every threshold as its name, rules, value written as text, and provenance.
 fn thresholds() -> Vec<(&'static str, &'static [RuleId], String, Provenance)> {
     let span = |span: Span| match span {
         Span::ModerateBeats(beats) => format!("{beats} beats"),
         Span::Millis(millis) => format!("{millis} ms"),
     };
+    let pitch = |pitch: SoundingPitch| pitch.get().to_string();
+    let count = |count: u8| count.to_string();
+    let number = |number: f32| number.to_string();
     vec![
-        (
-            "SUSTAINED_HIGH_BRASS",
-            SUSTAINED_HIGH_BRASS.rules,
-            span(SUSTAINED_HIGH_BRASS.value),
-            SUSTAINED_HIGH_BRASS.provenance,
-        ),
-        (
-            "UNDOUBLED_HIGH_MELODY",
-            UNDOUBLED_HIGH_MELODY.rules,
-            UNDOUBLED_HIGH_MELODY.value.get().to_string(),
-            UNDOUBLED_HIGH_MELODY.provenance,
-        ),
-        (
-            "UNDOUBLED_LOW_MELODY",
-            UNDOUBLED_LOW_MELODY.rules,
-            UNDOUBLED_LOW_MELODY.value.get().to_string(),
-            UNDOUBLED_LOW_MELODY.provenance,
-        ),
-        (
-            "LOW_DISSONANCE",
-            LOW_DISSONANCE.rules,
-            LOW_DISSONANCE.value.get().to_string(),
-            LOW_DISSONANCE.provenance,
-        ),
-        (
-            "BASS_SPACING",
-            BASS_SPACING.rules,
-            BASS_SPACING.value.to_string(),
-            BASS_SPACING.provenance,
-        ),
-        (
-            "MIDDLE_GAP",
-            MIDDLE_GAP.rules,
-            MIDDLE_GAP.value.to_string(),
-            MIDDLE_GAP.provenance,
-        ),
-        (
-            "WEAK_CHORD_MEMBER",
-            WEAK_CHORD_MEMBER.rules,
-            WEAK_CHORD_MEMBER.value.to_string(),
-            WEAK_CHORD_MEMBER.provenance,
-        ),
-        (
-            "MELODY_MARGIN",
-            MELODY_MARGIN.rules,
-            MELODY_MARGIN.value.to_string(),
-            MELODY_MARGIN.provenance,
-        ),
-        (
-            "SOLO_STRING_ACCOMPANIMENT",
-            SOLO_STRING_ACCOMPANIMENT.rules,
-            SOLO_STRING_ACCOMPANIMENT.value.to_string(),
-            SOLO_STRING_ACCOMPANIMENT.provenance,
-        ),
-        (
-            "FEWEST_FIRST_VIOLINS",
-            FEWEST_FIRST_VIOLINS.rules,
-            FEWEST_FIRST_VIOLINS.value.to_string(),
-            FEWEST_FIRST_VIOLINS.provenance,
-        ),
-        (
-            "LOUD_DIVISI",
-            LOUD_DIVISI.rules,
-            LOUD_DIVISI.value.to_string(),
-            LOUD_DIVISI.provenance,
-        ),
-        (
-            "WIND_PHRASE",
-            WIND_PHRASE.rules,
-            span(WIND_PHRASE.value),
-            WIND_PHRASE.provenance,
-        ),
-        (
-            "SOFT_SLUR",
-            SOFT_SLUR.rules,
-            span(SOFT_SLUR.value),
-            SOFT_SLUR.provenance,
-        ),
-        (
-            "MANY_NOTE_SLUR",
-            MANY_NOTE_SLUR.rules,
-            span(MANY_NOTE_SLUR.value),
-            MANY_NOTE_SLUR.provenance,
-        ),
-        (
-            "CHARACTERISTIC_COLOUR_SHARE",
-            CHARACTERISTIC_COLOUR_SHARE.rules,
-            CHARACTERISTIC_COLOUR_SHARE.value.to_string(),
-            CHARACTERISTIC_COLOUR_SHARE.provenance,
-        ),
+        threshold!(SUSTAINED_HIGH_BRASS, span),
+        threshold!(UNDOUBLED_HIGH_MELODY, pitch),
+        threshold!(UNDOUBLED_LOW_MELODY, pitch),
+        threshold!(LOW_DISSONANCE, pitch),
+        threshold!(BASS_SPACING, count),
+        threshold!(MIDDLE_GAP, count),
+        threshold!(WEAK_CHORD_MEMBER, number),
+        threshold!(MELODY_MARGIN, number),
+        threshold!(SOLO_STRING_ACCOMPANIMENT, number),
+        threshold!(FEWEST_FIRST_VIOLINS, count),
+        threshold!(LOUD_DIVISI, count),
+        threshold!(WIND_PHRASE, span),
+        threshold!(SOFT_SLUR, span),
+        threshold!(MANY_NOTE_SLUR, span),
+        threshold!(CHARACTERISTIC_COLOUR_SHARE, number),
+        threshold!(DYNAMIC_STEP, number),
+        threshold!(WEAK_REGISTER, number),
+        threshold!(STRONG_REGISTER, number),
+        threshold!(MASKING_ACCOMPANIMENT, number),
     ]
 }
 
@@ -369,7 +320,7 @@ fn thresholds() -> Vec<(&'static str, &'static [RuleId], String, Provenance)> {
 fn thresholds_hold_the_catalogue_numbers() {
     // TST-10: the values and sources written from the catalogue: two bars of moderate 4/4 are
     // eight beats, eight bars thirty-two; MIDI 90, 42 and D3 = 50; an octave is 12 semitones.
-    let expected: [(&str, &[RuleId], &str, bool); 15] = [
+    let expected: [(&str, &[RuleId], &str, bool); 19] = [
         ("SUSTAINED_HIGH_BRASS", &[RuleId::Rng03], "8 beats", false),
         ("UNDOUBLED_HIGH_MELODY", &[RuleId::Rng04], "90", false),
         ("UNDOUBLED_LOW_MELODY", &[RuleId::Rng04], "42", false),
@@ -390,6 +341,15 @@ fn thresholds_hold_the_catalogue_numbers() {
             "0.5",
             false,
         ),
+        ("DYNAMIC_STEP", &[RuleId::Bal02, RuleId::Bal04], "2", false),
+        (
+            "WEAK_REGISTER",
+            &[RuleId::Msk03, RuleId::Voi06],
+            "0.5",
+            false,
+        ),
+        ("STRONG_REGISTER", &[RuleId::Voi06], "1.25", false),
+        ("MASKING_ACCOMPANIMENT", &[RuleId::Msk03], "1", false),
     ];
     let actual = thresholds();
     assert_eq!(actual.len(), expected.len());
@@ -443,6 +403,10 @@ fn check_texts_state_their_thresholds() {
         (RuleId::Ply01, "8 bars of moderate 4/4"),
         (RuleId::Ply03, "4 bars of moderate time"),
         (RuleId::Tex01, "most bars"),
+        (RuleId::Msk03, "factor 0.5 or less"),
+        (RuleId::Msk03, "weight 1 or more"),
+        (RuleId::Voi06, "factor 0.5 or less"),
+        (RuleId::Voi06, "factor 1.25 or more"),
     ];
     for (id, words) in cases {
         assert!(id.get().check().contains(words), "{}: {words}", id.code());
@@ -740,11 +704,17 @@ fn octave_doublings_list_their_members_from_the_top() {
 
 #[test]
 fn played_selectors_name_articulations_their_instruments_play() {
-    // TST-07: a doubling of a played articulation names one each instrument lists, and each
-    // articulation is played by one of its instruments.
-    for (i, row) in NAMED_DOUBLINGS.iter().enumerate() {
-        for member in row.members {
-            let Selector::Played { ids, articulations } = member.selector else {
+    // TST-07: a selector of a played articulation, in a doubling, a weight row or the heavy
+    // percussion, names one each instrument lists, and each articulation is played by one of its
+    // instruments.
+    let selectors = NAMED_DOUBLINGS
+        .iter()
+        .flat_map(|row| row.members.iter().map(|member| member.selector))
+        .chain(WEIGHTS.iter().map(|row| row.selector))
+        .chain(HEAVY_PERCUSSION.members.iter().copied());
+    for (i, selector) in selectors.enumerate() {
+        {
+            let Selector::Played { ids, articulations } = selector else {
                 continue;
             };
             for instrument in ids {
@@ -1112,4 +1082,546 @@ fn woodwind_order_validator_rejects_broken_branches() {
         .check(),
         Err(RuleError::EmptyProvenance)
     );
+}
+
+/// Whether two weights agree; the data writes one- or two-digit decimals.
+fn close(a: f32, b: f32) -> bool {
+    (a - b).abs() < 1e-6
+}
+
+fn same_weights(a: [Option<f32>; 3], b: [Option<f32>; 3]) -> bool {
+    a.iter().zip(b).all(|(a, b)| match (a, b) {
+        (Some(a), Some(b)) => close(*a, b),
+        (None, None) => true,
+        _ => false,
+    })
+}
+
+fn bands(row: &WeightRow) -> [Option<f32>; 3] {
+    DynamicBand::ALL.map(|band| row.at(band))
+}
+
+const UNIT: [Option<f32>; 3] = [Some(1.0), Some(1.0), Some(1.0)];
+const HORN: [Option<f32>; 3] = [Some(1.0), Some(1.4), Some(2.0)];
+const TRUMPET: [Option<f32>; 3] = [Some(1.0), Some(2.0), Some(4.0)];
+const CORNET: [Option<f32>; 3] = [Some(1.0), Some(1.7), Some(3.0)];
+const LIGHT: [Option<f32>; 3] = [Some(0.5), Some(0.5), Some(0.5)];
+const SOFT_ONLY: [Option<f32>; 3] = [Some(0.5), Some(0.5), None];
+const BELLS: [Option<f32>; 3] = [Some(2.0), Some(3.0), Some(4.0)];
+const VOICE: [Option<f32>; 3] = [Some(1.0), Some(1.0), Some(1.5)];
+
+/// Every instrument with a weight and its weights at pp-p, mf and f-ff, written from the balance
+/// table: Rimsky-Korsakov's ratios (Ch. I, p. 33), one woodwind the unit, a horn 2 and a trumpet,
+/// trombone or tuba 4 in forte, one string section 2 in forte and 1 in piano, every wind 1 in
+/// piano; the other rows are the table's estimates.
+fn expected_weights() -> Vec<(InstrumentType, [Option<f32>; 3])> {
+    use InstrumentType as T;
+    vec![
+        (T::Piccolo, UNIT),
+        (T::Flute, UNIT),
+        (T::AltoFlute, UNIT),
+        (T::BassFlute, UNIT),
+        (T::Oboe, UNIT),
+        (T::OboeDamore, UNIT),
+        (T::EnglishHorn, UNIT),
+        (T::ClarinetEb, UNIT),
+        (T::ClarinetBb, UNIT),
+        (T::ClarinetA, UNIT),
+        (T::BassClarinet, UNIT),
+        (T::SaxophoneSoprano, HORN),
+        (T::SaxophoneAlto, HORN),
+        (T::SaxophoneTenor, HORN),
+        (T::SaxophoneBaritone, HORN),
+        (T::Bassoon, UNIT),
+        (T::Contrabassoon, UNIT),
+        (T::HornF, HORN),
+        (T::WagnerTubaTenor, HORN),
+        (T::WagnerTubaBass, HORN),
+        (T::TrumpetPiccolo, TRUMPET),
+        (T::TrumpetC, TRUMPET),
+        (T::TrumpetBb, TRUMPET),
+        (T::Cornet, CORNET),
+        (T::Flugelhorn, HORN),
+        (T::TromboneTenor, TRUMPET),
+        (T::TromboneBass, TRUMPET),
+        (T::Euphonium, HORN),
+        (T::Tuba, TRUMPET),
+        (T::Cimbasso, TRUMPET),
+        (T::Timpani, TRUMPET),
+        (T::Glockenspiel, BELLS),
+        (T::Xylophone, BELLS),
+        (T::TubularBells, BELLS),
+        (T::Crotales, BELLS),
+        (T::Harp, LIGHT),
+        (T::Celesta, SOFT_ONLY),
+        (T::PianoConcertGrand, SOFT_ONLY),
+        (T::PianoStudioGrand, SOFT_ONLY),
+        (T::PianoUpright, SOFT_ONLY),
+        (T::VoiceSoprano, VOICE),
+        (T::VoiceMezzoSoprano, VOICE),
+        (T::VoiceAlto, VOICE),
+        (T::VoiceTenor, VOICE),
+        (T::VoiceBaritone, VOICE),
+        (T::VoiceBass, VOICE),
+        (T::ChoirSoprano, VOICE),
+        (T::ChoirAlto, VOICE),
+        (T::ChoirTenor, VOICE),
+        (T::ChoirBass, VOICE),
+        (T::Violin, HORN),
+        (T::Viola, HORN),
+        (T::Cello, HORN),
+        (T::DoubleBass, HORN),
+    ]
+}
+
+#[test]
+fn weights_match_the_balance_table() {
+    // TST-10: every instrument played in its ordinary way finds the weights of the table, and
+    // instruments without a row have no weight.
+    let expected = expected_weights();
+    for instrument in InstrumentType::ALL {
+        let found = weight_row(Playing::ordinary(instrument)).map(bands);
+        let wanted = expected
+            .iter()
+            .find(|(listed, _)| *listed == instrument)
+            .map(|(_, weights)| *weights);
+        match (found, wanted) {
+            (Some(found), Some(wanted)) => {
+                assert!(same_weights(found, wanted), "{instrument:?}: {found:?}");
+            }
+            (None, None) => {}
+            _ => panic!("{instrument:?}: {found:?} against {wanted:?}"),
+        }
+    }
+    // A solo string, and a pizzicato or col legno section, weigh half a woodwind; tremolo is
+    // still the arco section.
+    let violin = Playing::ordinary(InstrumentType::Violin);
+    let played = |articulation| Playing {
+        articulation: Some(articulation),
+        ..violin
+    };
+    let solo = Playing {
+        forces: Forces::Solo,
+        ..violin
+    };
+    for playing in [
+        solo,
+        played(Articulation::Pizzicato),
+        played(Articulation::ColLegno),
+    ] {
+        let row = weight_row(playing).expect("a row");
+        assert!(same_weights(bands(row), LIGHT), "{playing:?}");
+    }
+    let tremolo = weight_row(played(Articulation::Tremolo)).expect("a row");
+    assert!(same_weights(bands(tremolo), HORN));
+}
+
+#[test]
+fn every_sustaining_instrument_has_a_weight_and_rows_never_weaken_louder() {
+    // TST-07: every woodwind, brass, string and voice part weighs something at every band, and
+    // no row weighs less at a louder band.
+    for instrument in InstrumentType::ALL {
+        let sustains = matches!(
+            instrument.family(),
+            Family::Woodwinds | Family::Brass | Family::Strings | Family::Choir
+        );
+        if sustains {
+            let row = weight_row(Playing::ordinary(instrument)).expect("a weight");
+            assert!(bands(row).iter().all(Option::is_some), "{instrument:?}");
+        }
+    }
+    for row in &WEIGHTS {
+        assert_eq!(row.check(), Ok(()));
+        assert!(is_traceable(row.provenance));
+        let given: Vec<f32> = bands(row).into_iter().flatten().collect();
+        assert!(given.windows(2).all(|pair| pair[0] <= pair[1]), "{row:?}");
+    }
+}
+
+#[test]
+fn section_weights_grow_with_the_players() {
+    // TST-10: the weights describe the medium orchestra's sections, 12-10-8-6-4 players.
+    assert!(close(section_weight(2.0, StringSection::ViolinsI, 12), 2.0));
+    assert!(close(
+        section_weight(2.0, StringSection::ViolinsI, 16),
+        16.0 / 6.0
+    ));
+    assert!(close(
+        section_weight(2.0, StringSection::ViolinsII, 10),
+        2.0
+    ));
+    assert!(close(section_weight(1.0, StringSection::Violas, 4), 0.5));
+    assert!(close(section_weight(1.0, StringSection::Cellos, 3), 0.5));
+    assert!(close(section_weight(2.0, StringSection::Basses, 8), 4.0));
+    assert!(close(section_weight(2.0, StringSection::Basses, 0), 0.0));
+}
+
+#[test]
+fn heavy_percussion_is_four_instruments_at_fortissimo() {
+    use InstrumentType::{BassDrum, ClashCymbals, SnareDrum, SuspendedCymbal, TamTam};
+    // TST-10: the bass drum, cymbals, gong and a side-drum roll (Rimsky-Korsakov, Ch. IV, p. 117).
+    let covers = |instrument, articulation| {
+        HEAVY_PERCUSSION.members.iter().any(|member| {
+            member.matches(Playing {
+                articulation,
+                ..Playing::ordinary(instrument)
+            })
+        })
+    };
+    assert_eq!(HEAVY_PERCUSSION.members.len(), 4);
+    assert!(covers(BassDrum, None));
+    assert!(covers(ClashCymbals, None));
+    assert!(covers(TamTam, None));
+    assert!(covers(SnareDrum, Some(Articulation::Roll)));
+    assert!(!covers(SnareDrum, None), "only the snare drum's roll");
+    assert!(!covers(SuspendedCymbal, None));
+    assert_eq!(HEAVY_PERCUSSION.check(), Ok(()));
+    assert!(is_traceable(HEAVY_PERCUSSION.provenance));
+}
+
+#[test]
+fn register_factors_match_the_table() {
+    use InstrumentType as T;
+    // TST-10: the factor table, with spans read off the records' ranges and the registers the
+    // sources name: the flute's low B3-G4 and bright top from G5, the alto flute's strong bottom
+    // sixth, the piccolo's weak low and middle and powerful top from C#7, the small clarinet's
+    // chalumeau and throat, the clarinets' throat, the horn's bottom fifth, the contrabassoon's
+    // deep notes in piano, the oboe's low fifth, the bassoon's upper register, and the harp below
+    // C5 in fast figures.
+    let expected = [
+        (T::Flute, 59, 67, 0.5, Applies::Always),
+        (T::Flute, 79, 98, 1.5, Applies::Always),
+        (T::AltoFlute, 55, 64, 1.0, Applies::Always),
+        (T::Piccolo, 74, 96, 0.5, Applies::Always),
+        (T::Piccolo, 97, 108, 2.0, Applies::Always),
+        (T::ClarinetEb, 55, 73, 0.5, Applies::Always),
+        (T::ClarinetBb, 63, 68, 0.5, Applies::Always),
+        (T::ClarinetA, 62, 67, 0.5, Applies::Always),
+        (T::HornF, 35, 42, 0.5, Applies::Always),
+        (
+            T::Contrabassoon,
+            22,
+            28,
+            1.5,
+            Applies::At(DynamicBand::Soft),
+        ),
+        (T::Oboe, 58, 65, 1.25, Applies::Always),
+        (T::Bassoon, 59, 75, 1.25, Applies::Always),
+        (T::Harp, 23, 71, 0.5, Applies::InFastFigures),
+    ];
+    assert_eq!(REGISTER_FACTORS.len(), expected.len());
+    for (row, (instrument, low, high, factor, applies)) in REGISTER_FACTORS.iter().zip(expected) {
+        assert_eq!(row.instrument, instrument);
+        assert_eq!(row.register, PitchRange::new(low, high), "{instrument:?}");
+        assert!(close(row.factor, factor), "{instrument:?}");
+        assert_eq!(row.applies, applies, "{instrument:?}");
+        assert_eq!(row.check(), Ok(()));
+        assert!(is_traceable(row.provenance), "{instrument:?}");
+    }
+}
+
+#[test]
+fn register_factors_lie_inside_the_playable_range() {
+    // TST-07: a register is one the instrument plays.
+    for row in &REGISTER_FACTORS {
+        let PitchModel::Pitched(pitched) = *row.instrument.get().expect("record").pitch() else {
+            panic!("{:?} is pitched", row.instrument);
+        };
+        assert!(
+            pitched.playable.range.encloses(row.register),
+            "{:?}",
+            row.instrument
+        );
+    }
+}
+
+fn sounding(note: i64) -> SoundingPitch {
+    SoundingPitch::new(note).expect("a MIDI note")
+}
+
+#[test]
+fn register_factor_lookup_applies_each_condition() {
+    use InstrumentType::{Contrabassoon, Flute, Harp, Violin};
+    let factor = |instrument, note, band, fast| {
+        register_factor(instrument, sounding(note), band, fast).map(|row| row.factor)
+    };
+    let medium = DynamicBand::Medium;
+    // TST-10: a factor applies inside its register and under its condition; elsewhere none (1).
+    assert_eq!(factor(Flute, 59, medium, false), Some(0.5));
+    assert_eq!(factor(Flute, 67, medium, false), Some(0.5));
+    assert_eq!(factor(Flute, 68, medium, false), None);
+    assert_eq!(factor(Flute, 79, medium, false), Some(1.5));
+    assert_eq!(
+        factor(Contrabassoon, 25, DynamicBand::Soft, false),
+        Some(1.5)
+    );
+    assert_eq!(factor(Contrabassoon, 25, DynamicBand::Loud, false), None);
+    assert_eq!(factor(Contrabassoon, 29, DynamicBand::Soft, false), None);
+    assert_eq!(factor(Harp, 50, medium, true), Some(0.5));
+    assert_eq!(factor(Harp, 50, medium, false), None);
+    assert_eq!(factor(Harp, 72, medium, true), None);
+    assert_eq!(factor(Violin, 60, medium, false), None);
+}
+
+#[test]
+fn register_bands_split_midi_into_octaves_from_c2() {
+    // TST-10: the band boundaries are the Cs from C2 (36) to C7 (96).
+    let cases = [
+        (0, RegisterBand::Sub),
+        (35, RegisterBand::Sub),
+        (36, RegisterBand::Bass),
+        (47, RegisterBand::Bass),
+        (48, RegisterBand::Tenor),
+        (60, RegisterBand::Alto),
+        (71, RegisterBand::Alto),
+        (72, RegisterBand::Soprano),
+        (84, RegisterBand::High),
+        (95, RegisterBand::High),
+        (96, RegisterBand::Top),
+        (127, RegisterBand::Top),
+    ];
+    for (note, band) in cases {
+        assert_eq!(RegisterBand::of(sounding(note)), band, "{note}");
+    }
+    // TST-07: the ranges cover MIDI in order without a gap, and each holds exactly its notes.
+    let mut next = 0;
+    for band in RegisterBand::ALL {
+        let range = band.range();
+        assert_eq!(range.low().get(), next, "{band:?}");
+        next = range.high().get() + 1;
+    }
+    assert_eq!(next, 128);
+    for note in 0..=127 {
+        let pitch = sounding(note);
+        assert!(RegisterBand::of(pitch).range().contains(pitch), "{note}");
+    }
+    assert!(is_traceable(RegisterBand::PROVENANCE));
+}
+
+#[test]
+fn low_interval_limits_match_the_table() {
+    // TST-10: the lowest lower note per interval, from the minor second (E3 = 52) to the major
+    // ninth (E♭2 = 39); the octave has none.
+    let expected = [
+        (1, Some(52)),
+        (2, Some(51)),
+        (3, Some(48)),
+        (4, Some(46)),
+        (5, Some(45)),
+        (6, Some(46)),
+        (7, Some(34)),
+        (8, Some(41)),
+        (9, Some(41)),
+        (10, Some(41)),
+        (11, Some(41)),
+        (12, None),
+        (13, Some(40)),
+        (14, Some(39)),
+    ];
+    assert_eq!(LOW_INTERVAL_LIMITS.rows.len(), expected.len());
+    for (semitones, note) in expected {
+        let limit = match note {
+            Some(note) => Limit::Lowest(sounding(note)),
+            None => Limit::Unlimited,
+        };
+        assert_eq!(
+            LOW_INTERVAL_LIMITS.of(semitones),
+            Some(limit),
+            "{semitones}"
+        );
+    }
+    // TST-03: a unison and an interval wider than a ninth are not in the table.
+    assert_eq!(LOW_INTERVAL_LIMITS.of(0), None);
+    assert_eq!(LOW_INTERVAL_LIMITS.of(15), None);
+    assert_eq!(LOW_INTERVAL_LIMITS.check(), Ok(()));
+    assert!(is_estimate(LOW_INTERVAL_LIMITS.provenance));
+    // The table is looser than the low-bass dissonance rule: below D3 it still admits a fourth.
+    assert!(45 < LOW_DISSONANCE.value.get());
+}
+
+const SECTION_WEIGHTS: WeightRow = WeightRow {
+    selector: Selector::Ids(&[InstrumentType::Violin]),
+    soft: Some(1.0),
+    medium: None,
+    loud: Some(2.0),
+    provenance: FIXTURE,
+};
+
+#[test]
+fn weight_validator_rejects_each_broken_row() {
+    // TST-03: one fixture per failing check.
+    assert_eq!(SECTION_WEIGHTS.check(), Ok(()));
+    let weights = [
+        (
+            WeightRow {
+                soft: None,
+                loud: None,
+                ..SECTION_WEIGHTS
+            },
+            RuleError::InvalidWeight,
+        ),
+        (
+            WeightRow {
+                soft: Some(0.0),
+                ..SECTION_WEIGHTS
+            },
+            RuleError::InvalidWeight,
+        ),
+        (
+            WeightRow {
+                medium: Some(-1.0),
+                ..SECTION_WEIGHTS
+            },
+            RuleError::InvalidWeight,
+        ),
+        (
+            WeightRow {
+                loud: Some(f32::NAN),
+                ..SECTION_WEIGHTS
+            },
+            RuleError::InvalidWeight,
+        ),
+        (
+            WeightRow {
+                loud: Some(f32::INFINITY),
+                ..SECTION_WEIGHTS
+            },
+            RuleError::InvalidWeight,
+        ),
+        (
+            WeightRow {
+                selector: Selector::Family(Family::Other),
+                ..SECTION_WEIGHTS
+            },
+            RuleError::InvalidSelector,
+        ),
+        (
+            WeightRow {
+                provenance: Provenance::Estimate { reason: " " },
+                ..SECTION_WEIGHTS
+            },
+            RuleError::EmptyProvenance,
+        ),
+    ];
+    for (row, error) in weights {
+        assert_eq!(row.check(), Err(error), "{row:?}");
+    }
+}
+
+#[test]
+fn factor_validator_rejects_each_broken_row() {
+    // TST-03: a factor must be a positive finite number, with a provenance.
+    let factor = RegisterFactor {
+        instrument: InstrumentType::Flute,
+        register: PitchRange::new(59, 67),
+        factor: 0.5,
+        applies: Applies::Always,
+        provenance: FIXTURE,
+    };
+    assert_eq!(factor.check(), Ok(()));
+    for broken in [0.0, -0.5, f32::NAN, f32::INFINITY] {
+        assert_eq!(
+            RegisterFactor {
+                factor: broken,
+                ..factor
+            }
+            .check(),
+            Err(RuleError::InvalidFactor),
+            "{broken}"
+        );
+    }
+    assert_eq!(
+        RegisterFactor {
+            provenance: Provenance::Cited { source: "" },
+            ..factor
+        }
+        .check(),
+        Err(RuleError::EmptyProvenance)
+    );
+}
+
+const MINOR_SECOND: IntervalLimit = IntervalLimit {
+    semitones: 1,
+    limit: Limit::Unlimited,
+};
+
+const MINOR_THIRD: IntervalLimit = IntervalLimit {
+    semitones: 3,
+    limit: Limit::Unlimited,
+};
+
+#[test]
+fn limit_and_combination_validators_reject_each_broken_table() {
+    // TST-03: the limits must run from one semitone upward without a gap.
+    let limits = IntervalLimits {
+        rows: &[MINOR_SECOND],
+        provenance: FIXTURE,
+    };
+    assert_eq!(limits.check(), Ok(()));
+    for rows in [
+        &[][..],
+        &[MINOR_THIRD],
+        &[MINOR_SECOND, MINOR_THIRD],
+        &[MINOR_SECOND, MINOR_SECOND],
+    ] {
+        assert_eq!(
+            IntervalLimits { rows, ..limits }.check(),
+            Err(RuleError::InvalidLimits),
+            "{rows:?}"
+        );
+    }
+    assert_eq!(
+        IntervalLimits {
+            provenance: Provenance::Estimate { reason: "" },
+            ..limits
+        }
+        .check(),
+        Err(RuleError::EmptyProvenance)
+    );
+
+    let combination = Combination {
+        members: &[
+            Selector::Ids(&[InstrumentType::BassDrum]),
+            Selector::Ids(&[InstrumentType::TamTam]),
+        ],
+        effect: "loud",
+        provenance: FIXTURE,
+    };
+    assert_eq!(combination.check(), Ok(()));
+    let broken = [
+        (
+            Combination {
+                members: &[Selector::Ids(&[InstrumentType::BassDrum])],
+                ..combination
+            },
+            RuleError::InvalidSelector,
+        ),
+        (
+            Combination {
+                members: &[
+                    Selector::Ids(&[InstrumentType::BassDrum]),
+                    Selector::Ids(&[]),
+                ],
+                ..combination
+            },
+            RuleError::InvalidSelector,
+        ),
+        (
+            Combination {
+                effect: "",
+                ..combination
+            },
+            RuleError::BlankText,
+        ),
+        (
+            Combination {
+                provenance: Provenance::Cited { source: " " },
+                ..combination
+            },
+            RuleError::EmptyProvenance,
+        ),
+    ];
+    for (row, error) in broken {
+        assert_eq!(row.check(), Err(error), "{row:?}");
+    }
 }

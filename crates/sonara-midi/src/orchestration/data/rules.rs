@@ -1,5 +1,5 @@
-//! The rule catalogue, one record per [`RuleId`], the thresholds its checks compare with, and
-//! the doubling tables.
+//! The rule catalogue, one record per [`RuleId`], the thresholds its checks compare with, the
+//! doubling tables, the weights and register factors, and the low-interval limits.
 //!
 //! Each rule cites the handbook passage it comes from; the numbers a check compares with are named
 //! thresholds with their own provenance, most of them estimates that turn a source's words into a
@@ -7,25 +7,30 @@
 //! throughout.
 
 use super::sources::{cite, reason};
-use crate::orchestration::articulation::Articulation::{ConSordino, Harmonics, Pizzicato, Stopped};
+use crate::orchestration::articulation::Articulation::{
+    ColLegno, ColLegnoBattuto, ConSordino, Harmonics, Pizzicato, Roll, Stopped,
+};
 use crate::orchestration::ensemble_profile::PlayerRange;
 use crate::orchestration::id::InstrumentType;
 use crate::orchestration::id::InstrumentType::{
-    AltoFlute, BassClarinet, BassFlute, Bassoon, Celesta, Cello, ClarinetA, ClarinetBb, ClarinetEb,
-    Contrabassoon, DoubleBass, EnglishHorn, Flute, Glockenspiel, Harp, HornF, Oboe, OboeDamore,
-    PianoConcertGrand, PianoStudioGrand, PianoUpright, Piccolo, TromboneBass, TromboneTenor,
-    TrumpetBb, TrumpetC, Tuba, Viola, Violin, Xylophone,
+    AltoFlute, BassClarinet, BassDrum, BassFlute, Bassoon, Celesta, Cello, Cimbasso, ClarinetA,
+    ClarinetBb, ClarinetEb, ClashCymbals, Contrabassoon, Cornet, Crotales, DoubleBass, EnglishHorn,
+    Euphonium, Flugelhorn, Flute, Glockenspiel, Harp, HornF, Oboe, OboeDamore, PianoConcertGrand,
+    PianoStudioGrand, PianoUpright, Piccolo, SaxophoneAlto, SaxophoneBaritone, SaxophoneSoprano,
+    SaxophoneTenor, SnareDrum, TamTam, Timpani, TromboneBass, TromboneTenor, TrumpetBb, TrumpetC,
+    TrumpetPiccolo, Tuba, TubularBells, Viola, Violin, WagnerTubaBass, WagnerTubaTenor, Xylophone,
 };
 use crate::orchestration::instrument::{Family, Provenance};
-use crate::orchestration::pitch::SoundingPitch;
+use crate::orchestration::pitch::{PitchRange, SoundingPitch};
 use crate::orchestration::playability::Span;
 use crate::orchestration::rules::RuleInput::{
     Articulation, Dynamic, Harmony, HarpPedals, Instrument, Meter, Notes, Part, RegisterFactors,
     Role, Tempo, TimpaniTuning, Weights,
 };
 use crate::orchestration::rules::{
-    Avoid, Level, Member, NamedDoubling, Prevails, Rule, RuleId, RuleInput, RuleSpec, Selector,
-    Severity, Spacing, Threshold, WoodwindOrder,
+    Applies, Avoid, Combination, DynamicBand, IntervalLimit, IntervalLimits, Level, Limit, Member,
+    NamedDoubling, Prevails, RegisterFactor, Rule, RuleId, RuleInput, RuleSpec, Selector, Severity,
+    Spacing, Threshold, WeightRow, WoodwindOrder,
 };
 
 const HINT: Severity = Severity::Fixed(Level::Hint);
@@ -2587,5 +2592,637 @@ const _: () = {
     assert!(
         WOODWIND_ORDER.check().is_ok(),
         "the woodwind order is invalid"
+    );
+};
+
+// Weights, register factors and low-interval limits.
+
+/// Where the register bands come from.
+pub(in crate::orchestration) const REGISTER_BANDS: Provenance = Provenance::Estimate {
+    reason: reason!(
+        "Rimsky-Korsakov (",
+        rimsky_korsakov,
+        ") numbers octaves in prose and names the strings' registers (Ch. II, pp. 36-38); his \
+            octave n is read as scientific octave n + 1, which three passages of his text support",
+    ),
+};
+
+/// How strongly each line sounds at each dynamic band, the most specific rows first: a solo or a
+/// pizzicato string matches its own row before the arco section's.
+pub static WEIGHTS: [WeightRow; 17] = [
+    WeightRow {
+        selector: Selector::Solo(STRINGS),
+        soft: Some(0.5),
+        medium: Some(0.5),
+        loud: Some(0.5),
+        provenance: Provenance::Estimate {
+            reason: reason!(
+                "Rimsky-Korsakov (",
+                rimsky_korsakov,
+                ") Ch. IV, Soli in the strings, p. 105, calls the solo tone comparatively weak \
+                    and gives no number",
+            ),
+        },
+    },
+    WeightRow {
+        selector: Selector::Played {
+            ids: STRINGS,
+            articulations: &[Pizzicato, ColLegno, ColLegnoBattuto],
+        },
+        soft: Some(0.5),
+        medium: Some(0.5),
+        loud: Some(0.5),
+        provenance: Provenance::Estimate {
+            reason: reason!(
+                "Rimsky-Korsakov (",
+                rimsky_korsakov,
+                ") Ch. I, Comparison of resonance, pp. 33-34: pizzicato and col legno strings \
+                    are easily overpowered by the sustaining groups; no number",
+            ),
+        },
+    },
+    WeightRow {
+        selector: Selector::Ids(STRINGS),
+        soft: Some(1.0),
+        medium: Some(1.4),
+        loud: Some(2.0),
+        provenance: Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, Comparison of resonance, p. 33: in a medium orchestra \
+                    the first violins equal 2 flutes, or 1 oboe and 1 clarinet, in forte, and 1 \
+                    flute in piano";
+                "the other sections taken to weigh as the first violins, the mf weight as the \
+                    geometric middle, and the weight of a larger or smaller section in proportion \
+                    to its players are estimates"
+            ),
+        },
+    },
+    WeightRow {
+        selector: Selector::Ids(&[Flute, Oboe, ClarinetBb, ClarinetA, Bassoon]),
+        soft: Some(1.0),
+        medium: Some(1.0),
+        loud: Some(1.0),
+        provenance: Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, Comparison of resonance, p. 33: 1 horn equals 2 \
+                    clarinets, 2 oboes, 2 flutes or 2 bassoons in forte, and in piano all wind \
+                    instruments are of fairly equal balance; one of them is the unit",
+            ),
+        },
+    },
+    WeightRow {
+        selector: Selector::Ids(&[
+            EnglishHorn,
+            OboeDamore,
+            ClarinetEb,
+            BassClarinet,
+            AltoFlute,
+            BassFlute,
+            Piccolo,
+            Contrabassoon,
+        ]),
+        soft: Some(1.0),
+        medium: Some(1.0),
+        loud: Some(1.0),
+        provenance: Provenance::Estimate {
+            reason: reason!(
+                "the same group as the flute, oboe, clarinet and bassoon, which Rimsky-Korsakov (",
+                rimsky_korsakov,
+                ") Ch. I, p. 33, makes the unit; he gives no separate figure, and the register \
+                    factors adjust their weak and strong registers",
+            ),
+        },
+    },
+    WeightRow {
+        selector: Selector::Ids(&[
+            SaxophoneSoprano,
+            SaxophoneAlto,
+            SaxophoneTenor,
+            SaxophoneBaritone,
+        ]),
+        soft: Some(1.0),
+        medium: Some(1.4),
+        loud: Some(2.0),
+        provenance: Provenance::Estimate {
+            reason: "no source that was read gives a ratio; placed with the horn",
+        },
+    },
+    WeightRow {
+        selector: Selector::Ids(&[HornF]),
+        soft: Some(1.0),
+        medium: Some(1.4),
+        loud: Some(2.0),
+        provenance: Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, Comparison of resonance, p. 33: 1 horn equals 2 \
+                    woodwinds in forte, and all wind instruments are of fairly equal balance in \
+                    piano";
+                "the mf weight is the geometric middle of the soft and loud ones"
+            ),
+        },
+    },
+    WeightRow {
+        selector: Selector::Ids(&[WagnerTubaTenor, WagnerTubaBass, Euphonium, Flugelhorn]),
+        soft: Some(1.0),
+        medium: Some(1.4),
+        loud: Some(2.0),
+        provenance: Provenance::Estimate {
+            reason: "conical brass close to the horn; no source that was read gives a ratio",
+        },
+    },
+    WeightRow {
+        selector: Selector::Ids(&[TrumpetBb, TrumpetC, TrumpetPiccolo]),
+        soft: Some(1.0),
+        medium: Some(2.0),
+        loud: Some(4.0),
+        provenance: Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, Comparison of resonance, p. 33: 1 trumpet equals 1 \
+                    trombone, 1 tuba or 2 horns in forte, and all wind instruments are of fairly \
+                    equal balance in piano";
+                "the piccolo trumpet taken to weigh as the trumpet and the mf weight as the \
+                    geometric middle are estimates"
+            ),
+        },
+    },
+    WeightRow {
+        selector: Selector::Ids(&[Cornet]),
+        soft: Some(1.0),
+        medium: Some(1.7),
+        loud: Some(3.0),
+        provenance: Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, brass remarks, pp. 22-24: cornets have not quite the \
+                    same force as trumpets and are softer and weaker";
+                "the numbers, between the horn and the trumpet in forte, are an estimate"
+            ),
+        },
+    },
+    WeightRow {
+        selector: Selector::Ids(&[TromboneTenor, TromboneBass, Tuba, Cimbasso]),
+        soft: Some(1.0),
+        medium: Some(2.0),
+        loud: Some(4.0),
+        provenance: Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, Comparison of resonance, p. 33: 1 trumpet equals 1 \
+                    trombone or 1 tuba in forte, and all wind instruments are of fairly equal \
+                    balance in piano";
+                "the cimbasso taken to weigh as the tuba and the mf weight as the geometric \
+                    middle are estimates"
+            ),
+        },
+    },
+    WeightRow {
+        selector: Selector::Ids(&[Harp]),
+        soft: Some(0.5),
+        medium: Some(0.5),
+        loud: Some(0.5),
+        provenance: Provenance::Estimate {
+            reason: reason!(
+                "Rimsky-Korsakov (",
+                rimsky_korsakov,
+                ") Ch. I, Harp, p. 29, needs three or four harps against a full orchestra in \
+                    forte and calls it never a very powerful instrument; no number",
+            ),
+        },
+    },
+    WeightRow {
+        selector: Selector::Ids(&[Celesta]),
+        soft: Some(0.5),
+        medium: Some(0.5),
+        loud: None,
+        provenance: Provenance::Estimate {
+            reason: reason!(
+                "Rimsky-Korsakov (",
+                rimsky_korsakov,
+                ") Ch. I, pp. 33-34: the celesta is easily overpowered by the sustaining groups; \
+                    no number, and none for forte",
+            ),
+        },
+    },
+    WeightRow {
+        selector: Selector::Ids(&[PianoConcertGrand, PianoStudioGrand, PianoUpright]),
+        soft: Some(0.5),
+        medium: Some(0.5),
+        loud: None,
+        provenance: Provenance::Estimate {
+            reason: reason!(
+                "Rimsky-Korsakov (",
+                rimsky_korsakov,
+                ") Ch. I, pp. 33-34: the piano played softly is easily overpowered by the \
+                    sustaining groups; no number, and none for the piano played loud",
+            ),
+        },
+    },
+    WeightRow {
+        selector: Selector::Ids(&[Glockenspiel, Xylophone, TubularBells, Crotales]),
+        soft: Some(2.0),
+        medium: Some(3.0),
+        loud: Some(4.0),
+        provenance: Provenance::Estimate {
+            reason: reason!(
+                "Rimsky-Korsakov (",
+                rimsky_korsakov,
+                ") Ch. I, pp. 33-34: the glockenspiel, bells and xylophone will easily prevail; \
+                    no number",
+            ),
+        },
+    },
+    WeightRow {
+        selector: Selector::Ids(&[Timpani]),
+        soft: Some(1.0),
+        medium: Some(2.0),
+        loud: Some(4.0),
+        provenance: Provenance::Estimate {
+            reason: reason!(
+                "Rimsky-Korsakov (",
+                rimsky_korsakov,
+                ") Ch. I, pp. 33-34: the kettle-drums will easily prevail; set equal to the \
+                    trumpet",
+            ),
+        },
+    },
+    WeightRow {
+        selector: Selector::Family(Family::Choir),
+        soft: Some(1.0),
+        medium: Some(1.0),
+        loud: Some(1.5),
+        provenance: Provenance::Estimate {
+            reason: "no source that was read gives a ratio for voices; how an accompaniment \
+                covers a voice is the masking rules' concern",
+        },
+    },
+];
+
+/// One step of notated dynamic as a weight factor: a part marked one step louder weighs twice as
+/// much, one step softer half.
+pub const DYNAMIC_STEP: Threshold<f32> = Threshold {
+    rules: &[RuleId::Bal02, RuleId::Bal04],
+    value: 2.0,
+    provenance: Provenance::Estimate {
+        reason: reason!(
+            "Rimsky-Korsakov (",
+            rimsky_korsakov,
+            ") Ch. III, pp. 84-85, marks single horns one degree louder in place of doubling them, \
+                so one step is worth about a factor of 2 in his arithmetic",
+        ),
+    },
+};
+
+/// MSK-03 and VOI-06: a register of this factor or less is weak.
+pub const WEAK_REGISTER: Threshold<f32> = Threshold {
+    rules: &[RuleId::Msk03, RuleId::Voi06],
+    value: 0.5,
+    provenance: Provenance::Estimate {
+        reason: "the factor the register factors give a register that the handbooks call weak \
+            or easily covered",
+    },
+};
+
+/// VOI-06: a register of this factor or more is strong.
+pub const STRONG_REGISTER: Threshold<f32> = Threshold {
+    rules: &[RuleId::Voi06],
+    value: 1.25,
+    provenance: Provenance::Estimate {
+        reason: "the smallest factor the register factors give a register that the handbooks \
+            call prevailing or powerful",
+    },
+};
+
+/// MSK-03: an accompaniment of this weight or more covers a melody in a weak register.
+pub const MASKING_ACCOMPANIMENT: Threshold<f32> = Threshold {
+    rules: &[RuleId::Msk03],
+    value: 1.0,
+    provenance: Provenance::Estimate {
+        reason: "one woodwind player in the middle register, the unit of the weights",
+    },
+};
+
+/// The percussion that, at fortissimo, overpowers any tutti.
+pub const HEAVY_PERCUSSION: Combination = Combination {
+    members: &[
+        Selector::Ids(&[BassDrum]),
+        Selector::Ids(&[ClashCymbals]),
+        Selector::Ids(&[TamTam]),
+        Selector::Played {
+            ids: &[SnareDrum],
+            articulations: &[Roll],
+        },
+    ],
+    effect: "the bass drum, cymbals, tam-tam and a snare-drum roll together at fortissimo \
+        overpower any orchestral tutti",
+    provenance: Provenance::Cited {
+        source: cite!(
+            rimsky_korsakov: "Ch. IV, Use of percussion instruments, p. 117: the bass drum, \
+                cymbals, gong and a tremolo on the side drum, played fortissimo, are sufficient \
+                to overpower any orchestral tutti",
+        ),
+    },
+};
+
+/// A register factor.
+const fn factor(
+    instrument: InstrumentType,
+    low: i64,
+    high: i64,
+    factor: f32,
+    applies: Applies,
+    provenance: Provenance,
+) -> RegisterFactor {
+    RegisterFactor {
+        instrument,
+        register: PitchRange::new(low, high),
+        factor,
+        applies,
+        provenance,
+    }
+}
+
+/// How registers change the weights. The factors are estimates that encode what the handbooks say
+/// in words; each row cites the statement it encodes.
+pub static REGISTER_FACTORS: [RegisterFactor; 13] = [
+    factor(
+        Flute,
+        59,
+        67,
+        0.5,
+        Applies::Always,
+        Provenance::Cited {
+            source: cite!(
+                forsyth: "the flute's low register, C4 to about A4, is thick and heavy and easily \
+                    covered, and double basses blur it",
+                widor: "in combination the flute only begins to tell from G or A upwards";
+                "the factor and the span, B3 to G4, are estimates"
+            ),
+        },
+    ),
+    factor(
+        Flute,
+        79,
+        98,
+        1.5,
+        Applies::Always,
+        Provenance::Cited {
+            source: cite!(
+                forsyth: "from G5 up the flute is bright and telling";
+                "the factor is an estimate"
+            ),
+        },
+    ),
+    factor(
+        AltoFlute,
+        55,
+        64,
+        1.0,
+        Applies::Always,
+        Provenance::Cited {
+            source: cite!(
+                forsyth: "the alto flute's bottom sixth is remarkably strong",
+                wikipedia_alto_flute: "a greater dynamic presence in the bottom octave and a \
+                    half";
+                "the factor stays 1, unlike the flute's weak low register, because the register \
+                    is still light in absolute terms; an estimate"
+            ),
+        },
+    ),
+    factor(
+        Piccolo,
+        74,
+        96,
+        0.5,
+        Applies::Always,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, wood-wind remarks, p. 20: in its low and middle range \
+                    the piccolo's tone is so much weaker than the flute's that it is of little \
+                    service there",
+                vsl_academy_piccolo: "registers D5-G5, G#5-C7 and C#7-C8";
+                "the factor is an estimate"
+            ),
+        },
+    ),
+    factor(
+        Piccolo,
+        97,
+        108,
+        2.0,
+        Applies::Always,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, wood-wind remarks, p. 20: the piccolo's highest compass \
+                    is extraordinarily powerful",
+                vsl_academy_piccolo: "the upper register C#7-C8, piercing in forte";
+                "the factor is an estimate"
+            ),
+        },
+    ),
+    factor(
+        ClarinetEb,
+        55,
+        73,
+        0.5,
+        Applies::Always,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, wood-wind remarks, p. 20: in its low and middle range \
+                    the small clarinet's tone is so much weaker than the clarinet's that it is of \
+                    little service there",
+                wikipedia_cs_klarinet: "the clarinet's chalumeau and throat registers, written \
+                    E3 to B♭4, which sound G3 to D♭5 on the E♭ clarinet";
+                "the factor is an estimate"
+            ),
+        },
+    ),
+    factor(
+        ClarinetBb,
+        63,
+        68,
+        0.5,
+        Applies::Always,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Combination in unison, p. 48: the clarinet is weak in \
+                    the middle compass",
+                forsyth: "the throat notes are the very worst part of the instrument, the weakest \
+                    in quality, almost inaudible in pp",
+                wikipedia_cs_klarinet: "the weak throat register, written F4 to B♭4, which \
+                    sounds E♭4 to A♭4 on the B♭ clarinet",
+                wikipedia_register_music: "the clarinet's throat register";
+                "the factor is an estimate"
+            ),
+        },
+    ),
+    factor(
+        ClarinetA,
+        62,
+        67,
+        0.5,
+        Applies::Always,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Combination in unison, p. 48: the clarinet is weak in \
+                    the middle compass",
+                wikipedia_cs_klarinet: "the weak throat register, written F4 to B♭4, which \
+                    sounds D4 to G4 on the A clarinet";
+                "the factor is an estimate"
+            ),
+        },
+    ),
+    factor(
+        HornF,
+        35,
+        42,
+        0.5,
+        Applies::Always,
+        Provenance::Cited {
+            source: cite!(
+                forsyth: "the fourth horn tends to drop out of sight in the bottom fifth of its \
+                    compass";
+                "the factor and the span, the fifth above the playable bottom, are estimates"
+            ),
+        },
+    ),
+    factor(
+        Contrabassoon,
+        22,
+        28,
+        1.5,
+        Applies::At(DynamicBand::Soft),
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, wood-wind remarks, p. 20: the very deep notes of the \
+                    double bassoon are remarkably thick and dense, very powerful in piano \
+                    passages",
+                vsl_academy_contrabassoon: "the lower register B♭0 to E1";
+                "the factor is an estimate"
+            ),
+        },
+    ),
+    factor(
+        Oboe,
+        58,
+        65,
+        1.25,
+        Applies::Always,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Combination in unison, p. 47: the dark, nasal tone of \
+                    the oboe prevails over the clarinet in the low register",
+                forsyth_second_scan: "the oboe's low fifth is coarse and over-reedy";
+                "the factor and the span, the low fifth B♭3 to F4, are estimates"
+            ),
+        },
+    ),
+    factor(
+        Bassoon,
+        59,
+        75,
+        1.25,
+        Applies::Always,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. II, Combination in unison, p. 48: the sickly quality of \
+                    the bassoon prevails over the clarinet in the higher register",
+                vsl_academy_bassoon: "the upper register B3 to E♭5";
+                "the factor is an estimate"
+            ),
+        },
+    ),
+    factor(
+        Harp,
+        23,
+        71,
+        0.5,
+        Applies::InFastFigures,
+        Provenance::Cited {
+            source: cite!(
+                rimsky_korsakov: "Ch. I, Harp, p. 28: in the middle and lower octaves the strings \
+                    ring on, so more or less rapid figures are clear only in the upper register, \
+                    where the strings are shorter";
+                "the factor and the span, below his upper octave C5, are estimates"
+            ),
+        },
+    ),
+];
+
+/// The low-interval limits, by semitones from the minor second to the major ninth.
+pub const LOW_INTERVAL_LIMITS: IntervalLimits = IntervalLimits {
+    rows: &[
+        lowest(1, 52),
+        lowest(2, 51),
+        lowest(3, 48),
+        lowest(4, 46),
+        lowest(5, 45),
+        lowest(6, 46),
+        lowest(7, 34),
+        lowest(8, 41),
+        lowest(9, 41),
+        lowest(10, 41),
+        lowest(11, 41),
+        IntervalLimit {
+            semitones: 12,
+            limit: Limit::Unlimited,
+        },
+        lowest(13, 40),
+        lowest(14, 39),
+    ],
+    provenance: Provenance::Estimate {
+        reason: reason!(
+            "the commonly taught arranging guideline, checked against Rimsky-Korsakov (",
+            rimsky_korsakov,
+            ") Ch. IV, p. 106, for whom the lowest octaves, below MIDI 48, sound bad in close \
+                intervals, and Rogers (",
+            rogers_big_band_voicings,
+            "), who keeps intervals below D3 consonant; the charts of Hoffmann (",
+            hoffmann_low_interval_limits,
+            ") and Sleepfreaks (",
+            sleepfreaks_low_interval_limit,
+            ") are images that were not read, and published charts disagree, notably on the \
+                tritone and the fifth",
+        ),
+    },
+};
+
+/// The limit of the interval of `semitones`: its lower note no lower than `note`.
+const fn lowest(semitones: u8, note: i64) -> IntervalLimit {
+    IntervalLimit {
+        semitones,
+        limit: Limit::Lowest(pitch(note)),
+    }
+}
+
+// Compile-time checks of the weight, register and limit tables: every row checks out, and an
+// instrument's registers do not overlap, so a note has one factor.
+const _: () = {
+    let mut i = 0;
+    while i < WEIGHTS.len() {
+        assert!(WEIGHTS[i].check().is_ok(), "a weight row is invalid");
+        i += 1;
+    }
+    let mut i = 0;
+    while i < REGISTER_FACTORS.len() {
+        let row = REGISTER_FACTORS[i];
+        assert!(row.check().is_ok(), "a register factor is invalid");
+        let mut j = i + 1;
+        while j < REGISTER_FACTORS.len() {
+            let other = REGISTER_FACTORS[j];
+            assert!(
+                row.instrument as u8 != other.instrument as u8
+                    || row.register.high().get() < other.register.low().get()
+                    || other.register.high().get() < row.register.low().get(),
+                "two registers of one instrument overlap"
+            );
+            j += 1;
+        }
+        i += 1;
+    }
+    assert!(
+        HEAVY_PERCUSSION.check().is_ok(),
+        "the heavy percussion is invalid"
+    );
+    assert!(
+        LOW_INTERVAL_LIMITS.check().is_ok(),
+        "the low-interval limits are invalid"
     );
 };

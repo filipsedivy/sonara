@@ -296,7 +296,8 @@ const FULL: StringSize = StringSize {
     },
 };
 
-const MEDIUM: StringSize = StringSize {
+/// Rimsky-Korsakov's medium orchestra, whose string sections the weights describe.
+pub(in crate::orchestration) const MEDIUM: StringSize = StringSize {
     slug: "medium",
     name: "Medium",
     counts: [12, 10, 8, 6, 4],

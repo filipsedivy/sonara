@@ -52,7 +52,7 @@ mod woodwinds;
 
 pub(super) use categories::{FAMILY_ALIASES, category, family_aliases};
 pub use ensembles::ENSEMBLES;
-pub(super) use ensembles::ensemble;
+pub(super) use ensembles::{MEDIUM as MEDIUM_STRINGS, ensemble};
 pub(super) use rules::rule_record;
 
 use super::ensemble_profile::{EraPlayers, PlayerRange};

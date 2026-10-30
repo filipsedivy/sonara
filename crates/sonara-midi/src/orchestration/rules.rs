@@ -6,6 +6,11 @@
 //! - [`NAMED_DOUBLINGS`] lists the doublings the handbooks name and the colour they give,
 //!   [`DO_NOT_DOUBLE`] what not to double, and [`WOODWIND_ORDER`] the natural order of the
 //!   woodwinds from the top.
+//! - [`WEIGHTS`] gives how strongly a line sounds against the others at each dynamic band,
+//!   [`HEAVY_PERCUSSION`] the percussion that overpowers any tutti, [`REGISTER_FACTORS`] how a
+//!   register changes the weight, and [`RegisterBand`] the bands that say which notes lie near
+//!   each other.
+//! - [`LOW_INTERVAL_LIMITS`] gives the lowest note at which each interval stays clear.
 //! - Named thresholds, such as [`SUSTAINED_HIGH_BRASS`], hold the numbers the checks compare
 //!   with, each with its own provenance and the rules that use it.
 //!
@@ -22,14 +27,18 @@ use thiserror::Error;
 use super::articulation::Articulation;
 use super::data;
 use super::ensemble_profile::PlayerRange;
+use super::ensembles::StringSection;
 use super::id::InstrumentType;
 use super::instrument::{Family, Provenance, is_stated};
+use super::pitch::{PitchRange, SoundingPitch};
 
 pub use super::data::rules::{
-    BASS_SPACING, CHARACTERISTIC_COLOUR_SHARE, DO_NOT_DOUBLE, FEWEST_FIRST_VIOLINS, LOUD_DIVISI,
-    LOW_DISSONANCE, MANY_NOTE_SLUR, MELODY_MARGIN, MIDDLE_GAP, NAMED_DOUBLINGS, RULES, SOFT_SLUR,
-    SOLO_STRING_ACCOMPANIMENT, SUSTAINED_HIGH_BRASS, UNDOUBLED_HIGH_MELODY, UNDOUBLED_LOW_MELODY,
-    WEAK_CHORD_MEMBER, WIND_PHRASE, WOODWIND_ORDER,
+    BASS_SPACING, CHARACTERISTIC_COLOUR_SHARE, DO_NOT_DOUBLE, DYNAMIC_STEP, FEWEST_FIRST_VIOLINS,
+    HEAVY_PERCUSSION, LOUD_DIVISI, LOW_DISSONANCE, LOW_INTERVAL_LIMITS, MANY_NOTE_SLUR,
+    MASKING_ACCOMPANIMENT, MELODY_MARGIN, MIDDLE_GAP, NAMED_DOUBLINGS, REGISTER_FACTORS, RULES,
+    SOFT_SLUR, SOLO_STRING_ACCOMPANIMENT, STRONG_REGISTER, SUSTAINED_HIGH_BRASS,
+    UNDOUBLED_HIGH_MELODY, UNDOUBLED_LOW_MELODY, WEAK_CHORD_MEMBER, WEAK_REGISTER, WEIGHTS,
+    WIND_PHRASE, WOODWIND_ORDER,
 };
 
 /// The eight groups of rules, by what they check. A rule's code starts with its group's prefix.
@@ -616,9 +625,9 @@ pub enum RuleInput {
     Harmony,
     /// The articulation of each note or passage.
     Articulation,
-    /// The weights of the parts: how strongly each sounds against the others.
+    /// The weights of the parts ([`WEIGHTS`]).
     Weights,
-    /// The register factors: how a register changes an instrument's weight.
+    /// The register factors ([`REGISTER_FACTORS`]).
     RegisterFactors,
     /// The setting of the harp's pedals.
     HarpPedals,
@@ -660,7 +669,8 @@ pub enum RuleError {
     #[error("the severity does not rise from its usual level")]
     InvalidSeverity,
     /// A selector names no instrument or one instrument twice, names a family no instrument has,
-    /// or plays no articulation or one articulation twice.
+    /// or plays no articulation or one articulation twice; or a combination has fewer than two
+    /// members.
     #[error("a selector is invalid")]
     InvalidSelector,
     /// A doubling has fewer than two members, a member counted with no players, no spacing, a
@@ -671,6 +681,15 @@ pub enum RuleError {
     /// instrument twice.
     #[error("the woodwind order is invalid")]
     InvalidOrder,
+    /// A weight row gives no weight, or a weight that is not a positive finite number.
+    #[error("a weight is invalid")]
+    InvalidWeight,
+    /// A register factor is not a positive finite number.
+    #[error("a register factor is invalid")]
+    InvalidFactor,
+    /// The low-interval limits do not list intervals from a second upward, each once and in order.
+    #[error("the low-interval limits are out of order")]
+    InvalidLimits,
 }
 
 /// A rule of the catalogue: what it checks, the inputs it needs, how serious a finding is and
@@ -1154,6 +1173,321 @@ impl WoodwindOrder {
     }
 }
 
+/// How strongly a line sounds against the others at each dynamic band.
+///
+/// The unit is one flute, oboe, clarinet or bassoon in its middle register: a weight counts how
+/// many such woodwind players the line equals, in Rimsky-Korsakov's additive arithmetic, when all
+/// parts play at the same marking. It is not a level in decibels. `None` means the source gives no
+/// weight for the band.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct WeightRow {
+    /// The lines the row weighs.
+    pub selector: Selector,
+    /// The weight at pp and p.
+    pub soft: Option<f32>,
+    /// The weight at mp and mf.
+    pub medium: Option<f32>,
+    /// The weight at f and ff.
+    pub loud: Option<f32>,
+    /// Where the weights come from, and which are estimated.
+    pub provenance: Provenance,
+}
+
+impl WeightRow {
+    /// The weight at `band`, or `None` when the row gives none.
+    #[must_use]
+    pub const fn at(&self, band: DynamicBand) -> Option<f32> {
+        match band {
+            DynamicBand::Soft => self.soft,
+            DynamicBand::Medium => self.medium,
+            DynamicBand::Loud => self.loud,
+        }
+    }
+
+    /// Checks the row.
+    ///
+    /// # Errors
+    /// [`RuleError::InvalidSelector`] for an invalid selector; [`RuleError::InvalidWeight`] when
+    /// the row gives no weight or one that is not a positive finite number;
+    /// [`RuleError::EmptyProvenance`].
+    pub const fn check(&self) -> Result<(), RuleError> {
+        if let Err(error) = self.selector.check() {
+            return Err(error);
+        }
+        if self.soft.is_none() && self.medium.is_none() && self.loud.is_none() {
+            return Err(RuleError::InvalidWeight);
+        }
+        let mut b = 0;
+        while b < DynamicBand::ALL.len() {
+            if let Some(weight) = self.at(DynamicBand::ALL[b])
+                && !is_positive(weight)
+            {
+                return Err(RuleError::InvalidWeight);
+            }
+            b += 1;
+        }
+        if !is_stated(self.provenance) {
+            return Err(RuleError::EmptyProvenance);
+        }
+        Ok(())
+    }
+}
+
+/// The weight row of the line `playing`: the first row of [`WEIGHTS`] whose selector matches it,
+/// or `None` when no row does. The rows are ordered so that a solo or a pizzicato string matches
+/// its own row before the row of the arco section.
+#[must_use]
+pub fn weight_row(playing: Playing) -> Option<&'static WeightRow> {
+    WEIGHTS.iter().find(|row| row.selector.matches(playing))
+}
+
+/// The weight of a string section of `players` from the weight `units` of a section of the
+/// medium orchestra, whose sections the weights describe: the weight grows in proportion to the
+/// players.
+///
+/// The medium orchestra has 12 first violins, 10 second violins, 8 violas, 6 cellos and 4 double
+/// basses (Rimsky-Korsakov, Principles of Orchestration, Ch. I, p. 6). That the weight grows in
+/// proportion is an estimate: it matches Rimsky-Korsakov's additive count of winds, and no source
+/// states it for strings.
+#[must_use]
+pub fn section_weight(units: f32, section: StringSection, players: u8) -> f32 {
+    let medium = data::MEDIUM_STRINGS.count(section);
+    units * f32::from(players) / f32::from(medium)
+}
+
+/// A combination of instruments that the sources say overpowers something as a whole.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Combination {
+    /// The members, which sound together.
+    pub members: &'static [Selector],
+    /// What the combination does, in words.
+    pub effect: &'static str,
+    /// Where it comes from.
+    pub provenance: Provenance,
+}
+
+impl Combination {
+    /// Checks the combination.
+    ///
+    /// # Errors
+    /// [`RuleError::InvalidSelector`] for fewer than two members or an invalid one;
+    /// [`RuleError::BlankText`] for a blank effect; [`RuleError::EmptyProvenance`].
+    pub const fn check(&self) -> Result<(), RuleError> {
+        if self.members.len() < 2 {
+            return Err(RuleError::InvalidSelector);
+        }
+        let mut i = 0;
+        while i < self.members.len() {
+            if let Err(error) = self.members[i].check() {
+                return Err(error);
+            }
+            i += 1;
+        }
+        if is_blank(self.effect) {
+            return Err(RuleError::BlankText);
+        }
+        if !is_stated(self.provenance) {
+            return Err(RuleError::EmptyProvenance);
+        }
+        Ok(())
+    }
+}
+
+/// When a register factor applies.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Applies {
+    /// Whenever the note lies in the register.
+    Always,
+    /// Only in this dynamic band.
+    At(DynamicBand),
+    /// Only in fast figures.
+    InFastFigures,
+}
+
+/// How a register changes an instrument's weight: multiply the weight of a note in `register` by
+/// `factor`. A factor below 1 marks a weak register that others easily cover, above 1 a strong one.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RegisterFactor {
+    /// The instrument.
+    pub instrument: InstrumentType,
+    /// The register, in sounding pitch, inside the instrument's playable range.
+    pub register: PitchRange,
+    /// The factor; 1 records a register that a source might suggest is weak but is not.
+    pub factor: f32,
+    /// When the factor applies.
+    pub applies: Applies,
+    /// Where the factor and the register come from.
+    pub provenance: Provenance,
+}
+
+impl RegisterFactor {
+    /// Checks the row.
+    ///
+    /// # Errors
+    /// [`RuleError::InvalidFactor`] for a factor that is not a positive finite number;
+    /// [`RuleError::EmptyProvenance`].
+    pub const fn check(&self) -> Result<(), RuleError> {
+        if !is_positive(self.factor) {
+            return Err(RuleError::InvalidFactor);
+        }
+        if !is_stated(self.provenance) {
+            return Err(RuleError::EmptyProvenance);
+        }
+        Ok(())
+    }
+}
+
+/// The register factor of `pitch` on `instrument`, played at `band`, in fast figures or not: the
+/// row of [`REGISTER_FACTORS`] whose register holds the note and whose condition holds, or `None`,
+/// which means a factor of 1. An instrument's registers do not overlap.
+#[must_use]
+pub fn register_factor(
+    instrument: InstrumentType,
+    pitch: SoundingPitch,
+    band: DynamicBand,
+    in_fast_figures: bool,
+) -> Option<&'static RegisterFactor> {
+    REGISTER_FACTORS.iter().find(|row| {
+        row.instrument == instrument
+            && row.register.contains(pitch)
+            && match row.applies {
+                Applies::Always => true,
+                Applies::At(at) => at == band,
+                Applies::InFastFigures => in_fast_figures,
+            }
+    })
+}
+
+/// How low an interval may lie before it sounds muddy.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Limit {
+    /// The lower note of the interval should not lie below this pitch.
+    Lowest(SoundingPitch),
+    /// The interval is clear in any register.
+    Unlimited,
+}
+
+/// The low-interval limit of one interval.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct IntervalLimit {
+    /// The interval in semitones, such as 7 for a perfect fifth.
+    pub semitones: u8,
+    /// How low its lower note may lie.
+    pub limit: Limit,
+}
+
+/// The low-interval limits: for each interval up to a major ninth, the lowest note its lower note
+/// may sound on before the interval turns muddy.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct IntervalLimits {
+    /// One row per interval, from the minor second (1 semitone) upward, each once.
+    pub rows: &'static [IntervalLimit],
+    /// Where the limits come from.
+    pub provenance: Provenance,
+}
+
+impl IntervalLimits {
+    /// The limit of the interval of `semitones`, or `None` when the table does not list it (a
+    /// unison, or an interval wider than its last row).
+    #[must_use]
+    pub fn of(&self, semitones: u8) -> Option<Limit> {
+        self.rows
+            .iter()
+            .find(|row| row.semitones == semitones)
+            .map(|row| row.limit)
+    }
+
+    /// Checks the table.
+    ///
+    /// # Errors
+    /// [`RuleError::InvalidLimits`] when the rows do not run from 1 semitone upward one semitone
+    /// at a time; [`RuleError::EmptyProvenance`].
+    pub const fn check(&self) -> Result<(), RuleError> {
+        if self.rows.is_empty() {
+            return Err(RuleError::InvalidLimits);
+        }
+        let mut i = 0;
+        while i < self.rows.len() {
+            if self.rows[i].semitones as usize != i + 1 {
+                return Err(RuleError::InvalidLimits);
+            }
+            i += 1;
+        }
+        if !is_stated(self.provenance) {
+            return Err(RuleError::EmptyProvenance);
+        }
+        Ok(())
+    }
+}
+
+/// A register band of seven, from below C2 to C7 and above, that the balance and masking rules use
+/// to say which notes lie near each other.
+///
+/// The bands are Rimsky-Korsakov's octaves, each an octave from C, with his register names for the
+/// strings; that his prose octave n is scientific octave n + 1 is an estimate
+/// ([`RegisterBand::PROVENANCE`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum RegisterBand {
+    /// Below C2 (MIDI 36): the double bass's lowest compass.
+    Sub,
+    /// C2 to B2 (36-47).
+    Bass,
+    /// C3 to B3 (48-59).
+    Tenor,
+    /// C4 to B4 (60-71).
+    Alto,
+    /// C5 to B5 (72-83).
+    Soprano,
+    /// C6 to B6 (84-95): the extra-high compass.
+    High,
+    /// C7 (96) and above: piccolo and glockenspiel territory.
+    Top,
+}
+
+impl RegisterBand {
+    /// The seven bands, from the lowest.
+    pub const ALL: [Self; 7] = [
+        Self::Sub,
+        Self::Bass,
+        Self::Tenor,
+        Self::Alto,
+        Self::Soprano,
+        Self::High,
+        Self::Top,
+    ];
+
+    /// Where the bands come from.
+    pub const PROVENANCE: Provenance = data::rules::REGISTER_BANDS;
+
+    /// The band of `pitch`.
+    #[must_use]
+    pub const fn of(pitch: SoundingPitch) -> Self {
+        match pitch.get() {
+            ..36 => Self::Sub,
+            36..48 => Self::Bass,
+            48..60 => Self::Tenor,
+            60..72 => Self::Alto,
+            72..84 => Self::Soprano,
+            84..96 => Self::High,
+            _ => Self::Top,
+        }
+    }
+
+    /// The pitches of the band.
+    #[must_use]
+    pub const fn range(self) -> PitchRange {
+        match self {
+            Self::Sub => PitchRange::new(0, 35),
+            Self::Bass => PitchRange::new(36, 47),
+            Self::Tenor => PitchRange::new(48, 59),
+            Self::Alto => PitchRange::new(60, 71),
+            Self::Soprano => PitchRange::new(72, 83),
+            Self::High => PitchRange::new(84, 95),
+            Self::Top => PitchRange::new(96, 127),
+        }
+    }
+}
+
 /// A number a rule's check compares with, such as two bars for sustained high brass, with the rules
 /// that use it and where it comes from.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -1170,6 +1504,11 @@ pub struct Threshold<T> {
 /// Whether `text` is empty or holds only ASCII whitespace.
 const fn is_blank(text: &str) -> bool {
     text.trim_ascii().is_empty()
+}
+
+/// Whether `value` is a positive finite number; `false` for NaN.
+const fn is_positive(value: f32) -> bool {
+    value > 0.0 && value.is_finite()
 }
 
 #[cfg(test)]
