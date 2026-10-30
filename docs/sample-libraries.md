@@ -52,6 +52,12 @@ sound themselves. Regions that the patch starts from a controller instead of a k
 (`on_locc`/`on_hicc`, such as Salamander's pedal noises) or that have a key of -1 (`key`, `lokey`
 or `hikey`) never play on a key; until the sampler plays controller triggers they stay silent.
 
+A region whose sample file is missing, or that names a generator other than `*silence` (`*sine`,
+`*saw` and the like), is left out: the rest of the patch plays, and the load warning names each
+missing file or generator and how many regions it left out. `sample=*silence` is a region that
+plays nothing but still cuts off its exclusive group. A patch fails to load only when no region
+is left; a sample file that is there but cannot be decoded still fails it.
+
 ## Memory
 
 A patch's samples are decoded whole into memory (4 bytes per sample, mono or stereo). Pick

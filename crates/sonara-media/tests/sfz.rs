@@ -490,15 +490,232 @@ fn a_missing_patch_or_sample_is_a_typed_error() {
             ..
         })
     ));
+    // A missing sample no longer fails the patch by itself, only its regions; with no region
+    // left, the patch is malformed, and the message names the missing file. It was the
+    // sample's `Io` error before.
     fs::write(
         dir.path().join("broken.sfz"),
         "<region> sample=Samples/absent.wav\n",
     )
     .expect("write");
-    assert!(matches!(
-        load_sfz(&dir.path().join("broken.sfz")),
-        Err(MediaError::Io { .. })
-    ));
+    let result = load_sfz(&dir.path().join("broken.sfz"));
+    let absent = dir.path().join("Samples/absent.wav");
+    assert!(
+        matches!(&result, Err(MediaError::Malformed { message, .. })
+        if *message == format!(
+            "the patch has no playable region: sample {} is missing (1 region left out)",
+            absent.display()
+        )),
+        "{result:?}"
+    );
+}
+
+#[test]
+fn a_generator_sample_does_not_fail_the_patch() {
+    // The SFZ format's generators (TST-06): `*silence` is a region that plays nothing, and a
+    // generator the sampler does not play leaves out its own region, as a missing file does.
+    // Any of them used to fail the whole patch.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<region> sample=Samples/soft1.wav lokey=c3 hikey=c5\n\
+         <region> sample=*sine key=c6\n\
+         <region> sample=*silence key=d6 group=1\n\
+         <region> sample=Samples/absent.wav key=e6\n\
+         <region> sample=*silence key=f6 trigger=release\n",
+    );
+    assert_eq!(bank.regions.len(), 3, "the note and the two silent regions");
+    assert!((first_value(&bank, 0) - 3_000.0 / 32_768.0).abs() < 1e-6);
+    let silent: Vec<_> = bank.regions[1..]
+        .iter()
+        .map(|r| (r.key_lo, r.group, r.trigger, r.sample))
+        .collect();
+    let silence = bank.regions[1].sample;
+    assert_eq!(
+        silent,
+        [
+            (86, 1, Trigger::Attack, silence),
+            (89, 0, Trigger::Release, silence)
+        ],
+        "both silent regions share one sample"
+    );
+    assert_eq!(bank.samples.len(), 2);
+    assert_eq!(bank.samples[silence].frames(), 0);
+    assert_eq!(
+        bank.load_notes,
+        [
+            "the sampler does not play the generator *sine (1 region left out)".to_owned(),
+            format!(
+                "sample {} is missing (1 region left out)",
+                dir.path().join("Samples/absent.wav").display()
+            ),
+        ]
+    );
+    assert!(
+        bank.ignored_opcodes.is_empty(),
+        "{:?}",
+        bank.ignored_opcodes
+    );
+    assert!(
+        (bank.tail_seconds - 0.0).abs() < f64::EPSILON,
+        "a silent release region adds no tail"
+    );
+}
+
+#[test]
+fn a_missing_sample_leaves_out_only_the_regions_that_name_it() {
+    // One missing file in a large patch used to silence the whole instrument. Its regions are
+    // counted in one note, whichever header path names the file.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<control> default_path=Samples/\n\
+         <group> lokey=c3 hikey=c5\n\
+         <region> sample=absent.wav lovel=1 hivel=63\n\
+         <region> sample=soft1.wav lovel=1 hivel=63\n\
+         <region> sample=absent.wav lovel=64\n\
+         <region> sample=loud1.wav lovel=64\n\
+         <region> sample=gone.wav trigger=release\n",
+    );
+    assert_eq!(
+        bank.regions
+            .iter()
+            .map(|r| (r.vel_lo, r.vel_hi))
+            .collect::<Vec<_>>(),
+        [(1, 63), (64, 127)]
+    );
+    assert!((first_value(&bank, 0) - 3_000.0 / 32_768.0).abs() < 1e-6);
+    assert!((first_value(&bank, 1) - 20_000.0 / 32_768.0).abs() < 1e-6);
+    let samples = dir.path().join("Samples");
+    assert_eq!(
+        bank.load_notes,
+        [
+            format!(
+                "sample {} is missing (2 regions left out)",
+                samples.join("absent.wav").display()
+            ),
+            format!(
+                "sample {} is missing (1 region left out)",
+                samples.join("gone.wav").display()
+            ),
+        ]
+    );
+}
+
+#[test]
+fn a_patch_of_unplayable_samples_names_them_all() {
+    // TST-03: with no region left, the patch fails, and the message gives every reason.
+    let dir = library();
+    let result = load_sfz_text(
+        &dir,
+        "<region> sample=*saw\n<region> sample=*saw key=61\n<region> sample=Samples/x.wav\n",
+    );
+    let expected = format!(
+        "the patch has no playable region: the sampler does not play the generator *saw \
+         (2 regions left out); sample {} is missing (1 region left out)",
+        dir.path().join("Samples/x.wav").display()
+    );
+    assert!(
+        matches!(&result, Err(MediaError::Malformed { message, .. }) if *message == expected),
+        "{result:?}"
+    );
+}
+
+#[test]
+fn a_sample_that_cannot_be_decoded_still_fails_the_patch() {
+    // TST-03: only a sample file that does not exist leaves out its regions; a file that is
+    // there but broken is an error of the patch, as before.
+    let dir = library();
+    fs::write(
+        dir.path().join("Samples/bad.wav"),
+        b"RIFF not really a wave file",
+    )
+    .expect("write");
+    let result = load_sfz_text(
+        &dir,
+        "<region> sample=Samples/soft1.wav\n<region> sample=Samples/bad.wav key=61\n",
+    );
+    let error = result.expect_err("a broken sample fails the patch");
+    let message = error.to_string();
+    assert!(message.contains("bad.wav"), "{message}");
+    assert!(!message.contains("no playable region"), "{message}");
+}
+
+/// Plays `bank` in the sampler at 44.1 kHz with the default parameters, one 2048-frame block per
+/// entry of `blocks`, each with its note-ons at frame 0. Returns the last block and the voices
+/// still sounding at its end.
+fn play(bank: SampleBank, blocks: &[&[u8]]) -> (Vec<[f64; 2]>, f64) {
+    let mut sampler = create("sonara.sampler").expect("the sampler exists");
+    sampler.prepare(ProcessSpec {
+        sample_rate: 44_100,
+        block_size: 2_048,
+        channels: 2,
+    });
+    sampler.set_state(&DeviceState {
+        sample_bank: Some(Arc::new(bank)),
+        ..DeviceState::default()
+    });
+    let descriptor = sampler_descriptor(&["/library/patch.sfz".to_owned()]).expect("a patch");
+    sampler.set_params(&param_slots(&descriptor, &Params::new()).expect("defaults"));
+    let mut buffer = vec![[0.0; 2]; 2_048];
+    for (block, keys) in blocks.iter().enumerate() {
+        let events: Vec<_> = keys
+            .iter()
+            .map(|key| InstrumentEvent {
+                offset: 0,
+                kind: EventKind::NoteOn,
+                pitch: *key,
+                velocity: 127,
+                channel: 0,
+                value: 0,
+                number: 0,
+            })
+            .collect();
+        buffer.fill([0.0; 2]);
+        sampler.process(
+            &mut buffer,
+            &BlockContext {
+                frame: i64::try_from(block * 2_048).expect("a small frame"),
+                sample_rate: 44_100,
+                beat: 0.0,
+                bpm: 120.0,
+                playing: true,
+                sidechain: None,
+                events: &events,
+            },
+        );
+    }
+    let voices = sampler.report().entries()[0].1;
+    (buffer, voices)
+}
+
+#[test]
+fn a_silence_region_plays_nothing_and_chokes_its_group() {
+    // A `*silence` region is how a patch writes a note that only cuts others off: its note
+    // starts no voice, and its group switches off the regions that name it in `off_by`.
+    let dir = library();
+    let text = |group: &str| {
+        format!(
+            "<region> sample=Samples/loud1.wav key=60 off_by=1 loop_mode=one_shot\n\
+             <region> sample=*silence key=62 {group}\n"
+        )
+    };
+    let (alone, voices) = play(load_patch(&dir, &text("group=1")), &[&[62]]);
+    assert_eq!(voices, 0.0, "the silent note starts no voice");
+    assert!(alone.iter().all(|frame| *frame == [0.0, 0.0]));
+
+    // loud1.wav is 4410 frames long, so the note still sounds at the end of the second block,
+    // unless the silent note's group cut it off with the 10 ms choke.
+    let (choked, voices) = play(load_patch(&dir, &text("group=1")), &[&[60], &[62]]);
+    assert_eq!(voices, 0.0, "the note is choked");
+    assert!(choked[512..].iter().all(|frame| *frame == [0.0, 0.0]));
+    let (kept, voices) = play(load_patch(&dir, &text("")), &[&[60], &[62]]);
+    assert_eq!(voices, 1.0, "without a group nothing is choked");
+    assert!(
+        (kept[2_000][0] - 20_000.0 / 32_768.0).abs() < 1e-6,
+        "{}",
+        kept[2_000][0]
+    );
 }
 
 #[test]

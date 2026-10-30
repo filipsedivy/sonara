@@ -27,13 +27,24 @@ pub trait PatchLoader {
 /// The loader of the application: the SFZ reader and sample decoder of `sonara-media`, the one
 /// the sampler uses to play the patch. It decodes every sample the patch names, so it can take
 /// seconds and memory up to `sonara_media::sfz::MAX_BANK_BYTES`; the bank is dropped at once.
+///
+/// The sampler plays a patch without the regions whose sample is missing; this check is
+/// stricter and refuses such a patch with the reader's notes, because one of its samples is
+/// missing.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct MediaPatchLoader;
 
 impl PatchLoader for MediaPatchLoader {
     fn load(&self, patch: &Path) -> Result<(), PatchLoadError> {
-        sonara_media::sfz::load_sfz(patch)
-            .map(drop)
-            .map_err(|err| PatchLoadError(err.to_string()))
+        let bank =
+            sonara_media::sfz::load_sfz(patch).map_err(|err| PatchLoadError(err.to_string()))?;
+        if bank.load_notes.is_empty() {
+            Ok(())
+        } else {
+            Err(PatchLoadError(format!(
+                "the patch leaves out regions it cannot load: {}",
+                bank.load_notes.join("; ")
+            )))
+        }
     }
 }

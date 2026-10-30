@@ -451,6 +451,60 @@ fn the_media_loader_accepts_a_playable_patch_and_rejects_a_missing_sample() {
 }
 
 #[test]
+fn the_media_loader_refuses_a_patch_that_plays_without_a_missing_sample() {
+    // The sampler plays such a patch without the regions of the missing sample; the deep check
+    // stays strict and names the file.
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path().join("lib");
+    fs::create_dir_all(&root).expect("mkdir");
+    let spec = hound::WavSpec {
+        channels: 1,
+        sample_rate: 44_100,
+        bits_per_sample: 16,
+        sample_format: hound::SampleFormat::Int,
+    };
+    let mut wav = hound::WavWriter::create(root.join("tone.wav"), spec).expect("wav");
+    for i in 0..64_i16 {
+        wav.write_sample(i * 100).expect("sample");
+    }
+    wav.finalize().expect("finalize");
+    fs::write(
+        root.join("Partial.sfz"),
+        "<region> sample=tone.wav key=60\n<region> sample=nope.wav key=61\n",
+    )
+    .expect("write");
+    fs::write(
+        root.join("Silent.sfz"),
+        "<region> sample=tone.wav key=60\n<region> sample=*silence key=61 group=1\n",
+    )
+    .expect("write");
+
+    let mut catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
+    let ids: Vec<_> = catalog.presets().iter().map(|p| p.id.clone()).collect();
+    assert_eq!(ids.len(), 2);
+    let (partial, silent) = (&ids[0], &ids[1]);
+    let verdict = catalog
+        .verify(partial, &MediaPatchLoader)
+        .expect("known")
+        .clone();
+    assert_eq!(
+        verdict,
+        Availability::Invalid {
+            reason: format!(
+                "the patch leaves out regions it cannot load: sample {} is missing \
+                 (1 region left out)",
+                root.join("nope.wav").display()
+            )
+        }
+    );
+    assert_eq!(
+        catalog.verify(silent, &MediaPatchLoader).expect("known"),
+        &Availability::Available,
+        "a silent region is part of the patch"
+    );
+}
+
+#[test]
 fn the_media_loader_survives_hostile_patches() {
     let dir = tempfile::tempdir().expect("tempdir");
     let root = dir.path().join("lib");

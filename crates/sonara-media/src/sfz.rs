@@ -45,11 +45,20 @@
 //! the file, at any level, as the reference player sfizz reads it: a later header that does not
 //! repeat it (VSCO 2 CE's key-switch patches start a new `<control>` and `<group>`) keeps it.
 //!
+//! **Samples a region cannot play.** `sample=*silence` is a region that plays nothing; its note
+//! still switches off the exclusive group it belongs to, which is what patches write it for. The
+//! other generators the SFZ format names with a leading `*` (`*sine`, `*saw`, `*square`,
+//! `*triangle`, `*noise`) are not played, and a sample file that does not exist cannot be. Either
+//! leaves out only the regions that name it, with a note in [`SampleBank::load_notes`], so one
+//! missing file no longer silences a whole instrument. The patch fails only when no region is
+//! left. A sample file that exists but cannot be decoded still fails the patch.
+//!
 //! Samples are decoded whole, at their own rate, into `f32` (no streaming yet): memory is the
 //! decoded size of the samples the patch names, capped at [`MAX_BANK_BYTES`].
 
 use std::collections::HashMap;
 use std::fs;
+use std::io;
 use std::path::{Path, PathBuf};
 
 use sonara_dsp::bank::{Keyswitches, LoopMode, Region, Sample, SampleBank, Trigger};
@@ -63,19 +72,29 @@ pub const MAX_BANK_BYTES: usize = 3 << 30;
 const MAX_INCLUDE_DEPTH: usize = 8;
 /// Frames decoded per read.
 const READ_FRAMES: usize = 16_384;
+/// The generator of a region that plays nothing.
+const SILENCE: &str = "*silence";
+/// The rate given to the silent sample; a sample without frames never plays, so it is not used.
+const SILENCE_RATE: u32 = 44_100;
 
 type Opcodes = HashMap<String, String>;
 
 /// Reads the SFZ file `path` and the samples it names.
 ///
+/// A region whose sample file does not exist, or that names a generator the sampler does not
+/// play, is left out and noted in [`SampleBank::load_notes`] (see the module documentation). A
+/// region that names no sample, or is disabled with a negative `end`, is left out silently.
+///
 /// # Errors
 ///
-/// - [`MediaError::Io`] when the patch or a sample file cannot be opened or read (a missing
-///   library or sample);
-/// - [`MediaError::Malformed`] when the patch has no region, a region names no sample, an
-///   `#include` is too deep, or the samples exceed [`MAX_BANK_BYTES`];
-/// - [`MediaError::Unsupported`] and [`MediaError::Decode`] for a sample that cannot be decoded
-///   or has more than two channels.
+/// - [`MediaError::Io`] when the patch, an included file or an existing sample file cannot be
+///   opened or read (a missing library or include);
+/// - [`MediaError::Malformed`] when no region is left (the message lists the notes of the
+///   regions left out, such as a missing sample), an `#include` is too deep, or the samples
+///   exceed [`MAX_BANK_BYTES`];
+/// - [`MediaError::NotRecognised`], [`MediaError::Rejected`], [`MediaError::Unsupported`],
+///   [`MediaError::Malformed`] and [`MediaError::Decode`] for a sample file that cannot be
+///   decoded or has more than two channels.
 pub fn load_sfz(path: &Path) -> Result<SampleBank, MediaError> {
     let dir = path.parent().unwrap_or_else(|| Path::new("."));
     let text = read_preprocessed(path, dir, &mut HashMap::new(), 0)?;
@@ -87,12 +106,16 @@ pub fn load_sfz(path: &Path) -> Result<SampleBank, MediaError> {
         let region = loader.region(dir, opcodes, path)?;
         bank.regions.extend(region);
     }
+    let notes = loader.notes();
     if bank.regions.is_empty() {
-        return Err(MediaError::malformed(
-            path,
-            "the patch has no playable region",
-        ));
+        let message = if notes.is_empty() {
+            "the patch has no playable region".to_owned()
+        } else {
+            format!("the patch has no playable region: {}", notes.join("; "))
+        };
+        return Err(MediaError::malformed(path, message));
     }
+    bank.load_notes = notes;
     bank.samples = loader.samples;
     bank.keyswitches = parsed.keyswitches;
     bank.tail_seconds = tail_seconds(&bank);
@@ -505,13 +528,48 @@ fn note(value: &str) -> Option<u8> {
 #[derive(Default)]
 struct Loader {
     samples: Vec<Sample>,
-    index: HashMap<PathBuf, usize>,
+    /// Each sample file named so far: its index in `samples`, or its note when it is missing.
+    files: HashMap<PathBuf, FileState>,
+    /// The index in `samples` of the silent sample, once a region names `*silence`.
+    silence: Option<usize>,
+    /// Each generator the sampler does not play, named so far: the index of its note.
+    generators: HashMap<String, usize>,
+    /// What the regions left out name, in the order the patch first names it.
+    skipped: Vec<Skipped>,
     bytes: usize,
+}
+
+/// A sample file the loader has looked for.
+#[derive(Debug, Clone, Copy)]
+enum FileState {
+    /// Decoded: its index in [`Loader::samples`].
+    Decoded(usize),
+    /// Not there: the index of its note in [`Loader::skipped`].
+    Missing(usize),
+}
+
+/// A sample that regions name but the sampler cannot play, and how many regions name it.
+struct Skipped {
+    /// Why it cannot be played, naming the sample.
+    reason: String,
+    /// The regions left out because of it.
+    regions: usize,
+}
+
+impl Skipped {
+    /// The note for [`SampleBank::load_notes`].
+    fn note(&self) -> String {
+        if self.regions == 1 {
+            format!("{} (1 region left out)", self.reason)
+        } else {
+            format!("{} ({} regions left out)", self.reason, self.regions)
+        }
+    }
 }
 
 impl Loader {
     /// The region `opcodes` describe, with its sample loaded; `None` for a disabled region
-    /// (`end=-1`) or one without a sample.
+    /// (`end=-1`), one without a sample, and one whose sample cannot be played (noted).
     fn region(
         &mut self,
         dir: &Path,
@@ -527,14 +585,21 @@ impl Loader {
         {
             return Ok(None);
         }
-        let mut file = dir.to_path_buf();
-        for part in [opcodes.get("default_path"), Some(name)]
-            .into_iter()
-            .flatten()
-        {
-            file.push(part.replace('\\', "/"));
-        }
-        let sample = self.sample(&file, patch)?;
+        let sample = if name.trim().starts_with('*') {
+            self.generator(name.trim())
+        } else {
+            let mut file = dir.to_path_buf();
+            for part in [opcodes.get("default_path"), Some(name)]
+                .into_iter()
+                .flatten()
+            {
+                file.push(part.replace('\\', "/"));
+            }
+            self.file(&file, patch)?
+        };
+        let Some(sample) = sample else {
+            return Ok(None);
+        };
         let frames = self.samples.get(sample).map_or(0, Sample::frames);
         let num = |key: &str| opcodes.get(key).and_then(|v| v.trim().parse::<f64>().ok());
         let int = |key: &str| num(key).map(|v| v.max(0.0).trunc());
@@ -589,11 +654,95 @@ impl Loader {
         Ok(Some(region))
     }
 
-    /// The index of the sample in `file`, decoding it on first use.
-    fn sample(&mut self, file: &Path, patch: &Path) -> Result<usize, MediaError> {
-        if let Some(index) = self.index.get(file) {
-            return Ok(*index);
+    /// The index of the sample of the generator `name`: the shared silent sample for
+    /// `*silence`. Any other generator is not played: `None`, and the region is noted.
+    fn generator(&mut self, name: &str) -> Option<usize> {
+        if name == SILENCE {
+            if self.silence.is_none() {
+                self.samples.push(Sample {
+                    rate: SILENCE_RATE,
+                    channels: 1,
+                    data: Vec::new(),
+                });
+                self.silence = Some(self.samples.len() - 1);
+            }
+            return self.silence;
         }
+        let at = if let Some(at) = self.generators.get(name) {
+            *at
+        } else {
+            let at = self.note(format!("the sampler does not play the generator {name}"));
+            self.generators.insert(name.to_owned(), at);
+            at
+        };
+        self.count(at);
+        None
+    }
+
+    /// The index of the sample in `file`, decoding it on first use. A file that does not exist
+    /// gives `None`, and the region is noted.
+    ///
+    /// # Errors
+    ///
+    /// The errors of [`Loader::decode`], except that the file does not exist.
+    fn file(&mut self, file: &Path, patch: &Path) -> Result<Option<usize>, MediaError> {
+        match self.files.get(file).copied() {
+            Some(FileState::Decoded(index)) => return Ok(Some(index)),
+            Some(FileState::Missing(at)) => {
+                self.count(at);
+                return Ok(None);
+            }
+            None => {}
+        }
+        match self.decode(file, patch) {
+            Ok(sample) => {
+                let index = self.samples.len();
+                self.samples.push(sample);
+                self.files
+                    .insert(file.to_owned(), FileState::Decoded(index));
+                Ok(Some(index))
+            }
+            Err(MediaError::Io {
+                operation: "open",
+                source,
+                ..
+            }) if source.kind() == io::ErrorKind::NotFound => {
+                let at = self.note(format!("sample {} is missing", file.display()));
+                self.count(at);
+                self.files.insert(file.to_owned(), FileState::Missing(at));
+                Ok(None)
+            }
+            Err(error) => Err(error),
+        }
+    }
+
+    /// Starts a note about a sample that cannot be played, with no region counted yet; returns
+    /// its index.
+    fn note(&mut self, reason: String) -> usize {
+        self.skipped.push(Skipped { reason, regions: 0 });
+        self.skipped.len() - 1
+    }
+
+    /// Counts one more region left out under the note at `at`.
+    fn count(&mut self, at: usize) {
+        if let Some(skipped) = self.skipped.get_mut(at) {
+            skipped.regions += 1;
+        }
+    }
+
+    /// The notes of [`SampleBank::load_notes`].
+    fn notes(&self) -> Vec<String> {
+        self.skipped.iter().map(Skipped::note).collect()
+    }
+
+    /// Decodes the sample in `file`, counting its memory against [`MAX_BANK_BYTES`].
+    ///
+    /// # Errors
+    ///
+    /// [`MediaError::Io`] when the file cannot be opened or read; [`MediaError::Malformed`] when
+    /// it has more than two channels or no length, or the patch's samples exceed
+    /// [`MAX_BANK_BYTES`]; the reader's errors for a file it cannot decode.
+    fn decode(&mut self, file: &Path, patch: &Path) -> Result<Sample, MediaError> {
         let opened = AudioStream::open(file)?;
         let mut stream = opened.stream;
         stream.check_decodable()?;
@@ -629,15 +778,11 @@ impl Loader {
             }
             data.extend(chunk.iter().take(read * channels).copied().map(to_f32));
         }
-        let sample = Sample {
+        Ok(Sample {
             rate: stream.sample_rate(),
             channels,
             data,
-        };
-        self.samples.push(sample);
-        let index = self.samples.len() - 1;
-        self.index.insert(file.to_owned(), index);
-        Ok(index)
+        })
     }
 }
 

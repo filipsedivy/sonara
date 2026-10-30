@@ -32,6 +32,9 @@ pub enum LoopMode {
 }
 
 /// One decoded sample: interleaved `f32` frames at the file's own rate.
+///
+/// A sample without frames plays nothing: a region that names one starts no voice, but its note
+/// still switches off the exclusive group it belongs to (SFZ `sample=*silence`).
 #[derive(Debug, Clone, PartialEq)]
 pub struct Sample {
     /// Sample rate of the file in Hz.
@@ -201,4 +204,9 @@ pub struct SampleBank {
     pub tail_seconds: f64,
     /// SFZ opcodes the patch uses that the sampler does not play, sorted, without duplicates.
     pub ignored_opcodes: Vec<String>,
+    /// The regions the loader left out and why, one note per sample they name, in the order the
+    /// patch first names it: a sample file that does not exist, or a generator the sampler does
+    /// not play (SFZ `*sine`). Each note counts the regions it left out. Empty when every region
+    /// was loaded.
+    pub load_notes: Vec<String>,
 }

@@ -199,3 +199,32 @@ fn an_unregistered_sampler_is_bypassed_with_a_warning() {
         audio.stats.warnings
     );
 }
+
+#[test]
+fn a_patch_with_a_missing_sample_plays_the_rest_and_warns() {
+    // The sampler leaves out only the regions whose sample is missing or a generator it does
+    // not play; the rest of the patch sounds, and the warning names what was left out.
+    let (dir, _) = patch_dir();
+    let sfz = dir.path().join("partial.sfz");
+    fs::write(
+        &sfz,
+        "<region> sample=tone.wav lokey=36 hikey=36 pitch_keycenter=36 ampeg_release=0.1\n\
+         <region> sample=gone.wav lokey=36 hikey=36\n\
+         <region> sample=*sine key=37\n",
+    )
+    .expect("write the patch");
+    let audio = render(&[path(&sfz)], None).expect("renders");
+    let expected = format!(
+        "instrument {} plays without the regions it cannot load: sample {} is missing \
+         (1 region left out); the sampler does not play the generator *sine (1 region left out)",
+        sonara_core::pyfmt::str_repr(&path(&sfz)),
+        dir.path().join("gone.wav").display()
+    );
+    assert_eq!(audio.stats.warnings, [expected]);
+    let (_other, whole) = patch_dir();
+    let heard = render(&[path(&whole)], None).expect("renders");
+    assert_eq!(
+        audio.data, heard.data,
+        "the region that loads plays as the same patch without the others"
+    );
+}

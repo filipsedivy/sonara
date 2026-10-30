@@ -1107,7 +1107,8 @@ impl Builder<'_> {
 
     /// The state of a sampler: the instrument of the SFZ patch its `instrument` parameter
     /// names. A patch that cannot be read is a warning, and the sampler plays silence, as a
-    /// missing impulse response does not stop a render (ADR 0010).
+    /// missing impulse response does not stop a render (ADR 0010). The opcodes the sampler does
+    /// not play and the regions the loader left out (a missing sample) are warnings too.
     fn sampler_state(&mut self, device: &Device) -> DeviceState {
         let Some(path) = self.sampler_instrument(device) else {
             return DeviceState::default();
@@ -1120,6 +1121,13 @@ impl Builder<'_> {
                         "instrument {} uses opcodes the sampler does not play: {}",
                         str_repr(path),
                         bank.ignored_opcodes.join(", ")
+                    ));
+                }
+                if !bank.load_notes.is_empty() {
+                    self.warnings.push(format!(
+                        "instrument {} plays without the regions it cannot load: {}",
+                        str_repr(path),
+                        bank.load_notes.join("; ")
                     ));
                 }
                 DeviceState {

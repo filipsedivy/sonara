@@ -36,7 +36,8 @@ manifest path that leaves the library (`..`, absolute, through a link) is reject
 `InstrumentCatalog::verify` goes deeper on request: it loads one patch through a `PatchLoader`,
 which for `MediaPatchLoader` means parsing the SFZ and decoding every sample it names (the load
 the sampler does, so it can be slow and use memory). A patch that fails becomes `invalid` with the
-loader's message. Tests use a fake loader.
+loader's message. The check is stricter than playback: a patch with a missing sample is `invalid`,
+although the sampler plays its other regions. Tests use a fake loader.
 
 ## The manifest, `sonara-library.json`
 
