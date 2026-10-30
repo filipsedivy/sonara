@@ -87,8 +87,9 @@ Sonara first, so that the window you see is the only instance.
 7. **Stop.** Start a longer prompt (`Compose a three-minute song in four sections.`), press Stop
    after a few steps. Expected: the panel reports a stopped run, and **Edit → Undo AI Composer**
    removes the part that was written.
-8. **Quit.** ⌘Q during a run. Expected: Sonara quits and `pgrep -fl claude` shows no process left
-   over from it.
+8. **Quit.** ⌘Q during a run. Expected: Sonara quits and
+   `pgrep -fl 'claude -p|sonara mcp'` shows no process left over from it (a plain `claude` is your
+   own session, not the run's).
 
 Write the result (macOS version, Claude Code version, which steps passed) next to the check in
 `docs/implementation-status.md`, under "Open checks", and remove the item when every step passed.

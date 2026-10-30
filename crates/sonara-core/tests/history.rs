@@ -401,3 +401,31 @@ fn opening_another_project_drops_an_open_group() {
     );
     assert_eq!(labels(&fx), ["Rename Track"]);
 }
+
+#[test]
+fn a_step_undone_inside_a_group_and_redone_later_belongs_to_no_group() {
+    let mut fx = Fx::new();
+    fx.session.begin_undo_group();
+    fx.session
+        .execute(&fx.rename("A"), false, "agent")
+        .expect("a");
+    fx.session
+        .execute(&fx.rename("B"), false, "agent")
+        .expect("b");
+    fx.session.undo("agent").expect("the agent takes B back");
+    assert!(fx.session.end_undo_group("AI Composer"));
+    fx.session.redo("user").expect("the user redoes B");
+    assert_eq!(labels(&fx), ["AI Composer", "Rename Track"]);
+
+    // A second run that changed nothing must not find a mark on the redone step.
+    fx.session.begin_undo_group();
+    assert!(!fx.session.end_undo_group("AI Composer"));
+
+    // A second run with one step stays apart from the redone one.
+    fx.session.begin_undo_group();
+    fx.session
+        .execute(&fx.rename("C"), false, "agent")
+        .expect("c");
+    assert!(fx.session.end_undo_group("AI Composer"));
+    assert_eq!(labels(&fx), ["AI Composer", "Rename Track", "AI Composer"]);
+}

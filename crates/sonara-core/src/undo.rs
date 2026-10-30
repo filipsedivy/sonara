@@ -127,6 +127,11 @@ impl UndoHistory {
     /// snapshot would otherwise take that step along. Returns whether a step was collapsed.
     pub fn end_group(&mut self, label: &str) -> bool {
         self.group_open = false;
+        // A step undone inside the group sits on the redo stack; it must not carry the mark into
+        // the next group once it is redone.
+        for entry in &mut self.redo {
+            entry.in_group = false;
+        }
         if !self.undo.iter().any(|entry| entry.in_group) {
             return false;
         }
