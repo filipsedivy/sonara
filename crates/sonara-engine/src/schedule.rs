@@ -544,4 +544,20 @@ mod tests {
         let empty = NoteSchedule::build(std::iter::empty(), &tempo, 8);
         assert_eq!(empty.pitches(), NoteSet::EMPTY);
     }
+
+    #[test]
+    fn a_seek_while_playing_keeps_the_last_switch() {
+        // Pins the current behaviour: a chase re-sends only the notes sounding at the new
+        // position, so a short keyswitch note before it (C1 at beat 0) is not sent again. With
+        // the sampler keeping its switch through all notes off, the articulation active before
+        // the jump stays active after it.
+        let tempo = TempoMap::constant(120.0).unwrap();
+        let c = clip(0.0, 4.0, &[(24, 0.0, 0.25), (60, 2.0, 1.0)], None);
+        let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8);
+        // Beat 2.5 is frame 10, inside the note C4 (frames 8 to 12).
+        assert_eq!(
+            kinds(schedule.events(10, 1, true)),
+            [(0, EventKind::AllNotesOff, 0), (0, EventKind::NoteOn, 60)]
+        );
+    }
 }
