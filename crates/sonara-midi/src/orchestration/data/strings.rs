@@ -14,6 +14,64 @@ use crate::orchestration::id::InstrumentType;
 use crate::orchestration::instrument::{Instrument, InstrumentSpec, Provenance};
 use crate::orchestration::names::Names;
 use crate::orchestration::pitch::Clef;
+use crate::orchestration::playability::{Fact, FactKind, Span};
+
+/// The string mute: Forsyth's time for it is stated of the whole string section.
+const MUTE_CHANGE: Fact = Fact {
+    kind: FactKind::MuteChange {
+        on: Span::ModerateBeats(8),
+        off: Span::ModerateBeats(7),
+    },
+    provenance: Provenance::Cited {
+        source: cite!(
+            forsyth_second_scan: "p. 374: a couple of bars at least of moderate time must be \
+                allowed for fixing the mute, a slightly shorter time for snatching it off; the \
+                same passage names the mutes of the violas, cellos and basses";
+            "seven beats for the slightly shorter time is an estimate"
+        ),
+    },
+};
+
+/// The violin's change from pizzicato back to arco.
+const VIOLIN_TO_ARCO: Fact = Fact {
+    kind: FactKind::ArcoPizzSwitch {
+        to_arco: Span::Millis(500),
+    },
+    provenance: Provenance::Cited {
+        source: cite!(
+            forsyth_second_scan: "p. 367: about half a second by the watch must be allowed to \
+                bring the bow back after pizzicato; very little time is needed from arco to \
+                pizzicato",
+        ),
+    },
+};
+
+/// The change from pizzicato back to arco of the bowed strings below the violin.
+const LOWER_STRINGS_TO_ARCO: Fact = Fact {
+    kind: FactKind::ArcoPizzSwitch {
+        to_arco: Span::Millis(500),
+    },
+    provenance: Provenance::Estimate {
+        reason: reason!(
+            "Forsyth (",
+            forsyth_second_scan,
+            ") p. 367 gives about half a second for the violin; the viola, cello and double bass \
+                bring the bow back to the string the same way",
+        ),
+    },
+};
+
+/// The notes of a chord a string player can hold.
+const SUSTAINED_STOPS: Fact = Fact {
+    kind: FactKind::SustainedStops { notes: 2 },
+    provenance: Provenance::Cited {
+        source: cite!(
+            rimsky_korsakov: "Ch. III, String harmony, p. 69: chords of three or four notes can \
+                only be executed rapidly on the strings; the two upper notes of a chord can be \
+                sustained and held a long time",
+        ),
+    },
+};
 
 pub(super) const VIOLIN: Instrument = Instrument::new(
     InstrumentType::Violin,
@@ -149,6 +207,7 @@ pub(super) const VIOLIN: Instrument = Instrument::new(
             ),
         }),
         keyboard: None,
+        facts: &[MUTE_CHANGE, VIOLIN_TO_ARCO, SUSTAINED_STOPS],
         gm: gm_program(41),
     },
 );
@@ -286,6 +345,7 @@ pub(super) const VIOLA: Instrument = Instrument::new(
             ),
         }),
         keyboard: None,
+        facts: &[MUTE_CHANGE, LOWER_STRINGS_TO_ARCO, SUSTAINED_STOPS],
         gm: gm_program(42),
     },
 );
@@ -428,6 +488,7 @@ pub(super) const CELLO: Instrument = Instrument::new(
             ),
         }),
         keyboard: None,
+        facts: &[MUTE_CHANGE, LOWER_STRINGS_TO_ARCO, SUSTAINED_STOPS],
         gm: gm_program(43),
     },
 );
@@ -569,6 +630,7 @@ pub(super) const DOUBLE_BASS: Instrument = Instrument::new(
             ),
         }),
         keyboard: None,
+        facts: &[MUTE_CHANGE, LOWER_STRINGS_TO_ARCO, SUSTAINED_STOPS],
         gm: gm_program(44),
     },
 );

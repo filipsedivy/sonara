@@ -2,8 +2,9 @@
 
 `sonara_midi::orchestration` holds machine-readable facts about orchestral instruments in
 general: names and aliases in five languages, categories, pitch range, transposition, family, the
-articulations they idiomatically play, how they appear in ensembles, their General MIDI voice and,
-for the instruments played from a keyboard, how the keyboard makes and stops the sound (SON-P06).
+articulations they idiomatically play, how they appear in ensembles, their General MIDI voice,
+for the instruments played from a keyboard how the keyboard makes and stops the sound, and the
+playability facts that rules read, such as how long a mute takes to put on (SON-P06).
 It is plain Rust data and pure functions. It depends on no audio engine, sample library or UI,
 adds no agent tool and changes no contract (CTR-01).
 
@@ -313,6 +314,40 @@ The fifteen keyboards and the carillon, a percussion instrument played from a ba
 - `note`: what the values leave out, such as the Hammond's tonewheel leakage or the room an organ
   sounds in; `provenance` for the record.
 
+## Playability facts
+
+`Instrument::facts` lists what rules need to know about playing an instrument beyond its ranges
+and articulations: a `Fact` is a `FactKind` with its values and a provenance, each kind at most
+once per record. Most records have none. The kinds:
+
+- `Breath { held_note }`: the longest one note can be held in the medium register at piano, from
+  Widor's experiments: about 40 seconds on the clarinets in B♭ and A (p. 33), at most 10 bars of
+  moderate 4/4 on the saxophones (p. 127) and 12 bars at crotchet = 120 on the trumpets in C and B♭
+  (p. 70; half as long forte). Other winds and the voices have no breath fact: no source that was
+  read gives that figure for them.
+- `MuteChange { on, off }`: the time to put a mute on and take it off. The strings take a couple
+  of bars of moderate time on and a little less off (Forsyth, p. 374); every brass instrument with
+  a mute takes an estimated two bars each way. The flugelhorn, which lists no mute, has none.
+- `ArcoPizzSwitch { to_arco }`: about half a second from pizzicato back to arco (Forsyth, p. 367,
+  for the violin; the other bowed strings take the same, an estimate).
+- `SustainedStops { notes }`: a string player holds the two upper notes of a chord; chords of
+  three or four notes are played quickly (Rimsky-Korsakov, p. 69).
+- `Retune { whole_tone, drums }`: the timpani. A pedal drum changes a step of the scale every
+  crotchet up to crotchet = 150, so a whole tone takes 400 ms; a standard set has four drums. Drums
+  tuned by screws needed two or three bars of 4/4 moderato (Forsyth, p. 46).
+- `HarpPedals { left, right, change }`: the harp's seven pedals as `LetterName`s, D C B under the
+  left foot and E F G A under the right (Forsyth, p. 464), and an estimated beat of moderate time
+  for one foot to change one pedal.
+- `NotesPerHand { notes }`: four notes at most in one hand on the harp (Rimsky-Korsakov, p. 28).
+
+A duration is a `Span`: `Millis`, or `ModerateBeats`, beats of a moderate 4/4 as the sources count
+them. `Span::millis` converts beats at `MODERATO_BPM`, 120 crotchets per minute (an estimate:
+Wikipedia's tempo list gives moderato as 108–120, and Widor times the trumpet's breath "in
+moderate tempo" at 120). A span states the time a player needs, so it converts at that tempo
+whatever the tempo of the piece; a rule measures the time a piece leaves with the piece's own
+tempo. Whether an instrument double-tongues is not a fact here: its articulation list says so
+(`multi_tongue`).
+
 ## Validation
 
 A record is an `InstrumentSpec` checked by `Instrument::try_new(instrument_type, spec)`. Records
@@ -334,11 +369,17 @@ that forgets any of them does not build.
   of its own on a transposing instrument (the octave would count twice), and a clef in which the
   written playable range leaves MIDI;
 - an empty or blank provenance anywhere in the record: a range, the articulation list, an era of
-  the ensemble profile, the keyboard mechanics or a GM substitute;
+  the ensemble profile, the keyboard mechanics, a playability fact or a GM substitute;
 - a GM voice of channel-10 keys that lists none or one key twice, and a GM voice that does not fit
   the pitch: a pitched instrument takes a program and an unpitched one channel-10 keys;
 - keyboard mechanics whose keys do not lie inside the playable range (an unpitched instrument has
-  none), a pedal kind listed twice, two pedals on one controller, and a noise listed twice.
+  none), a pedal kind listed twice, two pedals on one controller, and a noise listed twice;
+- a kind of playability fact listed twice, a fact that describes another sort of instrument
+  (`FactKind::fits`: a breath belongs to a wind, brass or voice part, a mute change to strings or
+  brass, a change back to arco and held chord notes to strings, a retuning to the timpani, pedals
+  to the harp, notes per hand to a plucked or keyboard instrument), a zero duration or count, harp
+  pedals that do not name each letter name once, and a mute change or a change back to arco on a
+  record that lists no mute it puts on (`con_sordino` or a named mute) or no `pizzicato`.
 
 A record is keyed by its `InstrumentType`, so its id cannot be malformed. The shipped data is
 built with the panicking `new` in a `static`, so invalid data is a compile error.
@@ -352,8 +393,9 @@ written list, provenance, the score-order conventions above, that every record r
 spec, and that a fixture breaking each check is rejected. It also compares every record's ranges,
 transposition, written range, clefs, forms and articulations with tables written out
 independently of the data, every record's GM voice and the orchestral percussion map with
-tables written from the GM1 lists, and the keyboard mechanics of the sixteen instruments played
-from a keyboard with a table written from the research.
+tables written from the GM1 lists, the keyboard mechanics of the sixteen instruments played
+from a keyboard with a table written from the research, and the playability facts of every
+record with a table written from the sources.
 
 ## Coverage
 

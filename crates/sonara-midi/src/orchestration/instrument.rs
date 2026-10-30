@@ -10,6 +10,7 @@ use super::id::{CategoryId, InstrumentType};
 use super::keyboard::KeyboardMechanics;
 use super::names::{Alias, Names, alias_fault};
 use super::pitch::{Clef, PitchRange, SoundingPitch, Transposition, WrittenPitch};
+use super::playability::Fact;
 
 /// The instrument family. The slugs equal the family slugs of the instrument catalog
 /// (`sonara_app::instruments`), so the two map by string. Voices, solo and choral, are `Choir`;
@@ -211,6 +212,26 @@ pub enum InstrumentError {
     /// The keyboard mechanics list a noise twice.
     #[error("a noise is listed twice")]
     DuplicateNoise,
+    /// A kind of playability fact is listed twice.
+    #[error("a kind of playability fact is listed twice")]
+    DuplicateFact,
+    /// A playability fact describes another sort of instrument ([`FactKind::fits`]): a breath on a
+    /// string instrument, a harp's pedals on a guitar.
+    ///
+    /// [`FactKind::fits`]: super::FactKind::fits
+    #[error("a playability fact describes another sort of instrument")]
+    FactDoesNotFit,
+    /// A duration or a count of a playability fact is zero.
+    #[error("a playability fact has a zero duration or count")]
+    ZeroFactValue,
+    /// Harp pedals do not name each of the seven letter names once between the two feet.
+    #[error("the harp pedals do not name each letter name once")]
+    HarpPedalLayout,
+    /// A playability fact rests on an articulation the record does not list: a mute change needs
+    /// a mute the player puts on (`con_sordino` or a named mute), a change back to arco needs
+    /// `pizzicato`.
+    #[error("a playability fact rests on an articulation the record does not list")]
+    FactWithoutArticulation,
 }
 
 /// The values of an instrument record, checked by [`Instrument::try_new`].
@@ -244,6 +265,9 @@ pub struct InstrumentSpec {
     /// How a keyboard instrument makes and stops its sound; `None` for an instrument without a
     /// keyboard.
     pub keyboard: Option<KeyboardMechanics>,
+    /// What rules need to know about playing the instrument beyond its ranges and articulations,
+    /// each kind at most once; empty when none is recorded.
+    pub facts: &'static [Fact],
     /// The General MIDI Level 1 voice: an exact program or channel-10 keys, a substitute, or none.
     pub gm: GmVoice,
 }
@@ -256,7 +280,8 @@ impl InstrumentSpec {
     /// a record that forgets one does not build. `pitch` is
     /// [`PitchModel::Unpitched`], which only percussion may keep; a pitched percussion instrument
     /// states its pitch. The other fields hold their "not known" value: no aliases, no category,
-    /// no clefs, no articulations, no ensemble profile and no keyboard mechanics.
+    /// no clefs, no articulations, no ensemble profile, no keyboard mechanics and no playability
+    /// facts.
     pub const EMPTY: Self = Self {
         names: Names {
             en: "",
@@ -274,6 +299,7 @@ impl InstrumentSpec {
         articulations_provenance: Provenance::Estimate { reason: "" },
         ensemble: None,
         keyboard: None,
+        facts: &[],
         gm: GmVoice::Percussion(&[]),
     };
 }
@@ -308,8 +334,8 @@ impl Instrument {
     /// with an octave of its own on a transposing instrument and
     /// [`WrittenOutOfMidi`](InstrumentError::WrittenOutOfMidi) when the playable range written
     /// in the clef leaves MIDI; [`EmptyProvenance`](InstrumentError::EmptyProvenance) when any
-    /// provenance of the record (ranges, articulations, ensemble profile, keyboard mechanics, GM
-    /// substitute) is empty or blank;
+    /// provenance of the record (ranges, articulations, ensemble profile, keyboard mechanics,
+    /// playability facts, GM substitute) is empty or blank;
     /// then, alias by alias in list order, [`AliasNotFolded`](InstrumentError::AliasNotFolded)
     /// for a text that is not folded and [`AliasTooShort`](InstrumentError::AliasTooShort) for
     /// one with fewer than three letters, and
@@ -323,7 +349,14 @@ impl Instrument {
     /// for a pedal kind listed twice,
     /// [`DuplicatePedalController`](InstrumentError::DuplicatePedalController) for two pedals on
     /// one controller and [`DuplicateNoise`](InstrumentError::DuplicateNoise) for a noise listed
-    /// twice. The first failing check in that order is reported.
+    /// twice; last, for the playability facts, [`DuplicateFact`](InstrumentError::DuplicateFact)
+    /// for a kind listed twice, then, fact by fact in list order,
+    /// [`FactDoesNotFit`](InstrumentError::FactDoesNotFit) for a fact that describes another sort
+    /// of instrument, [`ZeroFactValue`](InstrumentError::ZeroFactValue) for a zero duration or
+    /// count, [`HarpPedalLayout`](InstrumentError::HarpPedalLayout) for harp pedals that do not
+    /// name each letter name once and
+    /// [`FactWithoutArticulation`](InstrumentError::FactWithoutArticulation) for a fact whose
+    /// articulation the record does not list. The first failing check in that order is reported.
     pub const fn try_new(
         instrument_type: InstrumentType,
         spec: InstrumentSpec,
@@ -376,6 +409,9 @@ impl Instrument {
             return Err(error);
         }
         if let Err(error) = check_keyboard(&spec) {
+            return Err(error);
+        }
+        if let Err(error) = check_facts(instrument_type, &spec) {
             return Err(error);
         }
         Ok(Self {
@@ -475,6 +511,13 @@ impl Instrument {
     #[must_use]
     pub const fn keyboard(&self) -> Option<&KeyboardMechanics> {
         self.spec.keyboard.as_ref()
+    }
+
+    /// What rules need to know about playing the instrument beyond its ranges and articulations,
+    /// such as how long a mute takes to put on; empty for most instruments.
+    #[must_use]
+    pub const fn facts(&self) -> &'static [Fact] {
+        self.spec.facts
     }
 
     /// The General MIDI Level 1 voice: an exact program or channel-10 keys, a substitute, or
@@ -761,6 +804,45 @@ const fn check_keyboard(spec: &InstrumentSpec) -> Result<(), InstrumentError> {
     Ok(())
 }
 
+/// The playability fact checks of [`Instrument::try_new`], in its documented order: no kind of
+/// fact twice; then, fact by fact, a fact that fits the instrument, no zero duration or count,
+/// harp pedals that name each letter name once and the articulation the fact rests on.
+const fn check_facts(
+    instrument_type: InstrumentType,
+    spec: &InstrumentSpec,
+) -> Result<(), InstrumentError> {
+    let facts = spec.facts;
+    let mut i = 0;
+    while i < facts.len() {
+        let mut j = i + 1;
+        while j < facts.len() {
+            if facts[i].kind.tag() == facts[j].kind.tag() {
+                return Err(InstrumentError::DuplicateFact);
+            }
+            j += 1;
+        }
+        i += 1;
+    }
+    let mut i = 0;
+    while i < facts.len() {
+        let kind = facts[i].kind;
+        if !kind.fits(instrument_type) {
+            return Err(InstrumentError::FactDoesNotFit);
+        }
+        if kind.has_zero() {
+            return Err(InstrumentError::ZeroFactValue);
+        }
+        if !kind.has_valid_pedals() {
+            return Err(InstrumentError::HarpPedalLayout);
+        }
+        if !kind.has_its_articulation(spec.articulations) {
+            return Err(InstrumentError::FactWithoutArticulation);
+        }
+        i += 1;
+    }
+    Ok(())
+}
+
 /// Whether every provenance of `spec` names a source or a reason: not empty, not blank.
 const fn provenances_are_stated(spec: &InstrumentSpec) -> bool {
     if let PitchModel::Pitched(pitched) = &spec.pitch {
@@ -794,6 +876,13 @@ const fn provenances_are_stated(spec: &InstrumentSpec) -> bool {
         && !is_stated(keyboard.provenance)
     {
         return false;
+    }
+    let mut i = 0;
+    while i < spec.facts.len() {
+        if !is_stated(spec.facts[i].provenance) {
+            return false;
+        }
+        i += 1;
     }
     true
 }

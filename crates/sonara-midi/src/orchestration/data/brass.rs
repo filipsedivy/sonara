@@ -18,6 +18,39 @@ use crate::orchestration::id::{CategoryId, InstrumentType};
 use crate::orchestration::instrument::{Instrument, InstrumentSpec, Provenance};
 use crate::orchestration::names::Names;
 use crate::orchestration::pitch::Clef;
+use crate::orchestration::playability::{Fact, FactKind, Span};
+
+/// Putting on and taking off a brass mute, which no source that was read times.
+const MUTE_CHANGE: Fact = Fact {
+    kind: FactKind::MuteChange {
+        on: Span::ModerateBeats(8),
+        off: Span::ModerateBeats(8),
+    },
+    provenance: Provenance::Estimate {
+        reason: reason!(
+            "no source that was read gives the time a brass player needs for a mute; about two \
+                bars of moderate time each way, as Forsyth (",
+            forsyth_second_scan,
+            ") p. 374 allows for fixing a string mute",
+        ),
+    },
+};
+
+/// The longest note a trumpeter holds on one breath, from Widor's experiments.
+const TRUMPET_BREATH: Fact = Fact {
+    kind: FactKind::Breath {
+        held_note: Span::ModerateBeats(48),
+    },
+    provenance: Provenance::Cited {
+        source: cite!(
+            widor: "p. 70: piano, in moderate tempo (crotchet = 120), the trumpet holds a note \
+                of 8 or 9 bars in the low register and of 12 or 14 bars in the medium register; \
+                half as long forte";
+            "the fact keeps the 12 bars, at four beats to the bar; Widor's trumpet is the \
+                trumpet in F of his day, taken here for the trumpets in C and Bb"
+        ),
+    },
+};
 
 // Aliases: never the bare Czech "roh", which also means a corner.
 pub(super) const HORN_F: Instrument = Instrument::new(
@@ -123,6 +156,7 @@ pub(super) const HORN_F: Instrument = Instrument::new(
             chamber: players(1, 1, "wind quintet, brass quintet", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[MUTE_CHANGE],
         gm: gm_program(61),
     },
 );
@@ -219,6 +253,7 @@ pub(super) const WAGNER_TUBA_TENOR: Instrument = Instrument::new(
             chamber: not_used("", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[MUTE_CHANGE],
         gm: gm_substitute(
             61,
             SubstituteFit::Weak,
@@ -324,6 +359,7 @@ pub(super) const WAGNER_TUBA_BASS: Instrument = Instrument::new(
             chamber: not_used("", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[MUTE_CHANGE],
         gm: gm_substitute(
             61,
             SubstituteFit::Weak,
@@ -457,6 +493,7 @@ pub(super) const TRUMPET_PICCOLO: Instrument = Instrument::new(
             ),
         }),
         keyboard: None,
+        facts: &[MUTE_CHANGE],
         gm: gm_substitute(
             57,
             SubstituteFit::Approximate,
@@ -594,6 +631,7 @@ pub(super) const TRUMPET_C: Instrument = Instrument::new(
             ),
         }),
         keyboard: None,
+        facts: &[TRUMPET_BREATH, MUTE_CHANGE],
         gm: gm_program(57),
     },
 );
@@ -742,6 +780,7 @@ pub(super) const TRUMPET_BB: Instrument = Instrument::new(
             ),
         }),
         keyboard: None,
+        facts: &[TRUMPET_BREATH, MUTE_CHANGE],
         gm: gm_program(57),
     },
 );
@@ -868,6 +907,7 @@ pub(super) const CORNET: Instrument = Instrument::new(
             ),
         }),
         keyboard: None,
+        facts: &[MUTE_CHANGE],
         gm: gm_substitute(
             57,
             SubstituteFit::Approximate,
@@ -988,6 +1028,7 @@ pub(super) const FLUGELHORN: Instrument = Instrument::new(
             ),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_substitute(
             57,
             SubstituteFit::Weak,
@@ -1108,6 +1149,7 @@ pub(super) const TROMBONE_TENOR: Instrument = Instrument::new(
             chamber: players(0, 1, "brass quintet", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[MUTE_CHANGE],
         gm: gm_program(58),
     },
 );
@@ -1221,6 +1263,7 @@ pub(super) const TROMBONE_BASS: Instrument = Instrument::new(
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[MUTE_CHANGE],
         gm: gm_program(58),
     },
 );
@@ -1316,6 +1359,7 @@ pub(super) const EUPHONIUM: Instrument = Instrument::new(
             ),
         }),
         keyboard: None,
+        facts: &[MUTE_CHANGE],
         gm: gm_substitute(
             59,
             SubstituteFit::Approximate,
@@ -1416,6 +1460,7 @@ pub(super) const TUBA: Instrument = Instrument::new(
             chamber: players(1, 1, "brass quintet", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[MUTE_CHANGE],
         gm: gm_program(59),
     },
 );
@@ -1502,6 +1547,7 @@ pub(super) const CIMBASSO: Instrument = Instrument::new(
             chamber: not_used("", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[MUTE_CHANGE],
         gm: gm_substitute(
             58,
             SubstituteFit::Approximate,

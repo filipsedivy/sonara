@@ -165,6 +165,7 @@ pub(super) const CELESTA: Instrument = Instrument::new(
                 ),
             },
         }),
+        facts: &[],
         gm: gm_program(9),
     },
 );
@@ -290,6 +291,7 @@ pub(super) const PIANO_CONCERT_GRAND: Instrument = Instrument::new(
                 ),
             },
         }),
+        facts: &[],
         gm: gm_program(1),
     },
 );
@@ -404,6 +406,7 @@ pub(super) const PIANO_STUDIO_GRAND: Instrument = Instrument::new(
                 ),
             },
         }),
+        facts: &[],
         gm: gm_substitute(
             2,
             SubstituteFit::Approximate,
@@ -525,6 +528,7 @@ pub(super) const PIANO_UPRIGHT: Instrument = Instrument::new(
                 ),
             },
         }),
+        facts: &[],
         gm: gm_substitute(
             1,
             SubstituteFit::Approximate,
@@ -641,6 +645,7 @@ pub(super) const PIANO_FELT: Instrument = Instrument::new(
                 ),
             },
         }),
+        facts: &[],
         gm: gm_substitute(
             1,
             SubstituteFit::Weak,
@@ -746,6 +751,7 @@ pub(super) const PIANO_PREPARED: Instrument = Instrument::new(
                 ),
             },
         }),
+        facts: &[],
         gm: GmVoice::NoEquivalent,
     },
 );
@@ -826,6 +832,7 @@ pub(super) const PIANO_HONKY_TONK: Instrument = Instrument::new(
                 ),
             },
         }),
+        facts: &[],
         gm: gm_program(4),
     },
 );
@@ -924,6 +931,7 @@ pub(super) const HARPSICHORD: Instrument = Instrument::new(
                 ),
             },
         }),
+        facts: &[],
         gm: gm_program(7),
     },
 );
@@ -1020,6 +1028,7 @@ pub(super) const CLAVICHORD: Instrument = Instrument::new(
                 ),
             },
         }),
+        facts: &[],
         gm: gm_substitute(
             8,
             SubstituteFit::Weak,
@@ -1128,6 +1137,7 @@ pub(super) const ELECTRIC_PIANO_RHODES: Instrument = Instrument::new(
                 ),
             },
         }),
+        facts: &[],
         gm: gm_program(5),
     },
 );
@@ -1223,6 +1233,7 @@ pub(super) const ELECTRIC_PIANO_WURLITZER: Instrument = Instrument::new(
                 ),
             },
         }),
+        facts: &[],
         gm: gm_program(5),
     },
 );
@@ -1313,6 +1324,7 @@ pub(super) const CLAVINET: Instrument = Instrument::new(
                 ),
             },
         }),
+        facts: &[],
         gm: gm_program(8),
     },
 );
@@ -1410,6 +1422,7 @@ pub(super) const ORGAN_PIPE: Instrument = Instrument::new(
                 ),
             },
         }),
+        facts: &[],
         gm: gm_program(20),
     },
 );
@@ -1500,6 +1513,7 @@ pub(super) const ORGAN_HAMMOND: Instrument = Instrument::new(
                 ),
             },
         }),
+        facts: &[],
         gm: gm_program(17),
     },
 );
@@ -1598,6 +1612,7 @@ pub(super) const ACCORDION: Instrument = Instrument::new(
                 ),
             },
         }),
+        facts: &[],
         gm: gm_program(22),
     },
 );

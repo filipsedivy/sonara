@@ -7,13 +7,14 @@ use proptest::prelude::*;
 use sonara_midi::gm::GM_MAP;
 use sonara_midi::orchestration::{
     Action, Alias, Articulation, ArticulationAvailability, Axis, CategoryId, CheckError, Clef,
-    Controller, Decay, EnsembleProfile, Era, EraPlayers, Family, Forms, GmNote, GmProgram,
-    GmTarget, GmVoice, INSTRUMENTS, Instrument, InstrumentError, InstrumentSpec, InstrumentType,
-    KeyboardMechanics, Kind, Lang, Mute, Names, Noise, Number, ORCHESTRAL_PERCUSSION_MAP, Pedal,
-    PedalKind, PitchModel, PitchRange, Pitched, PlayerRange, Provenance, RangeCheck, Request,
-    RequestAvailability, RequestError, Resonance, Selection, SoundingPitch, SourcedRange,
-    SubstituteFit, Target, TimbreState, Transposition, Vibrato, WrittenPitch, all_aliases,
-    category, fold, instrument, instruments, percussion_instrument, resolve,
+    Controller, Decay, EnsembleProfile, Era, EraPlayers, Fact, FactKind, Family, Forms, GmNote,
+    GmProgram, GmTarget, GmVoice, INSTRUMENTS, Instrument, InstrumentError, InstrumentSpec,
+    InstrumentType, KeyboardMechanics, Kind, Lang, LetterName, Mute, Names, Noise, Number,
+    ORCHESTRAL_PERCUSSION_MAP, Pedal, PedalKind, PitchModel, PitchRange, Pitched, PlayerRange,
+    Provenance, RangeCheck, Request, RequestAvailability, RequestError, Resonance, Selection,
+    SoundingPitch, SourcedRange, Span, SubstituteFit, Target, TimbreState, Transposition, Vibrato,
+    WrittenPitch, all_aliases, category, fold, instrument, instruments, percussion_instrument,
+    resolve,
 };
 
 const ESTIMATE: Provenance = Provenance::Estimate {
@@ -165,7 +166,7 @@ fn mechanics(low: i64, high: i64) -> KeyboardMechanics {
 }
 
 /// Every provenance of a record: the articulation list, the playable and comfortable ranges, each
-/// era of the ensemble profile, a GM substitute and the keyboard mechanics.
+/// era of the ensemble profile, a GM substitute, the keyboard mechanics and each playability fact.
 fn provenances(instrument: &Instrument) -> Vec<Provenance> {
     let mut all = vec![instrument.articulations_provenance()];
     if let PitchModel::Pitched(pitched) = instrument.pitch() {
@@ -185,6 +186,7 @@ fn provenances(instrument: &Instrument) -> Vec<Provenance> {
     if let Some(keyboard) = instrument.keyboard() {
         all.push(keyboard.provenance);
     }
+    all.extend(instrument.facts().iter().map(|fact| fact.provenance));
     all
 }
 
@@ -245,6 +247,7 @@ fn dataset_invariants_hold() {
         assert_eq!(spec.ensemble.as_ref(), instrument.ensemble());
         assert_eq!(spec.gm, instrument.gm());
         assert_eq!(spec.keyboard.as_ref(), instrument.keyboard());
+        assert_eq!(spec.facts, instrument.facts());
         assert_eq!(spec.clefs, instrument.clefs());
         // Every record states its clefs, each once.
         let mut clefs: Vec<&str> = instrument.clefs().iter().map(|clef| clef.slug()).collect();
@@ -625,6 +628,7 @@ fn empty_spec_needs_a_name_an_articulation_provenance_and_a_gm_voice() {
     assert_eq!(empty.clefs, []);
     assert_eq!(empty.ensemble, None);
     assert_eq!(empty.keyboard, None);
+    assert_eq!(empty.facts, []);
     assert_eq!(empty.gm, GmVoice::Percussion(&[]));
     assert_eq!(
         Instrument::try_new(InstrumentType::Triangle, empty),
@@ -664,6 +668,7 @@ fn empty_spec_needs_a_name_an_articulation_provenance_and_a_gm_voice() {
     assert_eq!(triangle.written_playable(), None);
     assert_eq!(triangle.gm(), GmVoice::Percussion(TRIANGLE_KEYS));
     assert_eq!(triangle.keyboard(), None);
+    assert_eq!(triangle.facts(), []);
 }
 
 /// Each of the five names and the abbreviation must be stated (TST-03).
@@ -719,9 +724,15 @@ fn a_cited_source_must_name_a_url_or_a_page() {
     }
 }
 
+/// A fact that fits the timpani, with a blank provenance.
+const BLANK_FACT: &[Fact] = &[Fact {
+    provenance: Provenance::Estimate { reason: " " },
+    ..RETUNE
+}];
+
 /// Every provenance of a record names a source or a reason: the playable and comfortable
-/// ranges, the articulation list, each era of the ensemble profile and the keyboard mechanics
-/// (TST-03).
+/// ranges, the articulation list, each era of the ensemble profile, the keyboard mechanics and
+/// each playability fact (TST-03).
 #[test]
 fn every_provenance_must_be_stated() {
     let blank_cited = Provenance::Cited { source: " " };
@@ -777,6 +788,10 @@ fn every_provenance_must_be_stated() {
         }),
         ..VALID
     });
+    cases.push(InstrumentSpec {
+        facts: BLANK_FACT,
+        ..VALID
+    });
     for (index, spec) in cases.into_iter().enumerate() {
         assert_eq!(
             Instrument::try_new(InstrumentType::Timpani, spec),
@@ -789,6 +804,7 @@ fn every_provenance_must_be_stated() {
         pitch: pitched(range(40, 80, ESTIMATE), Some(range(50, 70, ESTIMATE))),
         ensemble: Some(profile()),
         keyboard: Some(mechanics(40, 80)),
+        facts: &[RETUNE],
         ..VALID
     };
     assert!(Instrument::try_new(InstrumentType::Timpani, stated).is_ok());
@@ -4671,6 +4687,441 @@ fn validator_accepts_valid_keyboards() {
         assert_eq!(
             upright(keyboard).map(|record| record.keyboard().copied()),
             Ok(Some(keyboard))
+        );
+    }
+}
+
+/// A fixture fact with an estimated provenance.
+const fn fact(kind: FactKind) -> Fact {
+    Fact {
+        kind,
+        provenance: ESTIMATE,
+    }
+}
+
+/// A valid timpani retuning: a whole tone in 400 ms, four drums.
+const RETUNE: Fact = fact(FactKind::Retune {
+    whole_tone: Span::Millis(400),
+    drums: 4,
+});
+
+/// A valid string mute change.
+const MUTE: Fact = fact(FactKind::MuteChange {
+    on: Span::ModerateBeats(8),
+    off: Span::ModerateBeats(7),
+});
+
+/// A valid change from pizzicato back to arco.
+const TO_ARCO: Fact = fact(FactKind::ArcoPizzSwitch {
+    to_arco: Span::Millis(500),
+});
+
+/// A valid count of held notes of a chord.
+const STOPS: Fact = fact(FactKind::SustainedStops { notes: 2 });
+
+/// A valid held note.
+const BREATH: Fact = fact(FactKind::Breath {
+    held_note: Span::Millis(40_000),
+});
+
+/// The harp's pedals as Forsyth lays them out: D C B under the left foot, E F G A under the right.
+const HARP_PEDALS: FactKind = FactKind::HarpPedals {
+    left: &[LetterName::D, LetterName::C, LetterName::B],
+    right: &[LetterName::E, LetterName::F, LetterName::G, LetterName::A],
+    change: Span::ModerateBeats(1),
+};
+
+/// A violin playing 55-105 with pizzicato and a mute, and `facts`.
+fn violin(facts: &'static [Fact]) -> Result<Instrument, InstrumentError> {
+    Instrument::try_new(
+        InstrumentType::Violin,
+        InstrumentSpec {
+            articulations: &[Articulation::Pizzicato, Articulation::ConSordino],
+            facts,
+            ..written_in_clefs(0, (55, 105), &[Clef::Treble])
+        },
+    )
+}
+
+/// A harp playing 23-103 with `facts`.
+fn harp(facts: &'static [Fact]) -> Result<Instrument, InstrumentError> {
+    Instrument::try_new(
+        InstrumentType::Harp,
+        InstrumentSpec {
+            facts,
+            ..written_in_clefs(0, (23, 103), &[Clef::Treble, Clef::Bass])
+        },
+    )
+}
+
+/// The facts the sources give a record: each fact's values and whether a source states it
+/// (`true`, `Cited`) or it is estimated.
+type FactRow = (&'static str, &'static [(FactKind, bool)]);
+
+/// The string section's mute: a couple of bars of moderate time on, a little less off.
+const STRING_MUTE: FactKind = FactKind::MuteChange {
+    on: Span::ModerateBeats(8),
+    off: Span::ModerateBeats(7),
+};
+
+/// A brass mute, estimated at two bars each way.
+const BRASS_MUTE: (FactKind, bool) = (
+    FactKind::MuteChange {
+        on: Span::ModerateBeats(8),
+        off: Span::ModerateBeats(8),
+    },
+    false,
+);
+
+/// About half a second from pizzicato back to arco.
+const HALF_A_SECOND: FactKind = FactKind::ArcoPizzSwitch {
+    to_arco: Span::Millis(500),
+};
+
+/// The two upper notes of a string chord can be held.
+const TWO_HELD: (FactKind, bool) = (FactKind::SustainedStops { notes: 2 }, true);
+
+/// A clarinet holds a medium note piano for about 40 seconds.
+const FORTY_SECONDS: (FactKind, bool) = (
+    FactKind::Breath {
+        held_note: Span::Millis(40_000),
+    },
+    true,
+);
+
+/// A saxophone holds a medium note for at most 10 bars of moderate 4/4.
+const TEN_BARS: (FactKind, bool) = (
+    FactKind::Breath {
+        held_note: Span::ModerateBeats(40),
+    },
+    true,
+);
+
+/// A trumpet holds a medium note piano for 12 bars at crotchet = 120.
+const TWELVE_BARS: (FactKind, bool) = (
+    FactKind::Breath {
+        held_note: Span::ModerateBeats(48),
+    },
+    true,
+);
+
+/// Every record with playability facts (TST-10: the values are written from the sources, not
+/// from the data): the held notes of Widor's breath experiments, the string section's mute,
+/// pizzicato and chords, the brass mutes, the timpani's retuning and the harp's pedals and hands.
+const FACTS: [FactRow; 24] = [
+    ("clarinet_bb", &[FORTY_SECONDS]),
+    ("clarinet_a", &[FORTY_SECONDS]),
+    ("saxophone_soprano", &[TEN_BARS]),
+    ("saxophone_alto", &[TEN_BARS]),
+    ("saxophone_tenor", &[TEN_BARS]),
+    ("saxophone_baritone", &[TEN_BARS]),
+    ("horn_f", &[BRASS_MUTE]),
+    ("wagner_tuba_tenor", &[BRASS_MUTE]),
+    ("wagner_tuba_bass", &[BRASS_MUTE]),
+    ("trumpet_piccolo", &[BRASS_MUTE]),
+    ("trumpet_c", &[TWELVE_BARS, BRASS_MUTE]),
+    ("trumpet_bb", &[TWELVE_BARS, BRASS_MUTE]),
+    ("cornet", &[BRASS_MUTE]),
+    ("trombone_tenor", &[BRASS_MUTE]),
+    ("trombone_bass", &[BRASS_MUTE]),
+    ("euphonium", &[BRASS_MUTE]),
+    ("tuba", &[BRASS_MUTE]),
+    ("cimbasso", &[BRASS_MUTE]),
+    (
+        "timpani",
+        &[(
+            FactKind::Retune {
+                whole_tone: Span::Millis(400),
+                drums: 4,
+            },
+            true,
+        )],
+    ),
+    (
+        "harp",
+        &[
+            (HARP_PEDALS, true),
+            (FactKind::NotesPerHand { notes: 4 }, true),
+        ],
+    ),
+    (
+        "violin",
+        &[(STRING_MUTE, true), (HALF_A_SECOND, true), TWO_HELD],
+    ),
+    (
+        "viola",
+        &[(STRING_MUTE, true), (HALF_A_SECOND, false), TWO_HELD],
+    ),
+    (
+        "cello",
+        &[(STRING_MUTE, true), (HALF_A_SECOND, false), TWO_HELD],
+    ),
+    (
+        "double_bass",
+        &[(STRING_MUTE, true), (HALF_A_SECOND, false), TWO_HELD],
+    ),
+];
+
+/// Every record with playability facts has the researched ones, and no other record has any
+/// (TST-10, TST-07).
+#[test]
+fn playability_facts_match_the_researched_values() {
+    let mut with_facts: Vec<&str> = INSTRUMENTS
+        .iter()
+        .filter(|record| !record.facts().is_empty())
+        .map(Instrument::id)
+        .collect();
+    with_facts.sort_unstable();
+    let mut expected: Vec<&str> = FACTS.iter().map(|(id, _)| *id).collect();
+    expected.sort_unstable();
+    assert_eq!(with_facts, expected);
+
+    for (id, facts) in FACTS {
+        let found: Vec<(FactKind, bool)> = get(id)
+            .facts()
+            .iter()
+            .map(|fact| {
+                let cited = matches!(fact.provenance, Provenance::Cited { .. });
+                (fact.kind, cited)
+            })
+            .collect();
+        assert_eq!(found, facts, "{id}");
+    }
+}
+
+/// The facts follow the articulations a record lists: every string and brass instrument with a
+/// mute it puts on (`con_sordino` or a named mute) has the time a mute change takes, and no
+/// other has; every bowed string with pizzicato has the time back to arco and the notes of a
+/// chord it can hold (TST-07).
+#[test]
+fn mute_and_pizzicato_facts_follow_the_articulations() {
+    let has = |record: &Instrument, wanted: fn(&FactKind) -> bool| {
+        record.facts().iter().any(|fact| wanted(&fact.kind))
+    };
+    for record in &INSTRUMENTS {
+        let lists = |articulations: &[Articulation]| {
+            record
+                .articulations()
+                .iter()
+                .any(|articulation| articulations.contains(articulation))
+        };
+        let lists_mute = lists(&[
+            Articulation::ConSordino,
+            Articulation::MuteCup,
+            Articulation::MuteHarmon,
+            Articulation::MutePlunger,
+            Articulation::MuteBucket,
+        ]);
+        let mute_change = has(record, |kind| matches!(kind, FactKind::MuteChange { .. }));
+        if matches!(record.family(), Family::Strings | Family::Brass) {
+            assert_eq!(mute_change, lists_mute, "{}", record.id());
+        }
+        if record.family() == Family::Strings {
+            assert!(lists(&[Articulation::Pizzicato]), "{}", record.id());
+            assert!(
+                has(record, |kind| matches!(
+                    kind,
+                    FactKind::ArcoPizzSwitch { .. }
+                )),
+                "{}",
+                record.id()
+            );
+            assert!(
+                has(record, |kind| matches!(
+                    kind,
+                    FactKind::SustainedStops { .. }
+                )),
+                "{}",
+                record.id()
+            );
+        }
+    }
+    // The flugelhorn lists no mute, so it is the one brass instrument without a mute change.
+    assert_eq!(get("flugelhorn").facts(), []);
+}
+
+/// The fact checks of `try_new` reject each broken fixture, the first failing check in the
+/// documented order (TST-03).
+#[test]
+fn validator_rejects_broken_facts() {
+    const TWICE: &[Fact] = &[
+        MUTE,
+        TO_ARCO,
+        fact(FactKind::MuteChange {
+            on: Span::Millis(1),
+            off: Span::Millis(1),
+        }),
+    ];
+    const BREATH_ON_A_VIOLIN: &[Fact] = &[MUTE, BREATH];
+    const RETUNE_ON_A_VIOLIN: &[Fact] = &[RETUNE];
+    const PEDALS_ON_A_VIOLIN: &[Fact] = &[fact(HARP_PEDALS)];
+    const ZERO_MUTE: &[Fact] = &[fact(FactKind::MuteChange {
+        on: Span::ModerateBeats(8),
+        off: Span::ModerateBeats(0),
+    })];
+    const ZERO_TO_ARCO: &[Fact] = &[fact(FactKind::ArcoPizzSwitch {
+        to_arco: Span::Millis(0),
+    })];
+    const ZERO_STOPS: &[Fact] = &[fact(FactKind::SustainedStops { notes: 0 })];
+    // A misfit and a zero in one fact: the fit is checked first.
+    const ZERO_BREATH: &[Fact] = &[fact(FactKind::Breath {
+        held_note: Span::Millis(0),
+    })];
+    // A duplicate after a misfit: duplicates are checked first.
+    const MISFIT_TWICE: &[Fact] = &[BREATH, STOPS, BREATH];
+    for (facts, error) in [
+        (TWICE, InstrumentError::DuplicateFact),
+        (BREATH_ON_A_VIOLIN, InstrumentError::FactDoesNotFit),
+        (RETUNE_ON_A_VIOLIN, InstrumentError::FactDoesNotFit),
+        (PEDALS_ON_A_VIOLIN, InstrumentError::FactDoesNotFit),
+        (ZERO_MUTE, InstrumentError::ZeroFactValue),
+        (ZERO_TO_ARCO, InstrumentError::ZeroFactValue),
+        (ZERO_STOPS, InstrumentError::ZeroFactValue),
+        (ZERO_BREATH, InstrumentError::FactDoesNotFit),
+        (MISFIT_TWICE, InstrumentError::DuplicateFact),
+    ] {
+        assert_eq!(violin(facts), Err(error), "{facts:?}");
+    }
+
+    // A fact rests on the articulation the record lists: a mute it puts on, or pizzicato.
+    let bare_violin = |articulations: &'static [Articulation], facts: &'static [Fact]| {
+        Instrument::try_new(
+            InstrumentType::Violin,
+            InstrumentSpec {
+                articulations,
+                facts,
+                ..written_in_clefs(0, (55, 105), &[Clef::Treble])
+            },
+        )
+    };
+    assert_eq!(
+        bare_violin(&[Articulation::Pizzicato], &[MUTE]),
+        Err(InstrumentError::FactWithoutArticulation)
+    );
+    assert_eq!(
+        bare_violin(&[Articulation::ConSordino], &[TO_ARCO]),
+        Err(InstrumentError::FactWithoutArticulation)
+    );
+    // A hand is not a mute the player puts on: a horn that lists only `stopped`.
+    assert_eq!(
+        Instrument::try_new(
+            InstrumentType::HornF,
+            InstrumentSpec {
+                articulations: &[Articulation::Stopped],
+                facts: &[MUTE],
+                ..written_in_clefs(-7, (34, 77), &[Clef::Treble])
+            },
+        ),
+        Err(InstrumentError::FactWithoutArticulation)
+    );
+    // The fact checks come after the keyboard checks.
+    assert_eq!(
+        Instrument::try_new(
+            InstrumentType::PianoUpright,
+            InstrumentSpec {
+                keyboard: Some(mechanics(20, 108)),
+                facts: &[BREATH],
+                ..written_in_clefs(0, (21, 108), &[Clef::Treble])
+            },
+        ),
+        Err(InstrumentError::KeysOutsidePlayable)
+    );
+}
+
+/// The harp's fact checks reject a zero and pedals that do not name each letter name once, the
+/// zero first (TST-03).
+#[test]
+fn validator_rejects_broken_harp_facts() {
+    const MISSING_LETTER: &[Fact] = &[fact(FactKind::HarpPedals {
+        left: &[LetterName::D, LetterName::C],
+        right: &[LetterName::E, LetterName::F, LetterName::G, LetterName::A],
+        change: Span::ModerateBeats(1),
+    })];
+    const LETTER_TWICE: &[Fact] = &[fact(FactKind::HarpPedals {
+        left: &[LetterName::D, LetterName::C, LetterName::C],
+        right: &[LetterName::E, LetterName::F, LetterName::G, LetterName::A],
+        change: Span::ModerateBeats(1),
+    })];
+    const EIGHT_PEDALS: &[Fact] = &[fact(FactKind::HarpPedals {
+        left: &[LetterName::D, LetterName::C, LetterName::B],
+        right: &[
+            LetterName::E,
+            LetterName::F,
+            LetterName::G,
+            LetterName::A,
+            LetterName::B,
+        ],
+        change: Span::ModerateBeats(1),
+    })];
+    // A zero change time is reported before the layout.
+    const ZERO_CHANGE: &[Fact] = &[fact(FactKind::HarpPedals {
+        left: &[LetterName::D],
+        right: &[],
+        change: Span::Millis(0),
+    })];
+    const ZERO_HANDS: &[Fact] = &[fact(FactKind::NotesPerHand { notes: 0 })];
+    for (facts, error) in [
+        (MISSING_LETTER, InstrumentError::HarpPedalLayout),
+        (LETTER_TWICE, InstrumentError::HarpPedalLayout),
+        (EIGHT_PEDALS, InstrumentError::HarpPedalLayout),
+        (ZERO_CHANGE, InstrumentError::ZeroFactValue),
+        (ZERO_HANDS, InstrumentError::ZeroFactValue),
+    ] {
+        assert_eq!(harp(facts), Err(error), "{facts:?}");
+    }
+}
+
+/// The valid counterparts of the broken fixtures: each kind on an instrument it fits, at the
+/// smallest values, returned unchanged (TST-07).
+#[test]
+fn validator_accepts_valid_facts() {
+    const STRINGS: &[Fact] = &[MUTE, TO_ARCO, STOPS];
+    const HARP: &[Fact] = &[fact(HARP_PEDALS), fact(FactKind::NotesPerHand { notes: 4 })];
+    const SMALLEST: &[Fact] = &[
+        fact(FactKind::MuteChange {
+            on: Span::Millis(1),
+            off: Span::ModerateBeats(1),
+        }),
+        fact(FactKind::ArcoPizzSwitch {
+            to_arco: Span::Millis(1),
+        }),
+        fact(FactKind::SustainedStops { notes: 1 }),
+    ];
+    for facts in [STRINGS, SMALLEST, &[]] {
+        assert_eq!(violin(facts).map(|record| record.facts()), Ok(facts));
+    }
+    assert_eq!(harp(HARP).map(|record| record.facts()), Ok(HARP));
+    assert!(
+        Instrument::try_new(
+            InstrumentType::Timpani,
+            InstrumentSpec {
+                facts: &[RETUNE],
+                ..VALID
+            },
+        )
+        .is_ok()
+    );
+    // A breath fits a wind, a brass and a voice part.
+    for instrument_type in [
+        InstrumentType::Oboe,
+        InstrumentType::Tuba,
+        InstrumentType::ChoirBass,
+    ] {
+        let PitchModel::Pitched(pitched) = get(instrument_type.id()).pitch() else {
+            panic!("{instrument_type:?} plays pitches");
+        };
+        let range = pitched.playable.range;
+        let spec = InstrumentSpec {
+            facts: &[BREATH],
+            ..written_in_clefs(
+                pitched.transposition.semitones(),
+                (range.low().get(), range.high().get()),
+                &[],
+            )
+        };
+        assert!(
+            Instrument::try_new(instrument_type, spec).is_ok(),
+            "{instrument_type:?}"
         );
     }
 }

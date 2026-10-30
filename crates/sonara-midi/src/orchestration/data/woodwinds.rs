@@ -17,6 +17,35 @@ use crate::orchestration::id::{CategoryId, InstrumentType};
 use crate::orchestration::instrument::{Instrument, InstrumentSpec, Provenance};
 use crate::orchestration::names::Names;
 use crate::orchestration::pitch::Clef;
+use crate::orchestration::playability::{Fact, FactKind, Span};
+
+/// The longest note a clarinettist holds on one breath, from Widor's experiment.
+const CLARINET_BREATH: Fact = Fact {
+    kind: FactKind::Breath {
+        held_note: Span::Millis(40_000),
+    },
+    provenance: Provenance::Cited {
+        source: cite!(
+            widor: "p. 33: a holding-note can be sustained piano, in the medium register, for 40 \
+                or 45 seconds; p. 127: the clarinet and the saxophones each sustain a note for \
+                about 40 seconds, a maximum for a soloist playing piano",
+        ),
+    },
+};
+
+/// The longest note a saxophonist holds on one breath.
+const SAXOPHONE_BREATH: Fact = Fact {
+    kind: FactKind::Breath {
+        held_note: Span::ModerateBeats(40),
+    },
+    provenance: Provenance::Cited {
+        source: cite!(
+            widor: "p. 127: a note in the medium register of the saxophones cannot be held for \
+                more than 10 bars in moderate quadruple time; about 40 seconds is a maximum, for \
+                a soloist playing piano",
+        ),
+    },
+};
 
 pub(super) const PICCOLO: Instrument = Instrument::new(
     InstrumentType::Piccolo,
@@ -116,6 +145,7 @@ pub(super) const PICCOLO: Instrument = Instrument::new(
             chamber: players(0, 1, "rare", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_program(73),
     },
 );
@@ -222,6 +252,7 @@ pub(super) const FLUTE: Instrument = Instrument::new(
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_program(74),
     },
 );
@@ -313,6 +344,7 @@ pub(super) const ALTO_FLUTE: Instrument = Instrument::new(
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_substitute(
             74,
             SubstituteFit::Approximate,
@@ -404,6 +436,7 @@ pub(super) const BASS_FLUTE: Instrument = Instrument::new(
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_substitute(
             74,
             SubstituteFit::Approximate,
@@ -533,6 +566,7 @@ pub(super) const OBOE: Instrument = Instrument::new(
             ),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_program(69),
     },
 );
@@ -642,6 +676,7 @@ pub(super) const OBOE_DAMORE: Instrument = Instrument::new(
             ),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_substitute(
             69,
             SubstituteFit::Approximate,
@@ -774,6 +809,7 @@ pub(super) const ENGLISH_HORN: Instrument = Instrument::new(
             ),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_program(70),
     },
 );
@@ -863,6 +899,7 @@ pub(super) const CLARINET_EB: Instrument = Instrument::new(
             chamber: unstated("rare", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_substitute(
             72,
             SubstituteFit::Approximate,
@@ -964,6 +1001,7 @@ pub(super) const CLARINET_BB: Instrument = Instrument::new(
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[CLARINET_BREATH],
         gm: gm_program(72),
     },
 );
@@ -1059,6 +1097,7 @@ pub(super) const CLARINET_A: Instrument = Instrument::new(
             chamber: players(1, 1, "Mozart and Brahms quintets", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[CLARINET_BREATH],
         gm: gm_program(72),
     },
 );
@@ -1156,6 +1195,7 @@ pub(super) const BASS_CLARINET: Instrument = Instrument::new(
             chamber: players(1, 1, "rare", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_substitute(
             72,
             SubstituteFit::Approximate,
@@ -1284,6 +1324,7 @@ pub(super) const SAXOPHONE_SOPRANO: Instrument = Instrument::new(
             ),
         }),
         keyboard: None,
+        facts: &[SAXOPHONE_BREATH],
         gm: gm_program(65),
     },
 );
@@ -1400,6 +1441,7 @@ pub(super) const SAXOPHONE_ALTO: Instrument = Instrument::new(
             chamber: players(1, 1, "in the SATB saxophone quartet", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[SAXOPHONE_BREATH],
         gm: gm_program(66),
     },
 );
@@ -1510,6 +1552,7 @@ pub(super) const SAXOPHONE_TENOR: Instrument = Instrument::new(
             chamber: players(1, 1, "in the SATB saxophone quartet", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[SAXOPHONE_BREATH],
         gm: gm_program(67),
     },
 );
@@ -1626,6 +1669,7 @@ pub(super) const SAXOPHONE_BARITONE: Instrument = Instrument::new(
             ),
         }),
         keyboard: None,
+        facts: &[SAXOPHONE_BREATH],
         gm: gm_program(68),
     },
 );
@@ -1752,6 +1796,7 @@ pub(super) const BASSOON: Instrument = Instrument::new(
             ),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_program(71),
     },
 );
@@ -1864,6 +1909,7 @@ pub(super) const CONTRABASSOON: Instrument = Instrument::new(
             ),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_substitute(
             71,
             SubstituteFit::Approximate,

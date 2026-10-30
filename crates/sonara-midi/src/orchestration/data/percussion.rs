@@ -17,6 +17,7 @@ use crate::orchestration::instrument::{Instrument, InstrumentSpec, PitchModel, P
 use crate::orchestration::keyboard::{Action, Decay, KeyboardMechanics, Noise, Resonance};
 use crate::orchestration::names::Names;
 use crate::orchestration::pitch::{Clef, PitchRange};
+use crate::orchestration::playability::{Fact, FactKind, Span};
 
 pub(super) const TIMPANI: Instrument = Instrument::new(
     InstrumentType::Timpani,
@@ -114,6 +115,25 @@ pub(super) const TIMPANI: Instrument = Instrument::new(
             chamber: not_used("usually none", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[Fact {
+            kind: FactKind::Retune {
+                whole_tone: Span::Millis(400),
+                drums: 4,
+            },
+            provenance: Provenance::Cited {
+                source: cite!(
+                    vsl_academy_timpani: "on a pedal drum, up to crotchet = 150, a new step of \
+                        the scale can be played every crotchet; the wider the interval, the \
+                        longer it takes to retune; hand-tuned drums needed at least eight bars' \
+                        rest",
+                    wikipedia_timpani: "a standard set of timpani consists of four drums",
+                    forsyth_second_scan: "p. 46: two or three bars at least of 4/4 moderato for \
+                        an accurate change of a whole tone on drums tuned by screws, \
+                        proportionately longer for a bigger change";
+                    "400 ms is one crotchet at 150, a step of the scale taken as a whole tone"
+                ),
+            },
+        }],
         gm: gm_program(48),
     },
 );
@@ -177,6 +197,7 @@ pub(super) const BASS_DRUM: Instrument = Instrument::new(
             chamber: unstated("rare", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: GmVoice::Percussion(gm_keys![35, 36]),
     },
 );
@@ -242,6 +263,7 @@ pub(super) const SNARE_DRUM: Instrument = Instrument::new(
             ),
         }),
         keyboard: None,
+        facts: &[],
         gm: GmVoice::Percussion(gm_keys![38]),
     },
 );
@@ -291,6 +313,7 @@ pub(super) const CLASH_CYMBALS: Instrument = Instrument::new(
             chamber: unstated("rare", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_substitute_keys(
             gm_keys![49, 57],
             SubstituteFit::Approximate,
@@ -364,6 +387,7 @@ pub(super) const SUSPENDED_CYMBAL: Instrument = Instrument::new(
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_substitute_keys(
             gm_keys![49],
             SubstituteFit::Approximate,
@@ -440,6 +464,7 @@ pub(super) const TAM_TAM: Instrument = Instrument::new(
             chamber: unstated("rare", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: GmVoice::NoEquivalent,
     },
 );
@@ -495,6 +520,7 @@ pub(super) const TRIANGLE: Instrument = Instrument::new(
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: GmVoice::Percussion(gm_keys![81, 80]),
     },
 );
@@ -550,6 +576,7 @@ pub(super) const TAMBOURINE: Instrument = Instrument::new(
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: GmVoice::Percussion(gm_keys![54]),
     },
 );
@@ -594,6 +621,7 @@ pub(super) const CASTANETS: Instrument = Instrument::new(
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_substitute_keys(
             gm_keys![75],
             SubstituteFit::Weak,
@@ -656,6 +684,7 @@ pub(super) const WOOD_BLOCK: Instrument = Instrument::new(
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: GmVoice::Percussion(gm_keys![76, 77]),
     },
 );
@@ -713,6 +742,7 @@ pub(super) const TEMPLE_BLOCKS: Instrument = Instrument::new(
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_substitute_keys(
             gm_keys![76, 77],
             SubstituteFit::Approximate,
@@ -777,6 +807,7 @@ pub(super) const SLEIGH_BELLS: Instrument = Instrument::new(
             chamber: unstated("rare", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_substitute_keys(
             gm_keys![54],
             SubstituteFit::Weak,
@@ -839,6 +870,7 @@ pub(super) const MARACAS: Instrument = Instrument::new(
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: GmVoice::Percussion(gm_keys![70]),
     },
 );
@@ -894,6 +926,7 @@ pub(super) const SHAKER: Instrument = Instrument::new(
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_substitute_keys(
             gm_keys![70, 69],
             SubstituteFit::Approximate,
@@ -963,6 +996,7 @@ pub(super) const WHIP: Instrument = Instrument::new(
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: GmVoice::NoEquivalent,
     },
 );
@@ -1044,6 +1078,7 @@ pub(super) const GLOCKENSPIEL: Instrument = Instrument::new(
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_program(10),
     },
 );
@@ -1123,6 +1158,7 @@ pub(super) const XYLOPHONE: Instrument = Instrument::new(
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_program(14),
     },
 );
@@ -1199,6 +1235,7 @@ pub(super) const VIBRAPHONE: Instrument = Instrument::new(
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_program(12),
     },
 );
@@ -1269,6 +1306,7 @@ pub(super) const MARIMBA: Instrument = Instrument::new(
             chamber: players(1, 1, "a solo and ensemble instrument", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_program(13),
     },
 );
@@ -1334,6 +1372,7 @@ pub(super) const TUBULAR_BELLS: Instrument = Instrument::new(
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_program(15),
     },
 );
@@ -1396,6 +1435,7 @@ pub(super) const CROTALES: Instrument = Instrument::new(
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_substitute(
             10,
             SubstituteFit::Approximate,
@@ -1500,6 +1540,7 @@ pub(super) const CARILLON: Instrument = Instrument::new(
                 ),
             },
         }),
+        facts: &[],
         gm: gm_substitute(
             15,
             SubstituteFit::Approximate,

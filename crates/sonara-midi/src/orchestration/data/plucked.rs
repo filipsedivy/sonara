@@ -15,6 +15,7 @@ use crate::orchestration::id::InstrumentType;
 use crate::orchestration::instrument::{Instrument, InstrumentSpec, Provenance};
 use crate::orchestration::names::Names;
 use crate::orchestration::pitch::Clef;
+use crate::orchestration::playability::{Fact, FactKind, LetterName, Span};
 
 pub(super) const HARP: Instrument = Instrument::new(
     InstrumentType::Harp,
@@ -106,6 +107,33 @@ pub(super) const HARP: Instrument = Instrument::new(
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[
+            Fact {
+                kind: FactKind::HarpPedals {
+                    left: &[LetterName::D, LetterName::C, LetterName::B],
+                    right: &[LetterName::E, LetterName::F, LetterName::G, LetterName::A],
+                    change: Span::ModerateBeats(1),
+                },
+                provenance: Provenance::Cited {
+                    source: cite!(
+                        forsyth_second_scan: "p. 464: seven pedals, the B, C and D pedals on the \
+                            left-hand side of the player and the E, F, G and A pedals on the \
+                            right, radiating outwards from the player in the order named";
+                        "one change per foot in a beat of moderate time is an estimate: no \
+                            source that was read times a pedal change"
+                    ),
+                },
+            },
+            Fact {
+                kind: FactKind::NotesPerHand { notes: 4 },
+                provenance: Provenance::Cited {
+                    source: cite!(
+                        rimsky_korsakov: "Ch. I, Harp, p. 28: only four notes at the most can be \
+                            played by each hand",
+                    ),
+                },
+            },
+        ],
         gm: gm_program(47),
     },
 );
@@ -199,6 +227,7 @@ pub(super) const GUITAR_CLASSICAL: Instrument = Instrument::new(
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_program(25),
     },
 );
@@ -267,6 +296,7 @@ pub(super) const LUTE: Instrument = Instrument::new(
             chamber: players(1, 1, "Baroque continuo", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_substitute(
             25,
             SubstituteFit::Weak,
@@ -357,6 +387,7 @@ pub(super) const MANDOLIN: Instrument = Instrument::new(
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
         keyboard: None,
+        facts: &[],
         gm: gm_substitute(
             26,
             SubstituteFit::Weak,
