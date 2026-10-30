@@ -2,8 +2,9 @@
 //! for a melody or a run of chords, applying the orchestration rules while they write.
 //!
 //! Each helper is a pure function of a melody or chords ([`ChordSlot`]s), the parts that may play
-//! them ([`Carrier`]s) and its options, and returns the notes of every part ([`Voiced`]) with the
-//! doublings it wrote and what it could not do ([`Remark`]):
+//! them ([`Carrier`]s) and its options. It returns the notes of every part it was given
+//! ([`Voiced`], inside a fuller result for the melody and the timpani) with the doublings it wrote
+//! and what it could not do ([`Remark`]); [`fit_register`] works on one line:
 //!
 //! - [`melody_doublings`]: picks the part that carries a melody from the function table
 //!   ([`CARRIERS`](crate::orchestration::rules::CARRIERS)) for the melody's register band, then
@@ -549,8 +550,6 @@ impl<'a> Score<'a> {
 struct VoiceGroup {
     /// The pitches the voice may sound: every member's range, moved by its offset, intersected.
     range: PitchRange,
-    /// The instrument of the voice's first member.
-    colour: InstrumentType,
     /// The members by place among the carriers, each with the semitones it plays above the
     /// voice: 0 in unison, −12 an octave below.
     members: Vec<(usize, i64)>,
@@ -567,7 +566,6 @@ impl VoiceGroup {
         let range = comfortable(carrier.instrument).ok_or_else(|| wrong(carrier))?;
         Ok(Self {
             range,
-            colour: carrier.instrument,
             members: vec![(place, 0)],
         })
     }
@@ -634,13 +632,7 @@ fn write_chords(
     rules: &ChordRules<'_>,
     ids: &mut dyn IdGenerator,
 ) -> Result<Vec<Option<Vec<i64>>>, VoicingError> {
-    let voices: Vec<layout::Voice> = groups
-        .iter()
-        .map(|voice| layout::Voice {
-            range: voice.range,
-            colour: voice.colour,
-        })
-        .collect();
+    let voices: Vec<PitchRange> = groups.iter().map(|voice| voice.range).collect();
     let accept = |pitches: &[i64]| (rules.accept)(pitches) && members_clear(groups, pitches);
     let layout_rules = layout::Rules {
         carries_bass: rules.carries_bass,
@@ -699,7 +691,6 @@ mod tests {
         let groups: Vec<VoiceGroup> = (0..3)
             .map(|place| VoiceGroup {
                 range: PitchRange::new(60, 72),
-                colour: InstrumentType::Viola,
                 members: vec![(place, 0)],
             })
             .collect();

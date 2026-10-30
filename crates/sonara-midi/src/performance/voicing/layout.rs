@@ -22,8 +22,8 @@
 //! than the root or the bass, the mean nearest the middle of the voices' ranges, and last the
 //! lowest pitches, so equal inputs always give the same layout (TST-04).
 
+use crate::orchestration::PitchRange;
 use crate::orchestration::rules::{LOW_DISSONANCE, LOW_INTERVAL_LIMITS, Limit};
-use crate::orchestration::{InstrumentType, PitchRange};
 use crate::theory::Chord;
 
 /// Semitones in an octave.
@@ -39,15 +39,6 @@ const DISSONANT: [i64; 6] = [1, 2, 5, 6, 10, 11];
 
 /// The widest interval the low-bass rule names, a major ninth.
 const WIDEST_DISSONANCE: i64 = 14;
-
-/// One voice of a layout.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) struct Voice {
-    /// The pitches the voice may sound.
-    pub(super) range: PitchRange,
-    /// The instrument that plays it, which the caller's check may read.
-    pub(super) colour: InstrumentType,
-}
 
 /// What a layout must satisfy besides the voices' ranges.
 pub(super) struct Rules<'a> {
@@ -145,7 +136,8 @@ struct Cost {
 
 /// The search for the best layout of one chord.
 struct Search<'a> {
-    voices: &'a [Voice],
+    /// The pitches each voice may sound, from the bottom.
+    voices: &'a [PitchRange],
     rules: &'a Rules<'a>,
     tones: Tones,
     previous: Option<&'a [i64]>,
@@ -154,12 +146,12 @@ struct Search<'a> {
     best: Option<Cost>,
 }
 
-/// The best layout of `chord` for `voices` (from the bottom) under `rules`, moving as smoothly as
-/// the rules allow from `previous` (the layout of the chord before, with as many voices); `None`
-/// when no layout passes.
+/// The best layout of `chord` for voices whose ranges are `voices` (from the bottom) under
+/// `rules`, moving as smoothly as the rules allow from `previous` (the layout of the chord before,
+/// with as many voices); `None` when no layout passes.
 pub(super) fn lay_out(
     chord: &Chord,
-    voices: &[Voice],
+    voices: &[PitchRange],
     rules: &Rules<'_>,
     previous: Option<&[i64]>,
 ) -> Option<Vec<i64>> {
@@ -168,7 +160,7 @@ pub(super) fn lay_out(
     }
     let centre = voices
         .iter()
-        .map(|voice| voice.range.low().get() + voice.range.high().get())
+        .map(|range| range.low().get() + range.high().get())
         .sum();
     let mut search = Search {
         voices,
@@ -187,16 +179,14 @@ impl Search<'_> {
     /// Tries every pitch for the next voice above `pitches`, then recurses.
     fn extend(&mut self, pitches: &mut Vec<i64>) {
         let index = pitches.len();
-        let Some(voice) = self.voices.get(index) else {
+        let Some(range) = self.voices.get(index) else {
             self.finish(pitches);
             return;
         };
         let below = pitches.last().copied();
-        let low = below.map_or(voice.range.low().get(), |below| {
-            voice.range.low().get().max(below + 1)
-        });
-        let high = below.map_or(voice.range.high().get(), |below| {
-            voice.range.high().get().min(below + OCTAVE)
+        let low = below.map_or(range.low().get(), |below| range.low().get().max(below + 1));
+        let high = below.map_or(range.high().get(), |below| {
+            range.high().get().min(below + OCTAVE)
         });
         for pitch in low..=high {
             if self.admits(pitches, pitch) {
@@ -326,21 +316,20 @@ pub(super) fn clears_limits(lower: i64, upper: i64) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{Rules, Voice, clears_limits, lay_out};
-    use crate::orchestration::{InstrumentType, PitchRange};
+    use super::{Rules, clears_limits, lay_out};
+    use crate::orchestration::PitchRange;
     use crate::theory::parse_chord;
 
-    fn voices(count: usize, low: i64, high: i64) -> Vec<Voice> {
-        vec![
-            Voice {
-                range: PitchRange::new(low, high),
-                colour: InstrumentType::HornF,
-            };
-            count
-        ]
+    fn voices(count: usize, low: i64, high: i64) -> Vec<PitchRange> {
+        vec![PitchRange::new(low, high); count]
     }
 
-    fn layout(symbol: &str, voices: &[Voice], bass: bool, previous: Option<&[i64]>) -> Vec<i64> {
+    fn layout(
+        symbol: &str,
+        voices: &[PitchRange],
+        bass: bool,
+        previous: Option<&[i64]>,
+    ) -> Vec<i64> {
         let chord = parse_chord(symbol).expect("a valid chord");
         let rules = Rules {
             carries_bass: bass,

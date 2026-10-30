@@ -4,6 +4,9 @@
 //! that plays it, the part's role in the texture and what the chosen sound can do
 //! ([`SoundCaps`]). It returns the notes to write ([`Performed`]).
 //!
+//! The lines come from [`voicing`], whose helpers give the parts of an ensemble their notes for a
+//! melody or a run of chords, family by family, applying the orchestration rules as they write.
+//!
 //! A performance is a pure function of its inputs and a [`Seed`]: no clock, no environment, no
 //! hash-ordered output and no state shared between calls, so the same line, score and seed always
 //! give the same performance (TST-04). Each part draws its random numbers from a stream of its own,
