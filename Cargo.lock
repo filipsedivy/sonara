@@ -4109,6 +4109,7 @@ dependencies = [
  "sonara-project",
  "sonara-rt",
  "sonara-testkit",
+ "strsim",
  "tempfile",
  "thiserror 2.0.21",
  "tokio",
@@ -4123,6 +4124,7 @@ dependencies = [
  "indexmap 2.14.2",
  "jiff",
  "log",
+ "proptest",
  "rustix",
  "serde",
  "serde_json",
@@ -4249,11 +4251,13 @@ dependencies = [
  "midly",
  "proptest",
  "rand_mt",
+ "serde",
  "serde_json",
  "sonara-core",
  "sonara-project",
  "sonara-testkit",
  "thiserror 2.0.21",
+ "unicode-normalization",
 ]
 
 [[package]]

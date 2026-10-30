@@ -43,6 +43,8 @@ rustix.workspace = true
 
 [dev-dependencies]
 hound.workspace = true
+# Property tests of the library-profile merge and the degradation chain (TST-09).
+proptest.workspace = true
 sonara-testkit.workspace = true
 tempfile.workspace = true
 

@@ -94,6 +94,7 @@ serde_json = { version = "1.0", features = ["float_roundtrip", "preserve_order"]
 sha1 = "0.11"
 sha2 = "0.11"
 # MPL-2.0, used unmodified. Crates enable the containers and codecs they need; no SIMD.
+strsim = "0.11"
 symphonia = { version = "0.6.1", default-features = false }
 # The desktop application (ADR 0009): Tauri 2.12 with its dialog plugin.
 tauri = { version = "2.12", features = [] }

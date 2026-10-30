@@ -27,6 +27,8 @@ serde_json.workspace = true
 # The application services the tools run on (one session, projects, jobs, settings).
 sonara-app.workspace = true
 sonara-core.workspace = true
+# "Did you mean" suggestions for misspelt instrument names in the orchestration planner.
+strsim.workspace = true
 # The MIDI generators and note transforms of `generate_midi` and `edit_midi_notes`.
 sonara-midi.workspace = true
 thiserror.workspace = true

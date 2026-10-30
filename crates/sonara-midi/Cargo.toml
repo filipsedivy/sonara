@@ -11,8 +11,12 @@ publish.workspace = true
 [dependencies]
 midly.workspace = true
 rand_mt.workspace = true
+# Serialization of the orchestration metadata's family slugs, shared with the instrument catalog.
+serde.workspace = true
 sonara-core.workspace = true
 thiserror.workspace = true
+# Diacritic folding of instrument aliases ("lesní rohy" matches "lesni rohy") for the planner's matching.
+unicode-normalization.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true
