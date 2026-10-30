@@ -7,17 +7,24 @@
 //!
 //! - [`mod@state`]: the pure state machine ([`Chat`]).
 //! - [`task`], [`mod@error`]: the data and the errors that cross to the window.
+//! - [`controller`]: runs the tasks one after the other through a provider and tells the
+//!   window ([`event`]); [`replay`] gives each task the earlier conversation as context.
 //! - [`provider`], [`providers`], [`boundary`]: the seam to the agent CLIs, and the Claude Code
 //!   adapter. Every provider runs under the safety boundary of the composer.
 
 pub mod boundary;
+pub mod controller;
 pub mod error;
+pub mod event;
 pub mod provider;
 pub mod providers;
+pub mod replay;
 pub mod state;
 pub mod task;
 
+pub use controller::{ChatConfig, ChatController, Sink};
 pub use error::{ChatError, QUEUE_CAPACITY};
+pub use event::{ChatEvent, ChatSnapshot, TaskLog};
 pub use provider::{Availability, Provider, ProviderStatus, Turn};
 pub use providers::ClaudeProvider;
 pub use state::Chat;

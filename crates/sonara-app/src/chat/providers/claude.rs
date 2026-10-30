@@ -15,7 +15,7 @@ use crate::composer::{
 /// The name of the provider in the window.
 const NAME: &str = "Claude Code";
 
-/// Claude Code, found through [`locate`]. The same executable and boundaries as the composer.
+/// Claude Code, found through [`locate()`]. The same executable and boundaries as the composer.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ClaudeProvider;
 
