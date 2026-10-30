@@ -385,7 +385,8 @@ preset, and applying one (sounds, tracks, folders, buses) is the application's w
   centred. A source recorded with the players in their places carries the stage image, so
   applying the pan is the caller's decision.
 - `order`: `FullScore` for the orchestras and the string quartet, the order of `InstrumentType`,
-  except that a doubled instrument may sit directly below its player's part; `Edition` where the
+  except that a doubled instrument may sit directly below its player's part (a doubling placed
+  anywhere else keeps the order of its type); `Edition` where the
   group's own scores print another order: the big band (rhythm section at the bottom), the wind
   quintet (horn between clarinet and bassoon), the brass quintet (horn below the trumpets) and the
   piano trio (piano at the bottom).

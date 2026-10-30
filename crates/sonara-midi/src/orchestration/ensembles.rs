@@ -353,7 +353,9 @@ pub struct Part {
 pub enum PartOrder {
     /// The order of a full orchestral score, that of [`InstrumentType::ALL`]: woodwinds, brass,
     /// percussion, harp, keyboards, voices, strings. A doubled instrument may also sit directly
-    /// below its player's part, as a piccolo below the third flute.
+    /// below its player's part, as a piccolo below the third flute, or below another doubling of
+    /// the same player placed so; a doubling placed anywhere else keeps the order of its type,
+    /// as the Wagner tubas below the eighth horn do.
     FullScore,
     /// The order the ensemble's own scores print, which differs from a full score: the rhythm
     /// section at the bottom of a big band, the trumpets above the horn in a brass quintet, the

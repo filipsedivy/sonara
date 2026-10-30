@@ -1087,12 +1087,12 @@ const LATE_ROMANTIC: Ensemble = Ensemble::new(
                     wikipedia_ein_heldenleben: "piccolo with its own player; three flutes; three \
                         oboes and an English horn doubled by a fourth oboe; a separate E♭ \
                         clarinet; two clarinets; bass clarinet; three bassoons; contrabassoon; \
-                        eight horns; five trumpets, three in B♭ and two in E♭; three trombones; \
-                        tenor tuba; tuba; timpani; percussion; two harps",
+                        eight horns; five trumpets, three in B♭ and two in E♭; trombones; tenor \
+                        tuba; tuba; timpani; percussion; two harps",
                     rimsky_korsakov: "the orchestra in fours gives the piccolo and the bass \
-                        clarinet their own players; six or eight horns; Wagner's Ring adds two \
-                        tenor and two bass tubas, a bass trumpet and a contrabass trombone; a \
-                        full orchestra should have three or four harps",
+                        clarinet their own players; six or eight horns; Wagner's Ring adds a \
+                        quartet of tenor and bass tubas, a bass trumpet and a contrabass \
+                        trombone; a full orchestra should have three or four harps",
                     jacksonville_symphony_seating: "Mahler still wrote for antiphonal violins",
                 ),
             },
