@@ -81,8 +81,9 @@ vibrato on CC 21), filters, per-region pan, streaming. The loader reports unsupp
 the load warning when a patch is rendered, together with the values the sampler does not play
 (`trigger=first`, `legato` or `release_key`, which play on every key press for now, and unknown
 `loop_mode` values, which play as `no_loop`) and the headers whose opcodes it skips (`<curve>`,
-`<effect>`, `<midi>`, `<sample>`). Keyswitch keys select an articulation and make no
-sound themselves. Regions that the patch starts from a controller instead of a key
+`<effect>`, `<midi>`, `<sample>`). A keyswitch key selects an articulation; it makes no sound
+unless a region of the patch also covers that key, and then it does both. Regions that the patch
+starts from a controller instead of a key
 (`on_locc`/`on_hicc`, such as Salamander's pedal noises) or that have a key of -1 (`key`, `lokey`
 or `hikey`) never play on a key; until the sampler plays controller triggers they stay silent.
 

@@ -30,9 +30,9 @@ becomes `missing`; one that names a file in an `includes` folder is listed like 
 
 Nothing fails the discovery. Missing or non-directory roots, an unreadable or invalid manifest,
 a rejected manifest entry, a library that two of Sonara's profiles match, a duplicate library ID
-and a truncated scan are returned in `issues()`; the rest of the catalog is still built. Symbolic links are never followed, and a
-manifest path that leaves the library (`..`, absolute, through a link) is rejected or marked
-`invalid`.
+and a truncated scan are returned in `issues()`; the rest of the catalog is still built. Symbolic
+links are never followed, and a manifest path that leaves the library (`..`, absolute, through a
+link) is rejected or marked `invalid`.
 
 `InstrumentCatalog::verify` goes deeper on request: it loads one patch through a `PatchLoader`,
 which for `MediaPatchLoader` means parsing the SFZ and decoding every sample it names (the load
