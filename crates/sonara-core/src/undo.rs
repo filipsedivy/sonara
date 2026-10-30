@@ -7,6 +7,8 @@ use crate::model::project::Project;
 pub const DEFAULT_LIMIT: usize = 500;
 /// Default window in seconds within which commands with the same merge key merge.
 pub const DEFAULT_MERGE_WINDOW: f64 = 1.5;
+/// The source whose steps a group collapses: the agent interface.
+const GROUP_SOURCE: &str = "agent";
 
 /// One undo step: the snapshots before and after it.
 #[derive(Debug, Clone)]
@@ -25,6 +27,10 @@ pub struct UndoEntry {
     pub timestamp: f64,
     /// Who made the step (`user`, `agent`, …).
     pub source: String,
+    /// Whether the step was made inside an open group ([`UndoHistory::begin_group`]) and waits to
+    /// be collapsed by [`UndoHistory::end_group`]. Set by [`UndoHistory::push`]; a caller's value
+    /// is ignored.
+    pub in_group: bool,
 }
 
 /// The undo and redo stacks.
@@ -36,6 +42,7 @@ pub struct UndoHistory {
     pub limit: usize,
     /// Merge window in seconds.
     pub merge_window: f64,
+    group_open: bool,
 }
 
 impl Default for UndoHistory {
@@ -53,14 +60,20 @@ impl UndoHistory {
             redo: Vec::new(),
             limit,
             merge_window,
+            group_open: false,
         }
     }
 
     /// Records a step. It clears the redo stack and merges into the top entry when both have
     /// the same merge key and lie within the merge window.
-    pub fn push(&mut self, entry: UndoEntry) {
+    ///
+    /// While a group is open, a step from the `agent` source is marked for the group; steps from
+    /// other sources are recorded as usual, and a marked and an unmarked step never merge.
+    pub fn push(&mut self, mut entry: UndoEntry) {
         self.redo.clear();
+        entry.in_group = self.group_open && entry.source == GROUP_SOURCE;
         if let Some(top) = self.undo.last_mut()
+            && top.in_group == entry.in_group
             && entry.merge_key.is_some()
             && top.merge_key == entry.merge_key
             && entry.timestamp - top.timestamp <= self.merge_window
@@ -98,10 +111,63 @@ impl UndoHistory {
         }
     }
 
-    /// Forgets every step.
+    /// Opens a group: the steps the `agent` source records from now on are collapsed into one by
+    /// [`Self::end_group`]. The top entry is sealed, so the group starts a step of its own.
+    ///
+    /// The steps stay separate until the group ends, so an `undo` made inside the group still
+    /// undoes one step.
+    pub fn begin_group(&mut self) {
+        self.seal();
+        self.group_open = true;
+    }
+
+    /// Closes the group and collapses every run of consecutive marked steps into one step named
+    /// `label`: its `before` is the first step's, its `after` the last one's, and it is sealed.
+    /// A step of another source inside the group splits it into several steps, because each
+    /// snapshot would otherwise take that step along. Returns whether a step was collapsed.
+    pub fn end_group(&mut self, label: &str) -> bool {
+        self.group_open = false;
+        // A step undone inside the group sits on the redo stack; it must not carry the mark into
+        // the next group once it is redone.
+        for entry in &mut self.redo {
+            entry.in_group = false;
+        }
+        if !self.undo.iter().any(|entry| entry.in_group) {
+            return false;
+        }
+        let mut collapsed: Vec<UndoEntry> = Vec::with_capacity(self.undo.len());
+        // Whether the last entry of `collapsed` is a run still taking steps.
+        let mut in_run = false;
+        for mut entry in self.undo.drain(..) {
+            if !entry.in_group {
+                in_run = false;
+                collapsed.push(entry);
+                continue;
+            }
+            entry.in_group = false;
+            entry.merge_key = None;
+            match collapsed.last_mut() {
+                Some(run) if in_run => {
+                    run.after = entry.after;
+                    run.changes = run.changes.merge(&entry.changes);
+                    run.timestamp = entry.timestamp;
+                }
+                _ => {
+                    label.clone_into(&mut entry.label);
+                    in_run = true;
+                    collapsed.push(entry);
+                }
+            }
+        }
+        self.undo = collapsed;
+        true
+    }
+
+    /// Forgets every step and closes an open group.
     pub fn clear(&mut self) {
         self.undo.clear();
         self.redo.clear();
+        self.group_open = false;
     }
 
     /// Whether a step can be undone.
@@ -164,6 +230,7 @@ mod tests {
             merge_key: key.map(str::to_owned),
             timestamp,
             source: "user".to_owned(),
+            in_group: false,
         }
     }
 

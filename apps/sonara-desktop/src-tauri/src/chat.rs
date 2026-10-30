@@ -6,9 +6,11 @@
 //! then follows the `chat-event` stream, which is sent to that window alone.
 //!
 //! A run edits the open project through this window's agent session, so the timeline, the mixer
-//! and the piano roll update as the pump delivers its edits like any other. The undo history is
-//! sealed when a task starts running and when it ends ([`Sealer`]), so the user's next edit never
-//! merges into the agent's last step.
+//! and the piano roll update as the pump delivers its edits like any other. A task is one undo
+//! step ([`UNDO_LABEL`]): an undo group opens when it starts running and is collapsed when it
+//! ends ([`Sealer`]), before the window hears of the end. The collapsed step is sealed, so the
+//! user's next edit never merges into it. An edit the user makes while the task runs stays a step
+//! of its own.
 //!
 //! The history belongs to the chat window: closing it wipes the chat ([`window_closed`]), and so
 //! does replacing the open project ([`project_replaced`]). Quitting ends the run ([`shutdown`]).
@@ -66,8 +68,20 @@ impl ChatHost {
     }
 }
 
-/// Tells when to seal the undo history: whenever the running task changes, that is, when a task
-/// starts, and when it reaches a final state (or the chat is wiped under it).
+/// The label of the undo step that a whole task becomes (the Edit menu's "Undo AI Chat").
+const UNDO_LABEL: &str = "AI Chat";
+
+/// What a [`ChatEvent`] did to the running task.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Transition {
+    /// A task was running and no longer is (or is another one), so its undo group closes.
+    ended: bool,
+    /// A task started running, so an undo group opens.
+    started: bool,
+}
+
+/// Tells when to open and close the undo group: whenever the running task changes, that is, when
+/// a task starts, and when it reaches a final state (or the chat is wiped under it).
 ///
 /// It watches [`ChatEvent::Changed`], which the controller delivers one at a time and in order,
 /// so the transitions are seen exactly as they happened. The chat module itself knows nothing
@@ -78,32 +92,43 @@ struct Sealer {
 }
 
 impl Sealer {
-    /// Whether `event` starts or ends a running task.
-    fn observe(&mut self, event: &ChatEvent) -> bool {
+    /// How `event` changes the running task.
+    fn observe(&mut self, event: &ChatEvent) -> Transition {
         let ChatEvent::Changed { state } = event else {
-            return false;
+            return Transition {
+                ended: false,
+                started: false,
+            };
         };
         let now = state
             .tasks
             .iter()
             .find(|task| task.state == sonara_app::chat::TaskState::Running)
             .map(|task| (state.generation, task.id));
-        std::mem::replace(&mut self.running, now) != now
+        let before = std::mem::replace(&mut self.running, now);
+        Transition {
+            ended: before.is_some() && before != now,
+            started: now.is_some() && before != now,
+        }
     }
 }
 
-/// The controller's sink: seals the undo history at a task's start and end, and sends the event
-/// to the chat window. A window that is closed is not an error.
+/// The controller's sink: groups a task's undo steps into one, and sends the event to the chat
+/// window. A window that is closed is not an error.
 fn sink(app: &AppHandle, context: Arc<AppContext>) -> Sink {
     let app = app.clone();
     let sealer = Mutex::new(Sealer::default());
     Arc::new(move |event| {
-        let seal = sealer
+        let transition = sealer
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
             .observe(&event);
-        if seal {
-            edit::seal_undo(&context);
+        // Before the window hears of the change, so that it never reads the uncollapsed history.
+        if transition.ended {
+            edit::end_undo_group(&context, UNDO_LABEL);
+        }
+        if transition.started {
+            edit::begin_undo_group(&context);
         }
         if let Err(error) = app.emit_to(CHAT, EVENT, &event) {
             log::debug!("chat: the window is gone: {error}");
@@ -141,8 +166,8 @@ pub fn install(app: &AppHandle) {
 }
 
 /// The chat window was destroyed: the history belongs to the window, so the run stops and the
-/// chat is wiped. Runs off the UI thread, since the wipe tells the sink, which seals the undo
-/// history.
+/// chat is wiped. Runs off the UI thread, since the wipe tells the sink, which closes the undo
+/// group.
 pub fn window_closed(app: &AppHandle) {
     wipe(app, "the window closed");
 }
@@ -332,60 +357,80 @@ mod tests {
         }
     }
 
+    const NONE: Transition = Transition {
+        ended: false,
+        started: false,
+    };
+    const START: Transition = Transition {
+        ended: false,
+        started: true,
+    };
+    const END: Transition = Transition {
+        ended: true,
+        started: false,
+    };
+    const SWITCH: Transition = Transition {
+        ended: true,
+        started: true,
+    };
+
     #[test]
-    fn the_undo_history_is_sealed_when_a_task_starts_and_when_it_ends() {
+    fn the_undo_group_opens_when_a_task_starts_and_closes_when_it_ends() {
         let mut sealer = Sealer::default();
         let steps = [
             // queued behind nothing: not running yet
-            (changed(1, vec![task(1, TaskState::Queued)]), false),
-            (changed(1, vec![task(1, TaskState::Running)]), true),
-            // another change while it runs (a second task queued): no seal
+            (changed(1, vec![task(1, TaskState::Queued)]), NONE),
+            (changed(1, vec![task(1, TaskState::Running)]), START),
+            // another change while it runs (a second task queued): no transition
             (
                 changed(
                     1,
                     vec![task(1, TaskState::Running), task(2, TaskState::Queued)],
                 ),
-                false,
+                NONE,
             ),
             (
                 changed(
                     1,
                     vec![task(1, TaskState::Done), task(2, TaskState::Queued)],
                 ),
-                true,
+                END,
             ),
             (
                 changed(
                     1,
                     vec![task(1, TaskState::Done), task(2, TaskState::Running)],
                 ),
-                true,
+                START,
             ),
             (
                 changed(
                     1,
                     vec![task(1, TaskState::Done), task(2, TaskState::Failed)],
                 ),
-                true,
+                END,
             ),
-            // nothing runs: the same state again does not seal
+            // nothing runs: the same state again is no transition
             (
                 changed(
                     1,
                     vec![task(1, TaskState::Done), task(2, TaskState::Failed)],
                 ),
-                false,
+                NONE,
             ),
         ];
-        for (index, (event, seals)) in steps.iter().enumerate() {
-            assert_eq!(sealer.observe(event), *seals, "step {index}");
+        for (index, (event, transition)) in steps.iter().enumerate() {
+            assert_eq!(sealer.observe(event), *transition, "step {index}");
         }
     }
 
     #[test]
-    fn a_wipe_under_a_running_task_seals_and_run_events_never_do() {
+    fn a_wipe_under_a_running_task_ends_it_and_run_events_never_do() {
         let mut sealer = Sealer::default();
-        assert!(sealer.observe(&changed(1, vec![task(1, TaskState::Running)])));
+        assert_eq!(
+            sealer.observe(&changed(1, vec![task(1, TaskState::Running)])),
+            START
+        );
         let run = ChatEvent::Run {
             task_id: TaskId::from_raw(1),
             generation: 1,
@@ -393,13 +438,24 @@ mod tests {
                 text: "hi".to_owned(),
             },
         };
-        assert!(!sealer.observe(&run), "a run event is not a transition");
-        assert!(
+        assert_eq!(
+            sealer.observe(&run),
+            NONE,
+            "a run event is not a transition"
+        );
+        assert_eq!(
             sealer.observe(&changed(2, Vec::new())),
+            END,
             "the wipe ends the task"
         );
         // The first task of the new generation reuses the id: it is a new run all the same.
-        assert!(sealer.observe(&changed(2, vec![task(1, TaskState::Running)])));
-        assert!(sealer.observe(&changed(3, vec![task(1, TaskState::Running)])));
+        assert_eq!(
+            sealer.observe(&changed(2, vec![task(1, TaskState::Running)])),
+            START
+        );
+        assert_eq!(
+            sealer.observe(&changed(3, vec![task(1, TaskState::Running)])),
+            SWITCH
+        );
     }
 }

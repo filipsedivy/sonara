@@ -29,7 +29,9 @@ break the API. The project format is versioned independently, see
   an input-method composition from sending a message, announces the outcome of each task to
   screen readers, and quitting Sonara now ends a running agent before the process exits. A Codex
   chat run still receives the global instructions of the user's Codex configuration
-  (`AGENTS.md`); its user skills are left out.
+  (`AGENTS.md`); its user skills are left out. A whole task is one undo step: Edit → "Undo AI
+  Chat" reverts everything the task did, and Redo brings it back. An edit you make yourself while
+  the task runs stays a separate step.
 
 ### Changed
 
@@ -37,6 +39,15 @@ break the API. The project format is versioned independently, see
   panel are gone. The Claude Code command line of a run (tool boundaries, isolation, the pinned
   session) is unchanged and is the Claude Code provider of the chat; chat turns add
   `--no-session-persistence` and a chat addition to the system prompt.
+
+## [0.1.12] — 2026-10-30
+
+### Changed
+
+- **AI Composer: a whole run is one undo step.** Edit → "Undo AI Composer" reverts everything the
+  run did, and Redo brings it back. Before, every tool call of the agent was a step of its own. An
+  edit you make yourself while the run goes stays a separate step. No tool, schema or CLI
+  contract changes.
 
 ## [0.1.11] — 2026-10-29
 

@@ -52,9 +52,18 @@ project ids are not shifted by chatting.
      error). A Claude Code run whose session start reports the `sonara` MCP server as failed is
      ended at once and fails with that reason.
 
-   The undo history is sealed when a task starts running and when it ends, so your next edit
-   never merges into the agent's last step. Each tool call of the agent is its own undo step; a
-   task is not one step.
+   A task is one undo step, **Undo AI Chat**, and a stopped or failed task is one too:
+
+   - When a task starts running, the window's undo history opens a group
+     (`ProjectSession::begin_undo_group`) and seals the last step. While the task goes, its
+     steps (source `agent`) stay separate, so the agent's own `undo` tool still takes back exactly
+     one step instead of the whole task.
+   - When the task has reached a final state, and before the window hears of it, the group is
+     closed (`end_undo_group`): the task's steps become one, with the project from before the
+     first as its `before` and the one after the last as its `after`. The step is sealed, so your
+     next edit never merges into it. A task that changed nothing leaves the history alone.
+   - Nothing about the tools changes (CTR-01): this is a rule of the window's history, not of the
+     agent API.
 
 ## The queue
 
@@ -337,7 +346,11 @@ of the message.
 - One run at a time. At most 200 turns for Claude Code (`--max-turns`); Codex has no turn limit
   set. A message is at most 16 000 characters.
 - At most 50 waiting tasks in the queue.
-- Each tool call of the agent is its own undo step; a task is not one step.
+- An edit **you** make while a task runs is a step of its own and splits the task into two steps
+  (before and after it). Each undo snapshot is the whole project, so merging it would take your
+  edit along. Another agent attached to the same window also has the source `agent`, and its edits
+  during a task join the task's step. The history keeps 500 steps; a task of more steps than that
+  loses its oldest ones before the group is closed.
 - Claude Code reports a client-side cost estimate and a turn count. Codex reports tokens only,
   no cost and no turn count, and no text deltas: the window shows whole messages.
 - The tools that Codex denied are found by matching the error text of a refused call. That text
@@ -346,9 +359,8 @@ of the message.
   measured. Whether `sonara mcp` exits on its own after its provider was killed is not
   measured either.
 - An edit that an old run still lands after a wipe (the stop is a `SIGINT`, and a tool call that
-  is already in flight completes) is not sealed into an undo step of its own: the history is
-  sealed when the controller publishes a change, and the exit of a wiped generation publishes
-  none. It can merge with the user's next edit, and after a project was replaced it lands in the
+  is already in flight completes) is not part of the closed undo group: the group is closed
+  when the controller publishes a change, and the exit of a wiped generation publishes none. It can merge with the user's next edit, and after a project was replaced it lands in the
   new project.
 - macOS (Unix) only: the run module uses process groups and signals.
 

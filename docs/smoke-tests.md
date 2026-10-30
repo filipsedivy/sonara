@@ -49,3 +49,46 @@ Once they merge, wiring means adding agent tools or app services that call their
 (`Orchestrator`, `analyze_reference_file`, `TrackMeter::is_clipping`, `check_project`) and
 extending this path; the tools' schemas are part of CTR-01 and change only by a deliberate,
 versioned decision, which is why none of them were wired by their own tasks.
+
+## By hand: the AI menu and the AI Chat in the bundled app (owner)
+
+Not a CI gate and not automated (HW-01): it needs the bundled `Sonara.app` started from the
+Finder, a signed-in Claude Code and a person who looks at the native menu bar. The automated
+parts are covered elsewhere: the menu model's order, with the AI menu between View and Window
+(`crates/sonara-app/tests/gui_menus.rs`), the window's page tests (`tests/page/chat.spec.ts`)
+and a run against a fake `claude` (`sonara_app::chat`). What only the bundle can show is that
+the native menu is built from that model, and that the run finds `claude` and the bundled CLI
+from the Finder's minimal `PATH`.
+
+**Prerequisites.** Apple Silicon Mac with macOS 26 or newer, and Claude Code 2.1.259 or newer,
+installed and signed in (`claude --version`, then `claude` once in a terminal). Quit any running
+Sonara first, so that the window you see is the only instance.
+
+1. **Build.** `scripts/bundle-macos.sh` (it needs `target/native` from
+   `scripts/native/build-codecs.sh`). It checks that `Contents/MacOS/sonara`, the CLI of the run,
+   is in the bundle. The app is `target/release/bundle/macos/Sonara.app`.
+2. **Start from the Finder.** Double-click `Sonara.app` (or `open target/release/bundle/macos/Sonara.app`).
+   Do not start it from a terminal: that would hand it your shell's `PATH`, which hides the
+   problem this check is for. The first start of an ad-hoc signed app may need right-click →
+   Open.
+3. **Menu bar.** Read it from left to right: **Sonara, File, Edit, Track, Transport, View, AI,
+   Window, Help**. Open **AI**: it holds one item, **AI Chat (Beta)…**. Expected: the AI menu sits
+   between View and Window.
+4. **Window.** Create or open a project (File → New Project… or Open…), then choose **AI → AI Chat (Beta)…**. Expected:
+   a chat window, not a modal dialog (the window and its menus stay usable), that shows the path
+   and version of Claude Code as ready. Not expected: "the sonara command line tool is
+   missing", "cannot find Claude Code" or "agents cannot attach to this window".
+5. **Run.** Prompt: `Add a drum track with a one-bar beat at 100 BPM.` Send it. Expected:
+   tracks and notes appear on the timeline while the step log fills, and the task ends as done.
+6. **One undo step.** Open **Edit**: the first item reads **Undo AI Chat**. Press ⌘Z once:
+   everything the run added is gone and the project equals the one before the run. ⇧⌘Z brings it
+   all back. If the run was only a question and changed nothing, there is nothing to undo.
+7. **Stop.** Start a longer prompt (`Compose a three-minute song in four sections.`), press Stop
+   after a few steps. Expected: the task is shown as stopped, and **Edit → Undo AI Chat**
+   removes the part that was written.
+8. **Quit.** ⌘Q during a run. Expected: Sonara quits and
+   `pgrep -fl 'claude -p|sonara mcp'` shows no process left over from it (a plain `claude` is your
+   own session, not the run's).
+
+Write the result (macOS version, Claude Code version, which steps passed) next to the check in
+`docs/implementation-status.md`, under "Open checks", and remove the item when every step passed.
