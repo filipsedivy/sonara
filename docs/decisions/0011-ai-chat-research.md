@@ -37,12 +37,12 @@ Backs [0011-ai-chat-provider-bridge.md](0011-ai-chat-provider-bridge.md). Resear
 | `--restricted`, `--setting-sources`, `--bare` exist and could narrow isolation; not used | run (flags listed) | `--help`, 2.1.308 |
 | The composer argv is `-p --output-format stream-json --verbose --include-partial-messages --strict-mcp-config --mcp-config <json> --permission-mode dontAsk --permission-prompts none --allowedTools mcp__sonara,WebSearch,WebFetch --disallowedTools <18 names> --max-turns 200 --append-system-prompt <text>`, prompt on stdin | source | `crates/sonara-app/src/composer/invocation.rs` |
 | `DENIED_TOOLS` has 18 entries: `Bash`, `Edit`, `Write`, `NotebookEdit`, `AskUserQuestion` and 13 `mcp__sonara__*` tools (`save_project`, `open_project`, `create_project`, `export_audio`, `export_midi`, `export_stems`, `render_preview`, `relink_media`, `start_recording`, `set_midi_input`, `verify_project`, `analyze_audio`, `get_audio_analysis`) | source | `invocation.rs` |
-| `WebSearch` and `WebFetch` are allowed on purpose | source | `ALLOWED_TOOLS` in `invocation.rs`; `docs/ai-composer.md` |
-| `~/.claude` hooks and `CLAUDE.md` still load | source (documented by the module) | `invocation.rs` module docs; `docs/ai-composer.md` |
+| `WebSearch` and `WebFetch` are allowed on purpose | source | `ALLOWED_TOOLS` in `invocation.rs`; `docs/ai-chat.md` (the former `docs/ai-composer.md`) |
+| `~/.claude` hooks and `CLAUDE.md` still load | source (documented by the module) | `invocation.rs` module docs; `docs/ai-chat.md` (the former `docs/ai-composer.md`) |
 | Minimum version 2.1.259 | source (a repo constant; the reason given is `--permission-prompts`) | `locate.rs` `MIN_VERSION`; not re-bisected |
 | `Run::stop` sends SIGINT to the pid, SIGTERM to the process group after 10 s, SIGKILL after 5 s more; the child leads its own process group | source | `crates/sonara-app/src/composer/run.rs` |
 | SIGINT makes Claude emit a `result` and exit 130 | source (the module's documented rationale; tested with a fake `claude`, not a real one) | `run.rs` docs and tests |
-| A Claude run that is not signed in is reported in its result, not probed beforehand | source | `docs/ai-composer.md` |
+| A Claude run that is not signed in is reported in its result, not probed beforehand | source | `docs/ai-chat.md` (the former `docs/ai-composer.md`) |
 | `total_cost_usd` and token usage are in the `result` event | source | `composer/stream.rs` |
 
 ## 2. Codex CLI 0.166.0
@@ -109,6 +109,10 @@ Source: `codex-rs/exec/src/exec_events.rs` and `event_processor_with_jsonl_outpu
 | Destructive MCP tools | `requires_mcp_tool_approval` is true for `destructiveHint == true`, false for `readOnlyHint == true`, and false when `destructiveHint=false` and `openWorldHint=false`; with approval `never` the call is denied ("MCP tool call requires approval, but approval policy is never"). `default_tools_approval_mode="approve"` would disable this | source | `core/src/mcp_tool_call.rs` (`requires_mcp_tool_approval`, `custom_mcp_tool_approval_mode`) |
 | Sonara annotations | `readOnlyHint = (safety == Read)`, `destructiveHint = (safety == Destructive)`, `openWorldHint = false`; Destructive tools: `create_project`, `open_project`, `delete_track`, `export_audio`, `export_stems`, `export_midi` | source | `crates/sonara-agent/src/mcp/mod.rs`, `contract/tools.rs` |
 | Tools that stay | `update_plan`; MCP resource tools (`list_mcp_resources`, `list_mcp_resource_templates`, `read_mcp_resource`) whenever an MCP server exists; `apply_patch` | source | `spec_plan.rs` |
+| Tools that stay with the argv of the chat | at the top level `exec` (code mode: a JavaScript sandbox with no file system and no network), `wait`, `request_user_input`, `request_user_input_async`, `clock`, `sleep`; inside `exec` `apply_patch`, the three MCP resource tools and `clock__curr_time`. `update_plan` did not appear. Run without the `sonara` server, so its tools are not in this listing | run | `codex debug prompt-input`, 0.166.0, `crates/sonara-app/tests/chat_codex_binary.rs` |
+| `features.multi_agent=false` is not enough to remove the sub-agent tools; `agents.enabled=false` is | run (the model was still offered `spawn_agent`, `send_message` and `followup_task` with the first alone) | `codex debug prompt-input`, 0.166.0; the test asserts they are gone with both |
+| `features.code_mode` and `features.code_mode_host` do not remove `exec` | run (reported by the implementer; no committed test) | `codex debug prompt-input`, 0.166.0 |
+| The Sonara MCP tools are among the tools nested in `exec`; whether a nested call is an `mcp_tool_call` item | the first part: run (reported by the implementer); the second: not verified | `codex debug prompt-input`, 0.166.0 |
 | Hooks under `--ignore-user-config`, `$CODEX_HOME` `AGENTS.md` and skills | whether they still load | assumption (not checked) | |
 | Whether `model_catalog_json` can remove `apply_patch` | not checked | assumption | |
 

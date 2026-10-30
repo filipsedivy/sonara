@@ -1,16 +1,17 @@
 # ADR 0011: AI Chat provider bridge (native CLI adapters, no ACP, no Node)
 
-- **Status:** Accepted (2026-10-30)
+- **Status:** Accepted (2026-10-30); corrected after the implementation (2026-10-30), see
+  "Corrections after the implementation"
 - **Deciders:** Sonara core, for the `feature/ai-chat` branch.
 - **Research:** [0011-ai-chat-research.md](0011-ai-chat-research.md) holds every fact below with
   its source, version and status (verified or assumption).
 
 ## Context
 
-The AI Composer (`sonara_app::composer`, [docs/ai-composer.md](../ai-composer.md)) runs one
-headless `claude -p` per press of Compose. It is a single, one-shot run of one provider. AI Chat
-(Beta) is meant to be a conversation: a queue of tasks that run one after another, a thread that
-keeps the earlier tasks, and a choice of provider. Claude Code stays the reference backend.
+The AI Composer (`sonara_app::composer`; its document, `docs/ai-composer.md`, became
+[docs/ai-chat.md](../ai-chat.md)) runs one headless `claude -p` per press of Compose. It is a
+single, one-shot run of one provider. AI Chat (Beta) is meant to be a conversation: a queue of
+tasks that run one after another, a thread that keeps the earlier tasks, and a choice of provider. Claude Code stays the reference backend.
 OpenAI's Codex CLI is the second. Google's Gemini CLI was researched.
 
 The constraints that decide the design:
@@ -50,7 +51,7 @@ Three ways to reach several providers were compared.
 | MCP hand-off of the `sonara` server | Claude: `--mcp-config` JSON (`env` is a map). Codex: `-c mcp_servers.sonara.*`. Gemini: a settings file. Three wire forms from one `McpSpec`. | One form: `session/new` `mcpServers`, stdio entry (`env` is an array of `{name, value}`). | Two forms. |
 | Parsers | Two (Claude, Codex); a third for Gemini if it is ever built. | One event model plus a JSON-RPC client and its handlers (a `block_task` inside a request handler deadlocked the spike). | Two plus one. |
 | Maturity | The Claude path exists and is tested. Codex `exec --json` is a documented, versioned event schema. | Crate 3.0.0 to 3.6.0 between 2026-10-06 and 2026-10-28; protocol v2 is a draft that changes the MCP server shape. | As B. |
-| Lines of code | Claude today: `composer/` is 1,677 lines including tests (`stream.rs` 469, `run.rs` 413). A Codex adapter is not written yet; its size is not known. | Spike: 108 lines for `initialize`, `session/new`, one prompt and one permission request against the researcher's own agent. Not representative of real adapters. | Not estimated. |
+| Lines of code | Claude today: `composer/` is 1,677 lines including tests (`stream.rs` 469, `run.rs` 413). The Codex adapter, written afterwards, is `chat/providers/codex/`: 2,054 lines including tests. | Spike: 108 lines for `initialize`, `session/new`, one prompt and one permission request against the researcher's own agent. Not representative of real adapters. | Not estimated. |
 
 ## Decision
 
@@ -96,7 +97,7 @@ trait Provider: Send + Sync {
     fn id(&self) -> ProviderId;                     // "claude" | "codex"
     fn name(&self) -> &str;
     fn detect(&self) -> ProviderStatus;             // off the UI thread, never reads token files
-    fn build(&self, &Located, &Workspace, &Turn) -> Invocation;
+    fn build(&self, &Located, sonara_cli: &Path, &Workspace, &Turn) -> Invocation;
     fn parser(&self) -> Box<dyn LineParser>;        // stateful: Codex items need correlation
     fn stop_policy(&self) -> StopPolicy;
 }
@@ -106,23 +107,28 @@ Run::start_with(invocation, workspace, parser, stop_policy, sink)
 - **Normalised events.** The existing `composer::stream::Event` (`Init`, `Text`, `ToolUse`,
   `ToolResult`, `Retry`, `Result`, `Stderr`, `Output`, `Exited`), unchanged, so the Composer
   panel and its tests keep working. Fields a provider cannot fill are `None`: Codex reports tokens
-  but no cost, no turn count and no denied-tools list; it delivers whole messages, not deltas.
+  but no cost and no turn count; it delivers whole messages, not deltas.
   `Exited` is always last.
-- **Intended Codex mapping** (details live in the adapter): `thread.started` to `Init`;
+- **Codex mapping** (the parser is `chat/providers/codex/stream.rs`): `thread.started` to `Init`;
   `item.completed` `agent_message` to `Text`; `mcp_tool_call` start and end to `ToolUse` and
-  `ToolResult` (`ok` is `status == completed`); `turn.completed` and `turn.failed` to `Result`;
-  top-level `error` and `item` type `error` to `Retry` or `Output`, never to a failure by
-  themselves (they are not always fatal). Any `command_execution`, `file_change`, `web_search`
-  or `collab_tool_call` item is a boundary violation that the adapter surfaces, not hides.
-  Unknown item types and new fields are tolerated.
+  `ToolResult` (`ok` is `status == completed`); `turn.completed` and `turn.failed` to `Result`.
+  A `reasoning` item, a `todo_list` item and `item.updated` produce no event. A top-level `error`
+  and an `error` item become `Stderr`, never a failure by themselves (they are not always
+  fatal). Any `command_execution`, `file_change`, `web_search`, `collab_tool_call` or MCP call
+  of another server is a boundary violation that the adapter surfaces (a `Stderr` line
+  starting with `boundary:` and a failed tool call), and **so is any item type the parser does
+  not know**. Unknown top-level events and new fields are ignored. The `denied-tools` list of
+  the result is not reported by Codex: the parser builds it by matching the error text of a
+  refused call (`requires approval`, `approval policy`, `rejected`), which was read from source
+  and has not been seen in a real run.
 - **Per-provider `StopPolicy`** (first signal, graces, escalation), because the providers stop
   differently:
 
   | Provider | On SIGINT | Policy |
   |---|---|---|
-  | Claude 2.1.308 | emits a `result`, exits 130 (existing behaviour, `run.rs`) | SIGINT to the pid, 10 s, SIGTERM to the group, 5 s, SIGKILL (unchanged) |
-  | Codex 0.166.0 | first SIGINT interrupts the turn; no `turn.*` event; exit 1; a second SIGINT is swallowed; no SIGTERM handler found in `exec` | SIGINT, a short grace, then SIGKILL to the group (no SIGTERM step). The grace is a code constant; not measured. |
-  | Gemini 0.66.0 (assessed) | stable: no `result` event; nightly: `result` with `FatalCancellationError`, exit 130 | would be SIGINT, grace, SIGKILL; not implemented |
+  | Claude 2.1.308 | emits a `result`, exits 130 (existing behaviour, `run.rs`) | SIGINT to the pid, 10 s, SIGTERM to the group, 5 s, SIGKILL to the group (unchanged) |
+  | Codex 0.166.0 | first SIGINT interrupts the turn; no `turn.*` event; exit 1; a second SIGINT is swallowed; no SIGTERM handler found in `exec` | SIGINT to the pid, 4 s, SIGTERM to the group, 2 s, SIGKILL to the group. `StopPolicy` holds two graces and `run.rs` is shared, so Codex has the same three steps as Claude with shorter graces. The graces are code constants; not measured. |
+  | Gemini 0.66.0 (assessed) | stable: no `result` event; nightly: `result` with `FatalCancellationError`, exit 130 | not implemented |
 
 - **`cancelled` is decided by the host.** `Event::Exited.stopped` (the host's stop flag) is the
   only source of the `cancelled` state. Never the exit code (Codex exits 1 on both failure and
@@ -189,13 +195,14 @@ defined in the last section.
 |---|---|---|---|
 | No shell | `--disallowedTools Bash`, `--permission-mode dontAsk`, `--permission-prompts none`; `Bash` is not in `--allowedTools` | `-c features.shell_tool=false` (shell and unified-exec tools are not registered, from source); `-s read-only`; exec forces approval policy `never` | deny-all policy rule (`toolName="*"`, priority 900) plus the headless denial of `run_shell_command`; `tools.core=[]` in the injected system settings |
 | No file write | `--disallowedTools Edit,Write,NotebookEdit` | `-s read-only` with approval `never`. `apply_patch` cannot be removed by config: the model still sees it and the call is rejected by sandbox and approval policy (`file_change` item, status `failed`). | the same deny-all rule; `write_file` and `replace` are denied in headless mode by default |
-| No web | **Not blocked, by design**: `WebSearch` and `WebFetch` are in `--allowedTools` (prompt-injection risk accepted and documented in `ai-composer.md`) | `-c web_search="disabled"` | optional allow rules for `google_web_search` and `web_fetch`; read-only tools such as `read_file` are allowed by default, so deny-all is needed |
-| No other tool sources | `--strict-mcp-config` with our `--mcp-config`: the user's MCP servers do not load | `-c features.apps=false`, `features.plugins=false`, `features.multi_agent=false`, `features.view_image=false`, `features.hooks=false`, `features.memories=false`, `features.tool_suggest=false`, `features.request_permissions_tool=false`; `--ignore-user-config` (no `$CODEX_HOME/config.toml`), `--ignore-rules` | `--allowed-mcp-server-names sonara`; `hooksConfig.enabled=false` in the injected settings |
-| Only our MCP server | `--mcp-config` with `sonara` (`env` map) | `-c mcp_servers.sonara.command`, `.args`, `.env`, `.required=true`, `.enabled_tools`, `.disabled_tools`. `required=true` makes a server that fails to start abort the run before any event, exit 1 (run). | system settings `mcpServers.sonara` through `GEMINI_CLI_SYSTEM_SETTINGS_PATH` (merged last) |
-| Sonara tool deny list | `--disallowedTools` with 13 `mcp__sonara__*` names; deny wins over the server-wide allow `mcp__sonara` | `disabled_tools` (the same 13 bare names) after `enabled_tools`. In addition, tools annotated `destructiveHint=true` (`create_project`, `open_project`, `delete_track`, `export_audio`, `export_stems`, `export_midi`) are denied by Codex under approval `never` (from source), so `delete_track` is blocked even though Claude allows it with a confirmation | `--policy` file, user tier: allow `mcpName="sonara"` at 950, deny list at 990 |
+| No web | **Not blocked, by design**: `WebSearch` and `WebFetch` are in `--allowedTools` (prompt-injection risk accepted and documented in `ai-chat.md`) | `-c web_search="disabled"` | optional allow rules for `google_web_search` and `web_fetch`; read-only tools such as `read_file` are allowed by default, so deny-all is needed |
+| No other tool sources | `--strict-mcp-config` with our `--mcp-config`: the user's MCP servers do not load | `-c features.apps=false`, `features.plugins=false`, `features.multi_agent=false`, `features.view_image=false`, `features.hooks=false`, `features.memories=false`, `features.tool_suggest=false`, `features.request_permissions_tool=false`, **and `-c agents.enabled=false`**: with `features.multi_agent=false` alone the model is still offered `spawn_agent`, `send_message` and `followup_task` (found with `codex debug prompt-input` on 0.166.0); `--ignore-user-config` (no `$CODEX_HOME/config.toml`), `--ignore-rules` | `--allowed-mcp-server-names sonara`; `hooksConfig.enabled=false` in the injected settings |
+| Only our MCP server | `--mcp-config` with `sonara` (`env` map) | `-c mcp_servers.sonara.command`, `.args`, `.env`, `.required=true`, `.enabled_tools`, `.disabled_tools`, `.startup_timeout_sec=30`. `required=true` makes a server that fails to start abort the run before any event, exit 1 (run). The rest of the argv is `exec --json --ephemeral --skip-git-repo-check --color never -s read-only` and the prompt on stdin (`-`). | system settings `mcpServers.sonara` through `GEMINI_CLI_SYSTEM_SETTINGS_PATH` (merged last) |
+| Sonara tool deny list | `--disallowedTools` with 13 `mcp__sonara__*` names; deny wins over the server-wide allow `mcp__sonara` | `enabled_tools` with 44 of the 57 tools (every tool of the Agent API that is not denied; a test compares the list with `docs/agent-api.md` in both directions) and `disabled_tools` (the same 13 bare names) after it. In addition, tools annotated `destructiveHint=true` (`create_project`, `open_project`, `delete_track`, `export_audio`, `export_stems`, `export_midi`) are denied by Codex under approval `never` (from source), so `delete_track` is blocked even on an empty track, where Claude allows it without a confirmation (not verified at run time) | `--policy` file, user tier: allow `mcpName="sonara"` at 950, deny list at 990 |
 | No prompts, no escalation | `dontAsk` and `--permission-prompts none` | exec's harness policy is `never`; `-c approvals_reviewer="user"` (the schema default) so a user config cannot route to `auto_review`; exec auto-cancels MCP elicitations and rejects other approval requests. Never `--yolo` or any `--dangerously-bypass-*` flag. | `--approval-mode default`; `ask_user` is denied in headless mode; folder trust needs `--skip-trust` in the app-owned empty cwd |
 | Reject a typo or a renamed key | not applicable | `--strict-config`: an unknown `-c` key aborts with exit 1 (run) | not applicable |
-| No provider transcript | `--no-session-persistence` (to be added in the chat argv) | `--ephemeral` | none found; transcripts go to `~/.gemini/tmp` |
+| No provider transcript | `--no-session-persistence` (added to chat turns only, and the chat refuses a Claude Code whose `claude --help` does not list it) | `--ephemeral` | none found; transcripts go to `~/.gemini/tmp` |
+| System prompt | `--append-system-prompt`: the composer's prompt and the chat addendum in the same value (a second flag would replace the first) | `-c developer_instructions`: the same text. It still says the agent has `WebSearch` and `WebFetch`, which Codex lacks | not implemented |
 | `CONFIRMATION_REQUIRED` | prompt rule only (`system_prompt.md`) | prompt rule only (`developer_instructions`), plus the destructive-tool denial above | prompt rule only |
 
 **What each backend cannot enforce.**
@@ -203,8 +210,9 @@ defined in the last section.
 - **On every backend, replaying a confirmation token is a prompt-level rule.** The token is a
   Sonara protocol value returned in a tool result. A model can resend the identical call with
   `confirmation_token`, and the user can turn confirmations off in Settings
-  ([agent-api.md](../agent-api.md)). `ai-composer.md` says such a step "cannot be confirmed by a
-  headless run"; that overstates a prompt rule. A hard rule needs server-side support, and the
+  ([agent-api.md](../agent-api.md)). The former `ai-composer.md` said such a step "cannot be
+  confirmed by a headless run"; that overstated a prompt rule, and `ai-chat.md` now says it is
+  one on every backend. A hard rule needs server-side support, and the
   server has no tool filter: `ClientContext` carries only `base_dir` and `allowed_paths`, a path
   allow-list, and `sonara mcp` has no option that restricts tools. Adding one touches CTR-01, so
   it is not done here; an API backend (above) is the other way.
@@ -212,8 +220,15 @@ defined in the last section.
   flag, accepted by 2.1.308 but absent from `--help`, so a release could drop it. Web access is
   allowed.
 - **Codex:** `apply_patch` stays visible to the model and relies on the sandbox and approval
-  rejection; `update_plan` and the MCP resource tools (`list_mcp_resources`,
-  `read_mcp_resource`) cannot be switched off, but reach only the `sonara` server. There is no
+  rejection. The model is also offered a code-mode `exec` tool (a JavaScript sandbox with no file
+  system and no network) whose nested tools include `apply_patch`, the MCP resource tools
+  (`list_mcp_resources`, `list_mcp_resource_templates`, `read_mcp_resource`), the clock tools and,
+  according to the first probe, the Sonara MCP tools; and, at the top level, `wait`,
+  `request_user_input`, `request_user_input_async`, `clock` and `sleep`. The keys
+  `features.code_mode` and `features.code_mode_host` did not remove `exec`. None of these can be
+  switched off by configuration; they are rejected or inert because of the sandbox and the
+  approval policy, and the MCP resource tools reach only the `sonara` server. Whether a Sonara
+  call made inside `exec` shows up as an `mcp_tool_call` item is **not verified**. There is no
   "only these tools" switch, so the boundary is a list of keys that must be re-checked on each
   Codex upgrade. Whether `$CODEX_HOME` level `AGENTS.md`, skills and `hooks.json` still load
   under `--ignore-user-config` was not verified. Auth stays in the real `CODEX_HOME`.
@@ -251,13 +266,17 @@ defined in the last section.
    discipline and a live deny test first.
 9. **Web access follows the existing Claude composer** (allowed) and is off for Codex
    (`web_search="disabled"`).
+10. **Claude Code is `ready` only when `claude --help` lists `--no-session-persistence`.** The
+    chat passes the flag to every run, so a Claude Code that does not list it would refuse every
+    task; one that is older is `too_old`, and one that cannot be asked is `unsupported`.
 
 ## Consequences
 
 - **The Composer's Claude path does not change.** Its argv, deny list and `Run::start` stay byte
-  for byte. Only chat turns add `--no-session-persistence` (the chat contract says both that the
-  Claude argv does not change and that chat runs are not persisted; this ADR reads it as: the
-  Composer argv is frozen, chat turns add the one flag).
+  for byte. Chat turns add `--no-session-persistence` and the chat addendum to the system prompt
+  value (the chat contract says both that the Claude argv does not change and that chat runs are
+  not persisted; this ADR reads it as: the Composer argv is frozen, chat turns add the flag and
+  the addendum).
 - **Each provider is a boundary to maintain.** Codex's boundary is about a dozen `-c` keys whose
   names have changed across releases. `--strict-config` makes a renamed or removed key abort the
   run loudly (it fails closed) instead of silently reopening a tool, so a Codex upgrade can
@@ -278,6 +297,10 @@ defined in the last section.
   Codex release that changes read-only or the exec approval override would open it. Keep `-s
   read-only` and a test of the argv.
 - `CONFIRMATION_REQUIRED` replay is not blocked on any backend.
+- The tools nested in Codex's code-mode `exec` include the Sonara MCP tools, and `exec` cannot be
+  disabled by configuration. The Sonara tool lists (`enabled_tools`, `disabled_tools`) are the
+  boundary there as well; whether a nested call is reported as an `mcp_tool_call` item (and so
+  shown in the window) is not verified.
 - An orphaned `sonara mcp` after a SIGKILL of the provider: unmeasured whether it exits on stdin
   EOF.
 - The destructive-tool denial in Codex depends on MCP annotations. `disabled_tools` repeats the
@@ -314,6 +337,24 @@ defined in the last section.
     events are not terminal, and `detect()` must use `codex login status` rather than a run.
   - An `--ephemeral` run created no `sessions/` directory, but did create SQLite state files in
     `CODEX_HOME`.
+- **codex 0.166.0, `crates/sonara-app/tests/chat_codex_binary.rs`** (run and passed on
+  2026-10-30; no login, no quota, a private empty `CODEX_HOME`):
+  - the whole command line of the chat, `--strict-config` included, loads: the run ends only
+    because the required `sonara` server (a command that cannot start) fails to initialise,
+    before any turn, exit 1;
+  - the developer instructions (the composer prompt and the chat addendum) come back from
+    `codex debug prompt-input` exactly as written, so the TOML escaping is right;
+  - none of `exec_command`, `write_stdin`, `view_image`, `spawn_agent`, `send_message` and
+    `followup_task` is offered, at the top level or inside `exec`;
+  - with this argv the model is offered `exec`, `wait`, `request_user_input`,
+    `request_user_input_async`, `clock` and `sleep` at the top level, and inside `exec`
+    `apply_patch`, `list_mcp_resources`, `list_mcp_resource_templates`, `read_mcp_resource` and
+    `clock__curr_time`. The test runs without the `sonara` server, so the Sonara tools are not in
+    that listing; `update_plan` did not appear in it either;
+  - an unknown `-c` key (`features.shell_toool`) aborts the run with exit 1 under
+    `--strict-config`.
+- **claude**: the chat's availability check reads `claude --help` for `--no-session-persistence`
+  (`ClaudeProvider::status_checked`, unit-tested with a fake help text).
 
 **Verified from source** (openai/codex `rust-v0.166.0`; Gemini `v0.66.0` and `main` at b633c07;
 agent-client-protocol 3.6.0 and the 0.99.1 and 2.5.0 adapter packages): the Codex event schema
@@ -339,4 +380,41 @@ dependencies. All eleven feature keys checked (the nine used plus `codex_hooks` 
 - Whether `$CODEX_HOME` `AGENTS.md`, skills and `hooks.json` load under `--ignore-user-config`.
 - The Codex minimum version 0.147.0 is a bisect result, and the full `-c` set was only run on
   0.166.0.
-- A live deny test (shell, write, save, export, user MCP servers) for Codex and Gemini.
+- A live deny test (shell, write, save, export, user MCP servers) for Codex and Gemini, and for
+  Claude Code in the chat (`apps/sonara/tests/chat_live.rs` exists, is ignored by default, and has
+  no recorded run).
+- Whether a Sonara call made from inside Codex's code-mode `exec` shows up as an `mcp_tool_call`
+  item, and whether the code-mode `exec` tool can be disabled at all (`features.code_mode` and
+  `features.code_mode_host` did not remove it).
+- Whether `delete_track` is denied on Codex for a track without content (the `destructiveHint`
+  handling was read from source and not run).
+- The text of a denied-tool error and the marker matching that builds the list of denied tools:
+  from source, not seen in a real run.
+- The Codex stop graces (4 s and 2 s): code constants, not measured on a real turn.
+
+## Corrections after the implementation
+
+Facts found while building the chat, checked against the code. Each is also written into the
+sections above.
+
+1. **`agents.enabled=false` is part of the Codex set.** `features.multi_agent=false` alone still
+   leaves `spawn_agent`, `send_message` and `followup_task` offered (`codex debug prompt-input`,
+   0.166.0).
+2. **Codex offers a code-mode `exec` tool** (JavaScript sandbox, no file system, no network),
+   plus `wait`, `request_user_input`, `request_user_input_async` and the clock tools, besides
+   `apply_patch` and the MCP resource tools. `exec` could not be disabled by `features.code_mode`
+   or `features.code_mode_host`. Its nested tools include the Sonara MCP tools; whether a nested
+   call is reported as an `mcp_tool_call` item is not verified.
+3. **The Codex `StopPolicy` is SIGINT, 4 s, SIGTERM to the group, 2 s, SIGKILL to the group.**
+   `run.rs` is shared, so there is no Codex-only path without the SIGTERM step.
+4. **The Codex parser:** a `reasoning` item produces no event; an `error` item becomes `Stderr`
+   (as does a top-level `error`); an unknown item type is a boundary violation, not "tolerated".
+   The denied-tools list is derived from error text and is a heuristic.
+5. **`ClaudeProvider` checks `claude --help`** for `--no-session-persistence` and is `too_old` or
+   `unsupported` without it.
+6. **44 of the 57 tools are on the Codex allow-list.** `delete_track` is blocked on Codex by its
+   handling of `destructiveHint`, even on an empty track (not verified at run time).
+7. **The real-binary test `chat_codex_binary.rs` passed on 0.166.0:** the argv loads under
+   `--strict-config` and the developer instructions round-trip exactly.
+8. **`Provider::build` takes the path of the `sonara` tool**, and chat turns put the addendum in
+   the same `--append-system-prompt` value as the composer's prompt.
