@@ -29,9 +29,11 @@ impl InstrumentCatalog {
     /// Discovers the presets below the library directories `roots`.
     ///
     /// Never fails: a directory that is missing, is not a directory or has a broken manifest is
-    /// reported in [`Self::issues`] and the rest is still read. Hidden entries and symbolic links
-    /// are not followed ([`crate::samples::scan_patches`]). The scan reads directory entries and
-    /// the small manifests only; it opens no sample.
+    /// reported in [`Self::issues`] and the rest is still read. Hidden entries, symbolic links and
+    /// folders named `includes` are not followed ([`crate::samples::scan_patches`]); a manifest
+    /// entry that names a file in an `includes` folder is still listed. The scan reads directory
+    /// entries and the small manifests only; it opens no sample and parses no patch, so a patch
+    /// without regions is available until [`Self::verify`] loads it.
     #[must_use]
     pub fn discover(roots: &[PathBuf]) -> Self {
         let mut catalog = Self::default();

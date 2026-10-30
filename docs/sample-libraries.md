@@ -18,7 +18,9 @@ ships no samples (ADR 0010).
    ```
 
 3. Restart Sonara. The directories are scanned for `.sfz` files at startup (eight levels deep,
-   hidden folders and symbolic links skipped, at most 5,000 patches).
+   hidden folders, symbolic links and folders named `includes` skipped, at most 5,000 patches).
+   An `includes` folder holds the fragments that a library's patches include (Sonatina has 190
+   of them), which cannot be played on their own, so they are not offered as instruments.
 
 To replace or add a library, edit the list and restart. Projects store the patch's absolute path;
 on a machine without it the track plays silence and the render warns

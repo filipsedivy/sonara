@@ -5,6 +5,12 @@
 //! offered only when a configured directory holds at least one `.sfz` patch
 //! ([`sampler_descriptor`]). The scan reads directory entries only; patches are loaded when a
 //! track plays them, off the real-time thread.
+//!
+//! **Include fragments are not patches.** Libraries such as Sonatina keep the pieces their
+//! patches `#include` in folders named `includes` (190 `.sfz` files in Sonatina). A fragment
+//! holds no region of its own, or names its samples relative to the patch that includes it, so
+//! it cannot be played alone. The scan does not enter a folder named `includes` (in any case),
+//! so the fragments are neither presets nor choices of the sampler's `instrument` parameter.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -21,6 +27,9 @@ pub const LIBRARIES_KEY: &str = "sample_libraries";
 const MAX_DEPTH: usize = 8;
 /// The most patches a scan reports; a directory tree with more is cut short.
 pub const MAX_PATCHES: usize = 5_000;
+/// The name of the folders that hold include fragments, compared ignoring ASCII case; the scan
+/// does not enter them.
+const INCLUDES_DIR: &str = "includes";
 
 /// The library directories of `settings`: the strings of the `sample_libraries` list. Anything
 /// else in the key is ignored.
@@ -40,7 +49,10 @@ pub fn library_roots(settings: &Settings) -> Vec<PathBuf> {
 }
 
 /// The `.sfz` files below `roots`, as sorted absolute UTF-8 paths. Hidden entries and symbolic
-/// links are skipped, so a link cannot loop the scan; an unreadable directory is skipped.
+/// links are skipped, so a link cannot loop the scan; an unreadable directory is skipped. A
+/// folder named `includes` below a root, in any case, is skipped with everything in it: it holds
+/// fragments that other patches include, not patches (see the module documentation). A root is
+/// scanned whatever its name.
 #[must_use]
 pub fn scan_patches(roots: &[PathBuf]) -> Vec<String> {
     let mut found = Vec::new();
@@ -62,7 +74,8 @@ fn walk(dir: &Path, depth: usize, found: &mut Vec<String>) {
     };
     for entry in entries.flatten() {
         let path = entry.path();
-        let hidden = entry.file_name().to_string_lossy().starts_with('.');
+        let name = entry.file_name();
+        let hidden = name.to_string_lossy().starts_with('.');
         let Ok(kind) = entry.file_type() else {
             continue;
         };
@@ -70,7 +83,9 @@ fn walk(dir: &Path, depth: usize, found: &mut Vec<String>) {
             continue;
         }
         if kind.is_dir() {
-            walk(&path, depth + 1, found);
+            if !name.eq_ignore_ascii_case(INCLUDES_DIR) {
+                walk(&path, depth + 1, found);
+            }
         } else if path
             .extension()
             .is_some_and(|ext| ext.eq_ignore_ascii_case("sfz"))
@@ -131,6 +146,73 @@ mod tests {
         assert_eq!(names, ["Horn.SFZ", "Violin.sfz"]);
     }
 
+    /// The paths of `found` below `root`, `/`-separated.
+    fn relative(root: &std::path::Path, found: &[String]) -> Vec<String> {
+        found
+            .iter()
+            .map(|path| {
+                let parts: Vec<&str> = std::path::Path::new(path)
+                    .strip_prefix(root)
+                    .expect("below the root")
+                    .components()
+                    .map(|part| part.as_os_str().to_str().expect("UTF-8"))
+                    .collect();
+                parts.join("/")
+            })
+            .collect()
+    }
+
+    #[test]
+    fn include_fragments_are_not_patches() {
+        // TST-06: Sonatina's layout, where 190 fragments in `includes` folders were listed as
+        // patches next to the patches that include them.
+        let dir = tempfile::tempdir().expect("a tempdir");
+        let root = dir.path();
+        touch(&root.join("Strings - Notation/1st Violins.sfz"));
+        touch(&root.join("Strings - Notation/includes/1st-violins-sustain.sfz"));
+        touch(&root.join("Strings - Notation/INCLUDES/nested/vibrato.sfz"));
+        touch(&root.join("Includes/Common.sfz"));
+        // Only a folder with exactly that name is a fragment folder; a patch file named like it
+        // and a folder whose name merely contains it are scanned.
+        touch(&root.join("Brass/includes.sfz"));
+        touch(&root.join("Brass/my includes/Horn.sfz"));
+
+        let found = scan_patches(&[root.to_owned()]);
+
+        assert_eq!(
+            relative(root, &found),
+            [
+                "Brass/includes.sfz",
+                "Brass/my includes/Horn.sfz",
+                "Strings - Notation/1st Violins.sfz"
+            ]
+        );
+    }
+
+    #[test]
+    fn a_root_named_includes_is_still_scanned() {
+        let dir = tempfile::tempdir().expect("a tempdir");
+        let root = dir.path().join("includes");
+        touch(&root.join("Piano.sfz"));
+        touch(&root.join("includes/fragment.sfz"));
+        let found = scan_patches(std::slice::from_ref(&root));
+        assert_eq!(relative(&root, &found), ["Piano.sfz"]);
+    }
+
+    #[test]
+    fn a_library_of_fragments_only_offers_no_sampler() {
+        let dir = tempfile::tempdir().expect("a tempdir");
+        touch(&dir.path().join("includes/violin-sustain.sfz"));
+        let mut settings = Settings::default();
+        settings.extra.insert(
+            LIBRARIES_KEY.to_owned(),
+            json!([dir.path().to_str().expect("UTF-8")]),
+        );
+        let registry = registry_for(&settings);
+        assert!(registry.find("sonara.sampler").is_none());
+        assert_eq!(registry.all(None).len(), 12, "the golden catalog only");
+    }
+
     #[test]
     fn the_sampler_is_registered_only_when_a_library_holds_instruments() {
         let none = registry_for(&Settings::default());
@@ -142,6 +224,8 @@ mod tests {
 
         let dir = tempfile::tempdir().expect("a tempdir");
         touch(&dir.path().join("Violin.sfz"));
+        // A fragment is not offered as an instrument.
+        touch(&dir.path().join("includes/violin-sustain.sfz"));
         let mut settings = Settings::default();
         settings.extra.insert(
             LIBRARIES_KEY.to_owned(),

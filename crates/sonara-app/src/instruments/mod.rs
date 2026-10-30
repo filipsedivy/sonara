@@ -16,11 +16,14 @@
 //! - a **scan** for `.sfz` files, which finds every patch whether or not the manifest knows it.
 //!   A patch the manifest does not list gets a name from its file name and a family *inferred*
 //!   from the words of its path ([`InstrumentFamily`]), marked as inferred. Articulations are
-//!   never guessed: without a manifest the list is empty, which means "not verified".
+//!   never guessed: without a manifest the list is empty, which means "not verified". The scan
+//!   leaves out folders named `includes`, which hold fragments that other patches include
+//!   ([`crate::samples`]); a manifest entry that names a file in one is still listed.
 //!
 //! A manifest entry whose file is gone is kept as [`Availability::Missing`], so the user sees
-//! what to reinstall. SFZ has no bank or program numbers, so a preset has none; a future SF2
-//! source would add them.
+//! what to reinstall. Discovery opens no patch, so a file with no region is listed as available
+//! until [`InstrumentCatalog::verify`] loads it and marks it [`Availability::Invalid`]. SFZ has
+//! no bank or program numbers, so a preset has none; a future SF2 source would add them.
 
 mod discovery;
 mod family;

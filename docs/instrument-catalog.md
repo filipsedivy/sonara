@@ -23,9 +23,10 @@ SFZ patches have no bank or program number, so presets carry none.
 
 `InstrumentCatalog::from_settings` reads the `sample_libraries` directories; `discover` takes
 them directly. Each directory is scanned for `.sfz` files with the same rules as the sampler
-(eight levels deep, hidden folders and symbolic links skipped, at most 5,000 patches), and its
-optional manifest is merged in. A patch the manifest does not list is still found and gets an
-inferred family and no articulations. A manifest entry whose file is gone becomes `missing`.
+(eight levels deep, hidden folders, symbolic links and folders named `includes` skipped, at most
+5,000 patches), and its optional manifest is merged in. A patch the manifest does not list is
+still found and gets an inferred family and no articulations. A manifest entry whose file is gone
+becomes `missing`; one that names a file in an `includes` folder is listed like any other entry.
 
 Nothing fails the discovery. Missing or non-directory roots, an unreadable or invalid manifest,
 a rejected manifest entry, a duplicate library ID and a truncated scan are returned in
@@ -36,8 +37,9 @@ manifest path that leaves the library (`..`, absolute, through a link) is reject
 `InstrumentCatalog::verify` goes deeper on request: it loads one patch through a `PatchLoader`,
 which for `MediaPatchLoader` means parsing the SFZ and decoding every sample it names (the load
 the sampler does, so it can be slow and use memory). A patch that fails becomes `invalid` with the
-loader's message. The check is stricter than playback: a patch with a missing sample is `invalid`,
-although the sampler plays its other regions. Tests use a fake loader.
+loader's message; so does a file with no region, which discovery lists as `available` because it
+does not parse the patch. The check is stricter than playback: a patch with a missing sample is
+`invalid`, although the sampler plays its other regions. Tests use a fake loader.
 
 ## The manifest, `sonara-library.json`
 

@@ -505,6 +505,75 @@ fn the_media_loader_refuses_a_patch_that_plays_without_a_missing_sample() {
 }
 
 #[test]
+fn include_fragments_are_listed_only_when_a_manifest_names_them() {
+    // TST-06: Sonatina keeps the pieces its patches include in `includes` folders. The scan
+    // leaves them out; a manifest that names one explicitly still lists it.
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path().join("sso");
+    patch(&root.join("Strings/1st Violins.sfz"));
+    patch(&root.join("Strings/includes/1st-violins-sustain.sfz"));
+    patch(&root.join("Strings/Includes/vibrato.sfz"));
+    manifest(
+        &root,
+        &json!({"version": 1, "instruments": [
+            {"path": "Strings/includes/1st-violins-sustain.sfz", "name": "Violins sustain"}]}),
+    );
+
+    let catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
+
+    assert_eq!(
+        preset_ids(&catalog),
+        [
+            "sso/Strings/1st Violins",
+            "sso/Strings/includes/1st-violins-sustain"
+        ]
+    );
+    let listed = &catalog.presets()[1];
+    assert_eq!(listed.display_name, "Violins sustain");
+    assert_eq!(listed.availability, Availability::Available);
+    assert_eq!(
+        listed.patch_path,
+        root.join("Strings/includes/1st-violins-sustain.sfz")
+    );
+    assert_eq!(catalog.issues(), []);
+}
+
+#[test]
+fn a_patch_without_regions_is_invalid_once_verified() {
+    // Discovery reads directory entries only, so a file with no `<region>` (a fragment outside
+    // an `includes` folder) is listed as available; loading it marks it invalid.
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path().join("lib");
+    fs::create_dir_all(&root).expect("mkdir");
+    fs::write(
+        root.join("Vibrato.sfz"),
+        "<global> sw_last=36\n<group> lovel=1 hivel=127 // no region follows\n",
+    )
+    .expect("write");
+
+    let mut catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
+    let id = catalog.presets()[0].id.clone();
+    assert_eq!(id.as_str(), "lib/Vibrato");
+    assert_eq!(catalog.presets()[0].availability, Availability::Available);
+
+    let verdict = catalog
+        .verify(&id, &MediaPatchLoader)
+        .expect("known")
+        .clone();
+
+    assert_eq!(
+        verdict,
+        Availability::Invalid {
+            reason: format!(
+                "{}: the patch has no playable region",
+                root.join("Vibrato.sfz").display()
+            )
+        }
+    );
+    assert_eq!(catalog.available().count(), 0);
+}
+
+#[test]
 fn the_media_loader_survives_hostile_patches() {
     let dir = tempfile::tempdir().expect("tempdir");
     let root = dir.path().join("lib");
