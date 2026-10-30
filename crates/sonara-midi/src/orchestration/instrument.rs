@@ -888,7 +888,7 @@ const fn provenances_are_stated(spec: &InstrumentSpec) -> bool {
 }
 
 /// Whether `provenance` names a source or a reason.
-const fn is_stated(provenance: Provenance) -> bool {
+pub(super) const fn is_stated(provenance: Provenance) -> bool {
     match provenance {
         Provenance::Cited { source } => !source.trim_ascii().is_empty(),
         Provenance::Estimate { reason } => !reason.trim_ascii().is_empty(),

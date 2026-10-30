@@ -147,6 +147,13 @@ define_sources! {
     wikipedia_bass_voice => "Wikipedia, Bass (voice type), \
         https://en.wikipedia.org/wiki/Bass_(voice_type)",
     wikipedia_bassoon => "Wikipedia, Bassoon, https://en.wikipedia.org/wiki/Bassoon",
+    wikipedia_beethoven_symphony_5 => "Wikipedia, Symphony No. 5 (Beethoven), \
+        https://en.wikipedia.org/wiki/Symphony_No._5_(Beethoven)",
+    wikipedia_beethoven_symphony_9 => "Wikipedia, Symphony No. 9 (Beethoven), \
+        https://en.wikipedia.org/wiki/Symphony_No._9_(Beethoven)",
+    wikipedia_big_band => "Wikipedia, Big band, https://en.wikipedia.org/wiki/Big_band",
+    wikipedia_brahms_symphony_1 => "Wikipedia, Symphony No. 1 (Brahms), \
+        https://en.wikipedia.org/wiki/Symphony_No._1_(Brahms)",
     wikipedia_carillon => "Wikipedia, Carillon, https://en.wikipedia.org/wiki/Carillon",
     wikipedia_castanets => "Wikipedia, Castanets, https://en.wikipedia.org/wiki/Castanets",
     wikipedia_celesta => "Wikipedia, Celesta, https://en.wikipedia.org/wiki/Celesta",
@@ -172,6 +179,10 @@ define_sources! {
         https://en.wikipedia.org/wiki/E-flat_clarinet",
     wikipedia_eight_foot_pitch => "Wikipedia, Eight-foot pitch, \
         https://en.wikipedia.org/wiki/Eight-foot_pitch",
+    wikipedia_ein_deutsches_requiem => "Wikipedia, Ein deutsches Requiem, \
+        https://en.wikipedia.org/wiki/Ein_deutsches_Requiem",
+    wikipedia_ein_heldenleben => "Wikipedia, Ein Heldenleben, \
+        https://en.wikipedia.org/wiki/Ein_Heldenleben",
     wikipedia_euphonium => "Wikipedia, Euphonium, https://en.wikipedia.org/wiki/Euphonium",
     wikipedia_extended_technique => "Wikipedia, Extended technique, \
         https://en.wikipedia.org/wiki/Extended_technique",
@@ -188,6 +199,8 @@ define_sources! {
     wikipedia_hammond_organ => "Wikipedia, Hammond organ, \
         https://en.wikipedia.org/wiki/Hammond_organ",
     wikipedia_harpsichord => "Wikipedia, Harpsichord, https://en.wikipedia.org/wiki/Harpsichord",
+    wikipedia_haydn_symphony_104 => "Wikipedia, Symphony No. 104 (Haydn), \
+        https://en.wikipedia.org/wiki/Symphony_No._104_(Haydn)",
     wikipedia_honky_tonk_piano => "Wikipedia, Honky-tonk piano (redirects to Tack piano), \
         https://en.wikipedia.org/wiki/Honky-tonk_piano",
     wikipedia_humming => "Wikipedia, Humming, https://en.wikipedia.org/wiki/Humming",
@@ -195,13 +208,20 @@ define_sources! {
         https://en.wikipedia.org/wiki/Imperial_B%C3%B6sendorfer",
     wikipedia_jingle_bell => "Wikipedia, Jingle bell, https://en.wikipedia.org/wiki/Jingle_bell",
     wikipedia_lute => "Wikipedia, Lute, https://en.wikipedia.org/wiki/Lute",
+    wikipedia_mahler_symphony_6 => "Wikipedia, Symphony No. 6 (Mahler), \
+        https://en.wikipedia.org/wiki/Symphony_No._6_(Mahler)",
     wikipedia_mandolin => "Wikipedia, Mandolin, https://en.wikipedia.org/wiki/Mandolin",
     wikipedia_maraca => "Wikipedia, Maraca, https://en.wikipedia.org/wiki/Maraca",
     wikipedia_marimba => "Wikipedia, Marimba, https://en.wikipedia.org/wiki/Marimba",
+    wikipedia_mozart_symphony_41 => "Wikipedia, Symphony No. 41 (Mozart), \
+        https://en.wikipedia.org/wiki/Symphony_No._41_(Mozart)",
+    wikipedia_musical_ensemble => "Wikipedia, Musical ensemble, \
+        https://en.wikipedia.org/wiki/Musical_ensemble",
     wikipedia_mute => "Wikipedia, Mute (music), https://en.wikipedia.org/wiki/Mute_(music)",
     wikipedia_oboe => "Wikipedia, Oboe, https://en.wikipedia.org/wiki/Oboe",
     wikipedia_oboe_d_amore => "Wikipedia, Oboe d'amore, \
         https://en.wikipedia.org/wiki/Oboe_d%27amore",
+    wikipedia_orchestra => "Wikipedia, Orchestra, https://en.wikipedia.org/wiki/Orchestra",
     wikipedia_organ_stop => "Wikipedia, Organ stop, https://en.wikipedia.org/wiki/Organ_stop",
     wikipedia_pedal_harp => "Wikipedia, Pedal harp, https://en.wikipedia.org/wiki/Pedal_harp",
     wikipedia_piano => "Wikipedia, Piano, https://en.wikipedia.org/wiki/Piano",
@@ -209,6 +229,7 @@ define_sources! {
         https://en.wikipedia.org/wiki/Piano_pedals",
     wikipedia_piano_accordion => "Wikipedia, Piano accordion, \
         https://en.wikipedia.org/wiki/Piano_accordion",
+    wikipedia_piano_trio => "Wikipedia, Piano trio, https://en.wikipedia.org/wiki/Piano_trio",
     wikipedia_piccolo => "Wikipedia, Piccolo, https://en.wikipedia.org/wiki/Piccolo",
     wikipedia_piccolo_trumpet => "Wikipedia, Piccolo trumpet, \
         https://en.wikipedia.org/wiki/Piccolo_trumpet",
@@ -230,6 +251,8 @@ define_sources! {
         https://en.wikipedia.org/wiki/Soprano_saxophone",
     wikipedia_stradella_bass => "Wikipedia, Stradella bass system, \
         https://en.wikipedia.org/wiki/Stradella_bass_system",
+    wikipedia_string_orchestra => "Wikipedia, String orchestra, \
+        https://en.wikipedia.org/wiki/String_orchestra",
     wikipedia_string_section => "Wikipedia, String section, \
         https://en.wikipedia.org/wiki/String_section",
     wikipedia_suspended_cymbal => "Wikipedia, Suspended cymbal, \
@@ -238,6 +261,8 @@ define_sources! {
     wikipedia_symphonic_choirs => "Wikipedia, Symphonic Choirs, \
         https://en.wikipedia.org/wiki/Symphonic_Choirs",
     wikipedia_tambourine => "Wikipedia, Tambourine, https://en.wikipedia.org/wiki/Tambourine",
+    wikipedia_tchaikovsky_symphony_6 => "Wikipedia, Symphony No. 6 (Tchaikovsky), \
+        https://en.wikipedia.org/wiki/Symphony_No._6_(Tchaikovsky)",
     wikipedia_temple_blocks => "Wikipedia, Temple blocks, \
         https://en.wikipedia.org/wiki/Temple_blocks",
     wikipedia_tenor => "Wikipedia, Tenor, https://en.wikipedia.org/wiki/Tenor",
@@ -326,6 +351,12 @@ define_sources! {
         https://usa.yamaha.com/products/musical_instruments/percussion/xylophones/yx-500r_f/specs.html",
     yamaha_ycl_622ii => "Yamaha USA, YCL-622II bass clarinet to low C, specifications, \
         https://usa.yamaha.com/products/musical_instruments/winds/clarinets/ycl-622ii/specs.html",
+
+    // Orchestras and score-layout guides.
+    jacksonville_symphony_seating => "Jacksonville Symphony, Musical Chairs: Why Orchestras Sit \
+        the Way They Do, https://www.jaxsymphony.org/musical-chairs-why-orchestras-sit-the-way-they-do/",
+    taming_the_saxophone_score_layout => "Taming the Saxophone, Orchestration: Score Layout, \
+        https://tamingthesaxophone.com/composition-score",
 
     // General MIDI tables and notation software data.
     finale_2010_gm_table => "MakeMusic, Finale 2010 user manual, General MIDI Table, \
@@ -447,7 +478,9 @@ define_sources! {
         https://www.spitfireaudio.com/spitfire-studio-brass-professional",
     spitfire_studio_woodwinds_pro => "Spitfire Audio, Spitfire Studio Woodwinds Professional, \
         https://www.spitfireaudio.com/spitfire-studio-woodwinds-professional",
-    spitfire_symphony_orchestra_manual => "Spitfire Audio, Spitfire Symphony Orchestra User \
+    spitfire_symphonic_strings => "Spitfire Audio, Spitfire Symphonic Strings, \
+        https://www.spitfireaudio.com/spitfire-symphonic-strings",
+    spitfire_symphony_orchestra_manual =>"Spitfire Audio, Spitfire Symphony Orchestra User \
         Manual v5, \
         https://www.spitfireaudio.com/cdn/shop/files/Spitfire_Symphony_Orchestra_Manual_v5.pdf",
     vcsl => "Versilian Studios, Versilian Community Sample Library, \

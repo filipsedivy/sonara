@@ -40,6 +40,7 @@ macro_rules! gm_keys {
 
 mod brass;
 mod categories;
+mod ensembles;
 mod keyboards;
 mod percussion;
 mod plucked;
@@ -49,6 +50,8 @@ mod voices;
 mod woodwinds;
 
 pub(super) use categories::{FAMILY_ALIASES, category, family_aliases};
+pub use ensembles::ENSEMBLES;
+pub(super) use ensembles::ensemble;
 
 use super::ensemble_profile::{EraPlayers, PlayerRange};
 use super::general_midi::{GmNote, GmProgram, GmTarget, GmVoice, SubstituteFit};

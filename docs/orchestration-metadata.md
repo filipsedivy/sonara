@@ -4,7 +4,9 @@
 general: names and aliases in five languages, categories, pitch range, transposition, family, the
 articulations they idiomatically play, how they appear in ensembles, their General MIDI voice,
 for the instruments played from a keyboard how the keyboard makes and stops the sound, and the
-playability facts that rules read, such as how long a mute takes to put on (SON-P06).
+playability facts that rules read, such as how long a mute takes to put on (SON-P06). It also
+holds ensemble templates: the parts of an orchestra or a smaller group in score order, with
+their players, string sizes and stereo places.
 It is plain Rust data and pure functions. It depends on no audio engine, sample library or UI,
 adds no agent tool and changes no contract (CTR-01).
 
@@ -350,6 +352,52 @@ whatever the tempo of the piece; a rule measures the time a piece leaves with th
 tempo. Whether an instrument double-tongues is not a fact here: its articulation list says so
 (`multi_tongue`).
 
+## Ensembles
+
+`ENSEMBLES` (also `ensembles()` and `ensemble(id)`) holds thirteen ensemble templates, keyed by
+`EnsembleId`: the Classical orchestra (Haydn, Mozart), the Beethoven orchestra, the Romantic
+orchestra (Brahms, Tchaikovsky), the late-Romantic orchestra (Wagner, Mahler, Strauss), a film
+orchestra, a chamber orchestra, a string orchestra, a big band, chorus and orchestra (Brahms's Ein
+deutsches Requiem), a string quartet, a wind quintet, a brass quintet and a piano trio. A template
+is a recipe, not project data: it names instrument types only, never a library, plugin or
+preset, and applying one (sounds, tracks, folders, buses) is the application's work. The
+`orchestral` project template is not an ensemble and does not change. A template holds:
+
+- `parts`: one `Part` per track, in the order its score prints them. A part has a `slug`
+  (`horn_3`), a display `name` ("Horn 3", "Piccolo (Fl. 3)") and a `short` name ("Hn. 3"), the
+  `instrument` it plays, the `alternatives` a work may use instead (the clarinet in A for the
+  clarinet in B♭), whether it is `required` or used only by some works, its `pan` and a `note`
+  ("finale only").
+- Each part's `players`: `Own` with a `PlayerRange` (one for a wind part, 16 to 20 singers for a
+  choir section); `Section` for a string section, whose players the chosen string size gives; or
+  `Doubling { by }`, played by the player of part `by`, who changes instrument, so the two never
+  sound at once: the third flute's piccolo, the fifth to eighth horns' Wagner tubas, a
+  percussionist's second instrument. That part has one player of its own and another instrument.
+- `string_sizes`, the default first: Rimsky-Korsakov's full (16-14-12-10-8), medium (12-10-8-6-4)
+  and small (8-6-4-3-2) orchestras, Die Walküre's 16-16-12-12-8, Gurre-Lieder's 20-20-16-16-12
+  and the chamber string orchestras of 21 and 12 players.
+- `seatings`, the default first: `American` (the violins together on the left) and `Antiphonal`
+  (first and second violins on opposite sides); the Classical, Beethoven and late-Romantic
+  orchestras default to antiphonal, the repertoire's own layout. A part's `Pan` holds a track pan
+  (−1 to +1, seen from the audience) for each seating, read off the seating plans and kept within
+  0.6 of the centre; every pan is an estimate. The big band and the chamber groups offer no
+  seating: the big band's parts sit where their section puts them, the chamber groups stay
+  centred. A source recorded with the players in their places carries the stage image, so
+  applying the pan is the caller's decision.
+- `order`: `FullScore` for the orchestras and the string quartet, the order of `InstrumentType`,
+  except that a doubled instrument may sit directly below its player's part; `Edition` where the
+  group's own scores print another order: the big band (rhythm section at the bottom), the wind
+  quintet (horn between clarinet and bassoon), the brass quintet (horn below the trumpets) and the
+  piano trio (piano at the bottom).
+- `provenance`: the scorings and handbooks the roster follows, and what is estimated.
+
+Parts no instrument type covers are left out rather than invented, and the template's provenance
+names them: the late-Romantic orchestra's bass trumpet, contrabass trombone, cowbells and hammer
+(and the Rute, a beater on the bass drum), the film orchestra's synthesizer layer, and the big
+band's guitar and drum kit, so the big band lists 15 of its 17 players. Where a near type stands
+in, such as the horn in F for the Classical orchestra's natural horn or the tenor trombone for
+Beethoven's alto trombone, the part plays it and its note says so.
+
 ## Validation
 
 A record is an `InstrumentSpec` checked by `Instrument::try_new(instrument_type, spec)`. Records
@@ -399,6 +447,28 @@ tables written from the GM1 lists, the keyboard mechanics of the sixteen instrum
 from a keyboard with a table written from the research, and the playability facts of every
 record with a table written from the sources.
 
+An ensemble template is an `EnsembleSpec` checked by `Ensemble::try_new(id, spec)`, which
+rejects:
+
+- a blank name or description, and a missing or blank provenance of the template or a string
+  size;
+- a string size whose slug is not `snake_case` or repeats another's, whose name is blank or which
+  gives a section no players; string sizes without a string section; a seating listed twice;
+- a part whose slug is not `snake_case`, whose name or short name is blank, or whose slug or name
+  another part has; an alternative that is the part's own instrument, of another family or listed
+  twice; own players with none at the low end; a string section on another instrument than its
+  own, listed twice or without string sizes; a doubling that names no part, a part without exactly
+  one player of its own or a part of the same instrument, or that is required while its player's
+  part is optional; a pan outside −1 to +1; a pan that depends on a seating the template does not
+  offer;
+- a template without a required part, and a full-score template out of score order.
+
+The shipped templates are built with the panicking `Ensemble::new` in a `static`, so an invalid
+template is a compile error. `crates/sonara-midi/tests/ensembles.rs` compares every template's
+parts, string sizes, seatings and pans with tables written from the cited scorings and seating
+plans, checks the track and player counts the sources state, and rejects a fixture breaking each
+check.
+
 ## Coverage
 
 All 85 types have a record, listed in score order by `INSTRUMENTS` and `instruments()`. The
@@ -406,4 +476,5 @@ records live in one file per family under `crates/sonara-midi/src/orchestration/
 (woodwinds, brass, percussion, plucked, keyboards, voices, strings). A display name is the first
 form of the English name, with a flat spelled `♭` ("Clarinet in B♭"); an alternate in parentheses
 ("Timpani (kettledrums)") is not part of it. Range extensions and gaps, alternative tunings and
-techniques outside the vocabulary are not modelled.
+techniques outside the vocabulary are not modelled. The thirteen ensemble templates live in
+`data/ensembles.rs`; divisi tracks are not part of a template.

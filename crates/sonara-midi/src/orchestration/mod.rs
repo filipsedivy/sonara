@@ -1,6 +1,7 @@
 //! Orchestral instrument metadata: names and aliases in five languages, categories, pitch ranges,
 //! transposition, families, articulations, ensemble profiles, General MIDI voices, keyboard
-//! mechanics and playability facts (SON-P06, `contracts/orchestration-metadata.md`).
+//! mechanics and playability facts (SON-P06, `contracts/orchestration-metadata.md`), and the
+//! ensemble templates that assemble the instruments into orchestras and smaller groups.
 //!
 //! The data is about instruments in general, not about any sample library, audio engine or UI. A
 //! value is either sourced or marked as an estimate, and an articulation counts as supported only
@@ -9,6 +10,7 @@
 mod articulation;
 mod data;
 mod ensemble_profile;
+mod ensembles;
 mod general_midi;
 mod id;
 mod instrument;
@@ -21,8 +23,12 @@ pub use articulation::{
     Articulation, ArticulationAvailability, Axis, Kind, Mute, Request, RequestAvailability,
     RequestError, Vibrato,
 };
-pub use data::INSTRUMENTS;
+pub use data::{ENSEMBLES, INSTRUMENTS};
 pub use ensemble_profile::{EnsembleProfile, Era, EraPlayers, Forms, PlayerRange};
+pub use ensembles::{
+    Ensemble, EnsembleError, EnsembleId, EnsembleSpec, Pan, Part, PartOrder, Players, Seating,
+    StringSection, StringSize,
+};
 pub use general_midi::{
     GmNote, GmProgram, GmTarget, GmVoice, ORCHESTRAL_PERCUSSION_MAP, SubstituteFit,
     percussion_instrument,
@@ -56,4 +62,17 @@ pub fn instruments() -> &'static [Instrument] {
 #[must_use]
 pub fn category(id: CategoryId) -> &'static Category {
     id.get()
+}
+
+/// The ensemble template with id `id`, or `None` for an unknown id. The id must match exactly
+/// ([`EnsembleId::from_id`]).
+#[must_use]
+pub fn ensemble(id: &str) -> Option<&'static Ensemble> {
+    EnsembleId::from_id(id).map(EnsembleId::get)
+}
+
+/// Every ensemble template, in the order of [`EnsembleId::ALL`].
+#[must_use]
+pub fn ensembles() -> &'static [Ensemble] {
+    &ENSEMBLES
 }
