@@ -345,9 +345,21 @@ fn where_a_fades_bounds_meet_or_cross_the_low_bound_decides() {
     for velocity in 0..=127 {
         assert_eq!(fade_out(127, 90, power).gain(velocity), 1.0, "{velocity}");
     }
-    // A fade-out of no width, or one whose bounds cross, is full up to its low bound.
+    // A fade-out of no width, or one whose bounds cross, is full up to its low bound and silent
+    // above it, as the SFZ format's bounds say (sfizz fades nothing there).
     assert_fade(fade_out(60, 60, power), 59, &[1.0, 1.0, 0.0, 0.0]);
     assert_fade(fade_out(90, 70, power), 89, &[1.0, 1.0, 0.0]);
+    // A fade that ends at 127 reaches its end there, not one velocity early as in sfizz.
+    assert_fade(
+        fade_out(100, 127, power),
+        125,
+        &[(2.0_f64 / 27.0).sqrt(), (1.0_f64 / 27.0).sqrt(), 0.0],
+    );
+    assert_fade(
+        fade_in(100, 127, power),
+        125,
+        &[(25.0_f64 / 27.0).sqrt(), (26.0_f64 / 27.0).sqrt(), 1.0],
+    );
 }
 
 #[test]

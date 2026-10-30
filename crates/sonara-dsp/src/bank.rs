@@ -55,7 +55,7 @@ impl CrossfadeCurve {
 
 /// How a region fades in and out with the velocity of the note that starts it (SFZ
 /// `xfin_lovel`/`xfin_hivel`, `xfout_lovel`/`xfout_hivel` and `xf_velcurve`), as the SFZ format
-/// describes it and the reference player sfizz plays it.
+/// describes it; the gains match the reference player sfizz's tests.
 ///
 /// The fade-in is silent at velocities at or below `in_lo` and full at or above `in_hi`; the
 /// fade-out is full at or below `out_lo` and silent at or above `out_hi`. In between, the gain
@@ -64,6 +64,10 @@ impl CrossfadeCurve {
 /// and full from it, and such a fade-out is full up to `out_lo` and silent above it. So
 /// `xfin_lovel=70` alone starts the region at velocity 70, and `xfout_hivel=90` alone, whose
 /// `xfout_lovel` stays 127, fades nothing, as in sfizz.
+///
+/// Two edges keep the SFZ format's bounds where sfizz differs: a fade whose high bound is 127
+/// reaches its end at 127 (sfizz ends it one velocity early), and a fade-out of no width is silent
+/// above its velocity (sfizz fades nothing).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VelocityCrossfade {
     /// The velocity at and below which the fade-in is silent (SFZ `xfin_lovel`, default 0).
