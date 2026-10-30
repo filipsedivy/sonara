@@ -901,12 +901,11 @@ Constraints that decide what to do with it:
     `create_project` enum: an owner decision under CTR-01.
 11. **Wagner tuba part numbering** conflicts between sources [Card cards/horns.md#wagner_tuba_tenor];
     templates use "Tenor Wagner tuba 1, 2" and "Bass Wagner tuba 1, 2" until resolved.
-12. **Alto trombone after Beethoven's middle period.** The tenor trombone card's
-    `typical_players` says the alto was dropped from Beethoven's middle period on
-    [Card cards/low_brass.md#trombone_tenor], but Symphony No. 5 scores alto, tenor and bass
-    trombones [Cited S19], and No. 5 belongs to that middle period [Estimate: the usual dating of
-    the symphony, 1808, not checked in an opened source]. The card's wording needs a source or a
-    correction; the Beethoven template (3.2) follows the symphony.
+12. **Alto trombone after Beethoven's middle period (closed).** The tenor trombone card once said the
+    alto was dropped from Beethoven's middle period on; Symphony No. 5 scores alto, tenor and bass
+    trombones [Cited S19]. The card has been corrected: it now cites the Fifth (composed 1804-1808) and
+    the Ninth as scoring alto, tenor and bass trombones [Card cards/low_brass.md#trombone_tenor]. The
+    Beethoven template (3.2) follows the symphony.
 
 ## Review notes
 
@@ -950,3 +949,4 @@ the repository. Changes:
    Forsyth 1914, Rimsky-Korsakov 1922, Berlioz 1882); none needed paraphrasing.
 10. **Citation re-check.** The big-band seating claims of 2.1 (leads in the middle of their
     sections, solo parts nearest the rhythm section) were re-read in S13 and confirmed.
+- Open question 12 closed: the low brass card was corrected and now cites the dating of Symphonies No. 5 and No. 9.

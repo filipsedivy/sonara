@@ -37,6 +37,7 @@ Transposition = sounding minus written, in semitones._
 | S28 | manuals.plus Wurlitzer manuals category | https://manuals.plus/category/wurlitzer | other | No: HTTP 403. Not cited |
 | S29 | Native Instruments Scarbee Mark I / A-200 / Clavinet-Pianet manuals (guessed fileadmin URLs) | https://www.native-instruments.com/fileadmin/ni_media/downloads/manuals/ | library maker | No: HTTP 404. Not cited; Scarbee and Soniccouture facts seen only in search snippets are not used |
 | S30 | GitHub REST API (repository and licence metadata) | https://api.github.com/orgs/sfzinstruments/repos | other | No: rate limit. The repositories were read through their web pages and raw files instead (S20, S21, S22, S23) |
+| S31 | Greg Sullivan E-Pianos, sfzinstruments: `README.md`, `LICENSE`, file tree, `Wurlitzer EP200/Wurlitzer EP200.sfz`, GitHub REST repository record (licence field) | https://github.com/sfzinstruments/GregSullivan.E-Pianos | library maker | Yes (raw files and the API record; added in the consistency review) |
 
 ## electric_piano_rhodes: Rhodes piano
 
@@ -376,7 +377,8 @@ Conversion: S1 identifies keys by their number on an 88-key keyboard with the no
 
 | Library | Licence as stated | Coverage | Provenance |
 |---|---|---|---|
-| (no free SFZ found) | n/a | VCSL, VSCO 2 CE and FreePats hold no Wurlitzer; the visible sfzinstruments repositories hold only Rhodes sets (10 of 76 shown) | [Cited S22, S23, S24, S26; Estimate: a wider search may find one] |
+| Greg Sullivan E-Pianos: Wurlitzer EP200 v1.1 (1999), mapped to SFZ by kinwie | CC BY 3.0 Unported per the `LICENSE` legal code and the README, which adds the author's request for attribution; GitHub's repository record reports `NOASSERTION`, a disagreement left open (the likely reason, a licence its detector did not classify, is an Estimate) | `Wurlitzer EP200.sfz`: 48 regions over keys 33-96 (the whole 64-note compass), four velocity groups (1-37, 38-65, 66-89, 90-127), 42 FLAC samples; declared as SFZ v2 with ARIA extensions. Sonara supports `sample`, `default_path`, `lokey`/`hikey`, `pitch_keycenter`, `lovel`/`hivel`, `tune`, `volume`, `ampeg_attack`; it ignores, among others, `amplitude_oncc7`, `pan_oncc10`, `set_hdcc*`, `ampeg_hold`/`ampeg_decay`/`ampeg_sustain`, `amp_veltrack`, `note_polyphony`, `off_time` | [Cited S31, S25; Estimate: loading, including the `#define`d sample extension, was not tested] |
+| VCSL, VSCO 2 CE, FreePats | n/a | no Wurlitzer | [Cited S22, S23, S24] |
 | MuseScore_General, FluidR3_GM | MIT, notices | GM 5 generic electric piano, SF2 (not played by the Sonara sampler) | [Cited S25] |
 | Apple Vintage Electric Piano | Apple software licence | Wurlitzer models, modelled | [Cited S3] |
 | Arturia Wurlitzer V | commercial EULA | Modelled 200A with effects, Leslie and guitar amp | [Cited S7] |
@@ -560,7 +562,7 @@ Conversion: S1 identifies keys by their number on an 88-key keyboard with the no
 | jRhodes licence | 3d `LICENSE` CC BY-NC 4.0; 3c `LICENSE` CC BY-NC-SA 4.0 linking the BY-NC deed; 3d `.sfz` header "CC-SA-BY" [Cited S20, S21] | Treat as non-commercial: user-installed only, never bundled (LIC-01 and the bundling rule in S25) |
 | Sonara sampler and jRhodes3d | FLAC, note names and velocity layers are supported; crossfades, LFO tremolo, half pedal and curves would be ignored [Cited S25, S20] | Test a load and render before recommending it [Estimate: untested] |
 | Catalog family | `family.rs` keywords lack "rhodes", "wurlitzer", "clavinet", "clav" [Cited S25] | Add them (or "epiano") so such patches are classed `keyboards`; a code change outside this research |
-| Free Wurlitzer and Clavinet samples | none found in VCSL, VSCO 2 CE, FreePats or the visible sfzinstruments page [Cited S22, S23, S24, S26] | Search further (only 10 of 76 sfzinstruments repositories were visible) |
+| Free Wurlitzer and Clavinet samples | Wurlitzer: Greg Sullivan's EP200 (sfzinstruments), CC BY 3.0 Unported per `LICENSE` and README but `NOASSERTION` in GitHub's repository record [Cited S31]; Clavinet: none found in VCSL, VSCO 2 CE, FreePats or the visible sfzinstruments page [Cited S22, S23, S24, S26] | Wurlitzer: settle the licence disagreement before relying on CC BY 3.0, keep the attribution, test a load [Estimate]; Clavinet: search further (only 10 of 76 sfzinstruments repositories were visible) |
 | Effects as part of the instrument | Tremolo, phaser, chorus, drive, wah and the Clavinet mute are controls, not articulation ids | A control vocabulary (effect state per track) may be needed beside the 15 articulation ids [Estimate] |
 | 54-key Rhodes and 44-key Wurlitzer 106P ranges | key counts only [Cited S13, S14] | Not stored |
 
@@ -681,3 +683,8 @@ _Consistency review of 2026-10-30. No source was re-researched; no json value ch
   "designed to replicate the sound of a clavichord ..." and the S3 glissando quote at 14).
 - Tags: every Sn cited exists in the Sources table; S27-S30 (not opened) are never cited; no foreign tags, local
   paths, temporary-file references or attribution lines remain.
+- Wurlitzer section 10 and the open question on free samples: "no free SFZ found" contradicted the free-libraries
+  card, which lists Greg Sullivan's Wurlitzer EP200. New source S31 (opened for this change); the row gives the
+  licence caveat (CC BY 3.0 Unported in `LICENSE` and README, `NOASSERTION` in GitHub's record), the patch's
+  coverage and the opcodes Sonara supports or ignores (`sfz.rs`, S25). VCSL, VSCO 2 CE and FreePats still hold no
+  Wurlitzer; the Clavinet gap is unchanged.

@@ -41,6 +41,8 @@ Transposition = sounding minus written, in semitones._
 | S34 | Sonara repository: `crates/sonara-midi/src/orchestration/data.rs`, `articulation.rs`, `gm.rs`, `docs/orchestration-metadata.md`, `docs/sample-libraries.md`, `docs/orchestral-audio-engine-research.md` section 5 | local repository checkout | other | yes |
 | S35 | Vienna Symphonic Library Academy, `/en/` URLs (`https://www.vsl.co.at/en/academy/brass/tenor-trombone`, `https://vsl.co.at/en/Brass/Cimbasso`) | see column 2 | library maker | no (HTTP 502; the same pages were read at the S3-S8 URLs) |
 | S36 | Yamaha guide pages for tuba and euphonium; Conn-Selmer bass trombone pages | https://www.yamaha.com/en/musical_instrument_guide/ ; https://www.connselmer.com/ | manufacturer | no (not opened: one fetch was refused, the other redirected to a home page; nothing is cited from them) |
+| S37 | Wikipedia, "Symphony No. 5 (Beethoven)" (raw wikitext: infobox, background, instrumentation, finale) | https://en.wikipedia.org/wiki/Symphony_No._5_(Beethoven) | encyclopedia | yes (added in the consistency review) |
+| S38 | Wikipedia, "Symphony No. 9 (Beethoven)" (raw wikitext: infobox, instrumentation) | https://en.wikipedia.org/wiki/Symphony_No._9_(Beethoven) | encyclopedia | yes (added in the consistency review) |
 
 **Reading conventions used below.**
 - Helmholtz names convert with c = C3 = 48, c' = C4 = 60, c'' = C5 = 72, C = C2 = 36, so S32's tenor "E do c²" is E2-C5 = 40-72 and alto "A do es²" is A2-Eb5 = 45-75 [Estimate: standard Helmholtz/Czech conversion; S32 does not state its octave numbering].
@@ -64,7 +66,7 @@ Transposition = sounding minus written, in semitones._
  "articulations_proposed_new": ["glissando", "staccatissimo", "sforzando", "fortepiano", "crescendo_swell", "rip", "fall", "doit", "cuivre", "vibrato_on", "growl"],
  "articulations_provenance": "Cited S3 (tonguing, flutter, vibrato, lip and slide trills, mutes, legato, slide glissando, sfz/fp), S10 (glissando rules, mutes), S25/S26 (Spitfire solo and a2 articulation lists incl. rip, fall, cuivre, swell), S30 (falls and doits in Logic Studio Horns), S31 (Logic Studio Horns keyswitch table: Growl C#1 = 25 and Doit C2 = 36 are marked for 'Lead Instruments', whose footnote names Trombone 1)",
  "solo_or_section": "both",
- "typical_players": {"classical": "0-3: alto, tenor, bass trio in opera and church music; the alto was dropped from Beethoven's middle period on", "romantic": "2 tenors + 1 bass (France: 3 tenors)", "film": "2-3 tenors plus 1-2 bass trombones", "chamber": "1 (brass quintet) or 0"},
+ "typical_players": {"classical": "0-3: alto, tenor, bass trio in opera and church music and in Beethoven's Symphonies No. 5 (finale) and No. 9; the alto was 'practically obsolete' by 1914", "romantic": "2 tenors + 1 bass (France: 3 tenors)", "film": "2-3 tenors plus 1-2 bass trombones", "chamber": "1 (brass quintet) or 0"},
  "keyboard": null}
 ```
 
@@ -154,6 +156,7 @@ Partials and positions (for glissando planning). Every pitch of a slide glissand
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 - Standard: two tenor trombones and one bass trombone, plus one tuba [Cited S1, S10]; Rimsky-Korsakov's middle and large orchestras list "3 Trombones" [Cited S2]. French custom from about 1830: three tenors [Cited S1]. A fourth trombone was often added and kept in 20th-century orchestras [Cited S3].
+- Alto, tenor and bass: Beethoven scores this trio in the finale of Symphony No. 5 (1804-1808), his first symphonic use of trombones and a work of his middle period, and in movements 2 and 4 of No. 9 (1822-1824) [Cited S37, S38]. By 1914 the alto was "practically obsolete" [Cited S1].
 - Pedal unisons: Hérold wrote a held pedal Bb for three tenor trombones in unison; Elgar's *Cockaigne* has two tenors in unison on pedal Bb with tuba and double bassoon [Cited S1].
 - Libraries record solo, a2 sections and ensembles (S25 "Tenor Trombones a2", S29 "Trombone Ensemble") [Cited S25, S29].
 - Film sessions: 2-3 tenors plus 1-2 bass trombones, chamber music one trombone in a brass quintet [Estimate: session practice; no source read gives these counts].
@@ -722,3 +725,4 @@ _Consistency review, 2026-10-30: json against prose, written = sounding - transp
 - trombone_bass json `range_provenance.comfortable`: G4 (67) to Kodály's B4 (71) corrected from "three semitones" to four semitones (a major third).
 - euphonium json `articulations_provenance`: `vibrato_on` is now an Estimate from brass-band practice, matching §5, instead of "by analogy with the tuba".
 - trombone_tenor Verification of data.rs, articulations row: S31 added to the sources, following C7 (growl Cited S31).
+- trombone_tenor json `typical_players.classical` and §6: "the alto was dropped from Beethoven's middle period on" (untagged) was contradicted by Symphony No. 5 (middle period), which scores alto, tenor and bass trombones; now the trio in Beethoven's Nos. 5 and 9 [Cited S37, S38] and the alto "practically obsolete" by 1914 [Cited S1]. S37 and S38 were opened for this change; no range changed, so written = sounding - transposition is untouched.

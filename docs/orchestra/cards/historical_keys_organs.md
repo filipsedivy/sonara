@@ -46,6 +46,7 @@ Transposition = sounding minus written, in semitones._
 | S37 | Retailer listing "Schiedmayer Studio Celesta 5 octaves 1/2 C3-F8" | https://rsons-sylius.adipso.fr/en/products/schiedmayer-studio-celesta-5-octaves-1-2-c3-f8-id9070 | other (retailer) | No (search-result snippet only). Never cited |
 | S38 | Wikipedia, "Clonewheel organ" | https://en.wikipedia.org/wiki/Clonewheel_organ | encyclopedia | Yes, but only the list of software emulations was read |
 | S39 | Wikipedia, "Bandoneon" | https://en.wikipedia.org/wiki/Bandoneon | encyclopedia | Yes (lead and infobox) |
+| S40 | VCSL, GitHub REST tree of tag `v1.2.2-RC` (recursive; 183 `.sfz` files, among them the harpsichord, `Pipe Organ` and `Renaissance Organ` patches) | https://api.github.com/repos/sgossner/VCSL/git/trees/v1.2.2-RC?recursive=1 | library maker | Yes (file list only; no `.sfz` file was opened; added in the consistency review) |
 
 Conventions used in every card below:
 
@@ -139,7 +140,7 @@ Conventions used in every card below:
 | legato / staccato | finger overlap / early release; release noise follows note-off | note length plus release samples (`trigger=release`) | [Cited S32] for the release group; [Estimate] for the musical use |
 | trill and ornaments | played notes | ordinary notes | [Estimate] |
 | 8′, 4′, 8′+8′+4′ registers | choice of choirs | SSO `Harpsichord KS.sfz`: key switches on keys 96, 98, 100 select 4′, 8′ and Full (`sw_lokey=96`, `sw_hikey=100`); VSL: key switches C1-D1 for "8-feet", "8-feet double" and "tutti" (two 8′ and one 4′) | [Cited S32, S29] |
-| Lute stop | English dogleg system: an alternative row of jacks plucks near the nut, imitating a lute | VCSL's English harpsichord has separate `Sustains/Lute` and `Releases/Lute` sample folders beside `Normal` (separate samples, no SFZ) | [Cited S5]; [Cited S31] for the folders; [Estimate: the folder name is read as the lute stop] |
+| Lute stop | English dogleg system: an alternative row of jacks plucks near the nut, imitating a lute | VCSL's English harpsichord has separate `Sustains/Lute` and `Releases/Lute` sample folders beside `Normal` (separate samples; no SFZ on `master`, but tag `v1.2.2-RC` has `Harpsichord, English - Lute.sfz`, `- Normal.sfz` and `- Keyswitch.sfz`, not opened) | [Cited S5]; [Cited S31] for the folders; [Cited S40] for the tag's patches; [Estimate: the folder name is read as the lute stop] |
 | Buff stop | strip of buff leather against the strings, muting them to imitate a lute | Pianoteq models a buff stop pedal | [Cited S5, S35] |
 | Coupler | French shove coupler or English dogleg jacks let one manual play several choirs | not modelled in an opened library | [Cited S5] |
 | Velocity | none on the instrument | SSO sets `amp_veltrack=0`; VSL has one velocity layer; GM devices often use a fixed velocity level | [Cited S32, S29, S19] |
@@ -186,7 +187,7 @@ opened]. No divisi.
 
 | Library | Licence | Coverage | Plays in Sonara today | Provenance |
 |---|---|---|---|---|
-| VCSL | CC0 1.0 | five harpsichords (English, Flemish, French, Italian, unknown), 461 WAV files; each has `Sustains` and `Releases`, subdivided as English `Normal`/`Lute`, Flemish `High`/`Low`, Italian `stop1`; French and unknown undivided | WAV only, no SFZ in the folders read [Cited S31]; an SFZ would have to be written [Estimate] | [Cited S31] |
+| VCSL | CC0 1.0 | five harpsichords (English, Flemish, French, Italian, unknown), 461 WAV files; each has `Sustains` and `Releases`, subdivided as English `Normal`/`Lute`, Flemish `High`/`Low`, Italian `stop1`; French and unknown undivided | `master` holds WAVs only [Cited S31]; tag `v1.2.2-RC` holds ten patches: `Harpsichord, English - Normal`, `- Lute`, `- Keyswitch`; `Harpsichord, Flemish - 4'`, `- 8'`, `- Full`, `- Keyswitch`; `Harpsichord, French`; `Harpsichord, Italian`; `Harpsichord, Unk` (`.sfz`) [Cited S40]. Not opened, so playback in Sonara is not checked [Estimate] | [Cited S31, S40] |
 | Sonatina Symphonic Orchestra | CC Sampling Plus 1.0 (retired); not bundlable | 4′, 8′, Full patches and a key-switch patch, 29-89, release samples | yes, except `amp_veltrack` and the CC 12 release level, which are ignored | [Cited S32, S33] |
 | VSL Studio Special Keyboards | commercial | 8′, 8′ double, tutti; release samples; 1 velocity layer | no (proprietary player) | [Cited S29, S33] |
 | Pianoteq (Modartt) | commercial | physical model of a Griewisch copy of a 1624 Ioannes Ruckers: lower 8′, upper 8′, 4′, buff stop pedal | no (plug-in hosting is milestone M5) | [Cited S35, S33] |
@@ -587,7 +588,7 @@ One organist [Estimate]. Berlioz and Widor discuss the organ as "a complete and 
 | Library | Licence | Coverage | Plays in Sonara | Provenance |
 |---|---|---|---|---|
 | VSCO 2 CE | CC0 | `OrganLoud.sfz` (keys 36-96, 21 regions about every third semitone, one velocity range 0-127, samples `Rode_Man3Open_*`), `OrganLoudPedal.sfz` (36-66); `OrganQuiet` and `OrganQuietPedal` are in the file list but were not opened | yes | [Cited S30, S33] |
-| VCSL | CC0 1.0; `Info.txt`: organ sampled by Simon Dalzell of Ivy Audio, 2015-16, redistribution granted by Versilian Studios | Pipe Organ Loud, Quiet, Loud Pedal, Quiet Pedal, `Rode_Blower.wav` (blower noise); Renaissance Organ 4′, 8′, Full | WAV only [Cited S31] | [Cited S31] |
+| VCSL | CC0 1.0; `Info.txt`: organ sampled by Simon Dalzell of Ivy Audio, 2015-16, redistribution granted by Versilian Studios | Pipe Organ Loud, Quiet, Loud Pedal, Quiet Pedal, `Rode_Blower.wav` (blower noise); Renaissance Organ 4′, 8′, Full | `master` holds WAVs only [Cited S31]; tag `v1.2.2-RC` holds `Pipe Organ - Loud`, `- Quiet`, `- Loud Pedal`, `- Quiet Pedal`, `- Keyswitch` and `Renaissance Organ - 4'`, `- 8'`, `- 4'+8'`, `- Full`, `- Keyswitch` (`.sfz`) [Cited S40]. Not opened, so playback in Sonara is not checked [Estimate] | [Cited S31, S40] |
 | Sonatina Symphonic Orchestra | CC Sampling Plus 1.0 (retired); not bundlable | 14 single stops (Great, Swell, Pedal), combinations, all stops; key switches 12-28 | yes, without filters and `amp_veltrack` | [Cited S32, S33] |
 | Hauptwerk, GrandOrgue sample sets | various | not opened | no | [Estimate] |
 
@@ -1104,3 +1105,6 @@ _Consistency review of 2026-10-30. No source was re-researched; no json value ch
   are 15 words or fewer.
 - Tags: every Sn cited exists in the Sources table; S36 and S37 (not opened) and S21 (opened, no table) are never
   cited; no foreign tags, local paths, temporary-file references or attribution lines remain.
+- Harpsichord section 5 (lute stop) and section 10, organ_pipe section 10: the VCSL rows said "WAV only" or "no
+  SFZ", read from `master`. The SFZ patches exist in tag `v1.2.2-RC` (new source S40, the tag's file list, opened
+  for this change); the rows now name them and keep "not opened", because no `.sfz` file itself was read.

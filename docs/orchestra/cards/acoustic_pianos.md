@@ -53,6 +53,7 @@ Transposition = sounding minus written, in semitones._
 | S44 | Sound On Sound, S. Paterson, "Logic Pro: Studio Piano" (August 2026) | https://www.soundonsound.com/techniques/logic-pro-studio-piano | other | Partly: only the free introduction; the rest is paywalled |
 | S45 | SFZ Format, opcode reference `sw_lokey` (note names C-1 to G9 for MIDI 0-127) | https://sfzformat.com/opcodes/sw_lokey/ | spec | Yes (added by the fact-check) |
 | S46 | MakeMusic, *Finale 2012* user manual, "General MIDI Patch Numbers & Names" (patches 1-128) | https://usermanuals.finalemusic.com/Finale2012Win/Content/Finale/General_MIDI_Patch_Numbers_F_Names.htm | other | Yes (added by the fact-check; second source for the GM program numbers, because S30 has no table) |
+| S47 | VCSL, GitHub REST tree of tag `v1.2.2-RC` (recursive; 183 `.sfz` files, among them `Chordophones/Zithers/Grand Piano, Steinway B.sfz`, `Grand Piano, Kawai.sfz`, `Grand Piano, Kawai - Legacy.sfz`, `Upright Piano, Knight.sfz`, `Upright Piano, Yamaha.sfz`) | https://api.github.com/repos/sgossner/VCSL/git/trees/v1.2.2-RC?recursive=1 | library maker | Yes (file list only; no `.sfz` file was opened; added in the consistency review) |
 
 Conventions used by every card below:
 
@@ -245,7 +246,7 @@ library S38 is the exception, with five sampled articulations (see `piano_prepar
 
 | Library | Licence as stated | Coverage | Plays in the Sonara sampler? | Provenance |
 |---|---|---|---|---|
-| VCSL "Grand Piano, Steinway B" | CC0 | folders `Sus`, `NoSus`, `Rel`; a 211 cm Steinway B is a studio-size grand, not a concert grand (S5) | raw WAVs; an SFZ must be generated | [Cited S34, S5] |
+| VCSL "Grand Piano, Steinway B" | CC0 | folders `Sus`, `NoSus`, `Rel`; a 211 cm Steinway B is a studio-size grand, not a concert grand (S5) | `master` holds the WAVs only; the patch `Grand Piano, Steinway B.sfz` is in tag `v1.2.2-RC` (S47). The patch was not opened, so playback in Sonara is not checked [Estimate] | [Cited S34, S5, S47] |
 | VSL Synchron Pianos (Steinway D, Bösendorfer Imperial, Fazioli F308) | commercial EULA | pedals, half-pedal, sympathetic resonance, noises | no: needs plugin hosting | [Cited S26]; licence [Estimate: not read] |
 | Apple Studio Piano "Concert Grand" | ships with Logic Pro | three microphone signals (Stereo Mic A condenser pair, Stereo Mic B ribbon pair, Mono Mic ribbon), noises, resonance | no: Logic only | [Cited S24] |
 | No free concert-grand (9 ft class) SFZ was found | | | | [Estimate: only S31, S32, S33, S34 were inspected] |
@@ -357,8 +358,8 @@ Articulation ids and their MIDI mapping are the same as for `piano_concert_grand
 |---|---|---|---|---|
 | Salamander Grand Piano V3 (Yamaha C5, Alexander Holm) | Creative Commons Attribution 3.0 | full keyboard, 16 velocity layers, release, string-resonance and pedal-noise samples; SFZ+FLAC 707 MiB | partly at best: Sonara's sampler supports velocity layers, `trigger=release`, `sw_*` and CC64 (S39), but S32's file also uses `#define`/`#include`, CC-gated groups (`locc`/`hicc`), `on_locc64`, `set_hdcc` and `*_oncc`, which `docs/sample-libraries.md` does not list | [Cited S31, S32, S39]; the compatibility verdict [Estimate: not tested] |
 | YDP Grand Piano (Zenph Studios Yamaha Disklavier Pro multisamples) | Creative Commons Attribution 3.0 | grand piano; layer count not stated; offered only as SF2 (36 MiB) | no: SF2, not SFZ (S39: SF2 sets are not played by the Sonara sampler) | [Cited S31, S39] |
-| VCSL "Grand Piano, Steinway B" (211 cm) | CC0 | `Sus`, `NoSus`, `Rel` folders | raw WAVs; needs a generated SFZ | [Cited S34, S5] |
-| VCSL "Grand Piano, Kawai" | CC0 | folder exists | not checked | [Cited S34] |
+| VCSL "Grand Piano, Steinway B" (211 cm) | CC0 | `Sus`, `NoSus`, `Rel` folders | `master` holds the WAVs only; the patch `Grand Piano, Steinway B.sfz` is in tag `v1.2.2-RC` (S47); not opened, playback not checked [Estimate] | [Cited S34, S5, S47] |
+| VCSL "Grand Piano, Kawai" | CC0 | folder exists | patches `Grand Piano, Kawai.sfz` and `Grand Piano, Kawai - Legacy.sfz` are in tag `v1.2.2-RC` (S47); not opened, playback not checked [Estimate] | [Cited S34, S47] |
 | Apple Studio Piano "Studio Grand" | ships with Logic Pro | three mic sets, noises, resonance | no | [Cited S24] |
 
 ## piano_upright: Upright piano
@@ -474,7 +475,7 @@ Ids and mappings as for `piano_concert_grand` [Estimate].
 | VSCO 2 CE `UprightPiano.sfz` | CC0 | 88 keys, 3 velocity layers, no pedal or release samples | yes per S39 (VSCO's small opcode set plays); the file uses `lokey`, `hikey`, `lovel`, `hivel`, `pitch_keycenter`, `ampeg_attack`, `ampeg_release`, `ampeg_dynamic`, `volume`, `default_path` and `group_label`; `ampeg_dynamic` is not in the documented supported list and may raise a load warning | [Cited S33, S39] |
 | VSCO 2 CE `VSUpright1.sfz` | CC0 | keys 24-103, 3 dynamics, two-way random round robin | yes (`lorand`/`hirand` are supported) | [Cited S33, S39] |
 | Upright Piano KW | CC0 1.0 | Kawai upright, 2 velocity layers | probably; not checked | [Cited S31]; compatibility [Estimate] |
-| VCSL "Upright Piano, Yamaha" and "Upright Piano, Knight" | CC0 | Yamaha folder has `Sustains` and `Releases` | raw WAVs; needs a generated SFZ | [Cited S34] |
+| VCSL "Upright Piano, Yamaha" and "Upright Piano, Knight" | CC0 | Yamaha folder has `Sustains` and `Releases` | `master` holds the WAVs only; the patches `Upright Piano, Yamaha.sfz` and `Upright Piano, Knight.sfz` are in tag `v1.2.2-RC` (S47); not opened, playback not checked [Estimate] | [Cited S34, S47] |
 | Apple "Vintage Upright" | ships with Logic Pro | | no | [Cited S24] |
 
 ## piano_felt: Felt piano
@@ -999,3 +1000,4 @@ Review of 2026-10-30 against the JSON blocks, section 3, section 9, the fact-che
 - piano_prepared section 1: added the score abbreviation "Prep. Pno." [Estimate], which the json carried but no prose mentioned.
 - Fact-check log, opening paragraph: "All 44 sources cited above" now reads "listed above", because S30 is a listed source that is never cited.
 - Articulation ids in the json blocks of `piano_prepared` were harmonized to the shared vocabulary (`multitongue`, `double_tonguing` and `triple_tonguing` become `multi_tongue`; `muted_string` becomes `palm_mute`; `pitch_bend` becomes `portamento`); the prose keeps the original wording.
+- Section 10 of the concert grand, studio grand and upright: the VCSL rows said "raw WAVs; an SFZ must be generated", read from `master`. The SFZ patches exist in tag `v1.2.2-RC` (new source S47, the tag's file list, opened for this change); the rows now name the patches and keep "not opened", because no `.sfz` file itself was read.

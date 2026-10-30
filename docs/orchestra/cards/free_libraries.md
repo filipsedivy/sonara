@@ -63,6 +63,7 @@ Transposition = sounding minus written, in semitones._
 | S57 | FreePats: "Licenses used by FreePats" page and the documentation wiki "History and News" (entry 2022.07.11) | https://freepats.zenvoid.org/licenses.html ; https://github.com/freepats/documentation/wiki/History-and-News | library maker | yes (fact-check) |
 | S58 | FreePats: Saxophone page (Tenor Saxophone) and World and Rare Percussion page | https://freepats.zenvoid.org/Reed/saxophone.html ; https://freepats.zenvoid.org/Percussion/world-and-rare-percussion.html | library maker | yes (fact-check) |
 | S59 | sfzinstruments `LICENSE` files of karoryfer.scarypiano, karoryfer.war-tuba, karoryfer.meatbass, karoryfer.sneakybass, karoryfer.squidpipes (CC0 1.0) and MTG.SoloSax (CC BY 4.0), plus the MTG.SoloSax README | https://github.com/sfzinstruments/MTG.SoloSax | library maker | yes (fact-check) |
+| S60 | SFZ conformance of Sonara's sampler: a code reading of `sfz.rs` and `sampler.rs` at Release 0.1.11 (`a212544`), with library files re-read (VSCO 2 CE `ViolinEns-KS`, `SViolin-KS`, `Flute-KS`, `Clarinet-KS`, `GM-StylePerc`; Sonatina `1st Violins KS`, `Flutes KS`, `1st Violins Legato`, `Timpani`, `Grand Piano`; Salamander V3). Its row ids Q1-Q11, C1-C24 and N1-N7 are the "(Q1)" style references in this file | `../sfz-conformance.md` (this research set) | other (verification) | yes (review) |
 
 **How to read this file.** This group covers libraries and sound sources, not instruments, so each section
 below is a library card with a fixed field table instead of the instrument JSON card; the coverage matrix
@@ -74,7 +75,11 @@ at the end maps the libraries onto Sonara instrument ids. Two judgements recur i
   `default_path`); "every other opcode is recorded … and has no effect" [Cited S55]. Consequence: a region
   that a library gates with `locc`/`hicc` (pedal-down resonance, CC-switched layers) is not silenced but
   plays like any other region [Estimate: inferred from the "no effect" rule in sfz.rs; not tested with a
-  library]. Every `trigger` value other than `release` is mapped to an attack trigger [Cited S55]. SF2/SF3,
+  library]. Every `trigger` value other than `release` is mapped to an attack trigger [Cited S55]. Structural
+  parser limits can silence or stack whole patches even when every opcode is supported: the key-switch range
+  and default are read once at the end of the file (Q1); `#include` is read only at the start of a line
+  (Q2), without `$define` expansion in its path (Q3), and a nested one resolves against the including file's
+  folder (Q4); a `<control>` header clears the enclosing `<global>` (Q11) [Cited S60]. SF2/SF3,
   Kontakt, Decent Sampler (`.dspreset`), Hauptwerk and GrandOrgue (`.organ`) are not played [Cited S55:
   ADR 0010 names SF2 as not played; the scanner looks for `.sfz` files only]. Non-PCM samples (FLAC, Ogg)
   are opened through `AudioStream::open`; a FLAC file sniffs as `Family::Other`, which goes to
@@ -105,7 +110,7 @@ GPL 3.0 https://www.gnu.org/licenses/gpl-3.0.html ; GPL 2.0 https://www.gnu.org/
 | Size | Branch `SFZ`: 75 `.sfz`, 3,168 WAV files, 3.18 GB of WAV; also 6 MP3, 2 RAR and 2 ZIP files in the raw `VSCO 1 Percussion` folder and 9 `.ariax` files [Cited S1: recursive tree via the GitHub REST API, re-counted in the fact-check] |
 | Layers / RR / articulations | `ViolinEns-KS.sfz`: two velocity layers (0-62, 63-127), `seq_length=2`, key switches `sw_lokey=c2`..`sw_hikey=d#2` [Cited S1]; percussion bass drum: 7 velocity layers x 2 round robins (`BDrumNewhit_v1..v7_rr1..rr2`) [Cited S1]. Articulation files per instrument: see the coverage matrix [Cited S1] |
 | Maintenance | Last push 2021-04-06; dormant [Cited S1: `pushed_at`] |
-| Sonara plays as is? | Mostly. `ViolinEns-KS.sfz` uses only supported opcodes plus `group_label`/`sw_label` (treated as harmless) and `ampeg_dynamic` (6 uses), which is not in Sonara's supported list and is recorded as ignored [Cited S1, S55]; `GM-StylePerc.sfz` also sets `ampeg_dynamic=1` [Cited S1]. Ignoring it should be inaudible, because Sonara has no CC-driven envelope for it to update [Estimate: inferred from the opcode's purpose; not rendered]. Sonara's own install guide recommends this library [Cited S55] |
+| Sonara plays as is? | Partly. `ViolinEns-KS.sfz`, `Flute-KS.sfz` and `Clarinet-KS.sfz` are silent until a switch key is played: `sw_default` sits only in the first `<group>`, and the later `<control>` and `<group>` headers clear it (Q1) [Cited S60]. `SViolin-KS.sfz` repeats `sw_default` in every group and plays as is (Q1) [Cited S60]. `ViolinEns-KS.sfz` otherwise uses only supported opcodes plus `group_label`/`sw_label` (treated as harmless) and `ampeg_dynamic` (6 uses), which is not in Sonara's supported list and is recorded as ignored [Cited S1, S55]; `GM-StylePerc.sfz` also sets `ampeg_dynamic=1` [Cited S1]. Ignoring it should be inaudible, because Sonara has no CC-driven envelope for it to update [Estimate: inferred from the opcode's purpose; not rendered]. Sonara's own install guide recommends this library [Cited S55] |
 | Bundling | CC0 would allow bundling and modification without attribution; `Readme.txt` asks for credit and no direct sale of the samples [Cited S1]. ADR 0010: no [Cited S55] |
 
 Notes: the raw folders `Brass/OldTrombone` (Buzz, Fall, Short, Sustain, Vibrato) and `VSCO 1 Percussion`
@@ -146,7 +151,7 @@ Y ("VS Upright No. 1"), Upright Knight and the five harpsichords (English natura
 | Formats | SFZ; 747 `.sfz`; 3,062 audio files (1,626 WAV, 1,436 FLAC), 1.48 GB [Cited S4: tree]. Stereo, 16-bit, 44.1 kHz, mostly sampled in minor thirds, most short articulations with at least 2x round robin [Cited S4] |
 | Patch sets | Per-articulation files and KS files; "Notation" (velocity = volume, CC 1 = marcato attack strength) and "Performance" (CC 1 = volume on long notes) versions; CC 21 = vibrato amount on most strings [Cited S4] |
 | Maintenance | Latest release seen: SSO 4.0 (added vibraphone, solo-string harmonics, solo-violin staccato) [Cited S5]; last push 2026-08-22 [Cited S4] |
-| Sonara plays as is? | Partly. KS files use `sw_*` (supported) [Cited S4, S55]. Notation sustains use `fil_type`, `cutoff`, `fil_veltrack` and a vibrato include, all ignored [Cited S4, S55]; Performance files use `gain_cc1`/`set_cc1`, ignored [Cited S4, S55]. Legato files hold two groups with the same include and `offset=20000`, `trigger=first` (attack 0.30 s) and `trigger=legato` (attack 0.2 s), both `group=1 off_by=1 off_mode=time off_time=1` [Cited S4: `1st Violins Legato.sfz`]; Sonara maps both triggers to attack and runs `choke(group)` before each voice, so on every note-on the `first` region's voice starts, is choked by the `legato` region of the same note with a 10 ms release (`CHOKE_RELEASE = 0.01`), and the `legato` voice remains: every note restarts a monophonic sustain with no legato transition, and `off_mode`/`off_time` are ignored [Cited S55: `sfz.rs` trigger mapping, `sampler.rs` `note_on` and `choke`; Estimate: read from code, not rendered] |
+| Sonara plays as is? | Partly. The key-switch files do not switch as written: each `<global>` holds `sw_*` and one `sw_last`, then includes an articulation file, and an included file that contains a `<control>` header clears that `<global>`, so its articulation sounds on every note; when the last include has one, the switch range is lost and the remaining articulations never sound (Q11) [Cited S60]. In `1st Violins KS` sustain, legato, marcato and harmonics sound together on every note and the other four never sound; in `Flutes KS` the two re-read includes (sustain looped, staccato) also contain `<control>`, so those two articulations sound on every note [Cited S60]; most other Sonatina key-switch files stack articulations the same way [Estimate: S60 relays a first reading; those files were not re-read]. Notation sustains use `fil_type`, `cutoff`, `fil_veltrack` and a vibrato include, all ignored [Cited S4, S55]; Performance files use `gain_cc1`/`set_cc1`, ignored [Cited S4, S55]. Legato files hold two groups with the same include and `offset=20000`, `trigger=first` (attack 0.30 s) and `trigger=legato` (attack 0.2 s), both `group=1 off_by=1 off_mode=time off_time=1` [Cited S4: `1st Violins Legato.sfz`]; Sonara maps both triggers to attack (Q5) and runs `choke(group)` before each voice, so on every note-on the previous note fades over 10 ms (`CHOKE_RELEASE = 0.01`), the `first` region's voice starts at level 0 and is dropped by the `legato` region's choke before it makes a sound, and the `legato` voice remains: every note restarts a monophonic sustain with no legato transition, and the 1 s `off_time` overlap becomes that 10 ms choke (Q9) [Cited S55: `sfz.rs` trigger mapping, `sampler.rs` `note_on` and `choke`; S60; Estimate: read from code, not rendered]. `Timpani`: the `release_key` roll endings start at note-on together with the looped roll (Q5), and the f and p hit layers both sound on every hit because `xfin`/`xfout` are ignored (Q6) [Cited S60]. `Grand Piano` does not load (silence plus a warning): its `#include "$DIR/…"` paths keep the `$DIR` define unexpanded (Q3) [Cited S60] |
 | Bundling | Licence: whole-work distribution only noncommercially, attribution required, retired licence, uncertain sample provenance (including Philharmonia samples): no [Cited S4, S6, S33]. ADR 0010: no [Cited S55] |
 
 ## virtual_playing_orchestra_3: Virtual Playing Orchestra 3 (VPO3)
@@ -174,7 +179,7 @@ Y ("VS Upright No. 1"), Upright Knight and the five harpsichords (English natura
 | Variant: FreePats "V3+2020-06-02" | SFZ+FLAC 707 MiB and SF2 296 MiB (files dated 20200602); SFZ WAV 48 kHz/24-bit 1.18 GiB and SFZ WAV 44.1 kHz/16-bit 394 MiB (files named `V3+20161209`) [Cited S9] |
 | Variant: sfzinstruments (kinwie) | SFZ v2 + ARIA extensions, FLAC, Natural and Retuned in one file via key switch, CC controls for string resonance, hammer noise, pedal noise, release, offset, veltrack; "will only played properly in Plogue sforzando and similar sfz samplers" [Cited S21] |
 | Other variants | Accurate-Salamander Project, Chisato Yamauchi, "CC-BY" [Cited S22]; "Salamander C5 Light" listed in the MuseScore handbook with no licence [Cited S36]; original V3 on archive.org [Cited S21: link] |
-| Sonara plays as is? | kinwie remap: partly; CC controls ignored, so its CC-controlled noise and resonance layers would not be switchable [Cited S21, S55] and may sound on every note [Estimate: inferred from S55 "no effect" rule]. FreePats SFZ mapping not inspected [Estimate: archive not downloaded]. RAM: Sonara decodes whole samples to 4 bytes per sample whatever the file's bit depth, with a 3 GiB cap per patch [Cited S55: `sample-libraries.md`], so the 16-bit set saves disk, not RAM; the 44.1 kHz set needs about 8 % less RAM than the 48 kHz set (44.1/48) [Estimate: arithmetic; the decoded size of the full set was not measured] |
+| Sonara plays as is? | kinwie remap: no. It loads but plays no piano notes: `Data/notes.txt` writes its `#include` of the note regions after a `<group>` header on the same line, and Sonara reads `#include` only at the start of a line, so the note regions are never loaded (Q2) [Cited S60]. The pedal-noise regions (`lokey=-1 hikey=-1`, gated by `on_locc64`/`locc64`) fall back to the full key range, so every note-on starts one pedal-down and one pedal-up noise, transposed (Q7) [Cited S60]. Two later `<global>` headers clear the natural/retuned key switch, which matters once Q2 is fixed (Q1) [Cited S60]; the hammer and string-resonance release sections load but lose their tails under CC64 (N1) [Cited S60]; the other CC controls are ignored [Cited S21, S55]. FreePats SFZ mapping not inspected [Estimate: archive not downloaded]. RAM: Sonara decodes whole samples to 4 bytes per sample whatever the file's bit depth, with a 3 GiB cap per patch [Cited S55: `sample-libraries.md`], so the 16-bit set saves disk, not RAM; the 44.1 kHz set needs about 8 % less RAM than the 48 kHz set (44.1/48) [Estimate: arithmetic; the decoded size of the full set was not measured] |
 | Bundling | CC BY 3.0 would allow with attribution [Cited S21]. ADR 0010: no [Cited S55] |
 
 ## university_of_iowa_mis: University of Iowa Musical Instrument Samples
@@ -271,7 +276,7 @@ the GPL sets never (LIC-01) [Cited S9-S20, S55, S58]. ADR 0010: no [Cited S55].
 | Origin | README: AKAI released the set as public domain in early 2000; Steinway samples with 4 velocity layers; the repository holds the 256 MB version, converted to FLAC [Cited S23]; the SFZ Instruments catalogue lists the download as 77 MB [Cited S22]. MuseScore's sample sources list it as "Splendid Grand" for the AKAI S5000, "Steinway Model D grand piano 'close-mic'", "Original License: Public Domain (confirmed via AKAI rep.)" [Cited S34] |
 | Licence | "Public Domain" [Cited S22, S23]; no licence file in the repository [Estimate: `LICENSE` returned 404] |
 | Format | FLAC + SFZ v2 with ARIA extensions (kinwie); fifth layer made by filter cutoff; string resonance by Peter Eastman; half-pedalling added 2024-05-06 [Cited S23] |
-| Sonara plays as is? | Partly: the README says it plays properly only in ARIA-based players [Cited S23]; the filter-made fifth layer and CC controls are ignored [Cited S23, S55] |
+| Sonara plays as is? | No: the patch fails to load (silence plus a warning), because it selects its layers through `#include` paths built from `$DIR`-style defines, which Sonara does not expand (Q3) [Cited S60: relayed from a first reading of `Splendid Grand Piano.sfz`; S60 re-read only Sonatina's `Grand Piano`, a conversion of Splendid, which fails the same way]. Once Q3 is fixed: the README says it plays properly only in ARIA-based players [Cited S23]; the filter-made fifth layer and CC controls are ignored [Cited S23, S55] |
 | Bundling | Public domain would allow it; the claim rests on AKAI's statement relayed by third parties [Cited S23, S34]. ADR 0010: no [Cited S55] |
 
 ## upright_piano_kw: Upright Piano KW (FreePats)
@@ -307,10 +312,10 @@ Sonara: not inspected [Estimate: small SFZ]. Bundling: CC0 would allow; ADR 0010
 | Library | Facts | Licence | Sonara | Source |
 |---|---|---|---|---|
 | jRhodes3d (Jeff Learman) | 1977 Rhodes Mark I Stage 73; 67 16-bit full-length samples (up to 25 s), up to 5 velocity layers, every 4th white key, FLAC, 90 MB; six `.sfz` (mono, stereo, stereo vibrato, each with and without velocity crossfade) plus a `jRhodes-keyswitch` patch combining them; mod wheel = stereo width | `LICENSE`: "License for samples: CC BY-NC"; its details section names CC BY-NC 4.0 for distributing the samples (commercial licence on request); control files and example clips CC0; music made with it unrestricted ("License for musicians using this to make music: CC0"). Catalogue: jRhodes3d CC-BY-NC-4.0; the looped sibling jRhodes3c CC-BY-NC-SA-4.0 | use the `-no-xfade` files; crossfade and mod-wheel width are not played [Estimate: crossfade opcodes are outside the supported list S55] | [Cited S22, S24] |
-| Greg Sullivan E-Pianos | Yamaha CP80 Electric Grand v1.3, Hohner Pianet T (type 2) v1.3, Wurlitzer EP200 v1.1; SFZ v2 + ARIA (kinwie), FLAC; published with the author's permission and his request for attribution | CC BY 3.0 Unported (`LICENSE` legal code and README) | partly [Estimate: the README declares SFZ v2 + ARIA extensions, beyond Sonara's subset in S55] | [Cited S25] |
+| Greg Sullivan E-Pianos | Yamaha CP80 Electric Grand v1.3, Hohner Pianet T (type 2) v1.3, Wurlitzer EP200 v1.1; SFZ v2 + ARIA (kinwie), FLAC; published with the author's permission and his request for attribution | CC BY 3.0 Unported (`LICENSE` legal code and README); GitHub's licence detection reports NOASSERTION for the repository, so check the files before relying on it [Card electric_keys.md#electric_piano_wurlitzer] | partly [Estimate: the README declares SFZ v2 + ARIA extensions, beyond Sonara's subset in S55] | [Cited S25] |
 | Clavinet | no free sampled clavinet with a stated licence was found [Estimate: one web search; VCSL's `TX81Z/Clavisynth` is an FM-synth patch, not a clavinet, per its folder `Electrophones/TX81Z` (Cited S2)] | | | |
 
-Bundling: jRhodes NC samples never; Greg Sullivan CC BY would allow with attribution [Cited S24, S25].
+Bundling: jRhodes NC samples never; Greg Sullivan CC BY would allow with attribution, once the NOASSERTION reading of the repository metadata is resolved [Cited S24, S25].
 ADR 0010: no [Cited S55]. Spitfire's former "LABS Wurli" is a legacy pack that "can't be imported" into
 Splice INSTRUMENT [Cited S53].
 
@@ -417,7 +422,7 @@ sfzinstruments repositories [S21-S31, S59];
 FluidR3_GM, GeneralUser GS, Arachno; S34, S37-S39), SF2 so not playable by Sonara today; **Iowa** = MIS list
 [S32]; **Phil** = Philharmonia [S33]; **BBCSO-D** = BBCSO Discover [S51]. Abbreviations: sus sustain, vib
 vibrato, NV non-vibrato, stac staccato, spic spiccato, pizz pizzicato, trem tremolo, marc marcato, leg legato
-(see the Sonatina card for how Sonara plays it), harm harmonics, cl col legno, KS key-switch file, sec section.
+(see the Sonatina card for how Sonara plays it), harm harmonics, cl col legno, KS key-switch file (see the VSCO and Sonatina cards for how Sonara plays it), sec section.
 A blank cell means nothing was found in the source named in the column header. "[Estimate: std orch.]" in
 the Phil column means the page promises "all standard orchestral instruments" without listing them.
 
@@ -702,3 +707,28 @@ changed from "would allow" to "forbidden" or back.
   paragraph, so its wording here is a paraphrase.
 - Lars Palo's Jukkasjärvi set ships an "NC20250613" package; whether "NC" means a noncommercial licence was not
   checked.
+
+**Aligned with the SFZ conformance record, 2026-10-30 (was -> now, why).** Licence, provenance and bundling
+findings are unchanged; no coverage-matrix cell carries a playability verdict, so only the legend changed.
+
+1. Sources: added S60, the SFZ conformance record (`sfz-conformance.md`), whose row ids Q1-Q11 and N1-N7 the
+   verdicts now name.
+2. "How to read this file": added the structural parser limits (Q1-Q4, Q11) that can silence or stack whole
+   patches although every opcode is supported. Why: S60.
+3. VSCO 2 CE: "Mostly" -> "Partly": `ViolinEns-KS`, `Flute-KS` and `Clarinet-KS` are silent until a switch key
+   (Q1); `SViolin-KS` plays as is. Why: S60 Q1.
+4. Sonatina: "KS files use `sw_*` (supported)" -> the key-switch files stack some articulations and never
+   select others (Q11; `1st Violins KS` and two `Flutes KS` includes re-read, the other files an Estimate). Why:
+   S60 Q11.
+5. Sonatina legato: the `first` voice is choked by the `legato` region with a 10 ms release -> it is dropped
+   before it sounds, the previous note fades over 10 ms, and the 1 s overlap becomes that choke (Q5, Q9);
+   supersedes item 11 above. Why: S60 Q5, Q9.
+6. Sonatina: added `Timpani` (roll endings at note-on, both hit layers sound; Q5, Q6) and `Grand Piano`
+   (does not load; Q3). Verdict stays "Partly". Why: S60 Q3, Q5, Q6.
+7. Salamander kinwie remap: "partly" -> "no": no piano notes (Q2); pedal noises on every key, transposed
+   (Q7, replacing the earlier Estimate); key switch lost (Q1); release tails lost under CC64 (N1). Why: S60.
+8. Splendid: "Partly" -> "No": the patch fails to load (Q3), relayed by S60 from a first reading of the file;
+   only Sonatina's conversion was re-read. Why: S60 Q3.
+9. Coverage-matrix legend: "KS key-switch file" now points to the VSCO and Sonatina cards for how Sonara plays
+   it.
+- Greg Sullivan E-Pianos: added the caveat that GitHub's licence detection reports NOASSERTION for the repository while its LICENSE and README state CC BY 3.0 (recorded on the electric keyboards card).

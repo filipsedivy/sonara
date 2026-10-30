@@ -285,7 +285,7 @@ In the orchestra the harpist does not usually double on another instrument
 | Library | Licence (as stated) | Coverage | Plays in the Sonara sampler? | Provenance |
 |---|---|---|---|---|
 | VSCO 2 CE `Harp.sfz` | CC0 1.0 Universal | 23 regions, keys 28–101 (E1–F7; sample names agree with C4 = 60); **one velocity layer** (0–127); no round robin; `ampeg_release=12` (s); ordinary pluck only, no harmonics, glissando or damping samples | yes: velocity, release and CC64 are supported | [Cited S13, S25] |
-| VCSL "Concert Harp" | CC0 1.0 Universal | 45 WAVs at 23 pitches E1–F7, file names marking p, mp, mf and f (two layers per pitch: f plus one softer; E1 has f only); raw WAVs (VCSL ships an SFZ generator, per S25) | only after an SFZ is generated | [Cited S14, S25] |
+| VCSL "Concert Harp" | CC0 1.0 Universal | 45 WAVs at 23 pitches E1–F7, file names marking p, mp, mf and f (two layers per pitch: f plus one softer; E1 has f only); WAVs on the master branch; the SFZ files `Concert Harp.sfz` and `Folk Harp.sfz` exist only in the tag `v1.2.2-RC` (see [free_libraries.md](free_libraries.md), VCSL) | plays partly: both velocity layers sound together, because the sampler ignores velocity crossfades (Q6 in [../sfz-conformance.md](../sfz-conformance.md)); the SFZ file itself was not opened for this card | [Cited S14, S25]; the tag contents per free_libraries.md |
 | Sonatina SO `Concert Harp.sfz` | CC Sampling Plus 1.0 | 21 regions, note names c2–c7; `loop_mode=one_shot`; `pitch_veltrack`, `cutoff`, `fil_veltrack` (velocity-to-brightness filter) | partly: the sampler has no filters, so it ignores the brightness and reports unsupported opcodes | [Cited S15, S25]; c2–c7 = 36–96 [Estimate: assumes c4 = 60; S16 warns that note names differ by an octave or two between DAWs] |
 | VSL Synchron Harp, Spitfire Harp Redux | commercial EULAs | full techniques (see section 5) | no: Kontakt/VSL players need plugin hosting (M5) | [Cited S11, S12, S25] |
 
@@ -618,8 +618,8 @@ VSCO 2 CE, VCSL and Sonatina contain no mandolin [Cited S13, S14, S15]. No free 
 4. **Harp chord span per hand.** S3: within an octave, a tenth with a great stretch. S2: up to and beyond a tenth is
    normal. S6: at most an octave and a fourth. Recommendation: comfortable within an octave, maximum a tenth.
 5. **Harmonics per hand.** S1: a chord of harmonics has at most three notes (two in the left hand, one in the right).
-   S2 (Widor): the left hand two to four. S3: two or three. S6: up to three in the left hand. Recommendation: left
-   hand ≤ 3 close notes, right hand 1.
+   S2 (Forsyth, quoting Widor's *The Technique of the Modern Orchestra*): the left hand two to four. S3: two or three.
+   S6: up to three in the left hand. Recommendation: left hand ≤ 3 close notes, right hand 1.
 6. **Rimsky-Korsakov's "first to the fourth octave".** S1 says that of the whole harp range "only the notes of the
    first to the fourth octave are used", but the octave counting is not defined in the translation. It is not used
    for the comfortable range.
@@ -643,7 +643,7 @@ VSCO 2 CE, VCSL and Sonatina contain no mandolin [Cited S13, S14, S15]. No free 
     must never be parsed as scientific octaves.
 14. **No free library** covers harp techniques beyond the ordinary pluck, or any guitar, lute or mandolin in SFZ
     (among VSCO 2 CE, VCSL and Sonatina). VCSL's harp has two dynamic layers per pitch (f plus mf; mp or p at the
-    extremes; E1 has f only), four markings in all, but no SFZ in the tree that was checked.
+    extremes; E1 has f only), four markings in all; its SFZ files exist only in the tag `v1.2.2-RC`, not on the master branch read for this card.
 
 ## Fact-check log
 
@@ -753,3 +753,8 @@ transposition; tag hygiene; quote length; paths._
 - Fact-check log header: "S26 and S27 (VSL Academy) still return HTTP 502" corrected to match the Sources table
   (S26 VSL Academy, HTTP 502; S27 VSL product page, HTTP 404).
 - Sources row S25: the absolute local checkout path was replaced by "paths relative to the repository root".
+- Open question 5: "S2 (Widor)" now reads "S2 (Forsyth, quoting Widor's *The Technique of the Modern Orchestra*)".
+  S2 is Forsyth's *Orchestration*; its harp chapter quotes the two-to-four left-hand harmonics rule and footnotes
+  it to Widor, whose book is not a source of this card. Checked in the S2 OCR text; section 5 already said "S2
+  (quoting Widor)".
+- VCSL harp (section 10 row and Open question 14): the SFZ files `Concert Harp.sfz` and `Folk Harp.sfz` exist in the tag `v1.2.2-RC`; the row now says so, with the velocity-crossfade caveat (Q6) from the SFZ conformance record.
