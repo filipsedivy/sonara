@@ -31,6 +31,31 @@ pub enum LoopMode {
     Sustain,
 }
 
+/// How the voices of a region fade out when the exclusive group named in its `off_by` switches
+/// them off (SFZ `off_mode`, and `off_time` for [`OffMode::Time`]).
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub enum OffMode {
+    /// A quick fade that ignores the region's release (SFZ `fast`, the default): the sampler's
+    /// fixed 10 ms choke.
+    #[default]
+    Fast,
+    /// The region's own release, as when its key is released (SFZ `normal`): a note that an
+    /// exclusive group switches off fades over its release time while the note that switched it
+    /// off starts, so the two overlap.
+    Normal,
+    /// A fade over the given time in seconds, independent of the region's release and of the
+    /// sampler's release scale (SFZ `time` with `off_time`, an ARIA extension): Sonatina's legato
+    /// patches overlap their notes by 1 s this way. The sampler fades over at least its shortest
+    /// fade-out, so a time of 0 does not click.
+    Time(f64),
+}
+
+impl OffMode {
+    /// The `off_time` of [`OffMode::Time`] when the patch writes none, in seconds: 6 ms, the
+    /// default the SFZ format gives (ARIA).
+    pub const DEFAULT_TIME: f64 = 0.006;
+}
+
 /// The shape of a velocity crossfade (SFZ `xf_velcurve`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CrossfadeCurve {
@@ -203,6 +228,8 @@ pub struct Region {
     pub group: u32,
     /// Group whose start silences this region's voices; 0 for none (SFZ `off_by`).
     pub off_by: u32,
+    /// How the region's voices fade out when the group in `off_by` silences them.
+    pub off_mode: OffMode,
     /// Looping behaviour.
     pub loop_mode: LoopMode,
     /// First looped frame.
@@ -241,6 +268,7 @@ impl Default for Region {
             sw_last: None,
             group: 0,
             off_by: 0,
+            off_mode: OffMode::Fast,
             loop_mode: LoopMode::NoLoop,
             loop_start: 0,
             loop_end: 0,
@@ -346,7 +374,9 @@ pub struct SampleBank {
     /// The patch's keyswitches; [`Keyswitches::NONE`] when it has none.
     pub keyswitches: Keyswitches,
     /// How long the instrument can keep sounding after the last key release, in seconds: the
-    /// longest release and the longest release-trigger sample.
+    /// longest release, the longest timed fade of a region that an exclusive group can switch
+    /// off ([`OffMode::Time`]: a press just before the last release may have started it), and
+    /// the longest release-trigger sample.
     pub tail_seconds: f64,
     /// What the patch writes that the sampler does not play, sorted, without duplicates: the
     /// names of unsupported SFZ opcodes (a numbered family as one entry, `locc*`), the values of

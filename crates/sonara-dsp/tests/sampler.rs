@@ -9,10 +9,11 @@ use std::f64::consts::FRAC_1_SQRT_2;
 use std::sync::Arc;
 
 use assert_no_alloc::{AllocDisabler, assert_no_alloc};
-use sonara_core::model::device::Params;
+use sonara_core::model::device::{ParamValue, Params};
 use sonara_core::plugins::{SamplerChoices, sampler_descriptor};
 use sonara_dsp::bank::{
-    CrossfadeCurve, Keyswitches, LoopMode, Region, Sample, SampleBank, Trigger, VelocityCrossfade,
+    CrossfadeCurve, Keyswitches, LoopMode, OffMode, Region, Sample, SampleBank, Trigger,
+    VelocityCrossfade,
 };
 use sonara_dsp::processor::{
     BlockContext, DeviceState, EventKind, InstrumentEvent, ProcessSpec, Processor,
@@ -53,6 +54,11 @@ fn region(sample: usize) -> Region {
 }
 
 fn sampler(bank: SampleBank) -> Box<dyn Processor> {
+    sampler_with(bank, &Params::new())
+}
+
+/// A prepared sampler playing `bank` with `params` over the defaults.
+fn sampler_with(bank: SampleBank, params: &Params) -> Box<dyn Processor> {
     let mut processor = create("sonara.sampler").expect("the sampler exists");
     processor.prepare(ProcessSpec {
         sample_rate: RATE,
@@ -63,7 +69,7 @@ fn sampler(bank: SampleBank) -> Box<dyn Processor> {
         sample_bank: Some(Arc::new(bank)),
         ..DeviceState::default()
     });
-    let slots = param_slots(&descriptor(), &Params::new()).expect("defaults");
+    let slots = param_slots(&descriptor(), params).expect("valid parameters");
     processor.set_params(&slots);
     processor
 }
@@ -1005,6 +1011,194 @@ fn exclusive_group_chokes_the_open_note() {
     run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
     let out = run(&mut *processor, &[event(EventKind::NoteOn, 62, 127)]);
     // The first voice fades within CHOKE_RELEASE (10 ms); one voice is left.
+    close(level(&out), 0.5);
+    assert_eq!(processor.report().entries(), [("voices", 1.0)]);
+}
+
+/// A sample without frames: its region starts no voice but still switches off its group.
+fn silent() -> Sample {
+    Sample {
+        rate: RATE,
+        channels: 1,
+        data: Vec::new(),
+    }
+}
+
+/// Key 60 plays 0.5 with `release` and is switched off by group 1 as `off_mode` says; key 62
+/// is a silent region of group 1, so after its press the output is the old note's fade alone.
+fn exclusive(off_mode: OffMode, release: f64) -> SampleBank {
+    SampleBank {
+        samples: vec![constant(0.5), silent()],
+        regions: vec![
+            Region {
+                key_lo: 60,
+                key_hi: 60,
+                off_by: 1,
+                off_mode,
+                release,
+                ..region(0)
+            },
+            Region {
+                key_lo: 62,
+                key_hi: 62,
+                group: 1,
+                ..region(1)
+            },
+        ],
+        ..SampleBank::default()
+    }
+}
+
+/// The output of a full-level 0.5 voice `frame` frames into a linear fade-out of `seconds`
+/// that starts at the block's first frame: the level falls by `1 / (seconds · rate)` per frame.
+fn faded(seconds: f64, frame: u32) -> f64 {
+    0.5 * (1.0 - f64::from(frame + 1) / (seconds * f64::from(RATE))).max(0.0)
+}
+
+/// Checks every frame of `block` against [`faded`] over `seconds`.
+fn assert_fades_over(block: &[[f64; 2]], seconds: f64) {
+    for (frame, out) in (0_u32..).zip(block) {
+        assert!(
+            (out[0] - faded(seconds, frame)).abs() < 1e-9,
+            "frame {frame}: {} != {}",
+            out[0],
+            faded(seconds, frame)
+        );
+    }
+}
+
+/// Presses key 60 in `processor` and lets it settle, then presses key 62 and returns that block.
+fn switch_off(processor: &mut dyn Processor) -> Vec<[f64; 2]> {
+    close(
+        level(&run(processor, &[event(EventKind::NoteOn, 60, 127)])),
+        0.5,
+    );
+    run(processor, &[event(EventKind::NoteOn, 62, 127)])
+}
+
+/// The parameters with the release scale at `scale`.
+fn release_scale(scale: f64) -> Params {
+    let mut params = Params::new();
+    params.insert("release_scale".to_owned(), ParamValue::Float(scale));
+    params
+}
+
+#[test]
+fn off_mode_fast_keeps_the_quick_choke() {
+    // The default: 10 ms (480 frames), whatever the region's release.
+    let mut processor = sampler(exclusive(OffMode::Fast, 0.5));
+    let out = switch_off(&mut *processor);
+    assert_fades_over(&out, 0.01);
+    close(out[239][0], 0.25);
+    assert_eq!(processor.report().entries(), [("voices", 0.0)]);
+}
+
+#[test]
+fn off_mode_normal_chokes_over_the_region_release() {
+    // `normal` puts the voice into its release, exactly as a key release does: 20 ms here.
+    let bank = exclusive(OffMode::Normal, 0.02);
+    let mut processor = sampler(bank.clone());
+    let out = switch_off(&mut *processor);
+    assert_fades_over(&out, 0.02);
+    close(out[479][0], 0.25);
+    assert_eq!(processor.report().entries(), [("voices", 0.0)]);
+
+    let mut released = sampler(bank.clone());
+    run(&mut *released, &[event(EventKind::NoteOn, 60, 127)]);
+    let key_release = run(&mut *released, &[event(EventKind::NoteOff, 60, 0)]);
+    assert_eq!(out, key_release, "the same fade as the key release");
+
+    // The release parameter scales it like any release: twice as long.
+    let mut scaled = sampler_with(bank, &release_scale(2.0));
+    assert_fades_over(&switch_off(&mut *scaled), 0.04);
+}
+
+#[test]
+fn off_mode_time_fades_over_off_time() {
+    // `time` fades over `off_time` (40 ms, 1920 frames), neither the region's 1 ms release nor
+    // the 10 ms choke, and the release parameter leaves it alone.
+    let bank = exclusive(OffMode::Time(0.04), 0.001);
+    let mut processor = sampler(bank.clone());
+    let out = switch_off(&mut *processor);
+    assert_fades_over(&out, 0.04);
+    close(out[959][0], 0.25);
+    assert_eq!(processor.report().entries(), [("voices", 0.0)]);
+
+    let mut scaled = sampler_with(bank, &release_scale(4.0));
+    assert_fades_over(&switch_off(&mut *scaled), 0.04);
+}
+
+#[test]
+fn a_zero_off_time_still_fades_without_a_click() {
+    // The shortest fade-out of the sampler, 5 ms (240 frames), as for a release of 0.
+    let mut processor = sampler(exclusive(OffMode::Time(0.0), 0.0));
+    assert_fades_over(&switch_off(&mut *processor), 0.005);
+}
+
+#[test]
+fn a_switch_off_never_lengthens_a_release_under_way() {
+    // TST-07: the key's 10 ms release has begun when the group switches the voice off with a
+    // 1 s `off_time`; the release keeps its pace and ends at frame 480.
+    let mut processor = sampler(exclusive(OffMode::Time(1.0), 0.01));
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    let out = run(
+        &mut *processor,
+        &[
+            event(EventKind::NoteOff, 60, 0),
+            InstrumentEvent {
+                offset: 100,
+                ..event(EventKind::NoteOn, 62, 127)
+            },
+        ],
+    );
+    assert_fades_over(&out, 0.01);
+    assert_eq!(processor.report().entries(), [("voices", 0.0)]);
+}
+
+#[test]
+fn the_pedal_does_not_hold_a_switched_off_voice() {
+    // A key released under the pedal is switched off with a 40 ms `off_time`; lifting the pedal
+    // 100 frames later does not cut that fade to the region's 5 ms release.
+    let mut processor = sampler(exclusive(OffMode::Time(0.04), 0.005));
+    run(
+        &mut *processor,
+        &[pedal(true), event(EventKind::NoteOn, 60, 127)],
+    );
+    let held = run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+    close(level(&held), 0.5);
+    let out = run(
+        &mut *processor,
+        &[
+            event(EventKind::NoteOn, 62, 127),
+            InstrumentEvent {
+                offset: 100,
+                ..pedal(false)
+            },
+        ],
+    );
+    assert_fades_over(&out, 0.04);
+}
+
+#[test]
+fn a_timed_switch_off_overlaps_the_new_note() {
+    // Sonatina's legato layout: every region is in group 1 and switched off by it with a timed
+    // fade, so the old note fades out over `off_time` while the new one plays at full level.
+    let bank = SampleBank {
+        samples: vec![constant(0.5)],
+        regions: vec![Region {
+            group: 1,
+            off_by: 1,
+            off_mode: OffMode::Time(0.04),
+            ..region(0)
+        }],
+        ..SampleBank::default()
+    };
+    let mut processor = sampler(bank);
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    let out = run(&mut *processor, &[event(EventKind::NoteOn, 62, 127)]);
+    // The new voice's 0.5 ms attack (24 frames) is over by frame 959; the old voice is at half.
+    close(out[959][0], 0.5 + faded(0.04, 959));
+    close(out[959][0], 0.75);
     close(level(&out), 0.5);
     assert_eq!(processor.report().entries(), [("voices", 1.0)]);
 }

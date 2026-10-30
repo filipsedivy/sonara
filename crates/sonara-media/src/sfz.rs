@@ -9,17 +9,17 @@
 //!
 //! **Supported opcodes:** `sample`, `default_path`, `key`, `lokey`, `hikey`, `pitch_keycenter`,
 //! `lovel`, `hivel`, `lorand`, `hirand`, `seq_length`, `seq_position`, `sw_lokey`, `sw_hikey`,
-//! `sw_default`, `sw_last`, `trigger`, `group`, `off_by`, `loop_mode`, `loop_start`, `loop_end`,
-//! `offset`, `end`, `tune`, `transpose`, `volume`, `amp_veltrack`, `xfin_lovel`, `xfin_hivel`,
-//! `xfout_lovel`, `xfout_hivel`, `xf_velcurve`, `ampeg_attack`, `ampeg_release`, and the
-//! `#define`/`#include` directives. Every other opcode is recorded in
+//! `sw_default`, `sw_last`, `trigger`, `group`, `off_by`, `off_mode`, `off_time`, `loop_mode`,
+//! `loop_start`, `loop_end`, `offset`, `end`, `tune`, `transpose`, `volume`, `amp_veltrack`,
+//! `xfin_lovel`, `xfin_hivel`, `xfout_lovel`, `xfout_hivel`, `xf_velcurve`, `ampeg_attack`,
+//! `ampeg_release`, and the `#define`/`#include` directives. Every other opcode is recorded in
 //! [`SampleBank::ignored_opcodes`] and has no effect. So is a value of `trigger` other than
-//! `attack` and `release`, or of `loop_mode` other than `no_loop`, `one_shot`, `loop_continuous`
-//! and `loop_sustain`, as `trigger=legato`: the region plays as if the opcode were absent, so a
-//! `first`, `legato` or `release_key` region plays on every key press. A header other than
-//! `<control>`, `<global>`, `<master>`, `<group>` and `<region>` (`<curve>`, `<effect>`,
-//! `<midi>`, `<sample>`) is recorded as written, and the opcodes after it are skipped up to the
-//! next of those headers.
+//! `attack` and `release`, of `loop_mode` other than `no_loop`, `one_shot`, `loop_continuous`
+//! and `loop_sustain`, or of `off_mode` other than `fast`, `normal` and `time`, as
+//! `trigger=legato`: the region plays as if the opcode were absent, so a `first`, `legato` or
+//! `release_key` region plays on every key press. A header other than `<control>`, `<global>`,
+//! `<master>`, `<group>` and `<region>` (`<curve>`, `<effect>`, `<midi>`, `<sample>`) is recorded
+//! as written, and the opcodes after it are skipped up to the next of those headers.
 //!
 //! **Regions no key starts.** A `key`, `lokey` or `hikey` of -1 means "no key" (SFZ 2), and a
 //! region with a controller trigger (`on_loccN`/`on_hiccN`, or their `hdcc` forms, other than
@@ -62,6 +62,16 @@
 //! `power` and `gain` is reported and plays as `power`. The key and controller crossfades
 //! (`xfin_lokey`, `xfin_loccN` and their kin) and their curves are not supported.
 //!
+//! **Exclusive groups.** A region of `group` switches off the voices whose region names that
+//! group in `off_by`, and `off_mode` says how they fade ([`OffMode`]): `fast` (the default) is
+//! the sampler's quick choke, `normal` the region's release, and `time` a fade over `off_time`
+//! seconds (6 ms when the patch writes none), as the SFZ format describes them. A region that
+//! writes `off_time` without `off_mode` fades over it too, as ARIA, whose default mode is a timed
+//! fade underneath, and the reference player sfizz read it; an explicit `fast` or `normal` keeps
+//! its own fade. An `off_time` below 0 is read as 0, and one that is not a number as absent.
+//! Sonatina's legato patches write `off_mode=time off_time=1`, so a new note overlaps the old one
+//! for a second. `off_curve` and `off_shape` are not supported.
+//!
 //! **Samples a region cannot play.** `sample=*silence` is a region that plays nothing; its note
 //! still switches off the exclusive group it belongs to, which is what patches write it for. The
 //! other generators the SFZ format names with a leading `*` (`*sine`, `*saw`, `*square`,
@@ -88,7 +98,8 @@ use std::ops::RangeInclusive;
 use std::path::{Path, PathBuf};
 
 use sonara_dsp::bank::{
-    CrossfadeCurve, Keyswitches, LoopMode, Region, Sample, SampleBank, Trigger, VelocityCrossfade,
+    CrossfadeCurve, Keyswitches, LoopMode, OffMode, Region, Sample, SampleBank, Trigger,
+    VelocityCrossfade,
 };
 
 use crate::error::MediaError;
@@ -402,7 +413,11 @@ fn tail_seconds(bank: &SampleBank) -> f64 {
                         / f64::from(sample.rate.max(1))
                 })
             } else {
-                region.release
+                match region.off_mode {
+                    // A press just before the last release may have started this fade.
+                    OffMode::Time(seconds) if region.off_by != 0 => region.release.max(seconds),
+                    _ => region.release,
+                }
             }
         })
         .fold(0.0, f64::max)
@@ -575,6 +590,8 @@ const SUPPORTED: &[&str] = &[
     "trigger",
     "group",
     "off_by",
+    "off_mode",
+    "off_time",
     "loop_mode",
     "loopmode",
     "loop_start",
@@ -960,6 +977,14 @@ impl Loader {
         region.sw_last = key_of("sw_last");
         region.group = to_u32(int("group"), 0);
         region.off_by = to_u32(int("off_by"), 0);
+        let off_time = num("off_time")
+            .filter(|v| v.is_finite())
+            .map(|v| v.max(0.0));
+        region.off_mode = match self.value(opcodes, &["off_mode"], parse_off_mode) {
+            Some(OffMode::Time(default)) => OffMode::Time(off_time.unwrap_or(default)),
+            Some(mode) => mode,
+            None => off_time.map_or(OffMode::Fast, OffMode::Time),
+        };
         region.volume_db = num("volume").unwrap_or(0.0);
         region.amp_veltrack = num("amp_veltrack")
             .filter(|v| v.is_finite())
@@ -1184,6 +1209,17 @@ fn parse_trigger(value: &str) -> Option<Trigger> {
     match value {
         "attack" => Some(Trigger::Attack),
         "release" => Some(Trigger::Release),
+        _ => None,
+    }
+}
+
+/// The mode an `off_mode` value names, with the default `off_time` for `time`; `None` for a value
+/// the sampler does not play.
+fn parse_off_mode(value: &str) -> Option<OffMode> {
+    match value {
+        "fast" => Some(OffMode::Fast),
+        "normal" => Some(OffMode::Normal),
+        "time" => Some(OffMode::Time(OffMode::DEFAULT_TIME)),
         _ => None,
     }
 }

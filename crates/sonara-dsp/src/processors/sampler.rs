@@ -24,7 +24,12 @@
 //!   pedal lifts. Its `trigger=release` regions start then, chosen as at the release: by the
 //!   velocity the key was pressed with and the keyswitch active when it was released. A key
 //!   released twice under one pedal starts them once, for the later release.
-//! - **Exclusive groups.** `group`/`off_by` silence voices quickly.
+//! - **Exclusive groups.** A key press that starts a region of `group` switches off the voices
+//!   whose region names that group in `off_by`. They fade out as their region's `off_mode` says
+//!   ([`OffMode`]): quickly (10 ms) by default, over the region's release (`normal`), or over
+//!   its `off_time` (`time`), so a legato patch's old note overlaps the new one. A choke only
+//!   ever shortens a fade already under way, and the sustain pedal no longer holds a voice it
+//!   has switched off.
 //! - **Playback.** Linear interpolation, constant memory: 64 preallocated voices, the oldest
 //!   one is stolen when all sound (a releasing one first).
 //! - **Controls.** Sustain pedal (CC 64), volume (CC 7), expression (CC 11), pitch bend
@@ -39,7 +44,7 @@ use std::sync::Arc;
 
 use super::DEFAULT_SPEC;
 use super::params::float;
-use crate::bank::{LoopMode, Region, SampleBank, Trigger};
+use crate::bank::{LoopMode, OffMode, Region, SampleBank, Trigger};
 use crate::filters::db_to_amp;
 use crate::processor::{
     BlockContext, DeviceState, EventKind, InstrumentEvent, ParamSlots, ProcessSpec, Processor,
@@ -60,7 +65,8 @@ const MAX_VOICES: usize = 64;
 const MIN_ATTACK: f64 = 0.0005;
 /// Shortest fade-out, in seconds: prevents clicks on regions without a release.
 const MIN_RELEASE: f64 = 0.005;
-/// The fade-out of a voice that an exclusive group or a steal silences, in seconds.
+/// The fade-out, in seconds, of a voice that an exclusive group switches off with the default
+/// `off_mode=fast`, and of every voice on all notes off.
 const CHOKE_RELEASE: f64 = 0.01;
 /// Pitch bend range in semitones.
 const BEND_RANGE: f64 = 2.0;
@@ -278,7 +284,7 @@ impl Sampler {
                 continue;
             }
             advanced |= region.seq_length > 1;
-            self.choke(region.group);
+            self.choke(&bank, region.group);
             self.start_voice(&bank, index, region, event);
         }
         if advanced {
@@ -377,15 +383,19 @@ impl Sampler {
         }
     }
 
-    /// Silences the voices that exclusive group `group` switches off.
-    fn choke(&mut self, group: u32) {
+    /// Silences the voices that exclusive group `group` switches off, each over the fade its
+    /// region's `off_mode` gives ([`off_fade`]). A switched-off voice is off: the sustain pedal
+    /// no longer holds it, so lifting the pedal does not cut a long `off_time` fade short.
+    fn choke(&mut self, bank: &SampleBank, group: u32) {
         if group == 0 {
             return;
         }
         let rate = self.spec.sample_rate;
+        let scale = self.settings.map_or(1.0, |s| s.release_scale);
         for voice in &mut self.voices {
             if voice.active && voice.off_by == group {
-                start_release(voice, rate, CHOKE_RELEASE);
+                voice.held_by_pedal = false;
+                start_release(voice, rate, off_fade(bank, voice.region, scale));
             }
         }
     }
@@ -529,6 +539,19 @@ fn release_time(bank: Option<&SampleBank>, region: usize, scale: f64) -> f64 {
         .and_then(|bank| bank.regions.get(region))
         .map_or(0.0, |r| r.release);
     release.max(MIN_RELEASE) * scale
+}
+
+/// The fade-out in seconds of a voice of region `region` that an exclusive group switches off,
+/// as the region's `off_mode` says in the SFZ format: `fast` is the fixed choke, `normal` the
+/// region's release exactly as a key release plays it (scaled by the release parameter), and
+/// `time` its `off_time`, which the format makes independent of the release, so the release
+/// parameter does not scale it either. Every fade lasts at least the shortest fade-out.
+fn off_fade(bank: &SampleBank, region: usize, scale: f64) -> f64 {
+    match bank.regions.get(region).map(|region| region.off_mode) {
+        Some(OffMode::Normal) => release_time(Some(bank), region, scale),
+        Some(OffMode::Time(seconds)) => seconds.max(MIN_RELEASE),
+        Some(OffMode::Fast) | None => CHOKE_RELEASE,
+    }
 }
 
 /// A frame count or position as a float; sample lengths stay far below 2^52.

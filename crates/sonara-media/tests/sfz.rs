@@ -9,7 +9,7 @@ use std::sync::Arc;
 use sonara_core::model::device::Params;
 use sonara_core::plugins::{SamplerChoices, sampler_descriptor};
 use sonara_dsp::bank::{
-    CrossfadeCurve, Keyswitches, LoopMode, SampleBank, Trigger, VelocityCrossfade,
+    CrossfadeCurve, Keyswitches, LoopMode, OffMode, SampleBank, Trigger, VelocityCrossfade,
 };
 use sonara_dsp::processor::{BlockContext, DeviceState, EventKind, InstrumentEvent, ProcessSpec};
 use sonara_dsp::processors::{create, param_slots};
@@ -943,6 +943,102 @@ fn a_silence_region_plays_nothing_and_chokes_its_group() {
         "{}",
         kept[2_000][0]
     );
+}
+
+#[test]
+fn off_mode_and_off_time_are_read_with_their_scope() {
+    // An explicit `off_mode` decides; `time` without `off_time` fades over the SFZ default of
+    // 6 ms; `off_time` alone selects a timed fade, as ARIA and sfizz read it. An unknown mode is
+    // reported and plays as if absent; the fade curve opcodes stay unsupported and reported.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<control> default_path=Samples/\n\
+         <group> off_by=1 off_mode=time off_time=1\n\
+         <region> sample=soft1.wav\n\
+         <region> sample=soft1.wav off_mode=normal\n\
+         <region> sample=soft1.wav off_mode=fast\n\
+         <region> sample=soft1.wav off_time=0.25\n\
+         <region> sample=soft1.wav off_time=-2\n\
+         <region> sample=soft1.wav off_time=nan\n\
+         <group> off_by=1\n\
+         <region> sample=soft1.wav\n\
+         <region> sample=soft1.wav off_mode=time\n\
+         <region> sample=soft1.wav off_time=0.5\n\
+         <region> sample=soft1.wav off_mode=sometimes\n\
+         <region> sample=soft1.wav off_mode=sometimes off_time=0.5\n\
+         <region> sample=soft1.wav off_curve=1 off_shape=2\n",
+    );
+    assert_eq!(
+        bank.regions.iter().map(|r| r.off_mode).collect::<Vec<_>>(),
+        [
+            OffMode::Time(1.0),
+            OffMode::Normal,
+            OffMode::Fast,
+            OffMode::Time(0.25),
+            OffMode::Time(0.0),
+            OffMode::Time(OffMode::DEFAULT_TIME),
+            OffMode::Fast,
+            OffMode::Time(0.006),
+            OffMode::Time(0.5),
+            OffMode::Fast,
+            OffMode::Time(0.5),
+            OffMode::Fast,
+        ]
+    );
+    assert_eq!(
+        bank.ignored_opcodes,
+        ["off_curve", "off_mode=sometimes", "off_shape"]
+    );
+}
+
+#[test]
+fn a_timed_off_fade_counts_in_the_tail() {
+    // A note switched off just before the last key release can sound for its whole `off_time`
+    // after it; a timed fade no group can start, or a `normal` one, adds nothing to the release.
+    let dir = library();
+    let tail = |opcodes: &str| {
+        load_patch(
+            &dir,
+            &format!("<region> sample=Samples/soft1.wav ampeg_release=0.1 {opcodes}\n"),
+        )
+        .tail_seconds
+    };
+    assert!((tail("off_by=1 off_mode=time off_time=1.5") - 1.5).abs() < 1e-12);
+    assert!((tail("off_by=1 off_mode=time off_time=0.05") - 0.1).abs() < 1e-12);
+    assert!((tail("off_mode=time off_time=1.5") - 0.1).abs() < 1e-12);
+    assert!((tail("off_by=1 off_mode=normal") - 0.1).abs() < 1e-12);
+}
+
+#[test]
+fn a_legato_patch_overlaps_its_notes_for_the_off_time() {
+    // Sonatina's legato layout (TST-06): two groups, both in group 1 and switched off by it with
+    // `off_mode=time`, the first `trigger=first`, the second `trigger=legato` (both played on
+    // every press for now), so each press leaves one voice. Its 1 s `off_time` is 50 ms here
+    // (2205 frames at 44.1 kHz), to fit the fixture's 0.1 s samples. The old note used to stop
+    // within the 10 ms choke; now it is still fading at the end of the next 2048-frame block.
+    let dir = library();
+    let legato = |mode: &str| {
+        let group = format!("<group> group=1 off_by=1 lokey=c3 hikey=c5 {mode}");
+        load_patch(
+            &dir,
+            &format!(
+                "{group} trigger=first\n<region> sample=Samples/loud1.wav\n\
+                 {group} trigger=legato\n<region> sample=Samples/loud1.wav\n"
+            ),
+        )
+    };
+    let loud = 20_000.0 / 32_768.0;
+    let (out, voices) = play(legato("off_mode=time off_time=0.05"), &[&[60], &[62]]);
+    assert_eq!(voices, 2.0, "the old note fades under the new one");
+    let fading = 1.0 - 2_048.0 / 2_205.0;
+    let last = out.last().expect("a block")[0];
+    assert!((last - loud * (1.0 + fading)).abs() < 1e-6, "{last}");
+
+    let (out, voices) = play(legato(""), &[&[60], &[62]]);
+    assert_eq!(voices, 1.0, "the default choke ends the old note");
+    let last = out.last().expect("a block")[0];
+    assert!((last - loud).abs() < 1e-6, "{last}");
 }
 
 #[test]
