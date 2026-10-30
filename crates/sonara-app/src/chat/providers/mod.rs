@@ -6,6 +6,7 @@ use super::provider::Provider;
 
 pub mod claude;
 pub mod codex;
+pub(crate) mod probe;
 
 pub use claude::ClaudeProvider;
 pub use codex::CodexParser;
