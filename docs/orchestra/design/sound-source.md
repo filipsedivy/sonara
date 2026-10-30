@@ -36,8 +36,9 @@ decisions S4-S8 and adds no agent tool, schema field, IPC message or CLI command
 
 ## Today (verified)
 
-Code was read in the `sonara-orchestra` checkout; its `crates/` and `apps/` equal `main` at
-`a212544` (Release 0.1.11). Paths below are repository paths.
+Code was read at `main` `a212544` (Release 0.1.11); the files cited here are unchanged at the branch's
+base, `main` `558f898` (Release 0.1.12), which changed only the undo groups. Paths below are repository
+paths.
 
 | # | Fact | Where |
 |---|---|---|

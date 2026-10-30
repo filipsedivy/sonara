@@ -9,9 +9,9 @@ rows), and proposes a fix and a pinning test for each defect. It is research: no
 
 ## Method
 
-- **Code.** Read on branch `research/orchestra-instruments`. `git diff a212544 HEAD -- crates apps`
-  is empty, so the code is that of `main` at `a212544` (Release 0.1.11), and every line number
-  below refers to that commit. Nothing was built, run, rendered or listened to.
+- **Code.** Read at `main` `a212544` (Release 0.1.11), and every line number below refers to that commit.
+  The files read here are unchanged at the branch's base, `main` `558f898` (Release 0.1.12), which changed
+  only the undo groups (`session.rs`, `undo.rs`, `edit.rs`, `composer.rs`). Nothing was built, run, rendered or listened to.
 - **Files.** Short names used below:
 
   | Short name | Repository path |

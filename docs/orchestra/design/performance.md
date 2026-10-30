@@ -38,8 +38,8 @@ and is milestone O4.
 
 ## Today (verified)
 
-Code was read in a checkout of branch `research/orchestra-instruments`, whose `crates/` and `apps/`
-equal `main` at `a212544` (`git diff a212544 HEAD -- crates apps` is empty). Sampler facts come from
+Code was read at `main` `a212544` (Release 0.1.11). Since then 0.1.12 (`558f898`, this branch's base) changed only `session.rs`, `undo.rs`, `edit.rs` and `composer.rs` (the undo groups); the
+undo-group and `undo.rs` references below cite 0.1.12. Sampler facts come from
 [../sfz-conformance.md](../sfz-conformance.md), which wins over other research files.
 
 | Fact | Evidence |
@@ -66,7 +66,7 @@ equal `main` at `a212544` (`git diff a212544 HEAD -- crates apps` is empty). Sam
 | At equal frames the engine sends note-offs before note-ons; notes are frame-accurate; a note-off is clamped to the clip end; controller events are dropped for looping clips | `crates/sonara-engine/src/schedule.rs:6-15,228-236` |
 | VSCO `ViolinEnsSusVib.sfz` has 22 regions in two velocity layers (0-62, 63-127), `ampeg_attack=0.001`, `ampeg_release=0.8`, no `group`/`off_by`, no loop; `ViolinEns-KS.sfz` uses the same `susVib` samples and layers in its sustain group; the one sustain sample measured lasts 11.2 s | downloaded files and `VlnEns_susVib_A2_v1.wav` read for [../sfz-conformance.md](../sfz-conformance.md) (`afinfo`) |
 | Quality findings exist (`OVERLAPPING_NOTES` only for the same pitch and channel; `UNIFORM_VELOCITY` for a clip of ≥ 8 notes all at one velocity; `code` is `&'static str`); no tool exposes them | `crates/sonara-app/src/quality.rs:1-13,25,51-58,223-310` |
-| Consecutive undo steps with the same merge key within 1.5 s merge; a pan change keys on `mixer:<track>:pan` | `crates/sonara-core/src/undo.rs:7-9,61-70`; `crates/sonara-core/src/commands/track.rs:427-435` |
+| Consecutive undo steps with the same merge key within 1.5 s merge; a pan change keys on `mixer:<track>:pan` | `crates/sonara-core/src/undo.rs:7-9,72-85`; `crates/sonara-core/src/commands/track.rs:427-435` |
 | The AI Composer's system prompt is 3,960 bytes, included at compile time and passed with `--append-system-prompt`; a test checks needles in it; each tool call is its own undo step | `crates/sonara-app/src/composer/invocation.rs:33,252-253,460-470`; `docs/ai-composer.md:70` |
 | A committed generated doc is kept current by an example whose test fails on a difference | `crates/sonara-agent/examples/gen_agent_docs.rs:1-11` |
 | `unicode-normalization` 0.1 is a workspace dependency (MIT/Apache-2.0); `strsim` 0.11 (MIT/Apache-2.0) is in the lock file through clap | `Cargo.toml:106`; `docs/dependencies.md:43,57`; `crates/sonara-media/src/names.rs` |
@@ -421,7 +421,7 @@ pub struct StepRef { pub arg: &'static str, pub step: usize, pub pointer: &'stat
    committed.
 3. **Rollback.** If a stage-1 dry-run or commit fails, the planner calls `undo` once per committed
    step, newest first; no two plan steps share a merge key (the keys name the track or device,
-   `undo.rs:61-70`), so each is one undo entry. Before each `undo`, `get_history` must show the
+   `undo.rs:72-85`), so each is one undo entry. Before each `undo`, `get_history` must show the
    label its own step produced; the tool returns labels and the audit tail but no source per step
    (`crates/sonara-agent/src/handlers/history.rs:28-50`), so a user edit with another label stops the
    rollback and is reported, while one with the same label, or a user pan change merged within 1.5 s,

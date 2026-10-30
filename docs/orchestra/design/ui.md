@@ -33,8 +33,8 @@ changes in phases O1-O5 (CTR-01). Every new canvas element is measured against A
 
 ## Today (verified)
 
-Checked in the repository on branch `research/orchestra-instruments` at 9431759, whose code is
-identical to main @ a212544 (the later commits change only docs).
+Checked at `main` `a212544` (Release 0.1.11). Since then 0.1.12 (`558f898`, this branch's base) changed only `session.rs`, `undo.rs`, `edit.rs` and `composer.rs` (the undo groups); the `edit.rs`
+line numbers below are those of 0.1.12.
 
 **Browser.** The Devices tab is a tree "Instruments" → plugin → presets and "Effects" → category
 (`crates/sonara-app/src/browser.rs:71-127`, rendered by
@@ -102,7 +102,7 @@ controller edit (`src/lib/types.ts:431-514`), mirroring `sonara_app::edit::Edit`
 parent (`edit.rs:211-220`), though core `CreateTrack` has `index` and `parent_id`
 (`crates/sonara-core/src/commands/track.rs:93,103`); `Edit::SetInstrument` takes no preset or
 parameters (`types.ts:475`). Edits that need several commands already build one `Transaction`
-(`edit.rs:830`, `1003`, `1040`; `crates/sonara-core/src/commands/mod.rs:376-414`). `TrackView` has
+(`edit.rs:842`, `1015`, `1052`; `crates/sonara-core/src/commands/mod.rs:376-414`). `TrackView` has
 no automation lanes and `MidiClipView` no controller events (`crates/sonara-app/src/view.rs:186-217`,
 `339-358`; `types.ts:244-271`); `docs/implementation-status.md` (row "CC automation and pitch bend
 in clips") says the piano roll does not edit CC lanes. The core has the commands:
@@ -182,7 +182,7 @@ timeline p95 3 ms, meters 60 fps p99 38 ms, 10,000 notes in 2 ms (lines 177-180)
    Synth or Drum Kit track name, never presented as fact) or *none*.
 5. **Edits are undoable steps.** Each user action is one `Edit`; actions that need several core
    commands become one `Transaction`, as Set Sidechain, Split Clips and Duplicate Clips already do
-   (`edit.rs:830`, `1003`, `1040`).
+   (`edit.rs:842`, `1015`, `1052`).
 6. **Budgets first.** During playback the only new per-frame work is one comparison per header row
    (playhead against that row's next articulation switch) and a DOM write when the text changes;
    every new canvas element is batched like the existing painters and measured (section 12).
