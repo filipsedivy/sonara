@@ -22,7 +22,8 @@ everything Claude Code returned. The code is `sonara_app::composer` (the logic) 
 3. **Run.** `claude -p --output-format stream-json --verbose --include-partial-messages` with the
    prompt on stdin, the system prompt appended, the MCP server `sonara` (the bundled `sonara
    mcp`), and the tool boundaries below. Its edits go through the window's agent session, so the
-   timeline, mixer and piano roll update as for any agent, and Undo undoes them step by step.
+   timeline, mixer and piano roll update as for any agent, and the whole run is one undo step
+   (see Undo below).
 4. **Stream.** The output is parsed into events (`composer::stream`): the session start with the
    MCP status, text as it is written, tool calls and their answers (a Sonara `"ok": false`
    envelope counts as failed), API retries, and the final `result`.
@@ -61,18 +62,42 @@ summary in the language of the brief).
 **Stop** sends `SIGINT` to Claude Code, which ends the turn and still writes its `result`
 (`SIGTERM` would exit with 143 and no result). A run that does not end within 10 s gets `SIGTERM`
 and, 5 s later, `SIGKILL`, both to its process group, which also ends the `sonara mcp` child.
-Quitting Sonara stops a run the same way. The undo history is sealed when a run starts and when it
-ends, so your next edit never merges into the agent's last step.
+Quitting Sonara stops a run the same way.
+
+## Undo
+
+A run is one undo step, **Undo AI Composer**, and a stopped or failed run is one too.
+
+- When a run starts, the window's undo history opens a group (`ProjectSession::begin_undo_group`)
+  and seals the last step. While the run goes, its steps (source `agent`) stay separate, so the
+  agent's own `undo` tool still takes back exactly one step instead of the whole run.
+- When the process has exited, and before the panel hears of it, the group is closed
+  (`end_undo_group`): the run's steps become one, with the project from before the first as its
+  `before` and the one after the last as its `after`. The step is sealed, so your next edit never
+  merges into it. A run that changed nothing leaves the history alone.
+- Nothing about the tools changes (CTR-01): this is a rule of the window's history, not of the
+  agent API.
+
+Limits of this:
+
+- An edit **you** make while the run goes is a step of its own and splits the run into two steps
+  (before and after it). Each undo snapshot is the whole project, so merging it would take your
+  edit along.
+- Another agent attached to the same window also has the source `agent`, and its edits during a run
+  join the run's step. The source does not tell agents apart without an IPC change.
+- The history keeps 500 steps. A run of more steps than that loses its oldest ones before the
+  group is closed, as any history does.
 
 ## Limits
 
 - One run at a time; at most 200 turns and a 16 000 character prompt.
-- Each tool call of the agent is its own undo step; a run is not one step.
 - The cost is Claude Code's own client-side estimate.
 - macOS (Unix) only: the run module uses process groups and signals.
 
 ## Tests
 
+- Undo groups: `crates/sonara-core/tests/history.rs` (the session) and
+  `crates/sonara-agent/tests/undo_group.rs` (tool calls through the agent service).
 - Unit tests of the parser, the command line, the workspace, the search for `claude` and the
   process handling (with a fake `claude`), in `crates/sonara-app/src/composer/`.
 - `apps/sonara-desktop/tests/unit/composer.test.ts` and `tests/page/composer.spec.ts` for the

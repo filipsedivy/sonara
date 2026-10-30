@@ -7,8 +7,10 @@
 //! nothing from the composer for that). The panel is not a modal dialog: the window and the menu
 //! stay usable while the agent works, and the user can Undo, play or stop it at any time.
 //!
-//! One run at a time. The undo history is sealed when a run starts and when it ends, so the user's
-//! next edit never merges into the agent's last step.
+//! One run at a time. The whole run is one undo step ([`UNDO_LABEL`]): an undo group opens when it
+//! starts, and its steps are collapsed when it ends, before the panel hears of the end. The
+//! collapsed step is sealed, so the user's next edit never merges into it. An edit the user makes
+//! while the run goes stays a step of its own.
 
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard, PoisonError};
@@ -22,6 +24,9 @@ use tauri::State;
 use tauri::ipc::Channel;
 
 use crate::shell::Shell;
+
+/// The label of the undo step that a whole run becomes (the Edit menu's "Undo AI Composer").
+const UNDO_LABEL: &str = "AI Composer";
 
 /// The run in progress, if any.
 #[derive(Default)]
@@ -163,17 +168,22 @@ pub fn composer_start(
     let invocation = composer::build(&claude.path, &cli, &workspace, prompt);
 
     let app = std::sync::Arc::clone(shell.app());
-    edit::seal_undo(&app);
+    edit::begin_undo_group(&app);
     let run = Run::start(&invocation, workspace, move |event| {
         let exited = matches!(event, Event::Exited { .. });
+        if exited {
+            // Before the panel hears of the end, so that it never reads the uncollapsed history.
+            edit::end_undo_group(&app, UNDO_LABEL);
+        }
         if channel.send(event).is_err() {
             log::debug!("composer: the panel is gone");
         }
-        if exited {
-            edit::seal_undo(&app);
-        }
     })
-    .map_err(|error| failure("IO_ERROR", error.to_string()))?;
+    .map_err(|error| {
+        // The process never started, so nothing was recorded; the group must not stay open.
+        edit::end_undo_group(shell.app(), UNDO_LABEL);
+        failure("IO_ERROR", error.to_string())
+    })?;
     *slot = Some(run);
     Ok(())
 }

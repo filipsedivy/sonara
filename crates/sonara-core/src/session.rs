@@ -281,6 +281,7 @@ impl ProjectSession {
                 merge_key: command.merge_key(),
                 timestamp: (self.clock)(),
                 source: source.to_owned(),
+                in_group: false,
             });
         } else if self
             .saved_project
@@ -391,6 +392,30 @@ impl ProjectSession {
     /// Stops the last step from merging with the next one.
     pub fn seal_undo(&mut self) {
         self.history.seal();
+    }
+
+    /// Opens an undo group: until [`Self::end_undo_group`], the steps of the `agent` source stay
+    /// separate (an `undo` still undoes one) and are collapsed into one step at the end. Used by a
+    /// whole run of the AI composer. A project that is opened or closed meanwhile drops the group.
+    pub fn begin_undo_group(&mut self) {
+        self.history.begin_group();
+    }
+
+    /// Closes the undo group and collapses its steps into one named `label`. When steps were
+    /// collapsed, observers get an event without changes, so that the Undo item and the panels
+    /// word the new history. Returns whether there was anything to collapse.
+    pub fn end_undo_group(&mut self, label: &str) -> bool {
+        let collapsed = self.history.end_group(label);
+        if collapsed {
+            self.emit(&SessionEvent {
+                kind: EventKind::Command,
+                version: self.version,
+                changes: ChangeSet::default(),
+                label: String::new(),
+                source: "user".to_owned(),
+            });
+        }
+        collapsed
     }
 
     /// Forgets every undo and redo step (the prototype's `session.history.clear()`, used after

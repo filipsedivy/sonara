@@ -1,6 +1,6 @@
 //! The edit boundary of an interface (TYP-06): one validated [`Edit`] per
 //! gesture of the prototype's panels, mapped to `sonara-core` commands and transactions, run
-//! with the source `"gui"`; and `undo`, `redo` and `seal_undo`.
+//! with the source `"gui"`; and `undo`, `redo`, `seal_undo` and the undo group of an agent run.
 //!
 //! The prototype's panels built commands themselves and ran them through
 //! `SessionBridge.execute`. Here the page sends an [`Edit`] (a tagged JSON object, `{"op":
@@ -663,6 +663,18 @@ pub fn redo(app: &AppContext) -> Result<EditOutcome, ErrorNotice> {
 /// Ends the gesture: the next edit starts a new undo step, even with the same merge key.
 pub fn seal_undo(app: &AppContext) {
     app.session().lock().seal_undo();
+}
+
+/// Starts an undo group for a whole run of an agent (the AI composer): the top step is sealed, and
+/// the steps of the `agent` source that follow are collapsed into one by [`end_undo_group`].
+pub fn begin_undo_group(app: &AppContext) {
+    app.session().lock().begin_undo_group();
+}
+
+/// Ends the undo group: the run's steps become one step named `label`, which one Undo reverts.
+/// Returns whether there was a step to collapse. Never merges into a later edit.
+pub fn end_undo_group(app: &AppContext, label: &str) -> bool {
+    app.session().lock().end_undo_group(label)
 }
 
 /// The open project, for edits that read it to build their commands.

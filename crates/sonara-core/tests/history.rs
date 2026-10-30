@@ -240,3 +240,164 @@ fn deleting_and_restoring_a_note_keeps_its_id_and_values() {
     assert!(fx.clip().note("n_b").is_none());
     assert_eq!(fx.clip().notes.len(), 2);
 }
+
+// -- undo groups: one step for a whole AI composer run ----------------------------------------
+
+fn labels(fx: &Fx) -> Vec<String> {
+    fx.session
+        .history()
+        .labels()
+        .0
+        .into_iter()
+        .map(str::to_owned)
+        .collect()
+}
+
+#[test]
+fn a_group_of_agent_steps_is_one_undo_step_that_restores_the_project_before_it() {
+    let mut fx = Fx::new();
+    fx.exec(&fx.rename("Mine"));
+    let before = fx.project().clone();
+    fx.session.begin_undo_group();
+    for name in ["A", "B", "C"] {
+        fx.session
+            .execute(&fx.rename(name), false, "agent")
+            .expect("agent edit");
+    }
+    let after = fx.project().clone();
+    assert_eq!(
+        labels(&fx).len(),
+        4,
+        "the steps stay separate while the run goes"
+    );
+    assert!(fx.session.end_undo_group("AI Composer"));
+    assert_eq!(labels(&fx), ["Rename Track", "AI Composer"]);
+
+    fx.session.undo("user").expect("undo the run");
+    assert_eq!(*fx.project(), before);
+    fx.session.redo("user").expect("redo the run");
+    assert_eq!(*fx.project(), after);
+    fx.session.undo("user").expect("undo the run again");
+    fx.session.undo("user").expect("undo the earlier edit");
+    assert_eq!(
+        fx.session.undo("user").unwrap_err().code,
+        ErrorCode::NothingToUndo
+    );
+}
+
+#[test]
+fn an_undo_made_inside_the_group_undoes_one_step_not_the_run() {
+    let mut fx = Fx::new();
+    fx.session.begin_undo_group();
+    fx.session
+        .execute(&fx.rename("A"), false, "agent")
+        .expect("a");
+    let after_a = fx.project().clone();
+    fx.session
+        .execute(&fx.rename("B"), false, "agent")
+        .expect("b");
+    fx.session
+        .undo("agent")
+        .expect("the agent undoes its last step");
+    assert_eq!(*fx.project(), after_a);
+    assert!(fx.session.end_undo_group("AI Composer"));
+    assert_eq!(labels(&fx), ["AI Composer"]);
+}
+
+#[test]
+fn an_edit_of_the_user_inside_the_group_stays_its_own_step() {
+    let mut fx = Fx::new();
+    let start = fx.project().clone();
+    fx.session.begin_undo_group();
+    fx.session
+        .execute(&fx.rename("A"), false, "agent")
+        .expect("a");
+    fx.session
+        .execute(&fx.rename("B"), false, "agent")
+        .expect("b");
+    fx.session
+        .execute(&fx.rename("Mine"), false, "gui")
+        .expect("user");
+    fx.session
+        .execute(&fx.rename("C"), false, "agent")
+        .expect("c");
+    assert!(fx.session.end_undo_group("AI Composer"));
+    assert_eq!(labels(&fx), ["AI Composer", "Rename Track", "AI Composer"]);
+    fx.session.undo("user").expect("last run part");
+    assert_eq!(fx.session.history().undo_label(), Some("Rename Track"));
+    fx.session.undo("user").expect("the user's edit");
+    fx.session.undo("user").expect("first run part");
+    assert_eq!(*fx.project(), start);
+}
+
+#[test]
+fn steps_inside_a_group_never_merge_into_an_earlier_step() {
+    let mut fx = Fx::new();
+    // The same merge key within the merge window (the test clock stands still).
+    fx.session
+        .execute(&fx.rename("Mine"), false, "gui")
+        .expect("user");
+    fx.session.begin_undo_group();
+    fx.session
+        .execute(&fx.rename("A"), false, "agent")
+        .expect("agent");
+    fx.session.end_undo_group("AI Composer");
+    assert_eq!(labels(&fx), ["Rename Track", "AI Composer"]);
+    // The next edit does not merge into the run's step either.
+    fx.session
+        .execute(&fx.rename("After"), false, "gui")
+        .expect("user");
+    assert_eq!(labels(&fx), ["Rename Track", "AI Composer", "Rename Track"]);
+}
+
+#[test]
+fn an_empty_group_changes_nothing_and_makes_no_event() {
+    let mut fx = Fx::new();
+    fx.exec(&fx.rename("Mine"));
+    let events = fx.session.subscribe();
+    fx.session.begin_undo_group();
+    assert!(!fx.session.end_undo_group("AI Composer"));
+    assert_eq!(labels(&fx), ["Rename Track"]);
+    assert!(events.try_recv().is_err());
+}
+
+#[test]
+fn collapsing_a_group_tells_observers_to_refresh_the_history() {
+    let mut fx = Fx::new();
+    fx.session.begin_undo_group();
+    fx.session
+        .execute(&fx.rename("A"), false, "agent")
+        .expect("agent");
+    let events = fx.session.subscribe();
+    fx.session.end_undo_group("AI Composer");
+    let event = events.try_recv().expect("an event");
+    assert_eq!(
+        event.source, "user",
+        "no status-bar message for the collapse"
+    );
+    assert!(event.changes.flags.is_empty());
+}
+
+#[test]
+fn opening_another_project_drops_an_open_group() {
+    let mut fx = Fx::new();
+    fx.session.begin_undo_group();
+    fx.session
+        .execute(&fx.rename("A"), false, "agent")
+        .expect("agent");
+    let project = fx.project().clone();
+    let location = ProjectLocation {
+        path: None,
+        workspace: PathBuf::from("/tmp/ws2"),
+        packaged: false,
+    };
+    fx.session.load(project, location, true);
+    fx.session
+        .execute(&fx.rename("B"), false, "agent")
+        .expect("agent");
+    assert!(
+        !fx.session.end_undo_group("AI Composer"),
+        "the group did not survive the load"
+    );
+    assert_eq!(labels(&fx), ["Rename Track"]);
+}
