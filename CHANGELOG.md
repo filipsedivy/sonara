@@ -8,6 +8,8 @@ break the API. The project format is versioned independently, see
 
 ## [Unreleased]
 
+## [0.1.12] — 2026-10-30
+
 ### Changed
 
 - **AI Composer: a whole run is one undo step.** Edit → "Undo AI Composer" reverts everything the
