@@ -15,6 +15,10 @@ break the API. The project format is versioned independently, see
   edit you make yourself while the run goes stays a separate step. No tool, schema or CLI
   contract changes.
 
+### Internal
+
+- CI checks that the AI Composer panel's page tests are part of the frontend run.
+
 ## [0.1.11] — 2026-10-29
 
 ### Added

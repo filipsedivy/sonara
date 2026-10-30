@@ -101,7 +101,8 @@ Limits of this:
 - Unit tests of the parser, the command line, the workspace, the search for `claude` and the
   process handling (with a fake `claude`), in `crates/sonara-app/src/composer/`.
 - `apps/sonara-desktop/tests/unit/composer.test.ts` and `tests/page/composer.spec.ts` for the
-  panel.
+  panel. CI's `frontend` job runs both projects (`pnpm run test`), and a step fails the job if
+  the page project no longer lists `composer.spec.ts`.
 - `apps/sonara/tests/composer_live.rs` runs a real Claude Code against a headless session. It is
   local only and ignored by default, because it spends quota:
   `cargo test -p sonara --test composer_live -- --ignored --nocapture`.
