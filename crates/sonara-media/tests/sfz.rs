@@ -320,3 +320,142 @@ fn a_patch_without_regions_is_malformed() {
         Err(MediaError::Malformed { .. })
     ));
 }
+
+/// The first sample value of `region`'s sample, to tell the fixture's files apart.
+fn first_value(bank: &SampleBank, region: usize) -> f64 {
+    f64::from(bank.samples[bank.regions[region].sample].data[0])
+}
+
+#[test]
+fn an_include_after_a_header_on_the_same_line_is_read() {
+    // Salamander's layout (TST-06): the velocity layer's opcodes and its regions are included
+    // in the middle of a `<group>` line. Read only at the start of a line, the first include
+    // was dropped and the second was appended to `hivel`, which then fell back to 127, and the
+    // note regions were never loaded.
+    let dir = library();
+    fs::write(dir.path().join("v.txt"), "lokey=c3 hikey=c5 volume=-3\n").expect("write");
+    fs::write(
+        dir.path().join("r.txt"),
+        "<region> sample=Samples/soft1.wav\n<region> sample=Samples/loud1.wav\n",
+    )
+    .expect("write");
+    let bank = load_patch(
+        &dir,
+        "<group> #include \"v.txt\" lovel=1 hivel=26 #include \"r.txt\"\n",
+    );
+    assert_eq!(bank.regions.len(), 2, "the included regions are read");
+    for region in &bank.regions {
+        assert_eq!((region.vel_lo, region.vel_hi), (1, 26));
+        assert_eq!((region.key_lo, region.key_hi), (48, 72), "v.txt is read");
+        assert_eq!(region.volume_db, -3.0);
+    }
+    assert!((first_value(&bank, 0) - 3_000.0 / 32_768.0).abs() < 1e-6);
+    assert!((first_value(&bank, 1) - 20_000.0 / 32_768.0).abs() < 1e-6);
+    assert_eq!(
+        bank.ignored_opcodes,
+        Vec::<String>::new(),
+        "every opcode in v.txt is supported"
+    );
+}
+
+#[test]
+fn a_define_after_a_header_on_the_same_line_is_read() {
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<group> lokey=c3 hikey=c5 #define $TOP 26\n\
+         <region> sample=Samples/soft1.wav hivel=$TOP\n",
+    );
+    let region = &bank.regions[0];
+    assert_eq!(
+        (region.key_lo, region.key_hi),
+        (48, 72),
+        "the text before the define is read"
+    );
+    assert_eq!(region.vel_hi, 26, "$TOP is defined");
+}
+
+#[test]
+fn a_define_takes_the_rest_of_its_line() {
+    // `hivel=2` belongs to the define, as the reference player sfizz reads a define's value to
+    // the end of its line; it never reaches the open `<group>`.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<group> lovel=1 #define $TOP 26 hivel=2\n\
+         <region> sample=Samples/soft1.wav\n",
+    );
+    let region = &bank.regions[0];
+    assert_eq!((region.vel_lo, region.vel_hi), (1, 127));
+}
+
+#[test]
+fn include_paths_are_quoted_or_one_word() {
+    // A quoted path keeps its spaces; an unquoted one ends at the next space, and the line goes
+    // on after either. A header's `>` also ends a token, so an include may follow it directly.
+    let dir = library();
+    fs::write(
+        dir.path().join("my part.sfz"),
+        "<region> sample=Samples/soft1.wav\n",
+    )
+    .expect("write");
+    fs::write(
+        dir.path().join("loud.sfz"),
+        "<region> sample=Samples/loud1.wav\n",
+    )
+    .expect("write");
+    let bank = load_patch(
+        &dir,
+        "<group> lokey=c3 hikey=c5 #include \"my part.sfz\" lovel=10\n\
+         <group>#include loud.sfz lovel=64\n",
+    );
+    assert_eq!(bank.regions.len(), 2);
+    assert!((first_value(&bank, 0) - 3_000.0 / 32_768.0).abs() < 1e-6);
+    assert_eq!((bank.regions[0].key_lo, bank.regions[0].key_hi), (48, 72));
+    assert_eq!(
+        bank.regions[0].vel_lo, 10,
+        "the line goes on after the path"
+    );
+    assert!((first_value(&bank, 1) - 20_000.0 / 32_768.0).abs() < 1e-6);
+    assert_eq!(bank.regions[1].vel_lo, 64);
+}
+
+#[test]
+fn a_hash_inside_a_value_is_not_a_directive() {
+    // Only `#include` and `#define` are directives: a sample path with `#` after a space and
+    // a note name with a sharp stay opcode values.
+    let dir = library();
+    wav(&dir.path().join("Samples/Hit #1.wav"), 44_100, 441, 7_000);
+    let bank = load_patch(&dir, "<region> sample=Samples/Hit #1.wav key=c#4\n");
+    assert_eq!(bank.regions.len(), 1);
+    assert!((first_value(&bank, 0) - 7_000.0 / 32_768.0).abs() < 1e-6);
+    assert_eq!((bank.regions[0].key_lo, bank.regions[0].key_hi), (61, 61));
+}
+
+#[test]
+fn a_directive_in_a_comment_is_ignored() {
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "// #include \"absent.sfz\"\n\
+         <region> sample=Samples/soft1.wav // #define $X 1 #include \"absent.sfz\"\n\
+         /* <region> #include \"absent.sfz\" */\n",
+    );
+    assert_eq!(bank.regions.len(), 1, "no absent file is read");
+}
+
+#[test]
+fn an_include_cycle_is_malformed() {
+    let dir = library();
+    let path = dir.path().join("self.sfz");
+    fs::write(
+        &path,
+        "<region> sample=Samples/soft1.wav #include \"self.sfz\"\n",
+    )
+    .expect("write");
+    let result = load_sfz(&path);
+    assert!(
+        matches!(&result, Err(MediaError::Malformed { message, .. }) if message.contains("too deep")),
+        "{result:?}"
+    );
+}

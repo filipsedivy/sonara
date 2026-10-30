@@ -14,6 +14,13 @@
 //! `#define`/`#include` directives. Every other opcode is recorded in
 //! [`SampleBank::ignored_opcodes`] and has no effect.
 //!
+//! **Directives.** `#include` and `#define` are read wherever a token starts, not only at the
+//! start of a line, as the reference player sfizz reads them: Salamander's
+//! `<group> #include "vel.txt" lovel=1 hivel=26 #include "region.txt"` reads both files in
+//! place. An `#include` takes one path, quoted (spaces allowed) or a single word, and the line
+//! goes on after it. A `#define` takes the rest of its line, and its value is the first word
+//! after the name.
+//!
 //! **Header scopes.** A region inherits the opcodes of the open `<control>`, `<global>`,
 //! `<master>` and `<group>` headers. `<global>`, `<master>` and `<group>` each start their own
 //! scope afresh and clear the scopes inside it; `<control>` clears only the control scope, so a
@@ -102,6 +109,9 @@ fn tail_seconds(bank: &SampleBank) -> f64 {
 
 // --- Preprocessing: comments, #include, #define ---
 
+/// The text of the patch file `path` without comments, with each `#include` replaced by the
+/// file it names and the `$defines` known so far substituted. The directives are read wherever
+/// a token starts, so the line goes on after an `#include` (see the module documentation).
 fn read_preprocessed(
     path: &Path,
     defines: &mut HashMap<String, String>,
@@ -114,30 +124,103 @@ fn read_preprocessed(
     let dir = path.parent().unwrap_or_else(|| Path::new("."));
     let mut out = String::new();
     for line in strip_block_comments(&raw).lines() {
-        let line = line.split("//").next().unwrap_or("").trim();
-        if let Some(rest) = line.strip_prefix("#include") {
-            let name = rest.trim().trim_matches('"').replace('\\', "/");
-            out.push_str(&read_preprocessed(&dir.join(name), defines, depth + 1)?);
-        } else if let Some(rest) = line.strip_prefix("#define") {
-            let mut words = rest.split_whitespace();
-            if let (Some(name), Some(value)) = (words.next(), words.next()) {
-                defines.insert(name.to_owned(), value.to_owned());
-            }
-        } else {
-            let mut line = line.to_owned();
-            // Longest names first, so `$KEY2` is not eaten by `$KEY`.
-            let mut names: Vec<_> = defines.iter().collect();
-            names.sort_by_key(|(name, _)| std::cmp::Reverse(name.len()));
-            for (name, value) in names {
-                if line.contains(name.as_str()) {
-                    line = line.replace(name.as_str(), value);
+        let mut rest = line.split("//").next().unwrap_or("");
+        loop {
+            let (text, directive) = split_directive(rest);
+            push_expanded(&mut out, text, defines);
+            match directive {
+                Some(Directive::Include { file, after }) => {
+                    let file = dir.join(file.replace('\\', "/"));
+                    out.push_str(&read_preprocessed(&file, defines, depth + 1)?);
+                    rest = after;
                 }
+                Some(Directive::Define(definition)) => {
+                    let mut words = definition.split_whitespace();
+                    if let (Some(name), Some(value)) = (words.next(), words.next()) {
+                        defines.insert(name.to_owned(), value.to_owned());
+                    }
+                    break;
+                }
+                None => break,
             }
-            out.push_str(&line);
-            out.push('\n');
         }
     }
     Ok(out)
+}
+
+/// A preprocessor directive found in a line.
+enum Directive<'a> {
+    /// `#include`: the file it names, and the rest of the line after it.
+    Include { file: &'a str, after: &'a str },
+    /// `#define`: the rest of its line, which all belongs to the define.
+    Define(&'a str),
+}
+
+/// Splits `line` at its first directive: the text before it and the directive. A directive
+/// counts only where a token starts, at the start of the line or after whitespace or a header's
+/// `>`, so a `#` inside a value (`key=c#4`) is never one.
+fn split_directive(line: &str) -> (&str, Option<Directive<'_>>) {
+    for (at, _) in line.match_indices('#') {
+        let Some((text, from)) = line.split_at_checked(at) else {
+            continue;
+        };
+        let token_start = text
+            .chars()
+            .next_back()
+            .is_none_or(|c| c.is_whitespace() || c == '>');
+        if token_start && let Some(directive) = directive(from) {
+            return (text, Some(directive));
+        }
+    }
+    (line, None)
+}
+
+/// The directive `text` starts with: `#include` or `#define` as a whole word.
+fn directive(text: &str) -> Option<Directive<'_>> {
+    if let Some(rest) = strip_keyword(text, "#include") {
+        let (file, after) = include_file(rest);
+        Some(Directive::Include { file, after })
+    } else {
+        strip_keyword(text, "#define").map(Directive::Define)
+    }
+}
+
+/// `text` after `keyword`, when `text` starts with it and no identifier character follows.
+fn strip_keyword<'a>(text: &'a str, keyword: &str) -> Option<&'a str> {
+    let rest = text.strip_prefix(keyword)?;
+    let whole_word = !rest.starts_with(|c: char| c.is_ascii_alphanumeric() || c == '_');
+    whole_word.then_some(rest)
+}
+
+/// The file an `#include` names and the text after it. A quoted path runs to its closing quote,
+/// spaces included, or to the end of the line when the quote is not closed; an unquoted one is
+/// one word.
+fn include_file(rest: &str) -> (&str, &str) {
+    let rest = rest.trim_start();
+    if let Some(quoted) = rest.strip_prefix('"') {
+        quoted.split_once('"').unwrap_or((quoted.trim_end(), ""))
+    } else {
+        rest.split_once(char::is_whitespace).unwrap_or((rest, ""))
+    }
+}
+
+/// Appends `text` with its `$defines` substituted, on a line of its own, so that its tokens stay
+/// apart from an included file's.
+fn push_expanded(out: &mut String, text: &str, defines: &HashMap<String, String>) {
+    let mut text = text.trim().to_owned();
+    if text.is_empty() {
+        return;
+    }
+    // Longest names first, so `$KEY2` is not eaten by `$KEY`.
+    let mut names: Vec<_> = defines.iter().collect();
+    names.sort_by_key(|(name, _)| std::cmp::Reverse(name.len()));
+    for (name, value) in names {
+        if text.contains(name.as_str()) {
+            text = text.replace(name.as_str(), value);
+        }
+    }
+    out.push_str(&text);
+    out.push('\n');
 }
 
 fn strip_block_comments(text: &str) -> String {
