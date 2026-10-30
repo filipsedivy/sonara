@@ -25,7 +25,7 @@ pub use instrument::{
     CheckError, Family, Instrument, InstrumentError, InstrumentSpec, PitchModel, Pitched,
     Provenance, RangeCheck, SourcedRange,
 };
-pub use names::{Alias, Lang, Names, Number, Target, all_aliases};
+pub use names::{Alias, Lang, Mention, Names, Number, Target, all_aliases, fold, resolve};
 pub use pitch::{Clef, PitchRange, RangeError, SoundingPitch, Transposition, WrittenPitch};
 
 /// The instrument with id `id`, or `None` for an unknown id. The id must match exactly

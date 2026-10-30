@@ -40,10 +40,11 @@ share a name in one language. `name()` is the English name.
 Aliases (`Instrument::aliases`) are the forms a person may write to mean an instrument. They are
 matching data, not display text:
 
-- **Folded.** An alias is stored as lower-case ASCII letters and digits, words separated by one
-  space: diacritics are dropped, `ß` is written `ss`, `œ` `oe`, `♭` `b`, and every run of other
-  characters is one space. "Lesní rohy" is `lesni rohy`, "Hörner" `horner`, "Clarinet in B♭"
-  `clarinet in bb`.
+- **Folded.** An alias is stored as `fold()` writes it: lower-case ASCII letters and digits,
+  words separated by one space. The text is decomposed (Unicode NFKD) and its diacritics are
+  dropped; `ß`, `œ`, `æ`, `ø`, `ł`, `♭` and `♯` are written `ss`, `oe`, `ae`, `o`, `l`, `b` and
+  `is` (so "F♯" folds like "Fis"); every run of other characters is one space. "Lesní rohy" is
+  `lesni rohy`, "Hörner" `horner`, "Clarinet in B♭" `clarinet in bb`.
 - **Written out, never derived.** English has singular, plural and common synonyms ("French
   horn", "kettledrums", "chimes"); German, French and Italian singular and plural; Czech every
   case but the vocative, singular and plural ("lesní roh", "lesních rohů", "lesními rohy",
@@ -66,7 +67,19 @@ family) in data order: the instruments in score order, then the categories, then
 `Family::aliases` holds the words for a whole family ("strings", "smyčce", "Blechbläser",
 "cuivres", "legni"). The checks run when the data is built: an alias that is not folded, has fewer
 than three letters, or appears twice in one language of one record is an error
-(`InstrumentError::AliasNotFolded`, `AliasTooShort`, `DuplicateAlias`).
+(`InstrumentError::AliasNotFolded`, `AliasTooShort`, `DuplicateAlias`). Every display name folds
+to an alias of its own record in its own language.
+
+`resolve(text, languages)` finds the instruments, categories and families a text names. It folds
+the text and reads it word by word; at each word the longest alias that starts there wins ("bass
+clarinet" over "bass", "anglický roh" over a shorter form), and reading continues after it. Each
+find is a `Mention`: the positions of its words among the words of the folded text, the alias
+text, and every target with the alias that names it, in the order of `all_aliases()`, so an
+ambiguous word lists all its targets and the caller asks. Only aliases in `languages` count
+(`Lang::ALL` for all of them); a word that starts no alias is skipped. Nothing is guessed: there is
+no stemming and no edit distance. "Smyčce hrají legato melodii, lesní rohy a tympány pod tím"
+names the strings, the horns and the timpani. The alias index is built on first use; neither
+function is for real-time code.
 
 ## Categories
 

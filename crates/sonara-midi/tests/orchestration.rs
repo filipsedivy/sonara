@@ -1,12 +1,16 @@
 //! Contract tests of the orchestration metadata through its public API (SON-P06).
 
+use std::ops::Range;
+
+use proptest::collection::vec;
+use proptest::prelude::*;
 use sonara_midi::orchestration::{
     Alias, Articulation, ArticulationAvailability, Axis, CategoryId, CheckError, Clef,
     EnsembleProfile, Era, EraPlayers, Family, Forms, INSTRUMENTS, Instrument, InstrumentError,
     InstrumentSpec, InstrumentType, Kind, Lang, Mute, Names, Number, PitchModel, PitchRange,
     Pitched, PlayerRange, Provenance, RangeCheck, Request, RequestAvailability, RequestError,
     Selection, SoundingPitch, SourcedRange, Target, Transposition, Vibrato, WrittenPitch,
-    all_aliases, category, instrument, instruments,
+    all_aliases, category, fold, instrument, instruments, resolve,
 };
 
 const ESTIMATE: Provenance = Provenance::Estimate {
@@ -3248,5 +3252,484 @@ fn categories_choose_among_their_members() {
         ("bells", CategoryId::Bells),
     ] {
         assert_eq!(targets_of(text), [Target::Category(id)], "{text:?}");
+    }
+}
+
+/// Texts and their folded forms, written by hand from the folding rule: marks dropped after
+/// decomposition, lower case, the seven characters decomposition leaves whole spelled out, and
+/// every run of other characters one space (TST-10).
+const FOLD_TABLE: [(&str, &str); 24] = [
+    ("Lesní rohy", "lesni rohy"),
+    ("lesních rohů", "lesnich rohu"),
+    ("smyčců", "smyccu"),
+    ("Hörner", "horner"),
+    ("Blechbläser", "blechblaser"),
+    ("Clarinet in B♭", "clarinet in bb"),
+    ("clarinette en si♭", "clarinette en sib"),
+    ("Cl. (B♭)", "cl bb"),
+    ("F♯", "fis"),
+    ("Straße", "strasse"),
+    ("STRAẞE", "strasse"),
+    ("chœur", "choeur"),
+    ("Œuvre", "oeuvre"),
+    ("Ærø", "aero"),
+    ("Łódź", "lodz"),
+    ("oboe d'amore", "oboe d amore"),
+    ("  lesni  rohy  ", "lesni rohy"),
+    ("2. Violine (Geige)", "2 violine geige"),
+    ("ﬁddle", "fiddle"),
+    ("ＶＩＯＬＡ", "viola"),
+    ("İ", "i"),
+    ("скрипка viola", "viola"),
+    ("", ""),
+    (" — ", ""),
+];
+
+/// `fold` spells a text in the form aliases are stored in, and turns each text the record check
+/// rejects as not folded into one it accepts (TST-10, TST-03).
+#[test]
+fn fold_spells_text_in_the_stored_form() {
+    for (text, folded) in FOLD_TABLE {
+        assert_eq!(fold(text), folded, "{text:?}");
+    }
+    for text in [
+        "Housle",
+        "lesní rohy",
+        " housle",
+        "housle ",
+        "lesni  rohy",
+        "clarinet-in-bb",
+        "oboe d'amore",
+    ] {
+        let folded: &'static str = Box::leak(fold(text).into_boxed_str());
+        let aliases: &'static [Alias] = Box::leak(Box::new([en(folded)]));
+        assert!(
+            with_aliases(aliases).is_ok(),
+            "{text:?} folds to {folded:?}"
+        );
+    }
+    // A text with no letter or digit folds to nothing, which is still no alias.
+    let aliases: &'static [Alias] =
+        Box::leak(Box::new([en(Box::leak(fold(" ").into_boxed_str()))]));
+    assert_eq!(
+        with_aliases(aliases),
+        Err(InstrumentError::AliasNotFolded(""))
+    );
+}
+
+/// Every stored alias is its own folded form, and every display name folds to an alias of its
+/// own record in its own language, so a name read off a score finds its instrument (TST-07).
+#[test]
+fn display_names_fold_to_their_own_aliases() {
+    for (target, alias) in all_aliases() {
+        assert_eq!(fold(alias.text), alias.text, "{target:?}");
+    }
+    for record in instruments() {
+        for lang in Lang::ALL {
+            let name = record.names().get(lang);
+            let folded = fold(name);
+            assert!(
+                record
+                    .aliases()
+                    .iter()
+                    .any(|alias| alias.text == folded && alias.lang == lang),
+                "{}: the {lang:?} name {name:?} folds to {folded:?}, no alias of the record",
+                record.id()
+            );
+        }
+    }
+}
+
+/// Each mention of `text` in `languages`: its word positions, its folded text and its targets.
+fn mentions(text: &str, languages: &[Lang]) -> Vec<(Range<usize>, &'static str, Vec<Target>)> {
+    resolve(text, languages)
+        .iter()
+        .map(|mention| (mention.words(), mention.text(), mention.targets()))
+        .collect()
+}
+
+/// Every stored alias, resolved alone in its own language, is one mention of all its words that
+/// names its target with that alias; in every language the same holds (TST-07).
+#[test]
+fn every_alias_resolves_to_its_own_target() {
+    for (target, alias) in all_aliases() {
+        let words = alias.text.split(' ').count();
+        for languages in [&[alias.lang][..], &Lang::ALL[..]] {
+            let found = resolve(alias.text, languages);
+            let [mention] = found.as_slice() else {
+                panic!("{target:?} {alias:?}: {found:?}");
+            };
+            assert_eq!(mention.words(), 0..words, "{target:?} {alias:?}");
+            assert_eq!(mention.text(), alias.text);
+            assert!(
+                mention.matches().contains(&(target, alias)),
+                "{target:?} {alias:?}: {mention:?}"
+            );
+            assert!(mention.targets().contains(&target));
+            for (_, other) in mention.matches() {
+                assert_eq!(other.text, alias.text);
+                assert!(languages.contains(&other.lang), "{other:?}");
+            }
+        }
+    }
+}
+
+/// A text that names several targets is one mention with all of them, in data order; nothing
+/// picks one (TST-07, through the index rather than the table).
+#[test]
+fn ambiguous_texts_resolve_to_every_target() {
+    for (text, targets) in KNOWN_AMBIGUOUS {
+        assert_eq!(
+            mentions(text, &Lang::ALL),
+            [(0..text.split(' ').count(), text, targets.to_vec())],
+            "{text:?}"
+        );
+    }
+    // The matches keep the order of `all_aliases`, with the language and number of each form.
+    let bass = resolve("bass", &Lang::ALL);
+    let expected: Vec<(Target, &Alias)> = all_aliases()
+        .filter(|(_, alias)| alias.text == "bass")
+        .collect();
+    assert_eq!(bass.len(), 1);
+    assert_eq!(bass[0].matches(), expected.as_slice());
+}
+
+/// The sentence an orchestration request is written in, in Czech and in English, names the
+/// strings as a family, the horns and the timpani, each in the plural (TST-05).
+#[test]
+fn product_sentence_resolves() {
+    let strings = Target::Family(Family::Strings);
+    let horns = Target::Instrument(InstrumentType::HornF);
+    let timpani = Target::Instrument(InstrumentType::Timpani);
+    for (text, expected) in [
+        (
+            "smyčce hrají legato melodii, lesní rohy a tympány pod tím",
+            [
+                (0..1, "smycce", strings),
+                (4..6, "lesni rohy", horns),
+                (7..8, "tympany", timpani),
+            ],
+        ),
+        (
+            "the strings play a legato melody, horns and timpani underneath",
+            [
+                (1..2, "strings", strings),
+                (6..7, "horns", horns),
+                (8..9, "timpani", timpani),
+            ],
+        ),
+    ] {
+        let found = resolve(text, &Lang::ALL);
+        let words: Vec<String> = fold(text).split(' ').map(str::to_owned).collect();
+        assert_eq!(found.len(), expected.len(), "{text:?}: {found:?}");
+        for (mention, (span, folded, target)) in found.iter().zip(expected) {
+            assert_eq!(mention.words(), span, "{text:?}");
+            assert_eq!(mention.text(), folded);
+            assert_eq!(words[mention.words()].join(" "), folded);
+            assert_eq!(mention.targets(), [target]);
+            for (_, alias) in mention.matches() {
+                assert_eq!(alias.number, Number::Plural, "{alias:?}");
+            }
+        }
+    }
+    for text in ["corni", "Hörner", "cors", "lesních rohů"] {
+        let found = resolve(text, &Lang::ALL);
+        assert_eq!(found.len(), 1, "{text:?}");
+        assert_eq!(found[0].targets(), [horns], "{text:?}");
+        assert_eq!(found[0].matches()[0].1.number, Number::Plural, "{text:?}");
+    }
+    // The Czech "klavír" is the piano category, which chooses the concert grand.
+    assert_eq!(
+        mentions("klavír", &[Lang::Cs]),
+        [(0..1, "klavir", vec![Target::Category(CategoryId::Piano)])]
+    );
+    assert_eq!(
+        category(CategoryId::Piano).selection(),
+        Selection::Default(InstrumentType::PianoConcertGrand)
+    );
+}
+
+/// At each word the longest alias that starts there wins, and reading continues after it
+/// (TST-07).
+#[test]
+fn the_longest_alias_wins_from_the_left() {
+    let target = |t| vec![Target::Instrument(t)];
+    assert_eq!(
+        mentions("the bass drum and the bass clarinet", &[Lang::En]),
+        [
+            (1..3, "bass drum", target(InstrumentType::BassDrum)),
+            (5..7, "bass clarinet", target(InstrumentType::BassClarinet)),
+        ]
+    );
+    assert_eq!(
+        mentions("Anglický roh", &[Lang::Cs]),
+        [(0..2, "anglicky roh", target(InstrumentType::EnglishHorn))]
+    );
+    // A member's own name wins over the word for its category.
+    assert_eq!(
+        mentions("klarinet in B", &[Lang::Cs]),
+        [(0..3, "klarinet in b", target(InstrumentType::ClarinetBb))]
+    );
+    assert_eq!(
+        mentions("klarinet", &[Lang::Cs]),
+        [(
+            0..1,
+            "klarinet",
+            vec![Target::Category(CategoryId::Clarinet)]
+        )]
+    );
+    // A longer alias counts only in the languages asked for: the French "tuba basse" is one
+    // ambiguous mention, but in English only "tuba" is an alias.
+    assert_eq!(
+        mentions("tuba basse", &Lang::ALL),
+        [(
+            0..2,
+            "tuba basse",
+            vec![
+                Target::Instrument(InstrumentType::Euphonium),
+                Target::Instrument(InstrumentType::Tuba),
+            ]
+        )]
+    );
+    assert_eq!(
+        mentions("tuba basse", &[Lang::En]),
+        [(0..1, "tuba", target(InstrumentType::Tuba))]
+    );
+    // Two names in a row stay two mentions.
+    assert_eq!(
+        mentions("Violine (Geige)", &[Lang::De]),
+        [
+            (0..1, "violine", target(InstrumentType::Violin)),
+            (1..2, "geige", target(InstrumentType::Violin)),
+        ]
+    );
+}
+
+/// Only aliases in the languages asked for count, and the number tells a solo voice from a
+/// section (TST-03, TST-07).
+#[test]
+fn languages_filter_the_aliases_that_count() {
+    let voice_alto = Target::Instrument(InstrumentType::VoiceAlto);
+    let viola = Target::Instrument(InstrumentType::Viola);
+    assert_eq!(
+        mentions("alto", &Lang::ALL),
+        [(0..1, "alto", vec![voice_alto, viola])]
+    );
+    assert_eq!(
+        mentions("alto", &[Lang::En]),
+        [(0..1, "alto", vec![voice_alto])]
+    );
+    assert_eq!(mentions("alto", &[Lang::Fr]), [(0..1, "alto", vec![viola])]);
+    for lang in [Lang::Cs, Lang::De, Lang::It] {
+        assert!(resolve("alto", &[lang]).is_empty(), "{lang:?}");
+    }
+    assert!(
+        resolve("strings", &[Lang::Cs]).is_empty(),
+        "the English word is no Czech alias"
+    );
+    // A language listed twice changes nothing.
+    assert_eq!(
+        resolve("timpani", &[Lang::En, Lang::En]),
+        resolve("timpani", &[Lang::En])
+    );
+    // "timpani" is English and Italian: one target, matched by both forms.
+    let timpani = resolve("Timpani", &Lang::ALL);
+    assert_eq!(
+        timpani[0].targets(),
+        [Target::Instrument(InstrumentType::Timpani)]
+    );
+    assert_eq!(
+        timpani[0]
+            .matches()
+            .iter()
+            .map(|(_, alias)| alias.lang)
+            .collect::<Vec<_>>(),
+        [Lang::En, Lang::It]
+    );
+    let tenor = resolve("Tenor", &[Lang::En]);
+    assert_eq!(
+        tenor[0].targets(),
+        [Target::Instrument(InstrumentType::VoiceTenor)]
+    );
+    assert_eq!(tenor[0].matches()[0].1.number, Number::Singular);
+    let tenors = resolve("tenory", &[Lang::Cs]);
+    assert_eq!(
+        tenors[0].targets(),
+        [Target::Instrument(InstrumentType::ChoirTenor)]
+    );
+    assert_eq!(tenors[0].matches()[0].1.number, Number::Plural);
+}
+
+/// Text that spells no alias names nothing: no stemming, no edit distance, no two-letter
+/// abbreviations, and no language means no alias (TST-03).
+#[test]
+fn unknown_words_name_nothing() {
+    for text in [
+        "",
+        " ,.; ",
+        "saxhorn",
+        "violinn",
+        "housl",
+        "roh",
+        "hn",
+        "Vc.",
+        "and the a pod tím",
+        "bassclarinet",
+    ] {
+        assert!(resolve(text, &Lang::ALL).is_empty(), "{text:?}");
+    }
+    for text in ["horns", "lesní rohy", "smyčce", "klavír", "bass"] {
+        assert!(resolve(text, &[]).is_empty(), "{text:?}");
+    }
+}
+
+/// Letters with the diacritics Czech, German and French put on them; each decomposes (NFKD) into
+/// the bare letter and combining marks.
+const DIACRITICS: [(char, &str); 13] = [
+    ('a', "áäàâ"),
+    ('c', "čç"),
+    ('d', "ď"),
+    ('e', "éěèêë"),
+    ('i', "íîï"),
+    ('n', "ň"),
+    ('o', "óöô"),
+    ('r', "ř"),
+    ('s', "š"),
+    ('t', "ť"),
+    ('u', "úůüùû"),
+    ('y', "ý"),
+    ('z', "ž"),
+];
+
+/// What may stand between two words, before the first or after the last.
+const SEPARATORS: [&str; 7] = [" ", "  ", ", ", " - ", "; ", "/", "\u{a0}"];
+const LEADING: [&str; 5] = ["", "(", "\"", "„", "... "];
+const TRAILING: [&str; 5] = ["", ")", ".", "!", "“"];
+
+/// `text`, a folded alias, written as a person might: letters upper-cased or given a diacritic,
+/// `ss` written `ß`, and punctuation between and around the words, as `choices` pick.
+fn perturb(text: &str, choices: &[u8]) -> String {
+    let mut choice = choices.iter().copied().cycle().map(usize::from);
+    let mut next = move || choice.next().expect("choices are not empty");
+    let mut out = String::from(LEADING[next() % LEADING.len()]);
+    for (i, word) in text.split(' ').enumerate() {
+        if i > 0 {
+            out.push_str(SEPARATORS[next() % SEPARATORS.len()]);
+        }
+        let word = if next() % 2 == 1 {
+            word.replacen("ss", "ß", 1)
+        } else {
+            word.to_owned()
+        };
+        for c in word.chars() {
+            let variants: Vec<char> = DIACRITICS
+                .iter()
+                .find(|(letter, _)| *letter == c)
+                .map_or(Vec::new(), |(_, marked)| marked.chars().collect());
+            let pick = next();
+            let c = if pick % 2 == 1 && !variants.is_empty() {
+                variants[pick / 2 % variants.len()]
+            } else {
+                c
+            };
+            if next() % 2 == 1 {
+                out.extend(c.to_uppercase());
+            } else {
+                out.push(c);
+            }
+        }
+    }
+    out.push_str(TRAILING[next() % TRAILING.len()]);
+    out
+}
+
+/// Characters folding treats specially or that are easy to get wrong.
+const TRICKY: [char; 24] = [
+    'a',
+    'Z',
+    '7',
+    ' ',
+    '-',
+    '.',
+    'á',
+    'Ů',
+    'ß',
+    'ẞ',
+    'œ',
+    'Æ',
+    'ø',
+    'Ł',
+    '♭',
+    '♯',
+    'ﬁ',
+    'İ',
+    '½',
+    '\u{301}',
+    '\u{a0}',
+    'Ж',
+    '日',
+    '\u{1F3BB}',
+];
+
+proptest! {
+    /// The folded form holds only `a-z`, `0-9` and single inner spaces, and folding it again
+    /// changes nothing, whatever the input (TST-09).
+    #[test]
+    fn fold_is_idempotent_and_ascii(text in any::<String>(), tricky in vec(proptest::sample::select(TRICKY.to_vec()), 0..40)) {
+        for text in [text, tricky.into_iter().collect::<String>()] {
+            let folded = fold(&text);
+            prop_assert!(
+                folded.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == ' '),
+                "{:?} -> {:?}", text, folded
+            );
+            prop_assert_eq!(folded.trim(), folded.as_str());
+            prop_assert!(!folded.contains("  "), "{:?}", folded);
+            prop_assert_eq!(fold(&folded), folded);
+        }
+    }
+
+    /// Every stored alias still names its target after case changes, diacritics, `ß` and extra
+    /// punctuation around its words (TST-09).
+    #[test]
+    fn aliases_survive_case_diacritics_and_punctuation(
+        (target, alias) in proptest::sample::select(all_aliases().collect::<Vec<_>>()),
+        choices in vec(any::<u8>(), 1..64),
+    ) {
+        let text = perturb(alias.text, &choices);
+        let found = resolve(&text, &[alias.lang]);
+        prop_assert_eq!(found.len(), 1, "{:?}: {:?}", text, found);
+        prop_assert_eq!(found[0].words(), 0..alias.text.split(' ').count());
+        prop_assert_eq!(found[0].text(), alias.text);
+        prop_assert!(found[0].matches().contains(&(target, alias)), "{:?}: {:?}", text, found);
+    }
+
+    /// In any run of aliases and other words the mentions come left to right without overlap,
+    /// each spells the folded words it covers, and each match is an alias with that text in a
+    /// language asked for (TST-09).
+    #[test]
+    fn mentions_cover_the_words_they_spell(
+        pieces in vec(proptest::sample::select(
+            all_aliases()
+                .map(|(_, alias)| alias.text)
+                .chain(["a", "and", "the", "pod", "tim", "und", "et", "e", "hraji"])
+                .collect::<Vec<_>>(),
+        ), 0..8),
+        languages in proptest::sample::subsequence(Lang::ALL.to_vec(), 0..=5),
+    ) {
+        let text = pieces.join(", ");
+        let words: Vec<String> = fold(&text).split(' ').map(str::to_owned).collect();
+        let mut end = 0;
+        for mention in resolve(&text, &languages) {
+            let span = mention.words();
+            prop_assert!(span.start >= end && span.start < span.end, "{:?}", span);
+            end = span.end;
+            prop_assert_eq!(words[span].join(" "), mention.text());
+            prop_assert!(!mention.matches().is_empty());
+            for (_, alias) in mention.matches() {
+                prop_assert_eq!(alias.text, mention.text());
+                prop_assert!(languages.contains(&alias.lang));
+            }
+        }
+        prop_assert!(end <= words.len());
     }
 }
