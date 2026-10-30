@@ -4,8 +4,13 @@
 
 use std::fs;
 use std::path::Path;
+use std::sync::Arc;
 
+use sonara_core::model::device::Params;
+use sonara_core::plugins::sampler_descriptor;
 use sonara_dsp::bank::{Keyswitches, LoopMode, SampleBank, Trigger};
+use sonara_dsp::processor::{BlockContext, DeviceState, EventKind, InstrumentEvent, ProcessSpec};
+use sonara_dsp::processors::{create, param_slots};
 use sonara_media::{MediaError, sfz::load_sfz};
 
 /// A 16-bit mono PCM WAV of `frames` frames of the constant `value`.
@@ -269,6 +274,186 @@ fn the_last_valid_sw_default_in_the_file_wins() {
         Some(25),
         "the region's c#1 is the last valid one; x9 is no key"
     );
+}
+
+/// Writes Salamander's layout (TST-06): note regions, then a third `<global>` and an include
+/// whose first line, before any header, sets `lokey=-1 hikey=-1` for that global's scope, so
+/// that every pedal region inherits it. The pedal-down and pedal-up noises are each split by
+/// `lorand`/`hirand` and started by CC 64.
+fn salamander_pedals(dir: &tempfile::TempDir) -> SampleBank {
+    fs::write(
+        dir.path().join("pedal.txt"),
+        "lokey=-1 hikey=-1 group=1\n\
+         <group> on_locc64=127 on_hicc64=127 locc64=127 hicc64=127\n\
+         <region> sample=Samples/loud1.wav lorand=0 hirand=0.5\n\
+         <region> sample=Samples/loud2.wav lorand=0.5 hirand=1\n\
+         <group> on_locc64=0 on_hicc64=0 locc64=0 hicc64=0\n\
+         <region> sample=Samples/tail.wav\n",
+    )
+    .expect("write");
+    load_patch(
+        dir,
+        "<global> volume=0\n\
+         <group> lovel=1 hivel=127\n\
+         <region> sample=Samples/soft1.wav key=60\n\
+         <global> volume=0\n\
+         #include \"pedal.txt\"\n",
+    )
+}
+
+#[test]
+fn minus_one_keys_disable_key_triggering() {
+    let dir = library();
+    let bank = salamander_pedals(&dir);
+    assert_eq!(
+        bank.regions.iter().map(|r| r.on_key).collect::<Vec<_>>(),
+        [true, false, false, false],
+        "only the note region plays on a key"
+    );
+    assert_eq!((bank.regions[0].key_lo, bank.regions[0].key_hi), (60, 60));
+    // Each of the three key opcodes alone, and a region's own range over an inherited -1.
+    let bank = load_patch(
+        &dir,
+        "<global> lokey=-1 hikey=-1\n\
+         <region> sample=Samples/soft1.wav lokey=c3 hikey=c5\n\
+         <global>\n\
+         <region> sample=Samples/soft1.wav key=-1\n\
+         <region> sample=Samples/soft1.wav lokey=-1\n\
+         <region> sample=Samples/soft1.wav hikey=-1\n\
+         <region> sample=Samples/soft1.wav lokey=c3 hikey=c5\n",
+    );
+    assert_eq!(
+        bank.regions.iter().map(|r| r.on_key).collect::<Vec<_>>(),
+        [true, false, false, false, true]
+    );
+    assert_eq!((bank.regions[0].key_lo, bank.regions[0].key_hi), (48, 72));
+    assert_eq!(
+        bank.regions[1].pitch_keycenter, 60,
+        "key=-1 leaves the default key centre"
+    );
+    assert!(
+        bank.ignored_opcodes.is_empty(),
+        "{:?}",
+        bank.ignored_opcodes
+    );
+}
+
+#[test]
+fn the_deepest_scope_that_writes_a_key_decides() {
+    // The last key opcode decides, as the reference player sfizz reads it: a region's own
+    // `key=60` under an inherited -1 plays on key 60, as it did before -1 was read, and a -1
+    // written deeper than a valid key still disables the region.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<global> lokey=-1 hikey=-1\n\
+         <region> sample=Samples/soft1.wav key=60\n\
+         <group> key=-1\n\
+         <region> sample=Samples/soft1.wav\n\
+         <global> key=60\n\
+         <group> hikey=-1\n\
+         <region> sample=Samples/soft1.wav\n\
+         <region> sample=Samples/soft1.wav hikey=c5\n",
+    );
+    assert_eq!(
+        bank.regions.iter().map(|r| r.on_key).collect::<Vec<_>>(),
+        [true, false, false, true]
+    );
+    assert_eq!(
+        (
+            bank.regions[0].key_lo,
+            bank.regions[0].key_hi,
+            bank.regions[0].pitch_keycenter
+        ),
+        (60, 60, 60)
+    );
+    assert_eq!((bank.regions[3].key_lo, bank.regions[3].key_hi), (60, 72));
+}
+
+#[test]
+fn other_keys_that_name_no_key_keep_the_full_keyboard() {
+    // TST-03: only -1 means "no key"; another invalid key is ignored as before.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<region> sample=Samples/soft1.wav lokey=x9 hikey=200\n\
+         <region> sample=Samples/soft1.wav lokey=-2 hikey=-1.0\n",
+    );
+    for region in &bank.regions {
+        assert!(region.on_key);
+        assert_eq!((region.key_lo, region.key_hi), (0, 127));
+    }
+}
+
+#[test]
+fn controller_triggered_regions_are_not_key_triggered() {
+    // A controller trigger replaces the key's. A -1 is the format's "no trigger", and a
+    // `locc`/`hicc` range is a condition, not a trigger.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<group> lokey=c3 hikey=c5\n\
+         <region> sample=Samples/soft1.wav on_locc64=127 on_hicc64=127\n\
+         <region> sample=Samples/soft1.wav on_hicc1=0\n\
+         <region> sample=Samples/soft1.wav on_lohdcc11=0.5\n\
+         <region> sample=Samples/soft1.wav on_locc64=-1\n\
+         <region> sample=Samples/soft1.wav locc64=0 hicc64=63\n",
+    );
+    assert_eq!(
+        bank.regions.iter().map(|r| r.on_key).collect::<Vec<_>>(),
+        [false, false, false, true, true]
+    );
+    assert_eq!(
+        bank.ignored_opcodes,
+        ["hicc*", "locc*", "on_hicc*", "on_locc*", "on_lohdcc*"],
+        "the sampler starts no region from a controller yet"
+    );
+}
+
+#[test]
+fn salamander_pedal_noises_do_not_sound_on_a_note() {
+    // The loaded patch in the player: a note used to start the note, one of the two pedal-down
+    // noises and the pedal-up noise, each transposed to the key. Now only the note sounds.
+    let dir = library();
+    let bank = salamander_pedals(&dir);
+    let mut sampler = create("sonara.sampler").expect("the sampler exists");
+    sampler.prepare(ProcessSpec {
+        sample_rate: 44_100,
+        block_size: 2_048,
+        channels: 2,
+    });
+    sampler.set_state(&DeviceState {
+        sample_bank: Some(Arc::new(bank)),
+        ..DeviceState::default()
+    });
+    let descriptor = sampler_descriptor(&["/library/piano.sfz".to_owned()]).expect("a patch");
+    sampler.set_params(&param_slots(&descriptor, &Params::new()).expect("defaults"));
+    let mut buffer = vec![[0.0; 2]; 2_048];
+    let note_on = InstrumentEvent {
+        offset: 0,
+        kind: EventKind::NoteOn,
+        pitch: 60,
+        velocity: 127,
+        channel: 0,
+        value: 0,
+        number: 0,
+    };
+    sampler.process(
+        &mut buffer,
+        &BlockContext {
+            frame: 0,
+            sample_rate: 44_100,
+            beat: 0.0,
+            bpm: 120.0,
+            playing: true,
+            sidechain: None,
+            events: &[note_on],
+        },
+    );
+    assert_eq!(sampler.report().entries(), [("voices", 1.0)]);
+    // soft1.wav at full velocity, unity volume and centre pan.
+    let last = buffer.last().expect("a block")[0];
+    assert!((last - 3_000.0 / 32_768.0).abs() < 1e-6, "{last}");
 }
 
 #[test]

@@ -205,6 +205,72 @@ fn release_trigger_plays_the_tail_of_the_released_note() {
 }
 
 #[test]
+fn a_region_no_key_starts_matches_no_key() {
+    // A key of -1 or a controller trigger (TST-06: Salamander's pedal noises sounded on every
+    // note): neither its attack nor its release region starts on any of the 128 keys.
+    let bank = SampleBank {
+        samples: vec![constant(0.5), constant(0.25)],
+        regions: vec![
+            Region {
+                on_key: false,
+                ..region(0)
+            },
+            Region {
+                on_key: false,
+                trigger: Trigger::Release,
+                ..region(1)
+            },
+        ],
+        ..SampleBank::default()
+    };
+    let mut processor = sampler(bank);
+    let mut events: Vec<_> = (0..=127)
+        .map(|key| event(EventKind::NoteOn, key, 127))
+        .collect();
+    events.extend((0..=127).map(|key| InstrumentEvent {
+        offset: BLOCK / 2,
+        ..event(EventKind::NoteOff, key, 0)
+    }));
+    let out = run(&mut *processor, &events);
+    assert!(out.iter().flatten().all(|v| *v == 0.0), "no region sounds");
+    assert_eq!(processor.report().entries(), [("voices", 0.0)]);
+}
+
+#[test]
+fn regions_no_key_starts_leave_the_others_playing() {
+    let bank = SampleBank {
+        samples: vec![constant(0.5), constant(0.25), constant(0.125)],
+        regions: vec![
+            Region {
+                release: 0.001,
+                ..region(0)
+            },
+            Region {
+                on_key: false,
+                ..region(1)
+            },
+            Region {
+                on_key: false,
+                trigger: Trigger::Release,
+                ..region(2)
+            },
+        ],
+        ..SampleBank::default()
+    };
+    let mut processor = sampler(bank);
+    let held = run(&mut *processor, &[event(EventKind::NoteOn, 60, 100)]);
+    close(level(&held), 0.5 * gain(100));
+    assert_eq!(processor.report().entries(), [("voices", 1.0)]);
+    let released = run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+    close(level(&released), 0.0);
+    assert_eq!(
+        processor.report().entries(),
+        [("voices", 0.0)],
+        "the release region does not start"
+    );
+}
+
+#[test]
 fn keyswitch_selects_the_articulation() {
     let articulation = |sample, switch| Region {
         sw_last: Some(switch),

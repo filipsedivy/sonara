@@ -14,6 +14,15 @@
 //! `#define`/`#include` directives. Every other opcode is recorded in
 //! [`SampleBank::ignored_opcodes`] and has no effect.
 //!
+//! **Regions no key starts.** A `key`, `lokey` or `hikey` of -1 means "no key" (SFZ 2), and a
+//! region with a controller trigger (`on_loccN`/`on_hiccN`, or their `hdcc` forms, other than
+//! -1) is started by that controller instead of a key, as the SFZ format reads it. Such a region
+//! is loaded with [`Region::on_key`] false and never plays on a key: Salamander's pedal noises
+//! are written this way and used to sound on every note. The deepest scope that writes a key
+//! opcode decides, so a region's own `key=60` under a `<global> lokey=-1` plays on key 60. The
+//! sampler starts no region from a controller yet, so `on_locc*`/`on_hicc*` stay in the
+//! ignored opcodes. Any other key value that names no key is ignored, as before.
+//!
 //! **Directives.** `#include` and `#define` are read wherever a token starts, not only at the
 //! start of a line, as the reference player sfizz reads them: Salamander's
 //! `<group> #include "vel.txt" lovel=1 hivel=26 #include "region.txt"` reads both files in
@@ -309,12 +318,7 @@ fn parse(text: &str) -> Parsed {
     let finish =
         |region: &mut Option<Opcodes>, scopes: &[Opcodes; 4], regions: &mut Vec<Opcodes>| {
             if let Some(own) = region.take() {
-                let mut merged = Opcodes::new();
-                for scope in scopes {
-                    merged.extend(scope.clone());
-                }
-                merged.extend(own);
-                regions.push(merged);
+                regions.push(merge(scopes, own));
             }
         };
     for token in text.split_whitespace() {
@@ -398,6 +402,65 @@ fn parse(text: &str) -> Parsed {
         keyswitches,
         ignored,
     }
+}
+
+/// The opcodes that set a region's keys; a value of -1 means "no key".
+const KEY_OPCODES: [&str; 3] = ["key", "lokey", "hikey"];
+
+/// The opcodes a region plays with: those of its header scopes, outermost first, then its own,
+/// a deeper scope overriding the same opcode. As the reference player sfizz reads it, the last
+/// key opcode decides whether a key starts the region, so a key of -1 from an outer scope is
+/// dropped when a deeper scope writes a key opcode and no -1: a region's `key=60` under a
+/// `<global> lokey=-1 hikey=-1` plays on key 60. A dropped -1 never set a key range.
+fn merge(scopes: &[Opcodes; 4], own: Opcodes) -> Opcodes {
+    let is_no_key = |name: &str, value: &str| KEY_OPCODES.contains(&name) && is_minus_one(value);
+    let last_keys = scopes
+        .iter()
+        .chain(std::iter::once(&own))
+        .rev()
+        .find(|scope| KEY_OPCODES.iter().any(|name| scope.contains_key(*name)));
+    let keeps_no_key =
+        last_keys.is_some_and(|scope| scope.iter().any(|(name, value)| is_no_key(name, value)));
+    let mut merged = Opcodes::new();
+    for scope in scopes {
+        merged.extend(scope.clone());
+    }
+    merged.extend(own);
+    if !keeps_no_key {
+        merged.retain(|name, value| !is_no_key(name, value));
+    }
+    merged
+}
+
+/// Whether a key starts the region its merged `opcodes` describe. Not when `key`, `lokey` or
+/// `hikey` is -1 ("no key", SFZ 2), and not when a controller trigger is set, since it replaces
+/// the key's.
+fn on_key(opcodes: &Opcodes) -> bool {
+    let no_key = KEY_OPCODES
+        .into_iter()
+        .any(|name| opcodes.get(name).is_some_and(|value| is_minus_one(value)));
+    let on_controller = opcodes
+        .iter()
+        .any(|(name, value)| is_controller_trigger(name) && !is_minus_one(value));
+    !no_key && !on_controller
+}
+
+/// Whether an opcode value is -1, which the SFZ format uses for "none": no key, or no
+/// controller trigger (the default of `on_loccN` and `on_hiccN`).
+fn is_minus_one(value: &str) -> bool {
+    value.trim().parse::<i32>() == Ok(-1)
+}
+
+/// Whether `name` sets a controller trigger: `on_locc`, `on_hicc` or their high-definition forms
+/// `on_lohdcc` and `on_hihdcc`, followed by the controller number.
+fn is_controller_trigger(name: &str) -> bool {
+    ["on_locc", "on_hicc", "on_lohdcc", "on_hihdcc"]
+        .into_iter()
+        .any(|prefix| {
+            name.strip_prefix(prefix).is_some_and(|number| {
+                !number.is_empty() && number.bytes().all(|b| b.is_ascii_digit())
+            })
+        })
 }
 
 /// `locc64` and `hicc64` are one opcode family: report them as `locc*`.
@@ -487,6 +550,7 @@ impl Loader {
         }
         region.key_lo = key_of("lokey").unwrap_or(region.key_lo);
         region.key_hi = key_of("hikey").unwrap_or(region.key_hi);
+        region.on_key = on_key(opcodes);
         region.pitch_keycenter = key_of("pitch_keycenter").unwrap_or(region.pitch_keycenter);
         region.vel_lo = to_u8(int("lovel"), 0);
         region.vel_hi = to_u8(int("hivel"), 127);

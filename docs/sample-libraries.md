@@ -48,7 +48,9 @@ release scale, instrument.
 Not supported: CC-driven layers and crossfades (for example Sonatina's dynamics on CC 1 and
 vibrato on CC 21), filters, per-region pan, streaming. The loader reports unsupported opcodes in
 the load warning when a patch is rendered. Keyswitch keys select an articulation and make no
-sound themselves.
+sound themselves. Regions that the patch starts from a controller instead of a key
+(`on_locc`/`on_hicc`, such as Salamander's pedal noises) or that have a key of -1 (`key`, `lokey`
+or `hikey`) never play on a key; until the sampler plays controller triggers they stay silent.
 
 ## Memory
 

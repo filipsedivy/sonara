@@ -21,7 +21,8 @@
 //!
 //! Not supported, and not offered as parameters: CC-driven layers and crossfades, filters,
 //! per-region pan, sample streaming. A patch that uses them plays without them (the loader
-//! reports the opcodes it ignored).
+//! reports the opcodes it ignored). A region that no key starts ([`Region::on_key`] is false: a
+//! key of -1, or a region a controller starts) is never started by a key press or release.
 
 use std::sync::Arc;
 
@@ -476,9 +477,11 @@ fn floor_index(pos: f64) -> usize {
     pos as usize
 }
 
-/// Whether `region` plays for a press of `key` at `velocity` with `switch` as the last keyswitch.
+/// Whether `region` plays for a press (or, for a release region, a release) of `key` at
+/// `velocity` with `switch` as the last keyswitch. A region that no key starts never does.
 fn matches_note(region: &Region, key: u8, velocity: u8, switch: Option<u8>) -> bool {
-    (region.key_lo..=region.key_hi).contains(&key)
+    region.on_key
+        && (region.key_lo..=region.key_hi).contains(&key)
         && (region.vel_lo..=region.vel_hi).contains(&velocity)
         && region.sw_last.is_none_or(|sw| Some(sw) == switch)
 }

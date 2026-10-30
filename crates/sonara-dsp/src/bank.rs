@@ -59,6 +59,11 @@ pub struct Region {
     pub key_lo: u8,
     /// Highest MIDI key that plays the region.
     pub key_hi: u8,
+    /// Whether a key starts the region: a press for an attack region, a release for a
+    /// release region. `false` when the patch writes a key of -1 ("no key"), or when a
+    /// controller starts the region instead (SFZ `on_loccN`/`on_hiccN`). A flag rather than an
+    /// empty key range, so the range keeps its meaning (TYP-03).
+    pub on_key: bool,
     /// Lowest velocity.
     pub vel_lo: u8,
     /// Highest velocity.
@@ -107,6 +112,7 @@ impl Default for Region {
             sample: 0,
             key_lo: 0,
             key_hi: 127,
+            on_key: true,
             vel_lo: 0,
             vel_hi: 127,
             pitch_keycenter: 60,
