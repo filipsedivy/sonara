@@ -1,5 +1,5 @@
 //! `sonara.sampler` against synthetic banks: layers, round robin, release, release triggers,
-//! keyswitches, exclusive groups, polyphony and the real-time rules (TST-10: every check
+//! the sustain pedal, keyswitches, exclusive groups, polyphony and the real-time rules (TST-10: every check
 //! compares against a value that follows from the bank, not "it ran").
 //!
 //! The samples are constants, so a voice's steady-state output is its sample value times the
@@ -202,6 +202,171 @@ fn release_trigger_plays_the_tail_of_the_released_note() {
     let tail = run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
     // The main voice has faded; the tail plays at the velocity the note was pressed with.
     close(level(&tail), 0.125 * gain(80));
+}
+
+/// The sustain pedal (CC 64) pressed (`true`) or lifted.
+fn pedal(down: bool) -> InstrumentEvent {
+    InstrumentEvent {
+        number: 64,
+        value: if down { 127 } else { 0 },
+        ..event(EventKind::Cc, 0, 0)
+    }
+}
+
+/// A note with a short release over every key, and a release region on sample 1 (`tail`).
+fn note_with_tail(tail: f32) -> SampleBank {
+    SampleBank {
+        samples: vec![constant(0.5), constant(tail)],
+        regions: vec![
+            Region {
+                release: 0.001,
+                ..region(0)
+            },
+            Region {
+                trigger: Trigger::Release,
+                ..region(1)
+            },
+        ],
+        ..SampleBank::default()
+    }
+}
+
+#[test]
+fn release_samples_play_when_the_pedal_lifts() {
+    // TST-06: a key released under the pedal never started its release regions, so pianos lost
+    // their release and resonance tails whenever CC 64 was used.
+    let mut processor = sampler(note_with_tail(0.125));
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 80)]);
+    let held = run(
+        &mut *processor,
+        &[pedal(true), event(EventKind::NoteOff, 60, 0)],
+    );
+    // The pedal holds the note, and the tail waits for the pedal.
+    close(level(&held), 0.5 * gain(80));
+    assert_eq!(processor.report().entries(), [("voices", 1.0)]);
+    let lifted = run(&mut *processor, &[pedal(false)]);
+    // The note has faded; the tail plays at the velocity the note was pressed with.
+    close(level(&lifted), 0.125 * gain(80));
+    assert_eq!(processor.report().entries(), [("voices", 1.0)]);
+}
+
+#[test]
+fn a_re_press_under_the_pedal_keeps_the_released_velocity() {
+    let mut processor = sampler(note_with_tail(0.125));
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 80)]);
+    run(
+        &mut *processor,
+        &[pedal(true), event(EventKind::NoteOff, 60, 0)],
+    );
+    // The key is pressed again, harder, and stays down while the pedal lifts.
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    let lifted = run(&mut *processor, &[pedal(false)]);
+    // The first note fades; the held one sounds on, with the first note's tail beside it.
+    close(level(&lifted), 0.5 + 0.125 * gain(80));
+    assert_eq!(processor.report().entries(), [("voices", 2.0)]);
+}
+
+#[test]
+fn a_key_released_twice_under_the_pedal_plays_one_tail() {
+    let mut processor = sampler(note_with_tail(0.125));
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 80)]);
+    run(
+        &mut *processor,
+        &[pedal(true), event(EventKind::NoteOff, 60, 0)],
+    );
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 100)]);
+    run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+    let lifted = run(&mut *processor, &[pedal(false)]);
+    // Both notes fade; the tail is the later release's.
+    close(level(&lifted), 0.125 * gain(100));
+    assert_eq!(processor.report().entries(), [("voices", 1.0)]);
+}
+
+#[test]
+fn every_key_released_under_the_pedal_plays_its_tail_once() {
+    let mut processor = sampler(note_with_tail(0.125));
+    run(
+        &mut *processor,
+        &[
+            event(EventKind::NoteOn, 60, 80),
+            event(EventKind::NoteOn, 64, 100),
+        ],
+    );
+    run(
+        &mut *processor,
+        &[
+            pedal(true),
+            event(EventKind::NoteOff, 60, 0),
+            event(EventKind::NoteOff, 64, 0),
+        ],
+    );
+    let tails = 0.125 * (gain(80) + gain(100));
+    close(level(&run(&mut *processor, &[pedal(false)])), tails);
+    assert_eq!(processor.report().entries(), [("voices", 2.0)]);
+    // A second pedal stroke finds no release left to start.
+    close(
+        level(&run(&mut *processor, &[pedal(true), pedal(false)])),
+        tails,
+    );
+    assert_eq!(processor.report().entries(), [("voices", 2.0)]);
+}
+
+#[test]
+fn a_key_held_through_the_pedal_starts_no_tail() {
+    let mut processor = sampler(note_with_tail(0.125));
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 80)]);
+    let out = run(&mut *processor, &[pedal(true), pedal(false)]);
+    close(level(&out), 0.5 * gain(80));
+    assert_eq!(processor.report().entries(), [("voices", 1.0)]);
+}
+
+#[test]
+fn all_notes_off_forgets_the_releases_under_the_pedal() {
+    let mut processor = sampler(note_with_tail(0.125));
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 80)]);
+    run(
+        &mut *processor,
+        &[pedal(true), event(EventKind::NoteOff, 60, 0)],
+    );
+    run(&mut *processor, &[event(EventKind::AllNotesOff, 0, 0)]);
+    let out = run(&mut *processor, &[pedal(true), pedal(false)]);
+    assert!(out.iter().flatten().all(|v| *v == 0.0), "no tail starts");
+    assert_eq!(processor.report().entries(), [("voices", 0.0)]);
+}
+
+#[test]
+fn a_release_under_the_pedal_keeps_the_keyswitch_it_was_released_with() {
+    // The tail is the one the release selected, even when a keyswitch changes before the pedal
+    // lifts.
+    let tail = |sample, switch| Region {
+        trigger: Trigger::Release,
+        sw_last: Some(switch),
+        key_lo: 36,
+        ..region(sample)
+    };
+    let bank = SampleBank {
+        samples: vec![constant(0.5), constant(0.125), constant(0.25)],
+        regions: vec![
+            Region {
+                release: 0.001,
+                key_lo: 36,
+                ..region(0)
+            },
+            tail(1, 24),
+            tail(2, 25),
+        ],
+        keyswitches: switches(&[(24, 25)], Some(24)),
+        ..SampleBank::default()
+    };
+    let mut processor = sampler(bank);
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    run(
+        &mut *processor,
+        &[pedal(true), event(EventKind::NoteOff, 60, 0)],
+    );
+    run(&mut *processor, &[event(EventKind::NoteOn, 25, 127)]);
+    close(level(&run(&mut *processor, &[pedal(false)])), 0.125);
+    assert_eq!(processor.report().entries(), [("voices", 1.0)]);
 }
 
 #[test]

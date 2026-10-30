@@ -13,6 +13,10 @@
 //!   so a render is deterministic (TST-04).
 //! - **Release.** Key release fades the voice out over the region's release time, and starts
 //!   the `trigger=release` regions that match the released key and its original velocity.
+//! - **Sustain pedal.** A key released while the pedal (CC 64) is down keeps sounding until the
+//!   pedal lifts. Its `trigger=release` regions start then, chosen as at the release: by the
+//!   velocity the key was pressed with and the keyswitch active when it was released. A key
+//!   released twice under one pedal starts them once, for the later release.
 //! - **Exclusive groups.** `group`/`off_by` silence voices quickly.
 //! - **Playback.** Linear interpolation, constant memory: 64 preallocated voices, the oldest
 //!   one is stolen when all sound (a releasing one first).
@@ -116,6 +120,15 @@ impl Voice {
     };
 }
 
+/// What selects the `trigger=release` regions of a key release.
+#[derive(Debug, Clone, Copy)]
+struct KeyRelease {
+    /// The velocity the key was pressed with.
+    velocity: u8,
+    /// The last keyswitch when the key was released.
+    switch: Option<u8>,
+}
+
 /// The sample player.
 pub(crate) struct Sampler {
     spec: ProcessSpec,
@@ -126,6 +139,9 @@ pub(crate) struct Sampler {
     /// The velocity each key was pressed with, for release-trigger regions.
     key_velocity: [u8; 128],
     key_down: [bool; 128],
+    /// The keys released while the sustain pedal was down: their release regions start when
+    /// the pedal lifts.
+    released_under_pedal: [Option<KeyRelease>; 128],
     last_switch: Option<u8>,
     round_robin: u32,
     rng: u32,
@@ -147,6 +163,7 @@ impl Sampler {
             voices: [Voice::IDLE; MAX_VOICES],
             key_velocity: [0; 128],
             key_down: [false; 128],
+            released_under_pedal: [None; 128],
             last_switch: None,
             round_robin: 0,
             rng: RNG_SEED,
@@ -162,6 +179,7 @@ impl Sampler {
         self.voices = [Voice::IDLE; MAX_VOICES];
         self.key_velocity = [0; 128];
         self.key_down = [false; 128];
+        self.released_under_pedal = [None; 128];
         self.last_switch = self.bank.as_ref().and_then(|bank| bank.keyswitches.default);
         self.round_robin = 0;
         self.rng = RNG_SEED;
@@ -191,6 +209,8 @@ impl Sampler {
             EventKind::AllNotesOff => {
                 self.pedal = false;
                 self.key_down = [false; 128];
+                // Everything stops: the releases under the pedal start no tail.
+                self.released_under_pedal = [None; 128];
                 for voice in &mut self.voices {
                     if voice.active {
                         start_release(voice, self.spec.sample_rate, CHOKE_RELEASE);
@@ -217,6 +237,7 @@ impl Sampler {
                             start_release(voice, rate, release);
                         }
                     }
+                    self.start_pedal_releases(event.channel);
                 }
                 self.pedal = down;
             }
@@ -287,23 +308,64 @@ impl Sampler {
                 start_release(voice, rate, region.release.max(MIN_RELEASE) * scale);
             }
         }
+        let release = KeyRelease {
+            velocity: self
+                .key_velocity
+                .get(usize::from(key))
+                .copied()
+                .unwrap_or(event.velocity),
+            switch: self.last_switch,
+        };
         if pedal {
+            // SFZ `trigger=release` plays "on note-off or sustain pedal off": the regions wait
+            // for the pedal. The release is captured now, so a re-press of the key before the
+            // pedal lifts does not change it; a later release of the key replaces it.
+            if let Some(slot) = self.released_under_pedal.get_mut(usize::from(key)) {
+                *slot = Some(release);
+            }
             return;
         }
-        let Some(bank) = bank else {
+        if let Some(bank) = bank {
+            self.start_release_regions(&bank, key, event.channel, release);
+        }
+    }
+
+    /// Starts the release regions of the keys released while the pedal was down, in key order,
+    /// and forgets those releases.
+    fn start_pedal_releases(&mut self, channel: u8) {
+        let pending = std::mem::replace(&mut self.released_under_pedal, [None; 128]);
+        let Some(bank) = self.bank.clone() else {
             return;
         };
-        let velocity = self
-            .key_velocity
-            .get(usize::from(key))
-            .copied()
-            .unwrap_or(event.velocity);
+        for (key, release) in (0..=127_u8).zip(pending) {
+            if let Some(release) = release {
+                self.start_release_regions(&bank, key, channel, release);
+            }
+        }
+    }
+
+    /// Starts the `trigger=release` regions that `release` of `key` selects.
+    fn start_release_regions(
+        &mut self,
+        bank: &SampleBank,
+        key: u8,
+        channel: u8,
+        release: KeyRelease,
+    ) {
+        let event = InstrumentEvent {
+            offset: 0,
+            kind: EventKind::NoteOff,
+            pitch: key,
+            velocity: release.velocity,
+            channel,
+            value: 0,
+            number: 0,
+        };
         for (index, region) in bank.regions.iter().enumerate() {
             if region.trigger == Trigger::Release
-                && matches_note(region, key, velocity, self.last_switch)
+                && matches_note(region, key, release.velocity, release.switch)
             {
-                let released = InstrumentEvent { velocity, ..*event };
-                self.start_voice(&bank, index, region, &released);
+                self.start_voice(bank, index, region, &event);
             }
         }
     }

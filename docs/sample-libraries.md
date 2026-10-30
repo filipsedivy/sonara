@@ -45,6 +45,11 @@ attack and release times, tuning and volume. MIDI: notes, sustain pedal (CC 64),
 expression (CC 11), pitch bend (±2 semitones) and all notes off. Parameters: volume, pan,
 release scale, instrument.
 
+Release samples start when the key is released; for a key released while the sustain pedal is
+down, they start when the pedal lifts, at the velocity the key was pressed with and with the
+keyswitch that was active at the release. All notes off drops the releases still waiting for the
+pedal.
+
 Not supported: CC-driven layers and crossfades (for example Sonatina's dynamics on CC 1 and
 vibrato on CC 21), filters, per-region pan, streaming. The loader reports unsupported opcodes in
 the load warning when a patch is rendered, together with the values the sampler does not play
