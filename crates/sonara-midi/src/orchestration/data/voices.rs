@@ -116,6 +116,7 @@ pub(super) const VOICE_SOPRANO: Instrument = Instrument::new(
             ),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: SOLO_VOICE_GM,
     },
 );
@@ -197,6 +198,7 @@ pub(super) const VOICE_MEZZO_SOPRANO: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: SOLO_VOICE_GM,
     },
 );
@@ -292,6 +294,7 @@ pub(super) const VOICE_ALTO: Instrument = Instrument::new(
             ),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: SOLO_VOICE_GM,
     },
 );
@@ -388,6 +391,7 @@ pub(super) const VOICE_TENOR: Instrument = Instrument::new(
             ),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: SOLO_VOICE_GM,
     },
 );
@@ -471,6 +475,7 @@ pub(super) const VOICE_BARITONE: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: SOLO_VOICE_GM,
     },
 );
@@ -566,6 +571,7 @@ pub(super) const VOICE_BASS: Instrument = Instrument::new(
             ),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: SOLO_VOICE_GM,
     },
 );
@@ -690,6 +696,7 @@ pub(super) const CHOIR_SOPRANO: Instrument = Instrument::new(
                 },
             ),
         }),
+        keyboard: None,
         gm: gm_program(53),
     },
 );
@@ -811,6 +818,7 @@ pub(super) const CHOIR_ALTO: Instrument = Instrument::new(
                 },
             ),
         }),
+        keyboard: None,
         gm: gm_program(53),
     },
 );
@@ -938,6 +946,7 @@ pub(super) const CHOIR_TENOR: Instrument = Instrument::new(
                 },
             ),
         }),
+        keyboard: None,
         gm: gm_program(53),
     },
 );
@@ -1062,6 +1071,7 @@ pub(super) const CHOIR_BASS: Instrument = Instrument::new(
                 },
             ),
         }),
+        keyboard: None,
         gm: gm_program(53),
     },
 );

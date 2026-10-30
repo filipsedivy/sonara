@@ -2,10 +2,10 @@
 
 `sonara_midi::orchestration` holds machine-readable facts about orchestral instruments in
 general: names and aliases in five languages, categories, pitch range, transposition, family, the
-articulations they idiomatically play, how they appear in ensembles and their General MIDI voice
-(SON-P06). It is plain
-Rust data and pure functions. It depends on no audio engine, sample library or UI, adds no agent
-tool and changes no contract (CTR-01).
+articulations they idiomatically play, how they appear in ensembles, their General MIDI voice and,
+for the instruments played from a keyboard, how the keyboard makes and stops the sound (SON-P06).
+It is plain Rust data and pure functions. It depends on no audio engine, sample library or UI,
+adds no agent tool and changes no contract (CTR-01).
 
 ## Identity
 
@@ -158,9 +158,10 @@ tower instrument.
 
 ## Provenance
 
-Every range, every articulation list and every count of players is `Cited { source }` or
-`Estimate { reason }`; every General MIDI substitute is an `Estimate { reason }`, since a source
-states only that GM1 has no voice for the instrument, not which one to play instead. Cited means a source that was read states it. Each source the dataset
+Every range, every articulation list, every count of players and every keyboard mechanics record
+is `Cited { source }` or `Estimate { reason }`; every General MIDI substitute is an
+`Estimate { reason }`, since a source states only that GM1 has no voice for the instrument, not
+which one to play instead. Cited means a source that was read states it. Each source the dataset
 cites is written out once, in the dataset's source list
 (`crates/sonara-midi/src/orchestration/data/sources.rs`): its author or publisher, its title (with
 the edition for a book) and where it was read, a URL or, for a printed book without one, a page.
@@ -276,6 +277,42 @@ two instruments; substitute keys have no entry. It sits beside the drum kit's ma
 (`sonara_midi::gm::GM_MAP`), which it does not change: the drum kit's sounds are recorded golden
 data (GLD-01), and its map has, for example, no triangle (80, 81).
 
+## Keyboard mechanics
+
+The fifteen keyboards and the carillon, a percussion instrument played from a baton clavier, carry
+`KeyboardMechanics` (`Instrument::keyboard`); every other record has none. A record holds:
+
+- `action`: what a key moves. `Grand` (double escapement) and `Upright` (single escapement, spring
+  return) for the acoustic pianos, `TineHammer` (Rhodes), `ReedHammer` (Wurlitzer), `PlateHammer`
+  (celesta), `Plunger` (Clavinet), `Jack` (harpsichord), `Tangent` (clavichord), `PipeValve` (pipe
+  organ), `Contacts` (Hammond), `ReedValve` (accordion) and `Baton` (carillon).
+  `Action::is_touch_sensitive` says whether the force of the stroke sets the loudness: not for the
+  harpsichord, the organs or the accordion, which change it by their choirs, stops, swell pedal or
+  bellows.
+- `keys`: the sounding pitches of the lowest and the highest key, every key between them present
+  (`key_count()`); 88 keys from A0 to C8 on the pianos and the Rhodes. An instrument with registers
+  is given at its unison (8-foot) register, the accordion by its right-hand keyboard, and the
+  carillon by a representative 49-key clavier.
+- `pedals`: each `Pedal` has a `PedalKind` (`Sustain`, `Sostenuto`, `UnaCorda`, `Soft`,
+  `PracticeMuffler`, `FootSwell`, `Expression`, `Crescendo`) and the MIDI controller it sends, or
+  none where MIDI 1.0 defines none (the practice muffler, the crescendo pedal). `controller(kind)`
+  looks one up. A `Controller` is 0–119: MIDI 1.0 reserves 120–127 for channel mode messages. A
+  grand sends 64 (sustain), 67 (una corda) and 66 (sostenuto); an upright's half-blow pedal uses the
+  soft-pedal controller, 67; the Clavinet's foot swell and the organs' swell pedals send 11. The
+  list of pedal kinds is open. Pedals are controls, never articulations, and other controls (a
+  Rhodes tremolo, drawbars, a Leslie, registration) are not modelled here.
+- `resonance`: `Absent`, `Weak`, `DampersRaised` (the pianos' strings ring along while the sustain
+  pedal holds the dampers up) or `Undamped` (the carillon's bells).
+- `noises`: the sounds of the mechanism a library may record on its own (`KeyRelease`,
+  `DamperReturn`, `Pedal`, `Hammer`, `KeyClick`, `Wind`, `Bellows`, `Clapper`, `Rattle`).
+- `decay`: `TwoStage` (the pianos' prompt sound and aftersound), `Decaying` (one stage while the
+  key is held), `WhileHeld` (no decay while wind or air is supplied: the organs and the accordion),
+  `Free` (the carillon's bells ring on whatever the key does) or `PerKey` (the prepared piano).
+- `timbre`: a lasting change to the ordinary sound, `Felt`, `Prepared` (the pitch of a prepared
+  key is unreliable) or `DetunedUnisons` (the honky-tonk piano), or none.
+- `note`: what the values leave out, such as the Hammond's tonewheel leakage or the room an organ
+  sounds in; `provenance` for the record.
+
 ## Validation
 
 A record is an `InstrumentSpec` checked by `Instrument::try_new(instrument_type, spec)`. Records
@@ -297,9 +334,11 @@ that forgets any of them does not build.
   of its own on a transposing instrument (the octave would count twice), and a clef in which the
   written playable range leaves MIDI;
 - an empty or blank provenance anywhere in the record: a range, the articulation list, an era of
-  the ensemble profile or a GM substitute;
+  the ensemble profile, the keyboard mechanics or a GM substitute;
 - a GM voice of channel-10 keys that lists none or one key twice, and a GM voice that does not fit
-  the pitch: a pitched instrument takes a program and an unpitched one channel-10 keys.
+  the pitch: a pitched instrument takes a program and an unpitched one channel-10 keys;
+- keyboard mechanics whose keys do not lie inside the playable range (an unpitched instrument has
+  none), a pedal kind listed twice, two pedals on one controller, and a noise listed twice.
 
 A record is keyed by its `InstrumentType`, so its id cannot be malformed. The shipped data is
 built with the panicking `new` in a `static`, so invalid data is a compile error.
@@ -312,8 +351,9 @@ order.
 written list, provenance, the score-order conventions above, that every record rebuilds from its
 spec, and that a fixture breaking each check is rejected. It also compares every record's ranges,
 transposition, written range, clefs, forms and articulations with tables written out
-independently of the data, and every record's GM voice and the orchestral percussion map with
-tables written from the GM1 lists.
+independently of the data, every record's GM voice and the orchestral percussion map with
+tables written from the GM1 lists, and the keyboard mechanics of the sixteen instruments played
+from a keyboard with a table written from the research.
 
 ## Coverage
 

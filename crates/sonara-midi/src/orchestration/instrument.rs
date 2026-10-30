@@ -7,6 +7,7 @@ use super::data;
 use super::ensemble_profile::{EnsembleProfile, Era};
 use super::general_midi::{GmTarget, GmVoice};
 use super::id::{CategoryId, InstrumentType};
+use super::keyboard::KeyboardMechanics;
 use super::names::{Alias, Names, alias_fault};
 use super::pitch::{Clef, PitchRange, SoundingPitch, Transposition, WrittenPitch};
 
@@ -197,6 +198,19 @@ pub enum InstrumentError {
         "the GM voice does not fit the pitch: a pitched instrument takes a program, an unpitched one channel-10 keys"
     )]
     GmVoiceMismatch,
+    /// The keys of the keyboard mechanics do not lie inside the playable range. An unpitched
+    /// instrument has no playable range, so it has no keys.
+    #[error("the keys do not lie inside the playable range")]
+    KeysOutsidePlayable,
+    /// The keyboard mechanics list a pedal kind twice.
+    #[error("a pedal is listed twice")]
+    DuplicatePedal,
+    /// Two pedals of the keyboard mechanics send the same controller.
+    #[error("two pedals send the same controller")]
+    DuplicatePedalController,
+    /// The keyboard mechanics list a noise twice.
+    #[error("a noise is listed twice")]
+    DuplicateNoise,
 }
 
 /// The values of an instrument record, checked by [`Instrument::try_new`].
@@ -227,6 +241,9 @@ pub struct InstrumentSpec {
     pub articulations_provenance: Provenance,
     /// How the instrument appears in ensembles; `None` when not recorded.
     pub ensemble: Option<EnsembleProfile>,
+    /// How a keyboard instrument makes and stops its sound; `None` for an instrument without a
+    /// keyboard.
+    pub keyboard: Option<KeyboardMechanics>,
     /// The General MIDI Level 1 voice: an exact program or channel-10 keys, a substitute, or none.
     pub gm: GmVoice,
 }
@@ -239,7 +256,7 @@ impl InstrumentSpec {
     /// a record that forgets one does not build. `pitch` is
     /// [`PitchModel::Unpitched`], which only percussion may keep; a pitched percussion instrument
     /// states its pitch. The other fields hold their "not known" value: no aliases, no category,
-    /// no clefs, no articulations and no ensemble profile.
+    /// no clefs, no articulations, no ensemble profile and no keyboard mechanics.
     pub const EMPTY: Self = Self {
         names: Names {
             en: "",
@@ -256,6 +273,7 @@ impl InstrumentSpec {
         articulations: &[],
         articulations_provenance: Provenance::Estimate { reason: "" },
         ensemble: None,
+        keyboard: None,
         gm: GmVoice::Percussion(&[]),
     };
 }
@@ -290,8 +308,8 @@ impl Instrument {
     /// with an octave of its own on a transposing instrument and
     /// [`WrittenOutOfMidi`](InstrumentError::WrittenOutOfMidi) when the playable range written
     /// in the clef leaves MIDI; [`EmptyProvenance`](InstrumentError::EmptyProvenance) when any
-    /// provenance of the record (ranges, articulations, ensemble profile, GM substitute) is empty
-    /// or blank;
+    /// provenance of the record (ranges, articulations, ensemble profile, keyboard mechanics, GM
+    /// substitute) is empty or blank;
     /// then, alias by alias in list order, [`AliasNotFolded`](InstrumentError::AliasNotFolded)
     /// for a text that is not folded and [`AliasTooShort`](InstrumentError::AliasTooShort) for
     /// one with fewer than three letters, and
@@ -299,8 +317,13 @@ impl Instrument {
     /// language; last, for the GM voice, [`NoGmKeys`](InstrumentError::NoGmKeys) for a voice of
     /// channel-10 keys that lists none, [`DuplicateGmKey`](InstrumentError::DuplicateGmKey) for a
     /// key listed twice and [`GmVoiceMismatch`](InstrumentError::GmVoiceMismatch) for a program on
-    /// an unpitched instrument or keys on a pitched one. The first failing check in that order is
-    /// reported.
+    /// an unpitched instrument or keys on a pitched one; then, for the keyboard mechanics,
+    /// [`KeysOutsidePlayable`](InstrumentError::KeysOutsidePlayable) for keys outside the playable
+    /// range or on an unpitched instrument, [`DuplicatePedal`](InstrumentError::DuplicatePedal)
+    /// for a pedal kind listed twice,
+    /// [`DuplicatePedalController`](InstrumentError::DuplicatePedalController) for two pedals on
+    /// one controller and [`DuplicateNoise`](InstrumentError::DuplicateNoise) for a noise listed
+    /// twice. The first failing check in that order is reported.
     pub const fn try_new(
         instrument_type: InstrumentType,
         spec: InstrumentSpec,
@@ -350,6 +373,9 @@ impl Instrument {
             return Err(error);
         }
         if let Err(error) = check_gm(&spec) {
+            return Err(error);
+        }
+        if let Err(error) = check_keyboard(&spec) {
             return Err(error);
         }
         Ok(Self {
@@ -441,6 +467,14 @@ impl Instrument {
     #[must_use]
     pub const fn ensemble(&self) -> Option<&EnsembleProfile> {
         self.spec.ensemble.as_ref()
+    }
+
+    /// How the instrument makes and stops its sound through a keyboard, or `None` for an
+    /// instrument without one. Every keyboard instrument has it, and so does the carillon, a
+    /// percussion instrument played from a baton clavier.
+    #[must_use]
+    pub const fn keyboard(&self) -> Option<&KeyboardMechanics> {
+        self.spec.keyboard.as_ref()
     }
 
     /// The General MIDI Level 1 voice: an exact program or channel-10 keys, a substitute, or
@@ -672,6 +706,61 @@ const fn check_gm(spec: &InstrumentSpec) -> Result<(), InstrumentError> {
     Ok(())
 }
 
+/// The keyboard checks of [`Instrument::try_new`], in its documented order: keys inside the
+/// playable range; then no pedal kind twice, no controller on two pedals and no noise twice.
+const fn check_keyboard(spec: &InstrumentSpec) -> Result<(), InstrumentError> {
+    let Some(keyboard) = &spec.keyboard else {
+        return Ok(());
+    };
+    let keys_inside = match &spec.pitch {
+        PitchModel::Pitched(pitched) => pitched.playable.range.encloses(keyboard.keys),
+        PitchModel::Unpitched => false,
+    };
+    if !keys_inside {
+        return Err(InstrumentError::KeysOutsidePlayable);
+    }
+    let pedals = keyboard.pedals;
+    let mut i = 0;
+    while i < pedals.len() {
+        let mut j = i + 1;
+        while j < pedals.len() {
+            if pedals[i].kind as u8 == pedals[j].kind as u8 {
+                return Err(InstrumentError::DuplicatePedal);
+            }
+            j += 1;
+        }
+        i += 1;
+    }
+    let mut i = 0;
+    while i < pedals.len() {
+        if let Some(controller) = pedals[i].controller {
+            let mut j = i + 1;
+            while j < pedals.len() {
+                if let Some(other) = pedals[j].controller
+                    && other.number() == controller.number()
+                {
+                    return Err(InstrumentError::DuplicatePedalController);
+                }
+                j += 1;
+            }
+        }
+        i += 1;
+    }
+    let noises = keyboard.noises;
+    let mut i = 0;
+    while i < noises.len() {
+        let mut j = i + 1;
+        while j < noises.len() {
+            if noises[i] as u8 == noises[j] as u8 {
+                return Err(InstrumentError::DuplicateNoise);
+            }
+            j += 1;
+        }
+        i += 1;
+    }
+    Ok(())
+}
+
 /// Whether every provenance of `spec` names a source or a reason: not empty, not blank.
 const fn provenances_are_stated(spec: &InstrumentSpec) -> bool {
     if let PitchModel::Pitched(pitched) = &spec.pitch {
@@ -698,6 +787,11 @@ const fn provenances_are_stated(spec: &InstrumentSpec) -> bool {
     }
     if let GmVoice::Substitute { provenance, .. } = spec.gm
         && !is_stated(provenance)
+    {
+        return false;
+    }
+    if let Some(keyboard) = &spec.keyboard
+        && !is_stated(keyboard.provenance)
     {
         return false;
     }

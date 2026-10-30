@@ -148,6 +148,7 @@ pub(super) const VIOLIN: Instrument = Instrument::new(
                 },
             ),
         }),
+        keyboard: None,
         gm: gm_program(41),
     },
 );
@@ -284,6 +285,7 @@ pub(super) const VIOLA: Instrument = Instrument::new(
                 },
             ),
         }),
+        keyboard: None,
         gm: gm_program(42),
     },
 );
@@ -425,6 +427,7 @@ pub(super) const CELLO: Instrument = Instrument::new(
                 },
             ),
         }),
+        keyboard: None,
         gm: gm_program(43),
     },
 );
@@ -565,6 +568,7 @@ pub(super) const DOUBLE_BASS: Instrument = Instrument::new(
                 },
             ),
         }),
+        keyboard: None,
         gm: gm_program(44),
     },
 );

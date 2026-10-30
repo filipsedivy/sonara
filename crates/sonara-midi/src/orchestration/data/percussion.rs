@@ -14,8 +14,9 @@ use crate::orchestration::ensemble_profile::{EnsembleProfile, Forms};
 use crate::orchestration::general_midi::{GmVoice, SubstituteFit};
 use crate::orchestration::id::{CategoryId, InstrumentType};
 use crate::orchestration::instrument::{Instrument, InstrumentSpec, PitchModel, Provenance};
+use crate::orchestration::keyboard::{Action, Decay, KeyboardMechanics, Noise, Resonance};
 use crate::orchestration::names::Names;
-use crate::orchestration::pitch::Clef;
+use crate::orchestration::pitch::{Clef, PitchRange};
 
 pub(super) const TIMPANI: Instrument = Instrument::new(
     InstrumentType::Timpani,
@@ -112,6 +113,7 @@ pub(super) const TIMPANI: Instrument = Instrument::new(
             film: players(1, 1, "1 timpanist, 4-5 drums", PLAYERS_ESTIMATE),
             chamber: not_used("usually none", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_program(48),
     },
 );
@@ -174,6 +176,7 @@ pub(super) const BASS_DRUM: Instrument = Instrument::new(
             ),
             chamber: unstated("rare", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: GmVoice::Percussion(gm_keys![35, 36]),
     },
 );
@@ -238,6 +241,7 @@ pub(super) const SNARE_DRUM: Instrument = Instrument::new(
                 PLAYERS_ESTIMATE,
             ),
         }),
+        keyboard: None,
         gm: GmVoice::Percussion(gm_keys![38]),
     },
 );
@@ -286,6 +290,7 @@ pub(super) const CLASH_CYMBALS: Instrument = Instrument::new(
             film: players(1, 1, "several pairs in samples", PLAYERS_ESTIMATE),
             chamber: unstated("rare", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_substitute_keys(
             gm_keys![49, 57],
             SubstituteFit::Approximate,
@@ -358,6 +363,7 @@ pub(super) const SUSPENDED_CYMBAL: Instrument = Instrument::new(
             film: players(1, 2, "swells are a staple", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_substitute_keys(
             gm_keys![49],
             SubstituteFit::Approximate,
@@ -433,6 +439,7 @@ pub(super) const TAM_TAM: Instrument = Instrument::new(
             ),
             chamber: unstated("rare", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: GmVoice::NoEquivalent,
     },
 );
@@ -487,6 +494,7 @@ pub(super) const TRIANGLE: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: GmVoice::Percussion(gm_keys![81, 80]),
     },
 );
@@ -541,6 +549,7 @@ pub(super) const TAMBOURINE: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: GmVoice::Percussion(gm_keys![54]),
     },
 );
@@ -584,6 +593,7 @@ pub(super) const CASTANETS: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_substitute_keys(
             gm_keys![75],
             SubstituteFit::Weak,
@@ -645,6 +655,7 @@ pub(super) const WOOD_BLOCK: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: GmVoice::Percussion(gm_keys![76, 77]),
     },
 );
@@ -701,6 +712,7 @@ pub(super) const TEMPLE_BLOCKS: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_substitute_keys(
             gm_keys![76, 77],
             SubstituteFit::Approximate,
@@ -764,6 +776,7 @@ pub(super) const SLEIGH_BELLS: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: unstated("rare", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_substitute_keys(
             gm_keys![54],
             SubstituteFit::Weak,
@@ -825,6 +838,7 @@ pub(super) const MARACAS: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: GmVoice::Percussion(gm_keys![70]),
     },
 );
@@ -879,6 +893,7 @@ pub(super) const SHAKER: Instrument = Instrument::new(
             film: players(1, 1, "common in hybrid scores", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_substitute_keys(
             gm_keys![70, 69],
             SubstituteFit::Approximate,
@@ -947,6 +962,7 @@ pub(super) const WHIP: Instrument = Instrument::new(
             film: players(1, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: GmVoice::NoEquivalent,
     },
 );
@@ -1027,6 +1043,7 @@ pub(super) const GLOCKENSPIEL: Instrument = Instrument::new(
             film: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_program(10),
     },
 );
@@ -1105,6 +1122,7 @@ pub(super) const XYLOPHONE: Instrument = Instrument::new(
             ),
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_program(14),
     },
 );
@@ -1180,6 +1198,7 @@ pub(super) const VIBRAPHONE: Instrument = Instrument::new(
             film: players(0, 1, "a percussionist", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_program(12),
     },
 );
@@ -1249,6 +1268,7 @@ pub(super) const MARIMBA: Instrument = Instrument::new(
             film: players(0, 1, "a percussionist", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a solo and ensemble instrument", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_program(13),
     },
 );
@@ -1313,6 +1333,7 @@ pub(super) const TUBULAR_BELLS: Instrument = Instrument::new(
             film: players(1, 1, "a percussionist", PLAYERS_ESTIMATE),
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_program(15),
     },
 );
@@ -1374,6 +1395,7 @@ pub(super) const CROTALES: Instrument = Instrument::new(
             film: players(0, 1, "a percussionist", PLAYERS_ESTIMATE),
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_substitute(
             10,
             SubstituteFit::Approximate,
@@ -1450,6 +1472,33 @@ pub(super) const CARILLON: Instrument = Instrument::new(
             romantic: not_used("not an orchestral instrument", PLAYERS_ESTIMATE),
             film: unstated("a sampled or recorded tower", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "a carillonneur; a solo instrument", PLAYERS_ESTIMATE),
+        }),
+        keyboard: Some(KeyboardMechanics {
+            action: Action::Baton,
+            keys: PitchRange::new(48, 96),
+            pedals: &[],
+            resonance: Resonance::Undamped,
+            noises: &[Noise::Clapper],
+            decay: Decay::Free,
+            timbre: None,
+            note: "pedal keys play the bass bells; holding a clapper against its bell mutes it, \
+                which players avoid",
+            provenance: Provenance::Cited {
+                source: cite!(
+                    gcna_carillons: "wooden batons played with the closed fist, connected by wires \
+                        to the clappers, and one or two octaves of pedal keys for the heavy bass \
+                        bells; a struck bell rings until its vibration dies out naturally, and \
+                        dampers only deaden the sound; expression through touch",
+                    wikipedia_carillon: "a prominent minor-third partial, the tierce; touch sets \
+                        the dynamic",
+                    brink_carillon: "most pieces are written for a four-octave C3-C7 carillon; \
+                        large bells ring for up to about 30 s and parts carry no damper-pedal \
+                        marks; holding the clapper against the bell mutes it, which players advise \
+                        against";
+                    "the 49-key clavier, standing for a representative concert carillon, is an \
+                        estimate, and so is the clapper and transmission noise",
+                ),
+            },
         }),
         gm: gm_substitute(
             15,

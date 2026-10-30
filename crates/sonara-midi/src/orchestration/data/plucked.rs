@@ -105,6 +105,7 @@ pub(super) const HARP: Instrument = Instrument::new(
             film: players(1, 2, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_program(47),
     },
 );
@@ -197,6 +198,7 @@ pub(super) const GUITAR_CLASSICAL: Instrument = Instrument::new(
             film: players(0, 1, "often recorded separately", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_program(25),
     },
 );
@@ -264,6 +266,7 @@ pub(super) const LUTE: Instrument = Instrument::new(
             film: players(0, 1, "period and fantasy scores", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "Baroque continuo", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_substitute(
             25,
             SubstituteFit::Weak,
@@ -353,6 +356,7 @@ pub(super) const MANDOLIN: Instrument = Instrument::new(
             film: players(0, 1, "", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_substitute(
             26,
             SubstituteFit::Weak,

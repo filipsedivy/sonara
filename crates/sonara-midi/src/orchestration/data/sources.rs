@@ -95,6 +95,9 @@ define_sources! {
     brink_carillon => "Joey Brink, Composing for Carillon (Rockefeller Memorial Chapel, \
         University of Chicago, 2017), \
         https://rockefeller.uchicago.edu/2017/12/19/composing-for-carillon",
+    conklin_hammers => "Harold A. Conklin Jr., Piano design factors: the hammers, in Five \
+        Lectures on the Acoustics of the Piano (Royal Swedish Academy of Music, 1990), \
+        https://www.speech.kth.se/music/5_lectures/conklin/thehammers.html",
     forsyth => "Cecil Forsyth, Orchestration (Macmillan and Stainer & Bell, 1914), Cornell \
         University Library copy, https://archive.org/details/cu31924022381440",
     forsyth_second_scan => "Cecil Forsyth, Orchestration (Macmillan and Stainer & Bell, 1914), \
@@ -112,6 +115,9 @@ define_sources! {
     rimsky_korsakov => "Nikolai Rimsky-Korsakov, Principles of Orchestration, edited by \
         Maximilian Steinberg, translated by Edward Agate (1922; Dover reprint, 1964), Project \
         Gutenberg ebook 33900, https://www.gutenberg.org/ebooks/33900",
+    weinreich_coupled_strings => "Gabriel Weinreich, The coupled motion of piano strings, in \
+        Five Lectures on the Acoustics of the Piano (Royal Swedish Academy of Music, 1990), \
+        https://www.speech.kth.se/music/5_lectures/weinreic/weinreic.html",
     widor => "Charles-Marie Widor, The Technique of the Modern Orchestra, translated by Edward \
         Suddard (Joseph Williams, 1906), Cornell University Library copy, \
         https://archive.org/details/cu31924022381556",
@@ -199,6 +205,8 @@ define_sources! {
     wikipedia_organ_stop => "Wikipedia, Organ stop, https://en.wikipedia.org/wiki/Organ_stop",
     wikipedia_pedal_harp => "Wikipedia, Pedal harp, https://en.wikipedia.org/wiki/Pedal_harp",
     wikipedia_piano => "Wikipedia, Piano, https://en.wikipedia.org/wiki/Piano",
+    wikipedia_piano_pedals => "Wikipedia, Piano pedals, \
+        https://en.wikipedia.org/wiki/Piano_pedals",
     wikipedia_piano_accordion => "Wikipedia, Piano accordion, \
         https://en.wikipedia.org/wiki/Piano_accordion",
     wikipedia_piccolo => "Wikipedia, Piccolo, https://en.wikipedia.org/wiki/Piccolo",
@@ -215,6 +223,7 @@ define_sources! {
     wikipedia_shaker => "Wikipedia, Shaker (musical instrument), \
         https://en.wikipedia.org/wiki/Shaker_(musical_instrument)",
     wikipedia_snare_drum => "Wikipedia, Snare drum, https://en.wikipedia.org/wiki/Snare_drum",
+    wikipedia_soft_pedal => "Wikipedia, Soft pedal, https://en.wikipedia.org/wiki/Soft_pedal",
     wikipedia_sonatas_and_interludes => "Wikipedia, Sonatas and Interludes, \
         https://en.wikipedia.org/wiki/Sonatas_and_Interludes",
     wikipedia_soprano_saxophone => "Wikipedia, Soprano saxophone, \
@@ -324,6 +333,8 @@ define_sources! {
     finale_2012_gm_patches => "MakeMusic, Finale 2012 user manual, General MIDI Patch Numbers & \
         Names, \
         https://usermanuals.finalemusic.com/Finale2012Win/Content/Finale/General_MIDI_Patch_Numbers_F_Names.htm",
+    midi_control_change_messages => "MIDI Association, MIDI 1.0 Control Change Messages, \
+        https://midi.org/midi-1-0-control-change-messages",
     midi_gm1_sound_set_2012 => "MIDI Manufacturers Association, GM1 Sound Set (Wayback Machine \
         copy of 2012), \
         https://web.archive.org/web/2012id_/http://www.midi.org/techspecs/gm1sound.php",
@@ -374,6 +385,8 @@ define_sources! {
         for Mac, https://support.apple.com/guide/logicpro/studio-horns-overview-lgcpb0b2f2ab/mac",
     apple_logic_studio_horns_keyswitches => "Apple, Logic Pro User Guide for Mac, Studio Horns \
         keyswitch mapping, https://support.apple.com/en-ca/guide/logicpro/lgcp5a6d61ad/mac",
+    apple_logic_studio_piano => "Apple, Logic Pro User Guide for Mac, Studio Piano in Logic Pro \
+        for Mac, https://support.apple.com/guide/logicpro/studio-piano-lgcp69e6c94f/mac",
     apple_logic_vintage_b3 => "Apple, Logic Pro User Guide for Mac, Vintage B3 pages, \
         https://support.apple.com/guide/logicpro/percussion-effect-lgsia12dc4d/mac",
     arturia_clavinet_v_manual => "Arturia, Clavinet V User Manual, \
@@ -404,6 +417,8 @@ define_sources! {
     orchestral_tools_berlin_woodwinds_additional => "Orchestral Tools, Berlin Woodwinds / \
         Additional Instruments - Notes, \
         https://orchestraltools.helpscoutdocs.com/article/353-berlin-woodwinds-additional-instruments-notes",
+    salamander_grand_piano => "sfzinstruments, Salamander Grand Piano, \
+        https://github.com/sfzinstruments/SalamanderGrandPiano",
     samplemodeling_trumpet_3_manual => "Samplemodeling, The Trumpet 3 User Manual, Version 3 for \
         Kontakt 5, \
         https://www.samplemodeling.com/wp-content/uploads/2023/10/The-Trumpet-3-USER-MANUAL.pdf",
@@ -411,6 +426,8 @@ define_sources! {
         https://github.com/peastman/sso",
     soundiron_voices_of_rapture => "Soundiron, Voices of Rapture, \
         https://soundiron.com/collections/all-products/products/voices-of-rapture",
+    spectrasonics_keyscape_damper => "Spectrasonics, Keyscape manual, Damper, \
+        https://support.spectrasonics.net/manual/Keyscape/11/en/topic/damper",
     spitfire_bbc_so_pro_manual => "Spitfire Audio, BBC Symphony Orchestra Professional user \
         manual v4, \
         https://www.spitfireaudio.com/cdn/shop/files/BBCSOPro_Manual_v4_96703953-4d7b-4d52-bdc8-a7b176ed342c.pdf",
@@ -505,6 +522,8 @@ define_sources! {
         https://www.vsl.co.at/products/synchron/oboe-damore",
     vsl_synchron_percussion_1 => "Vienna Symphonic Library, Synchron Percussion I, \
         https://www.vsl.co.at/de/instruments/synchron/percussion-i",
+    vsl_synchron_pianos_play_view => "Vienna Symphonic Library, Synchron Pianos manual, Play \
+        View, https://www.vsl.co.at/manuals/synchron-pianos/play-view",
     vsl_synchron_timpani_3 => "Vienna Symphonic Library, Synchron Timpani III, \
         https://www.vsl.co.at/products/synchron/timpani-3",
     vsl_synchron_wagner_tuba => "Vienna Symphonic Library, Synchron Wagner Tuba, \

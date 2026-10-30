@@ -1,6 +1,6 @@
 //! Orchestral instrument metadata: names and aliases in five languages, categories, pitch ranges,
-//! transposition, families, articulations, ensemble profiles and General MIDI voices (SON-P06,
-//! `contracts/orchestration-metadata.md`).
+//! transposition, families, articulations, ensemble profiles, General MIDI voices and keyboard
+//! mechanics (SON-P06, `contracts/orchestration-metadata.md`).
 //!
 //! The data is about instruments in general, not about any sample library, audio engine or UI. A
 //! value is either sourced or marked as an estimate, and an articulation counts as supported only
@@ -12,6 +12,7 @@ mod ensemble_profile;
 mod general_midi;
 mod id;
 mod instrument;
+mod keyboard;
 mod names;
 mod pitch;
 
@@ -29,6 +30,9 @@ pub use id::{Category, CategoryId, InstrumentType, Selection};
 pub use instrument::{
     CheckError, Family, Instrument, InstrumentError, InstrumentSpec, PitchModel, Pitched,
     Provenance, RangeCheck, SourcedRange,
+};
+pub use keyboard::{
+    Action, Controller, Decay, KeyboardMechanics, Noise, Pedal, PedalKind, Resonance, TimbreState,
 };
 pub use names::{Alias, Lang, Mention, Names, Number, Target, all_aliases, fold, resolve};
 pub use pitch::{Clef, PitchRange, RangeError, SoundingPitch, Transposition, WrittenPitch};

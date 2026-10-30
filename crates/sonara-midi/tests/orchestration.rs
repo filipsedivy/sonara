@@ -6,12 +6,13 @@ use proptest::collection::vec;
 use proptest::prelude::*;
 use sonara_midi::gm::GM_MAP;
 use sonara_midi::orchestration::{
-    Alias, Articulation, ArticulationAvailability, Axis, CategoryId, CheckError, Clef,
-    EnsembleProfile, Era, EraPlayers, Family, Forms, GmNote, GmProgram, GmTarget, GmVoice,
-    INSTRUMENTS, Instrument, InstrumentError, InstrumentSpec, InstrumentType, Kind, Lang, Mute,
-    Names, Number, ORCHESTRAL_PERCUSSION_MAP, PitchModel, PitchRange, Pitched, PlayerRange,
-    Provenance, RangeCheck, Request, RequestAvailability, RequestError, Selection, SoundingPitch,
-    SourcedRange, SubstituteFit, Target, Transposition, Vibrato, WrittenPitch, all_aliases,
+    Action, Alias, Articulation, ArticulationAvailability, Axis, CategoryId, CheckError, Clef,
+    Controller, Decay, EnsembleProfile, Era, EraPlayers, Family, Forms, GmNote, GmProgram,
+    GmTarget, GmVoice, INSTRUMENTS, Instrument, InstrumentError, InstrumentSpec, InstrumentType,
+    KeyboardMechanics, Kind, Lang, Mute, Names, Noise, Number, ORCHESTRAL_PERCUSSION_MAP, Pedal,
+    PedalKind, PitchModel, PitchRange, Pitched, PlayerRange, Provenance, RangeCheck, Request,
+    RequestAvailability, RequestError, Resonance, Selection, SoundingPitch, SourcedRange,
+    SubstituteFit, Target, TimbreState, Transposition, Vibrato, WrittenPitch, all_aliases,
     category, fold, instrument, instruments, percussion_instrument, resolve,
 };
 
@@ -122,8 +123,49 @@ fn profile() -> EnsembleProfile {
     }
 }
 
-/// Every provenance of a record: the articulation list, the playable and comfortable ranges and
-/// each era of the ensemble profile.
+/// The controller `number`; a fixture above 119 does not compile.
+const fn cc(number: u8) -> Controller {
+    match Controller::new(number) {
+        Some(controller) => controller,
+        None => panic!("a pedal sends a controller of 0-119"),
+    }
+}
+
+/// A pedal of `kind` on the controller `number`.
+const fn pedal(kind: PedalKind, number: u8) -> Pedal {
+    Pedal {
+        kind,
+        controller: Some(cc(number)),
+    }
+}
+
+/// A damper pedal on controller 64 and a practice muffler without a controller.
+const DAMPER_AND_MUFFLER: &[Pedal] = &[
+    pedal(PedalKind::Sustain, 64),
+    Pedal {
+        kind: PedalKind::PracticeMuffler,
+        controller: None,
+    },
+];
+
+/// Valid keyboard mechanics with keys from `low` to `high`: a damper pedal and a practice muffler
+/// without a controller, and two noises.
+fn mechanics(low: i64, high: i64) -> KeyboardMechanics {
+    KeyboardMechanics {
+        action: Action::Upright,
+        keys: PitchRange::new(low, high),
+        pedals: DAMPER_AND_MUFFLER,
+        resonance: Resonance::DampersRaised,
+        noises: &[Noise::KeyRelease, Noise::DamperReturn],
+        decay: Decay::TwoStage,
+        timbre: None,
+        note: "",
+        provenance: ESTIMATE,
+    }
+}
+
+/// Every provenance of a record: the articulation list, the playable and comfortable ranges, each
+/// era of the ensemble profile, a GM substitute and the keyboard mechanics.
 fn provenances(instrument: &Instrument) -> Vec<Provenance> {
     let mut all = vec![instrument.articulations_provenance()];
     if let PitchModel::Pitched(pitched) = instrument.pitch() {
@@ -139,6 +181,9 @@ fn provenances(instrument: &Instrument) -> Vec<Provenance> {
     }
     if let GmVoice::Substitute { provenance, .. } = instrument.gm() {
         all.push(provenance);
+    }
+    if let Some(keyboard) = instrument.keyboard() {
+        all.push(keyboard.provenance);
     }
     all
 }
@@ -199,6 +244,7 @@ fn dataset_invariants_hold() {
         );
         assert_eq!(spec.ensemble.as_ref(), instrument.ensemble());
         assert_eq!(spec.gm, instrument.gm());
+        assert_eq!(spec.keyboard.as_ref(), instrument.keyboard());
         assert_eq!(spec.clefs, instrument.clefs());
         // Every record states its clefs, each once.
         let mut clefs: Vec<&str> = instrument.clefs().iter().map(|clef| clef.slug()).collect();
@@ -223,6 +269,9 @@ fn dataset_invariants_hold() {
             .collect();
         if let Some(profile) = instrument.ensemble() {
             texts.extend(Era::ALL.map(|era| profile.players(era).note));
+        }
+        if let Some(keyboard) = instrument.keyboard() {
+            texts.push(keyboard.note);
         }
         for text in texts {
             assert_eq!(text.trim(), text, "{}", instrument.id());
@@ -575,6 +624,7 @@ fn empty_spec_needs_a_name_an_articulation_provenance_and_a_gm_voice() {
     assert_eq!(empty.articulations, []);
     assert_eq!(empty.clefs, []);
     assert_eq!(empty.ensemble, None);
+    assert_eq!(empty.keyboard, None);
     assert_eq!(empty.gm, GmVoice::Percussion(&[]));
     assert_eq!(
         Instrument::try_new(InstrumentType::Triangle, empty),
@@ -613,6 +663,7 @@ fn empty_spec_needs_a_name_an_articulation_provenance_and_a_gm_voice() {
     assert_eq!(triangle.ensemble(), None);
     assert_eq!(triangle.written_playable(), None);
     assert_eq!(triangle.gm(), GmVoice::Percussion(TRIANGLE_KEYS));
+    assert_eq!(triangle.keyboard(), None);
 }
 
 /// Each of the five names and the abbreviation must be stated (TST-03).
@@ -669,7 +720,8 @@ fn a_cited_source_must_name_a_url_or_a_page() {
 }
 
 /// Every provenance of a record names a source or a reason: the playable and comfortable
-/// ranges, the articulation list and each era of the ensemble profile (TST-03).
+/// ranges, the articulation list, each era of the ensemble profile and the keyboard mechanics
+/// (TST-03).
 #[test]
 fn every_provenance_must_be_stated() {
     let blank_cited = Provenance::Cited { source: " " };
@@ -717,6 +769,14 @@ fn every_provenance_must_be_stated() {
             ..VALID
         });
     }
+    cases.push(InstrumentSpec {
+        pitch: pitched(range(40, 80, ESTIMATE), None),
+        keyboard: Some(KeyboardMechanics {
+            provenance: blank_cited,
+            ..mechanics(40, 80)
+        }),
+        ..VALID
+    });
     for (index, spec) in cases.into_iter().enumerate() {
         assert_eq!(
             Instrument::try_new(InstrumentType::Timpani, spec),
@@ -728,6 +788,7 @@ fn every_provenance_must_be_stated() {
     let stated = InstrumentSpec {
         pitch: pitched(range(40, 80, ESTIMATE), Some(range(50, 70, ESTIMATE))),
         ensemble: Some(profile()),
+        keyboard: Some(mechanics(40, 80)),
         ..VALID
     };
     assert!(Instrument::try_new(InstrumentType::Timpani, stated).is_ok());
@@ -4128,6 +4189,488 @@ fn orchestral_percussion_map_holds_the_exact_keys_only() {
         assert_eq!(
             percussion_instrument(key(number)),
             Some(InstrumentType::Triangle)
+        );
+    }
+}
+
+/// The keyboard mechanics of a record, as the research gives them.
+struct KeyboardRow {
+    id: &'static str,
+    action: Action,
+    /// The sounding pitches of the lowest and the highest key.
+    keys: (i64, i64),
+    key_count: u8,
+    /// Each pedal with the controller it sends.
+    pedals: &'static [(PedalKind, Option<u8>)],
+    resonance: Resonance,
+    noises: &'static [Noise],
+    decay: Decay,
+    timbre: Option<TimbreState>,
+    /// Whether the force of the stroke sets the loudness.
+    touch: bool,
+}
+
+/// The pedals of a grand piano with their MIDI 1.0 controllers.
+const GRAND: &[(PedalKind, Option<u8>)] = &[
+    (PedalKind::Sustain, Some(64)),
+    (PedalKind::UnaCorda, Some(67)),
+    (PedalKind::Sostenuto, Some(66)),
+];
+
+/// The pedals of an upright piano; the practice muffler has no controller.
+const UPRIGHT: &[(PedalKind, Option<u8>)] = &[
+    (PedalKind::Sustain, Some(64)),
+    (PedalKind::Soft, Some(67)),
+    (PedalKind::PracticeMuffler, None),
+];
+
+/// The keyboard mechanics of the sixteen instruments played from a keyboard: the fifteen
+/// keyboards and the carillon (TST-10: written from the researched values, not from the data).
+/// The key counts are those the research states, not derived from the key range.
+const KEYBOARDS: [KeyboardRow; 16] = [
+    KeyboardRow {
+        id: "carillon",
+        action: Action::Baton,
+        keys: (48, 96),
+        key_count: 49,
+        pedals: &[],
+        resonance: Resonance::Undamped,
+        noises: &[Noise::Clapper],
+        decay: Decay::Free,
+        timbre: None,
+        touch: true,
+    },
+    KeyboardRow {
+        id: "piano_concert_grand",
+        action: Action::Grand,
+        keys: (21, 108),
+        key_count: 88,
+        pedals: GRAND,
+        resonance: Resonance::DampersRaised,
+        noises: &[
+            Noise::DamperReturn,
+            Noise::KeyRelease,
+            Noise::Pedal,
+            Noise::Hammer,
+        ],
+        decay: Decay::TwoStage,
+        timbre: None,
+        touch: true,
+    },
+    KeyboardRow {
+        id: "piano_studio_grand",
+        action: Action::Grand,
+        keys: (21, 108),
+        key_count: 88,
+        pedals: GRAND,
+        resonance: Resonance::DampersRaised,
+        noises: &[
+            Noise::DamperReturn,
+            Noise::KeyRelease,
+            Noise::Pedal,
+            Noise::Hammer,
+        ],
+        decay: Decay::TwoStage,
+        timbre: None,
+        touch: true,
+    },
+    KeyboardRow {
+        id: "piano_upright",
+        action: Action::Upright,
+        keys: (21, 108),
+        key_count: 88,
+        pedals: UPRIGHT,
+        resonance: Resonance::DampersRaised,
+        noises: &[Noise::DamperReturn, Noise::KeyRelease, Noise::Pedal],
+        decay: Decay::TwoStage,
+        timbre: None,
+        touch: true,
+    },
+    KeyboardRow {
+        id: "piano_felt",
+        action: Action::Upright,
+        keys: (21, 108),
+        key_count: 88,
+        pedals: UPRIGHT,
+        resonance: Resonance::DampersRaised,
+        noises: &[Noise::Hammer, Noise::KeyRelease, Noise::Pedal],
+        decay: Decay::TwoStage,
+        timbre: Some(TimbreState::Felt),
+        touch: true,
+    },
+    KeyboardRow {
+        id: "piano_prepared",
+        action: Action::Grand,
+        keys: (21, 108),
+        key_count: 88,
+        pedals: GRAND,
+        resonance: Resonance::DampersRaised,
+        noises: &[Noise::Rattle],
+        decay: Decay::PerKey,
+        timbre: Some(TimbreState::Prepared),
+        touch: true,
+    },
+    KeyboardRow {
+        id: "piano_honky_tonk",
+        action: Action::Upright,
+        keys: (21, 108),
+        key_count: 88,
+        pedals: &[(PedalKind::Sustain, Some(64)), (PedalKind::Soft, Some(67))],
+        resonance: Resonance::DampersRaised,
+        noises: &[Noise::KeyRelease, Noise::DamperReturn],
+        decay: Decay::TwoStage,
+        timbre: Some(TimbreState::DetunedUnisons),
+        touch: true,
+    },
+    KeyboardRow {
+        id: "electric_piano_rhodes",
+        action: Action::TineHammer,
+        keys: (21, 108),
+        key_count: 88,
+        pedals: &[(PedalKind::Sustain, Some(64))],
+        resonance: Resonance::Weak,
+        noises: &[Noise::DamperReturn, Noise::Hammer],
+        decay: Decay::Decaying,
+        timbre: None,
+        touch: true,
+    },
+    KeyboardRow {
+        id: "electric_piano_wurlitzer",
+        action: Action::ReedHammer,
+        keys: (33, 96),
+        key_count: 64,
+        pedals: &[(PedalKind::Sustain, Some(64))],
+        resonance: Resonance::Weak,
+        noises: &[Noise::KeyRelease, Noise::Pedal, Noise::Hammer],
+        decay: Decay::Decaying,
+        timbre: None,
+        touch: true,
+    },
+    KeyboardRow {
+        id: "clavinet",
+        action: Action::Plunger,
+        keys: (29, 88),
+        key_count: 60,
+        pedals: &[(PedalKind::FootSwell, Some(11))],
+        resonance: Resonance::Absent,
+        noises: &[Noise::KeyRelease, Noise::Hammer],
+        decay: Decay::Decaying,
+        timbre: None,
+        touch: true,
+    },
+    KeyboardRow {
+        id: "harpsichord",
+        action: Action::Jack,
+        keys: (29, 89),
+        key_count: 61,
+        pedals: &[],
+        resonance: Resonance::Weak,
+        noises: &[Noise::KeyRelease, Noise::DamperReturn],
+        decay: Decay::Decaying,
+        timbre: None,
+        touch: false,
+    },
+    KeyboardRow {
+        id: "clavichord",
+        action: Action::Tangent,
+        keys: (29, 89),
+        key_count: 61,
+        pedals: &[],
+        resonance: Resonance::Absent,
+        noises: &[Noise::KeyRelease],
+        decay: Decay::Decaying,
+        timbre: None,
+        touch: true,
+    },
+    KeyboardRow {
+        id: "celesta",
+        action: Action::PlateHammer,
+        keys: (48, 108),
+        key_count: 61,
+        pedals: &[(PedalKind::Sustain, Some(64))],
+        resonance: Resonance::Weak,
+        noises: &[],
+        decay: Decay::Decaying,
+        timbre: None,
+        touch: true,
+    },
+    KeyboardRow {
+        id: "organ_pipe",
+        action: Action::PipeValve,
+        keys: (36, 96),
+        key_count: 61,
+        pedals: &[
+            (PedalKind::Expression, Some(11)),
+            (PedalKind::Crescendo, None),
+        ],
+        resonance: Resonance::Absent,
+        noises: &[Noise::Wind],
+        decay: Decay::WhileHeld,
+        timbre: None,
+        touch: false,
+    },
+    KeyboardRow {
+        id: "organ_hammond",
+        action: Action::Contacts,
+        keys: (36, 96),
+        key_count: 61,
+        pedals: &[(PedalKind::Expression, Some(11))],
+        resonance: Resonance::Absent,
+        noises: &[Noise::KeyClick],
+        decay: Decay::WhileHeld,
+        timbre: None,
+        touch: false,
+    },
+    KeyboardRow {
+        id: "accordion",
+        action: Action::ReedValve,
+        keys: (53, 93),
+        key_count: 41,
+        pedals: &[],
+        resonance: Resonance::Absent,
+        noises: &[Noise::Bellows],
+        decay: Decay::WhileHeld,
+        timbre: None,
+        touch: false,
+    },
+];
+
+/// Every record played from a keyboard has the researched mechanics, and no other record has
+/// any: the fifteen keyboards and the carillon, a percussion instrument with a baton clavier
+/// (TST-10, TST-07).
+#[test]
+fn keyboard_mechanics_match_the_researched_values() {
+    let mut with_mechanics: Vec<&str> = INSTRUMENTS
+        .iter()
+        .filter(|record| record.keyboard().is_some())
+        .map(Instrument::id)
+        .collect();
+    with_mechanics.sort_unstable();
+    let mut expected: Vec<&str> = KEYBOARDS.iter().map(|row| row.id).collect();
+    expected.sort_unstable();
+    assert_eq!(with_mechanics, expected);
+    for record in &INSTRUMENTS {
+        if record.family() == Family::Keyboards {
+            assert!(record.keyboard().is_some(), "{}", record.id());
+        }
+    }
+
+    for row in &KEYBOARDS {
+        let record = get(row.id);
+        let mechanics = record.keyboard().expect("listed rows have mechanics");
+        assert_eq!(mechanics.action, row.action, "{}", row.id);
+        assert_eq!(
+            (mechanics.keys.low().get(), mechanics.keys.high().get()),
+            row.keys,
+            "{}",
+            row.id
+        );
+        assert_eq!(mechanics.key_count(), row.key_count, "{}", row.id);
+        let pedals: Vec<(PedalKind, Option<u8>)> = mechanics
+            .pedals
+            .iter()
+            .map(|pedal| (pedal.kind, pedal.controller.map(Controller::number)))
+            .collect();
+        assert_eq!(pedals, row.pedals, "{}", row.id);
+        for &(kind, number) in row.pedals {
+            assert_eq!(
+                mechanics.controller(kind).map(Controller::number),
+                number,
+                "{} {kind:?}",
+                row.id
+            );
+        }
+        assert_eq!(mechanics.resonance, row.resonance, "{}", row.id);
+        assert_eq!(mechanics.noises, row.noises, "{}", row.id);
+        assert_eq!(mechanics.decay, row.decay, "{}", row.id);
+        assert_eq!(mechanics.timbre, row.timbre, "{}", row.id);
+        assert_eq!(
+            mechanics.action.is_touch_sensitive(),
+            row.touch,
+            "{}",
+            row.id
+        );
+        // The keys sound inside the playable range (PRI-04: the record check enforces it).
+        let PitchModel::Pitched(pitched) = record.pitch() else {
+            panic!("{} plays pitches", row.id);
+        };
+        assert!(
+            pitched.playable.range.encloses(mechanics.keys),
+            "{}",
+            row.id
+        );
+    }
+}
+
+/// A pedal kind sends the same controller wherever it appears, the one MIDI 1.0 names for it:
+/// the damper pedal 64, the sostenuto 66, the una corda and the half-blow soft pedal 67, a volume
+/// or swell pedal 11; the practice muffler and the organ's crescendo pedal have none (TST-07;
+/// the expected numbers are written from the MIDI 1.0 controller list).
+#[test]
+fn each_pedal_kind_sends_one_controller() {
+    let expected = |kind: PedalKind| match kind {
+        PedalKind::Sustain => Some(64),
+        PedalKind::Sostenuto => Some(66),
+        PedalKind::UnaCorda | PedalKind::Soft => Some(67),
+        PedalKind::FootSwell | PedalKind::Expression => Some(11),
+        PedalKind::PracticeMuffler | PedalKind::Crescendo => None,
+    };
+    let mut seen = Vec::new();
+    for record in &INSTRUMENTS {
+        let Some(mechanics) = record.keyboard() else {
+            continue;
+        };
+        for pedal in mechanics.pedals {
+            assert_eq!(
+                pedal.controller.map(Controller::number),
+                expected(pedal.kind),
+                "{} {:?}",
+                record.id(),
+                pedal.kind
+            );
+            if !seen.contains(&pedal.kind) {
+                seen.push(pedal.kind);
+            }
+        }
+    }
+    // Every kind of pedal is used by some record.
+    assert_eq!(seen.len(), 8, "{seen:?}");
+}
+
+/// A damper pedal listed twice, the second time without a controller.
+const SUSTAIN_TWICE: &[Pedal] = &[
+    pedal(PedalKind::Sustain, 64),
+    pedal(PedalKind::Soft, 67),
+    Pedal {
+        kind: PedalKind::Sustain,
+        controller: None,
+    },
+];
+
+/// Two pedals on controller 11, apart.
+const SHARED_CONTROLLER: &[Pedal] = &[
+    pedal(PedalKind::Expression, 11),
+    Pedal {
+        kind: PedalKind::Crescendo,
+        controller: None,
+    },
+    pedal(PedalKind::FootSwell, 11),
+];
+
+/// Two pedals without a controller: no controller is shared.
+const NO_CONTROLLERS: &[Pedal] = &[
+    Pedal {
+        kind: PedalKind::PracticeMuffler,
+        controller: None,
+    },
+    Pedal {
+        kind: PedalKind::Crescendo,
+        controller: None,
+    },
+];
+
+/// An upright piano playing 21-108 with `keyboard`.
+fn upright(keyboard: KeyboardMechanics) -> Result<Instrument, InstrumentError> {
+    Instrument::try_new(
+        InstrumentType::PianoUpright,
+        InstrumentSpec {
+            keyboard: Some(keyboard),
+            ..written_in_clefs(0, (21, 108), &[Clef::Treble, Clef::Bass])
+        },
+    )
+}
+
+/// The keyboard checks of `try_new` reject each broken fixture, the first failing check in the
+/// documented order (TST-03).
+#[test]
+fn validator_rejects_broken_keyboards() {
+    for (keyboard, error) in [
+        (mechanics(20, 108), InstrumentError::KeysOutsidePlayable),
+        (mechanics(21, 109), InstrumentError::KeysOutsidePlayable),
+        (
+            KeyboardMechanics {
+                pedals: SUSTAIN_TWICE,
+                ..mechanics(21, 108)
+            },
+            InstrumentError::DuplicatePedal,
+        ),
+        (
+            KeyboardMechanics {
+                pedals: SHARED_CONTROLLER,
+                ..mechanics(21, 108)
+            },
+            InstrumentError::DuplicatePedalController,
+        ),
+        (
+            KeyboardMechanics {
+                noises: &[Noise::KeyRelease, Noise::Hammer, Noise::KeyRelease],
+                ..mechanics(21, 108)
+            },
+            InstrumentError::DuplicateNoise,
+        ),
+        // The first failing check is reported: keys before pedals, pedals before noises.
+        (
+            KeyboardMechanics {
+                pedals: SUSTAIN_TWICE,
+                ..mechanics(12, 108)
+            },
+            InstrumentError::KeysOutsidePlayable,
+        ),
+        (
+            KeyboardMechanics {
+                pedals: SUSTAIN_TWICE,
+                noises: &[Noise::Wind, Noise::Wind],
+                ..mechanics(21, 108)
+            },
+            InstrumentError::DuplicatePedal,
+        ),
+    ] {
+        assert_eq!(upright(keyboard), Err(error), "{keyboard:?}");
+    }
+
+    // An unpitched instrument has no playable range, so it has no keys.
+    assert_eq!(
+        Instrument::try_new(
+            InstrumentType::Triangle,
+            InstrumentSpec {
+                keyboard: Some(mechanics(60, 72)),
+                ..VALID
+            },
+        ),
+        Err(InstrumentError::KeysOutsidePlayable)
+    );
+    // The keyboard checks come after the GM checks.
+    assert_eq!(
+        Instrument::try_new(
+            InstrumentType::PianoUpright,
+            InstrumentSpec {
+                keyboard: Some(mechanics(20, 108)),
+                gm: GmVoice::Percussion(TRIANGLE_KEYS),
+                ..written_in_clefs(0, (21, 108), &[Clef::Treble])
+            },
+        ),
+        Err(InstrumentError::GmVoiceMismatch)
+    );
+}
+
+/// The valid counterparts of the broken fixtures: keys at the ends of the playable range or
+/// inside it, and pedals that share no controller because they send none. The record returns its
+/// mechanics unchanged (TST-07).
+#[test]
+fn validator_accepts_valid_keyboards() {
+    for keyboard in [
+        mechanics(21, 108),
+        mechanics(36, 96),
+        KeyboardMechanics {
+            pedals: NO_CONTROLLERS,
+            noises: &[],
+            timbre: Some(TimbreState::Felt),
+            ..mechanics(21, 108)
+        },
+    ] {
+        assert_eq!(
+            upright(keyboard).map(|record| record.keyboard().copied()),
+            Ok(Some(keyboard))
         );
     }
 }

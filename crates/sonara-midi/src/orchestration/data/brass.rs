@@ -122,6 +122,7 @@ pub(super) const HORN_F: Instrument = Instrument::new(
             ),
             chamber: players(1, 1, "wind quintet, brass quintet", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_program(61),
     },
 );
@@ -217,6 +218,7 @@ pub(super) const WAGNER_TUBA_TENOR: Instrument = Instrument::new(
             film: unstated("rare; 2 when used", PLAYERS_ESTIMATE),
             chamber: not_used("", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_substitute(
             61,
             SubstituteFit::Weak,
@@ -321,6 +323,7 @@ pub(super) const WAGNER_TUBA_BASS: Instrument = Instrument::new(
             film: unstated("rare; 2 when used", PLAYERS_ESTIMATE),
             chamber: not_used("", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_substitute(
             61,
             SubstituteFit::Weak,
@@ -453,6 +456,7 @@ pub(super) const TRUMPET_PICCOLO: Instrument = Instrument::new(
                 },
             ),
         }),
+        keyboard: None,
         gm: gm_substitute(
             57,
             SubstituteFit::Approximate,
@@ -589,6 +593,7 @@ pub(super) const TRUMPET_C: Instrument = Instrument::new(
                 },
             ),
         }),
+        keyboard: None,
         gm: gm_program(57),
     },
 );
@@ -736,6 +741,7 @@ pub(super) const TRUMPET_BB: Instrument = Instrument::new(
                 },
             ),
         }),
+        keyboard: None,
         gm: gm_program(57),
     },
 );
@@ -861,6 +867,7 @@ pub(super) const CORNET: Instrument = Instrument::new(
                 },
             ),
         }),
+        keyboard: None,
         gm: gm_substitute(
             57,
             SubstituteFit::Approximate,
@@ -980,6 +987,7 @@ pub(super) const FLUGELHORN: Instrument = Instrument::new(
                 },
             ),
         }),
+        keyboard: None,
         gm: gm_substitute(
             57,
             SubstituteFit::Weak,
@@ -1099,6 +1107,7 @@ pub(super) const TROMBONE_TENOR: Instrument = Instrument::new(
             film: players(2, 3, "tenors, plus 1-2 bass trombones", PLAYERS_ESTIMATE),
             chamber: players(0, 1, "brass quintet", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_program(58),
     },
 );
@@ -1211,6 +1220,7 @@ pub(super) const TROMBONE_BASS: Instrument = Instrument::new(
             film: players(1, 2, "Spitfire records a2", PLAYERS_ESTIMATE),
             chamber: players(0, 1, "", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_program(58),
     },
 );
@@ -1305,6 +1315,7 @@ pub(super) const EUPHONIUM: Instrument = Instrument::new(
                 PLAYERS_ESTIMATE,
             ),
         }),
+        keyboard: None,
         gm: gm_substitute(
             59,
             SubstituteFit::Approximate,
@@ -1404,6 +1415,7 @@ pub(super) const TUBA: Instrument = Instrument::new(
             film: players(1, 2, "often with a cimbasso", PLAYERS_ESTIMATE),
             chamber: players(1, 1, "brass quintet", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_program(59),
     },
 );
@@ -1489,6 +1501,7 @@ pub(super) const CIMBASSO: Instrument = Instrument::new(
             film: players(1, 1, "often beside a tuba", PLAYERS_ESTIMATE),
             chamber: not_used("", PLAYERS_ESTIMATE),
         }),
+        keyboard: None,
         gm: gm_substitute(
             58,
             SubstituteFit::Approximate,
