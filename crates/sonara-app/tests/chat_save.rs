@@ -1,18 +1,33 @@
 //! The privacy proof of the AI Chat: what is said in a chat never reaches a saved project.
 //!
 //! The chat lives in memory only (`sonara_app::chat`); a project file is what `save` writes. This
-//! test pins that the two never meet:
+//! test pins that the two never meet. It is two kinds of evidence, and they are not the same:
 //!
+//! - **What guards the absence of a path is the structure.** The chat controller is built from a
+//!   provider list, a config and a sink; it holds no reference to an application context, a
+//!   session or a project service, so by construction it cannot change what a save writes. The
+//!   source scan ([`the_chat_sources_reach_neither_the_project_crates_nor_the_project_services`])
+//!   is what keeps that true: it fails when `chat/**` or `composer/**` import a project crate
+//!   or one of the application's project modules (`crate::projects`, `crate::edit`,
+//!   `crate::context`, or any module that is not their own), or reach one with `super::super`.
+//!   Without it nothing here would notice a path being added.
 //! - **Byte identity.** Two separate application contexts do the same fixed script of project
 //!   edits and saves (a bundle, an in-place save with its backup, a packaged archive). One has a
 //!   chat that is used all the while, with a sentinel text in its prompts and replies, and
 //!   done, failed, cancelled, edited, removed, moved and wiped tasks. Every file of the saved
 //!   bundle and the archive must be identical, byte for byte, and no file anywhere under the
-//!   context's folder may hold the sentinel.
+//!   context's folder may hold the sentinel. This pins that the saves of the two arms do not
+//!   differ: that running the chat machinery (threads, delivery, wipes, a process harness)
+//!   beside a project leaves no trace in a saved file, and that the sentinel is written
+//!   nowhere. It cannot detect a path from the chat to the project on its own: the project
+//!   edits of the second arm are the test's own script, so the arms can only differ through
+//!   something the chat does as a side effect (a shared global, a file in a shared folder, the
+//!   clock or the id source). The counters that show the chat was really used count scenario
+//!   runs (the removed, edited and moved tasks are scripted once per scenario), not outcomes
+//!   the chat decided.
 //! - **No side effect.** A chat-only call never changes the session's version or undo history
 //!   and never marks the project dirty.
-//! - **No path.** The chat sources import nothing from the project crates or from the
-//!   application's project services, and the project schema has no chat property.
+//! - **No path in the schema.** The project schema has no chat property.
 //!
 //! The clock and the ids of both contexts are the ones the golden tests use (a clock that
 //! ticks a microsecond per reading, sequential ids), so no byte differs for a reason that has
@@ -805,75 +820,131 @@ fn code_of(text: &str) -> String {
         .join("\n")
 }
 
-#[test]
-fn the_chat_sources_reach_neither_the_project_crates_nor_the_project_services() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/chat");
+/// The crates that hold the project, its format, the ids and the audio engine.
+const PROJECT_CRATES: [&str; 9] = [
+    "sonara_core",
+    "sonara_project",
+    "sonara_midi",
+    "sonara_engine",
+    "sonara_media",
+    "sonara_dsp",
+    "sonara_io",
+    "sonara_rt",
+    "sonara_agent",
+];
+
+/// The names of the application's types and calls that reach a project.
+const PROJECT_TOKENS: [&str; 5] = [
+    "AppContext",
+    "IdSource",
+    ".ids()",
+    "SharedSession",
+    "ProjectService",
+];
+
+/// Fails when a source under `root` reaches a project: through a project crate, through a
+/// module of this crate that is not one of `allowed` (`crate::projects`, `crate::edit`,
+/// `crate::context`, ...), through `super::super` into a module that is not in the tree, or
+/// through a type that holds a project. `tree` names the part of the crate for the message.
+fn assert_no_path_to_a_project(tree: &str, root: &Path, allowed: &[&str], least_files: usize) {
     let mut files = Vec::new();
-    sources(&root, &mut files);
+    sources(root, &mut files);
     assert!(
-        files.len() >= 10,
-        "the chat sources were found: {}",
+        files.len() >= least_files,
+        "the {tree} sources were found: {}",
         files.len()
     );
-    // The crates that hold the project, its format, the ids and the audio engine.
-    let crates = [
-        "sonara_core",
-        "sonara_project",
-        "sonara_midi",
-        "sonara_engine",
-        "sonara_media",
-        "sonara_dsp",
-        "sonara_io",
-        "sonara_rt",
-        "sonara_agent",
-    ];
-    // The only parts of this crate the chat may use: itself and the process harness.
-    let allowed = ["chat", "composer"];
+    // The modules of the tree itself: a `super::super::x` is fine when `x` is one of them.
+    let own: Vec<String> = files
+        .iter()
+        .flat_map(|(path, _)| {
+            path.strip_prefix(root)
+                .expect("under the root")
+                .iter()
+                .map(|part| part.to_string_lossy().trim_end_matches(".rs").to_owned())
+                .collect::<Vec<_>>()
+        })
+        .collect();
     for (path, text) in &files {
         let code = code_of(text);
-        for name in crates {
-            assert!(!code.contains(name), "{} uses {name}", path.display());
-        }
-        for piece in code.split("crate::").skip(1) {
-            let module: String = piece
-                .chars()
-                .take_while(|c| c.is_alphanumeric() || *c == '_')
-                .collect();
+        for name in PROJECT_CRATES {
             assert!(
-                allowed.contains(&module.as_str()),
-                "{} uses crate::{module}, which is not the chat's to use",
+                !code.contains(name),
+                "{} ({tree}) uses {name}",
                 path.display()
             );
         }
-        for token in [
-            "AppContext",
-            "IdSource",
-            ".ids()",
-            "SharedSession",
-            "ProjectService",
-        ] {
-            assert!(!code.contains(token), "{} mentions {token}", path.display());
+        for piece in code.split("crate::").skip(1) {
+            let module = path_segment(piece);
+            assert!(
+                allowed.contains(&module.as_str()),
+                "{} ({tree}) uses crate::{module}, which is not the {tree}'s to use",
+                path.display()
+            );
+        }
+        for piece in code.split("super::super::").skip(1) {
+            let module = path_segment(piece);
+            assert!(
+                own.contains(&module),
+                "{} ({tree}) reaches {module} with super::super, which is not in the {tree}",
+                path.display()
+            );
+        }
+        for token in PROJECT_TOKENS {
+            assert!(
+                !code.contains(token),
+                "{} ({tree}) mentions {token}",
+                path.display()
+            );
         }
     }
-    // The guard is not vacuous: it sees what the composer imports, and nothing there either.
-    let mut composer = Vec::new();
-    sources(
-        &Path::new(env!("CARGO_MANIFEST_DIR")).join("src/composer"),
-        &mut composer,
-    );
-    assert!(composer.len() >= 6);
-    for (path, text) in &composer {
-        let code = code_of(text);
-        assert!(
-            !code.contains("sonara_core") && !code.contains("sonara_project"),
-            "{}",
-            path.display()
-        );
+}
+
+/// The identifier a path continues with.
+fn path_segment(piece: &str) -> String {
+    piece
+        .chars()
+        .take_while(|c| c.is_alphanumeric() || *c == '_')
+        .collect()
+}
+
+#[test]
+fn the_chat_sources_reach_neither_the_project_crates_nor_the_project_services() {
+    let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    // The chat may use itself and the process harness; the harness only itself. Whatever
+    // else `crate::` names (`projects`, `edit`, `context`, `session`, ...) fails.
+    assert_no_path_to_a_project("chat", &src.join("chat"), &["chat", "composer"], 10);
+    assert_no_path_to_a_project("composer", &src.join("composer"), &["composer"], 6);
+}
+
+#[test]
+fn the_guard_sees_a_path_to_a_project_and_keeps_real_code() {
+    // The filter keeps real code and drops comments.
+    assert!(code_of("use sonara_project::store;").contains("sonara_project"));
+    assert!(!code_of("// use sonara_project::store;").contains("sonara_project"));
+    // A planted source that reaches the project is found, in either tree.
+    for (name, line) in [
+        ("sonara_core", "use sonara_core::ids::TrackId;"),
+        ("projects", "use crate::projects::ProjectService;"),
+        ("edit", "let _ = crate::edit::apply;"),
+        ("context", "fn f(c: &crate::context::AppContext) {}"),
+        ("super::super", "use super::super::projects::open;"),
+    ] {
+        let directory = tempfile::tempdir().expect("dir");
+        fs::write(directory.path().join("x.rs"), format!("{line}\n")).expect("file");
+        let found = std::panic::catch_unwind(|| {
+            assert_no_path_to_a_project("planted", directory.path(), &["composer"], 1);
+        });
+        assert!(found.is_err(), "{name} was not found in {line:?}");
     }
-    assert!(
-        code_of("use sonara_project::store;").contains("sonara_project"),
-        "the filter keeps real code"
-    );
+    // And a clean source passes.
+    let directory = tempfile::tempdir().expect("dir");
+    fs::write(
+        directory.path().join("x.rs"),
+        "use crate::composer::Run;\nuse super::super::x::y;\n",
+    )
+    .expect("file");
+    assert_no_path_to_a_project("clean", directory.path(), &["composer"], 1);
 }
 
 /// Every property name the schema declares, at any depth.
