@@ -59,6 +59,10 @@ pub const MAX_LOG_EVENTS: usize = 2_000;
 /// the run's process group.
 pub const SHUTDOWN_GRACE: Duration = Duration::from_secs(2);
 
+/// How long [`ChatController::shutdown`] waits, beyond its grace, for a run that was being
+/// started when the application quit: enough for `SIGTERM`, `SIGKILL` and the reaping that follow.
+const STARTING_GRACE: Duration = Duration::from_millis(1_500);
+
 /// How many trailing lines of standard error a failure message may quote.
 const STDERR_LINES: usize = 3;
 
@@ -486,17 +490,27 @@ impl ChatController {
     /// [`ChatController::shutdown`] with `grace` for `SIGINT`, so that a test need not wait
     /// out [`SHUTDOWN_GRACE`].
     pub fn shutdown_within(&self, grace: Duration) {
-        let run = {
+        let (run, starting) = {
             let mut core = self.inner.lock();
             // The run leaves the task here, so that the wipe does not interrupt it a second time.
             let run = core.active.as_mut().and_then(|active| active.run.take());
+            let starting = run.is_none() && core.active.is_some();
             core.wipe();
             core.closed = true;
             core.outbox.clear();
-            run
+            (run, starting)
         };
         if let Some(run) = run {
             run.stop_now(grace);
+        } else if starting {
+            // A task is being started: its process does not exist yet, or has just been
+            // started. `launch` does not start one for a closed chat, and `attach` ends one that
+            // came up meanwhile; wait for either, for as long as that takes at most.
+            let limit = grace + STARTING_GRACE;
+            let deadline = std::time::Instant::now() + limit;
+            while self.inner.lock().active.is_some() && std::time::Instant::now() < deadline {
+                std::thread::sleep(Duration::from_millis(10));
+            }
         }
     }
 }
@@ -648,6 +662,11 @@ impl Inner {
         let Some(located) = status.located else {
             return Err(format!("{} cannot run: {}", status.name, status.hint));
         };
+        // Detecting takes a moment, and the application may have quit meanwhile: start nothing
+        // that nobody would stop.
+        if self.lock().closed {
+            return Err("the chat is closed".to_owned());
+        }
         let workspace = Workspace::create(&self.config.discovery_file)
             .map_err(|error| format!("cannot prepare the run: {error}"))?;
         let turn = Turn {

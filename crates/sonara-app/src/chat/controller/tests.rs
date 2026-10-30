@@ -961,6 +961,106 @@ fn shutdown_kills_a_run_that_ignores_sigint_and_sigterm_before_it_returns() {
     fx.wait_idle();
 }
 
+/// The fake provider, whose detection waits until the gate is open.
+struct SlowDetect {
+    inner: Fake,
+    gate: Arc<Gate>,
+}
+
+impl Provider for SlowDetect {
+    fn id(&self) -> ProviderId {
+        self.inner.id()
+    }
+
+    fn name(&self) -> &str {
+        self.inner.name()
+    }
+
+    fn detect(&self) -> ProviderStatus {
+        self.gate.pass();
+        self.inner.detect()
+    }
+
+    fn build(
+        &self,
+        located: &Located,
+        sonara_cli: &Path,
+        workspace: &Workspace,
+        turn: &Turn,
+    ) -> Invocation {
+        self.inner.build(located, sonara_cli, workspace, turn)
+    }
+
+    fn parser(&self) -> Box<dyn LineParser> {
+        self.inner.parser()
+    }
+
+    fn stop_policy(&self) -> StopPolicy {
+        self.inner.stop_policy()
+    }
+}
+
+#[test]
+fn a_quit_while_a_task_is_being_started_starts_no_process() {
+    let dir = tempfile::tempdir().unwrap();
+    let out = dir.path().join("out");
+    fs::create_dir(&out).unwrap();
+    let script = dir.path().join("agent.sh");
+    fs::write(&script, SCRIPT).unwrap();
+    let gate = Gate::new();
+    gate.arm();
+    let provider = SlowDetect {
+        inner: Fake {
+            script,
+            out: out.clone(),
+            ready: true,
+            program: PathBuf::from("/bin/sh"),
+        },
+        gate: Arc::clone(&gate),
+    };
+    let chat = ChatController::new(
+        vec![Arc::new(provider)],
+        ChatConfig {
+            sonara_cli: PathBuf::from("/App/sonara"),
+            discovery_file: discovery(dir.path()),
+        },
+        Recorder::default().sink(),
+    );
+    let starting = {
+        let chat = chat.clone();
+        thread::spawn(move || chat.enqueue("alpha").unwrap())
+    };
+    // The task is active and its provider is being detected: there is no run to stop yet.
+    gate.wait_held();
+    assert!(chat.is_busy());
+    let opener = {
+        let chat = chat.clone();
+        let gate = Arc::clone(&gate);
+        thread::spawn(move || {
+            // Only once the application has quit does detection finish.
+            wait_until("the chat to be closed", || {
+                chat.inner.lock().closed.then_some(())
+            });
+            gate.open();
+        })
+    };
+    let started = Instant::now();
+    chat.shutdown_within(Duration::from_millis(100));
+    opener.join().unwrap();
+    starting.join().unwrap();
+    assert!(
+        started.elapsed() < Duration::from_secs(3),
+        "shutdown is bounded: {:?}",
+        started.elapsed()
+    );
+    assert!(!chat.is_busy(), "the starting task was dropped");
+    assert_eq!(
+        fs::read_to_string(out.join("log")).unwrap_or_default(),
+        "",
+        "no agent was started after the quit"
+    );
+}
+
 #[test]
 fn the_default_shutdown_grace_is_short() {
     assert!(SHUTDOWN_GRACE <= Duration::from_secs(2));
@@ -1057,6 +1157,17 @@ impl Gate {
     fn open(&self) {
         self.state.lock().unwrap().open = true;
         self.changed.notify_all();
+    }
+
+    /// Holds the caller while the gate is armed and closed, like a held sink call.
+    fn pass(&self) {
+        let mut state = self.state.lock().unwrap();
+        if state.armed {
+            state.held += 1;
+            while !state.open {
+                state = self.changed.wait(state).unwrap();
+            }
+        }
     }
 
     fn wait_held(&self) {
