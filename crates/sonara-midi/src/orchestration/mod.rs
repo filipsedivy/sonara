@@ -1,5 +1,5 @@
-//! Orchestral instrument metadata: pitch ranges, transposition, families and articulations
-//! (SON-P06, `contracts/orchestration-metadata.md`).
+//! Orchestral instrument metadata: pitch ranges, transposition, families, articulations and
+//! ensemble profiles (SON-P06, `contracts/orchestration-metadata.md`).
 //!
 //! The data is about instruments in general, not about any sample library, audio engine or UI. A
 //! value is either sourced or marked as an estimate, and an articulation counts as supported only
@@ -7,16 +7,18 @@
 
 mod articulation;
 mod data;
+mod ensemble_profile;
 mod id;
 mod instrument;
 mod pitch;
 
 pub use articulation::{Articulation, ArticulationAvailability};
 pub use data::INSTRUMENTS;
+pub use ensemble_profile::{EnsembleProfile, Era, EraPlayers, Forms, PlayerRange};
 pub use id::InstrumentType;
 pub use instrument::{
-    CheckError, Family, Instrument, InstrumentError, PitchModel, Pitched, Provenance, RangeCheck,
-    SourcedRange,
+    CheckError, Family, Instrument, InstrumentError, InstrumentSpec, PitchModel, Pitched,
+    Provenance, RangeCheck, SourcedRange,
 };
 pub use pitch::{PitchRange, RangeError, SoundingPitch, Transposition, WrittenPitch};
 

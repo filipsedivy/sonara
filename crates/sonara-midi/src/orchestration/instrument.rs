@@ -3,6 +3,7 @@
 use thiserror::Error;
 
 use super::articulation::{Articulation, ArticulationAvailability};
+use super::ensemble_profile::{EnsembleProfile, Era};
 use super::id::InstrumentType;
 use super::pitch::{PitchRange, SoundingPitch, Transposition, WrittenPitch};
 
@@ -127,49 +128,116 @@ pub enum InstrumentError {
     /// An articulation is listed twice.
     #[error("an articulation is listed twice")]
     DuplicateArticulation,
+    /// The display name is empty or blank.
+    #[error("the display name is empty or blank")]
+    EmptyName,
+    /// A provenance is a `Cited` source or an `Estimate` reason that is empty or blank.
+    #[error("a cited source or an estimate reason is empty or blank")]
+    EmptyProvenance,
+    /// An instrument outside the percussion family has no pitch. Every wind, brass, keyboard,
+    /// plucked, voice and string instrument plays definite pitches.
+    #[error("only percussion instruments may be unpitched")]
+    UnpitchedOutsidePercussion,
+    /// A player range has more players at its low end than at its high end.
+    #[error("player range {min}-{max} is inverted")]
+    InvertedPlayerRange {
+        /// The low end.
+        min: u8,
+        /// The high end.
+        max: u8,
+    },
+}
+
+/// The values of an instrument record, checked by [`Instrument::try_new`].
+///
+/// A record is written as a literal that ends in `..InstrumentSpec::EMPTY`, so a field added
+/// later gets its default without editing every record. [`InstrumentSpec::EMPTY`] is not a valid
+/// record: see there which fields a record must state.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct InstrumentSpec {
+    /// The English display name. Not an identifier.
+    pub name: &'static str,
+    /// The pitch capabilities.
+    pub pitch: PitchModel,
+    /// The articulations the instrument idiomatically plays (general capability, not any
+    /// library's), each at most once.
+    pub articulations: &'static [Articulation],
+    /// The provenance of `articulations`.
+    pub articulations_provenance: Provenance,
+    /// How the instrument appears in ensembles; `None` when not recorded.
+    pub ensemble: Option<EnsembleProfile>,
+}
+
+impl InstrumentSpec {
+    /// The base of every record literal.
+    ///
+    /// A record must state `name` and `articulations_provenance`: here they are empty, which
+    /// [`Instrument::try_new`] rejects, so a record that forgets one does not build. `pitch` is
+    /// [`PitchModel::Unpitched`], which only percussion may keep; a pitched percussion instrument
+    /// states its pitch. The other fields hold their "not known" value: no articulations and no
+    /// ensemble profile.
+    pub const EMPTY: Self = Self {
+        name: "",
+        pitch: PitchModel::Unpitched,
+        articulations: &[],
+        articulations_provenance: Provenance::Estimate { reason: "" },
+        ensemble: None,
+    };
 }
 
 /// Metadata of one instrument type, such as `violin` or `clarinet_bb`.
 ///
-/// The record is keyed by its [`InstrumentType`], which gives its id and family. The type names
-/// the acoustic instrument, not a sample preset: it is independent of the preset ids of the
-/// instrument catalog, which may map to it later. The data does not depend on any audio engine,
-/// library or UI.
+/// The record is keyed by its [`InstrumentType`], which gives its id and family, and holds the
+/// checked [`InstrumentSpec`]. The type names the acoustic instrument, not a sample preset: it is
+/// independent of the preset ids of the instrument catalog, which may map to it later. The data
+/// does not depend on any audio engine, library or UI.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Instrument {
     kind: InstrumentType,
-    name: &'static str,
-    pitch: PitchModel,
-    articulations: &'static [Articulation],
-    articulations_provenance: Provenance,
+    spec: InstrumentSpec,
 }
 
 impl Instrument {
-    /// Builds the record after checking its invariants.
+    /// Builds the record of `instrument_type` after checking the invariants of `spec`.
     ///
     /// # Errors
-    /// [`InstrumentError`] for a comfortable range outside the playable one, a transposition that
-    /// moves the playable range outside MIDI, or a duplicate articulation.
+    /// [`InstrumentError`]: [`EmptyName`](InstrumentError::EmptyName) for an empty or blank
+    /// name; [`UnpitchedOutsidePercussion`](InstrumentError::UnpitchedOutsidePercussion) for an
+    /// unpitched instrument outside the percussion family;
+    /// [`ComfortableOutsidePlayable`](InstrumentError::ComfortableOutsidePlayable) and
+    /// [`WrittenOutOfMidi`](InstrumentError::WrittenOutOfMidi) for ranges that do not fit;
+    /// [`DuplicateArticulation`](InstrumentError::DuplicateArticulation) for an articulation
+    /// listed twice; [`EmptyProvenance`](InstrumentError::EmptyProvenance) when any provenance
+    /// of the record (ranges, articulations, ensemble profile) is empty or blank. The first
+    /// failing check in that order is reported.
     pub const fn try_new(
         instrument_type: InstrumentType,
-        name: &'static str,
-        pitch: PitchModel,
-        articulations: &'static [Articulation],
-        articulations_provenance: Provenance,
+        spec: InstrumentSpec,
     ) -> Result<Self, InstrumentError> {
-        if let PitchModel::Pitched(pitched) = &pitch {
-            if let Some(comfortable) = &pitched.comfortable
-                && !pitched.playable.range.encloses(comfortable.range)
-            {
-                return Err(InstrumentError::ComfortableOutsidePlayable);
+        if spec.name.trim_ascii().is_empty() {
+            return Err(InstrumentError::EmptyName);
+        }
+        match &spec.pitch {
+            PitchModel::Pitched(pitched) => {
+                if let Some(comfortable) = &pitched.comfortable
+                    && !pitched.playable.range.encloses(comfortable.range)
+                {
+                    return Err(InstrumentError::ComfortableOutsidePlayable);
+                }
+                let range = pitched.playable.range;
+                if pitched.transposition.to_written(range.low()).is_none()
+                    || pitched.transposition.to_written(range.high()).is_none()
+                {
+                    return Err(InstrumentError::WrittenOutOfMidi);
+                }
             }
-            let range = pitched.playable.range;
-            if pitched.transposition.to_written(range.low()).is_none()
-                || pitched.transposition.to_written(range.high()).is_none()
-            {
-                return Err(InstrumentError::WrittenOutOfMidi);
+            PitchModel::Unpitched => {
+                if !matches!(instrument_type.family(), Family::Percussion) {
+                    return Err(InstrumentError::UnpitchedOutsidePercussion);
+                }
             }
         }
+        let articulations = spec.articulations;
         let mut i = 0;
         while i < articulations.len() {
             let mut j = i + 1;
@@ -181,12 +249,12 @@ impl Instrument {
             }
             i += 1;
         }
+        if !provenances_are_stated(&spec) {
+            return Err(InstrumentError::EmptyProvenance);
+        }
         Ok(Self {
             kind: instrument_type,
-            name,
-            pitch,
-            articulations,
-            articulations_provenance,
+            spec,
         })
     }
 
@@ -195,23 +263,17 @@ impl Instrument {
     /// # Panics
     /// When [`Instrument::try_new`] would fail.
     #[must_use]
-    pub const fn new(
-        instrument_type: InstrumentType,
-        name: &'static str,
-        pitch: PitchModel,
-        articulations: &'static [Articulation],
-        articulations_provenance: Provenance,
-    ) -> Self {
-        match Self::try_new(
-            instrument_type,
-            name,
-            pitch,
-            articulations,
-            articulations_provenance,
-        ) {
+    pub const fn new(instrument_type: InstrumentType, spec: InstrumentSpec) -> Self {
+        match Self::try_new(instrument_type, spec) {
             Ok(instrument) => instrument,
             Err(_) => panic!("invalid instrument metadata"),
         }
+    }
+
+    /// The checked values of the record, as [`Instrument::try_new`] received them.
+    #[must_use]
+    pub const fn spec(&self) -> InstrumentSpec {
+        self.spec
     }
 
     /// The instrument type the record describes.
@@ -229,7 +291,7 @@ impl Instrument {
     /// The English display name. Not an identifier.
     #[must_use]
     pub const fn name(&self) -> &'static str {
-        self.name
+        self.spec.name
     }
 
     /// The family, that of [`Instrument::instrument_type`].
@@ -241,26 +303,32 @@ impl Instrument {
     /// The pitch capabilities.
     #[must_use]
     pub const fn pitch(&self) -> &PitchModel {
-        &self.pitch
+        &self.spec.pitch
     }
 
     /// The articulations the instrument idiomatically plays (general capability, not any
     /// library's).
     #[must_use]
     pub const fn articulations(&self) -> &'static [Articulation] {
-        self.articulations
+        self.spec.articulations
     }
 
     /// The provenance of [`Instrument::articulations`].
     #[must_use]
     pub const fn articulations_provenance(&self) -> Provenance {
-        self.articulations_provenance
+        self.spec.articulations_provenance
+    }
+
+    /// How the instrument appears in ensembles, or `None` when not recorded.
+    #[must_use]
+    pub const fn ensemble(&self) -> Option<&EnsembleProfile> {
+        self.spec.ensemble.as_ref()
     }
 
     /// The transposition, or `None` for an unpitched instrument.
     #[must_use]
     pub const fn transposition(&self) -> Option<Transposition> {
-        match &self.pitch {
+        match &self.spec.pitch {
             PitchModel::Pitched(pitched) => Some(pitched.transposition),
             PitchModel::Unpitched => None,
         }
@@ -270,7 +338,7 @@ impl Instrument {
     /// unpitched instrument.
     #[must_use]
     pub fn written_playable(&self) -> Option<(WrittenPitch, WrittenPitch)> {
-        let PitchModel::Pitched(pitched) = &self.pitch else {
+        let PitchModel::Pitched(pitched) = &self.spec.pitch else {
             return None;
         };
         let range = pitched.playable.range;
@@ -285,7 +353,7 @@ impl Instrument {
     /// # Errors
     /// [`CheckError::Unpitched`] for an unpitched instrument.
     pub fn check_sounding(&self, pitch: SoundingPitch) -> Result<RangeCheck, CheckError> {
-        let PitchModel::Pitched(pitched) = &self.pitch else {
+        let PitchModel::Pitched(pitched) = &self.spec.pitch else {
             return Err(CheckError::Unpitched);
         };
         let playable = pitched.playable.range;
@@ -309,7 +377,7 @@ impl Instrument {
     /// [`CheckError::Unpitched`] for an unpitched instrument; [`CheckError::ConversionOutOfRange`]
     /// when the converted pitch is outside MIDI notes 0-127.
     pub fn check_written(&self, pitch: WrittenPitch) -> Result<RangeCheck, CheckError> {
-        let PitchModel::Pitched(pitched) = &self.pitch else {
+        let PitchModel::Pitched(pitched) = &self.spec.pitch else {
             return Err(CheckError::Unpitched);
         };
         let sounding = pitched
@@ -333,10 +401,45 @@ impl Instrument {
         };
         if library_declared.contains(&id) {
             ArticulationAvailability::Supported
-        } else if self.articulations.contains(&articulation) {
+        } else if self.spec.articulations.contains(&articulation) {
             ArticulationAvailability::IdiomaticUnverified
         } else {
             ArticulationAvailability::NotIdiomatic
         }
+    }
+}
+
+/// Whether every provenance of `spec` names a source or a reason: not empty, not blank.
+const fn provenances_are_stated(spec: &InstrumentSpec) -> bool {
+    if let PitchModel::Pitched(pitched) = &spec.pitch {
+        if !is_stated(pitched.playable.provenance) {
+            return false;
+        }
+        if let Some(comfortable) = &pitched.comfortable
+            && !is_stated(comfortable.provenance)
+        {
+            return false;
+        }
+    }
+    if !is_stated(spec.articulations_provenance) {
+        return false;
+    }
+    if let Some(profile) = &spec.ensemble {
+        let mut i = 0;
+        while i < Era::ALL.len() {
+            if !is_stated(profile.players(Era::ALL[i]).provenance) {
+                return false;
+            }
+            i += 1;
+        }
+    }
+    true
+}
+
+/// Whether `provenance` names a source or a reason.
+const fn is_stated(provenance: Provenance) -> bool {
+    match provenance {
+        Provenance::Cited { source } => !source.trim_ascii().is_empty(),
+        Provenance::Estimate { reason } => !reason.trim_ascii().is_empty(),
     }
 }

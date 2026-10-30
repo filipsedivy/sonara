@@ -1,8 +1,8 @@
 # Orchestration metadata
 
 `sonara_midi::orchestration` holds machine-readable facts about orchestral instruments in
-general: pitch range, transposition, family and the articulations they idiomatically play
-(SON-P06). It is plain Rust data and pure functions. It depends on no audio engine, sample
+general: pitch range, transposition, family, the articulations they idiomatically play and how
+they appear in ensembles (SON-P06). It is plain Rust data and pure functions. It depends on no audio engine, sample
 library or UI, adds no agent tool and changes no contract (CTR-01).
 
 ## Identity
@@ -75,17 +75,43 @@ plays. `articulation_availability(id, library_declared)` returns:
 How a library produces an articulation (patch, key switch, controller, note length) is not
 modelled.
 
+## Ensemble profile
+
+A record may carry an `EnsembleProfile` (`Instrument::ensemble`, `None` when not recorded): its
+`Forms` (`Solo`, `Section` or `Both`) and, for each `Era` (`Classical`, `Romantic`, `Film`,
+`Chamber`), the typical players as an `EraPlayers` value. Its `players` is a `PlayerRange`
+(`min <= max`; `PlayerRange::NOT_USED`, `0..=0`, means the instrument is not used there) or
+`None` when the source states no number; `note` keeps the qualifier that came with the number,
+and `provenance` says where it comes from. The section sizes of a particular orchestra are
+ensemble data, not part of the profile. No record of the dataset carries a profile yet.
+
 ## Validation
 
-`PitchRange::try_new` and `Instrument::try_new` reject inverted or non-MIDI ranges, a comfortable
-range outside the playable one, a transposition that moves the range outside MIDI and duplicate
-articulations. A record is keyed by its `InstrumentType`, so its id cannot be malformed. The
-shipped data is built with the panicking `new` in a `static`, so invalid data is a compile error.
+A record is an `InstrumentSpec` checked by `Instrument::try_new(instrument_type, spec)`. Records
+are written as literals ending in `..InstrumentSpec::EMPTY`, so a field added later gets its
+default without editing every record. `EMPTY` itself is not a valid record: its name and its
+articulation provenance are empty, so a record that forgets either does not build.
+
+`PitchRange::try_new`, `PlayerRange::try_new` and `Instrument::try_new` reject:
+
+- inverted or non-MIDI ranges, a comfortable range outside the playable one, and a transposition
+  that moves the range outside MIDI;
+- an inverted player range;
+- an empty or blank display name;
+- an unpitched instrument outside the percussion family (every other family plays definite
+  pitches);
+- an articulation listed twice;
+- an empty or blank provenance anywhere in the record: a range, the articulation list or an era
+  of the ensemble profile.
+
+A record is keyed by its `InstrumentType`, so its id cannot be malformed. The shipped data is
+built with the panicking `new` in a `static`, so invalid data is a compile error.
 Compile-time checks also hold the identity together: every type id is unique lower-case
 `snake_case`, `InstrumentType::ALL` lists every type once in declaration order, each family is one
 block of the score order, and `INSTRUMENTS` lists at most one record per type, in score order.
 `crates/sonara-midi/tests/orchestration.rs` also checks the type ids against an independently
-written list, provenance, the score-order conventions above and that bad fixtures are rejected.
+written list, provenance, the score-order conventions above, that every record rebuilds from its
+spec, and that a fixture breaking each check is rejected.
 
 ## Coverage
 

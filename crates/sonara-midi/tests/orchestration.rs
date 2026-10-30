@@ -1,9 +1,10 @@
 //! Contract tests of the orchestration metadata through its public API (SON-P06).
 
 use sonara_midi::orchestration::{
-    Articulation, ArticulationAvailability, CheckError, Family, INSTRUMENTS, Instrument,
-    InstrumentError, InstrumentType, PitchModel, PitchRange, Provenance, RangeCheck, SoundingPitch,
-    SourcedRange, Transposition, WrittenPitch, instrument, instruments,
+    Articulation, ArticulationAvailability, CheckError, EnsembleProfile, Era, EraPlayers, Family,
+    Forms, INSTRUMENTS, Instrument, InstrumentError, InstrumentSpec, InstrumentType, PitchModel,
+    PitchRange, Pitched, PlayerRange, Provenance, RangeCheck, SoundingPitch, SourcedRange,
+    Transposition, WrittenPitch, instrument, instruments,
 };
 
 const ESTIMATE: Provenance = Provenance::Estimate {
@@ -33,15 +34,41 @@ fn fixture(
     };
     Instrument::try_new(
         InstrumentType::Viola,
-        "Fixture",
-        PitchModel::Pitched(sonara_midi::orchestration::Pitched {
-            transposition: Transposition::new(semitones),
-            playable: sourced(playable),
-            comfortable: comfortable.map(sourced),
-        }),
-        &[],
-        ESTIMATE,
+        InstrumentSpec {
+            pitch: PitchModel::Pitched(Pitched {
+                transposition: Transposition::new(semitones),
+                playable: sourced(playable),
+                comfortable: comfortable.map(sourced),
+            }),
+            ..VALID
+        },
     )
+}
+
+/// A valid unpitched spec: the base of the fixtures that break one field each.
+const VALID: InstrumentSpec = InstrumentSpec {
+    name: "Fixture",
+    articulations_provenance: ESTIMATE,
+    ..InstrumentSpec::EMPTY
+};
+
+fn era_players(players: Option<PlayerRange>, note: &'static str) -> EraPlayers {
+    EraPlayers {
+        players,
+        note,
+        provenance: ESTIMATE,
+    }
+}
+
+/// A profile whose four eras hold four different values, so a mix-up of eras shows.
+fn profile() -> EnsembleProfile {
+    EnsembleProfile {
+        forms: Forms::Both,
+        classical: era_players(Some(PlayerRange::new(6, 10)), "classical"),
+        romantic: era_players(Some(PlayerRange::new(16, 16)), "romantic"),
+        film: era_players(None, "film"),
+        chamber: era_players(Some(PlayerRange::NOT_USED), "chamber"),
+    }
 }
 
 #[test]
@@ -54,14 +81,18 @@ fn dataset_invariants_hold() {
 
     for instrument in &INSTRUMENTS {
         // Re-validate every record through the constructor the data went through.
-        let rebuilt = Instrument::try_new(
-            instrument.instrument_type(),
-            instrument.name(),
-            *instrument.pitch(),
-            instrument.articulations(),
-            instrument.articulations_provenance(),
-        );
+        let spec = instrument.spec();
+        let rebuilt = Instrument::try_new(instrument.instrument_type(), spec);
         assert_eq!(rebuilt, Ok(*instrument), "{}", instrument.id());
+        // The accessors read the spec the record was built from.
+        assert_eq!(spec.name, instrument.name());
+        assert_eq!(&spec.pitch, instrument.pitch());
+        assert_eq!(spec.articulations, instrument.articulations());
+        assert_eq!(
+            spec.articulations_provenance,
+            instrument.articulations_provenance()
+        );
+        assert_eq!(spec.ensemble.as_ref(), instrument.ensemble());
         for articulation in instrument.articulations() {
             assert_eq!(
                 Articulation::from_id(articulation.id()),
@@ -99,12 +130,233 @@ fn validator_rejects_broken_metadata() {
     assert_eq!(
         Instrument::try_new(
             InstrumentType::Triangle,
-            "x",
-            PitchModel::Unpitched,
-            &[Articulation::Roll, Articulation::Roll],
-            ESTIMATE
+            InstrumentSpec {
+                articulations: &[Articulation::Roll, Articulation::Roll],
+                ..VALID
+            }
         ),
         Err(InstrumentError::DuplicateArticulation)
+    );
+    assert!(
+        Instrument::try_new(
+            InstrumentType::Triangle,
+            InstrumentSpec {
+                articulations: &[Articulation::Roll, Articulation::Marcato],
+                ..VALID
+            }
+        )
+        .is_ok()
+    );
+}
+
+/// `EMPTY` is the base of a record, not a record: the fields a record must state are rejected
+/// until it states them (TST-03).
+#[test]
+fn empty_spec_needs_a_name_and_an_articulation_provenance() {
+    let empty = InstrumentSpec::EMPTY;
+    assert_eq!(empty.name, "");
+    assert_eq!(empty.pitch, PitchModel::Unpitched);
+    assert_eq!(empty.articulations, []);
+    assert_eq!(empty.ensemble, None);
+    assert_eq!(
+        Instrument::try_new(InstrumentType::Triangle, empty),
+        Err(InstrumentError::EmptyName)
+    );
+    let named = InstrumentSpec {
+        name: "Triangle",
+        ..InstrumentSpec::EMPTY
+    };
+    assert_eq!(
+        Instrument::try_new(InstrumentType::Triangle, named),
+        Err(InstrumentError::EmptyProvenance)
+    );
+    let stated = InstrumentSpec {
+        articulations_provenance: ESTIMATE,
+        ..named
+    };
+    let triangle = Instrument::try_new(InstrumentType::Triangle, stated).expect("valid");
+    assert_eq!(triangle.name(), "Triangle");
+    assert_eq!(triangle.spec(), stated);
+    assert_eq!(triangle.ensemble(), None);
+    assert_eq!(triangle.written_playable(), None);
+}
+
+#[test]
+fn blank_names_are_rejected() {
+    for name in ["", " ", "\t\n"] {
+        assert_eq!(
+            Instrument::try_new(InstrumentType::Triangle, InstrumentSpec { name, ..VALID }),
+            Err(InstrumentError::EmptyName),
+            "{name:?}"
+        );
+    }
+}
+
+/// Every provenance of a record names a source or a reason: the playable and comfortable
+/// ranges, the articulation list and each era of the ensemble profile (TST-03).
+#[test]
+fn every_provenance_must_be_stated() {
+    let blank_cited = Provenance::Cited { source: " " };
+    let blank_estimate = Provenance::Estimate { reason: "" };
+    let range = |low, high, provenance| SourcedRange {
+        range: PitchRange::new(low, high),
+        provenance,
+    };
+    let pitched = |playable, comfortable| {
+        PitchModel::Pitched(Pitched {
+            transposition: Transposition::NONE,
+            playable,
+            comfortable,
+        })
+    };
+    let mut cases = vec![
+        InstrumentSpec {
+            pitch: pitched(range(40, 80, blank_cited), None),
+            ..VALID
+        },
+        InstrumentSpec {
+            pitch: pitched(range(40, 80, blank_estimate), None),
+            ..VALID
+        },
+        InstrumentSpec {
+            pitch: pitched(range(40, 80, ESTIMATE), Some(range(50, 70, blank_estimate))),
+            ..VALID
+        },
+        InstrumentSpec {
+            articulations_provenance: blank_cited,
+            ..VALID
+        },
+    ];
+    for era in Era::ALL {
+        let mut broken = profile();
+        let players = match era {
+            Era::Classical => &mut broken.classical,
+            Era::Romantic => &mut broken.romantic,
+            Era::Film => &mut broken.film,
+            Era::Chamber => &mut broken.chamber,
+        };
+        players.provenance = blank_estimate;
+        cases.push(InstrumentSpec {
+            ensemble: Some(broken),
+            ..VALID
+        });
+    }
+    for (index, spec) in cases.into_iter().enumerate() {
+        assert_eq!(
+            Instrument::try_new(InstrumentType::Timpani, spec),
+            Err(InstrumentError::EmptyProvenance),
+            "case {index}"
+        );
+    }
+    // The same fixtures with stated provenances are valid.
+    let stated = InstrumentSpec {
+        pitch: pitched(range(40, 80, ESTIMATE), Some(range(50, 70, ESTIMATE))),
+        ensemble: Some(profile()),
+        ..VALID
+    };
+    assert!(Instrument::try_new(InstrumentType::Timpani, stated).is_ok());
+}
+
+/// Only percussion may be unpitched: every other family plays definite pitches (TST-07).
+#[test]
+fn only_percussion_may_be_unpitched() {
+    let mut accepted = 0;
+    for instrument_type in InstrumentType::ALL {
+        let result = Instrument::try_new(instrument_type, VALID);
+        if instrument_type.family() == Family::Percussion {
+            assert!(result.is_ok(), "{instrument_type:?}");
+            accepted += 1;
+        } else {
+            assert_eq!(
+                result,
+                Err(InstrumentError::UnpitchedOutsidePercussion),
+                "{instrument_type:?}"
+            );
+        }
+    }
+    assert_eq!(accepted, 22);
+    for instrument_type in [
+        InstrumentType::Violin,
+        InstrumentType::Flute,
+        InstrumentType::HornF,
+        InstrumentType::Harp,
+        InstrumentType::PianoConcertGrand,
+        InstrumentType::VoiceSoprano,
+    ] {
+        assert_eq!(
+            Instrument::try_new(instrument_type, VALID),
+            Err(InstrumentError::UnpitchedOutsidePercussion),
+            "{instrument_type:?}"
+        );
+    }
+    // A pitched record outside the percussion is valid.
+    assert!(fixture((40, 80), None, 0).is_ok());
+}
+
+#[test]
+#[should_panic(expected = "invalid instrument metadata")]
+fn new_panics_on_invalid_metadata() {
+    let _ = Instrument::new(InstrumentType::Violin, VALID);
+}
+
+/// A player range holds `min <= max`; `0..=0` means not used (TST-03).
+#[test]
+fn player_ranges_reject_inverted_counts() {
+    assert_eq!(
+        PlayerRange::try_new(3, 2),
+        Err(InstrumentError::InvertedPlayerRange { min: 3, max: 2 })
+    );
+    let range = PlayerRange::try_new(16, 16).expect("valid");
+    assert_eq!((range.min(), range.max()), (16, 16));
+    let range = PlayerRange::new(6, 10);
+    assert_eq!((range.min(), range.max()), (6, 10));
+    assert_eq!(PlayerRange::new(0, 0), PlayerRange::NOT_USED);
+    assert_eq!(
+        (PlayerRange::NOT_USED.min(), PlayerRange::NOT_USED.max()),
+        (0, 0)
+    );
+}
+
+#[test]
+#[should_panic(expected = "invalid player range")]
+fn inverted_player_range_panics_in_new() {
+    let _ = PlayerRange::new(2, 1);
+}
+
+/// The ensemble profile travels through the record unchanged, and each era reads its own entry.
+#[test]
+fn ensemble_profile_is_read_per_era() {
+    let violin = Instrument::try_new(
+        InstrumentType::Violin,
+        InstrumentSpec {
+            pitch: PitchModel::Pitched(Pitched {
+                transposition: Transposition::NONE,
+                playable: SourcedRange {
+                    range: PitchRange::new(55, 105),
+                    provenance: ESTIMATE,
+                },
+                comfortable: None,
+            }),
+            ensemble: Some(profile()),
+            ..VALID
+        },
+    )
+    .expect("valid");
+    let profile = violin.ensemble().expect("recorded");
+    assert_eq!(profile.forms, Forms::Both);
+    let notes: Vec<&str> = Era::ALL
+        .into_iter()
+        .map(|era| profile.players(era).note)
+        .collect();
+    assert_eq!(notes, ["classical", "romantic", "film", "chamber"]);
+    assert_eq!(
+        profile.players(Era::Classical).players,
+        Some(PlayerRange::new(6, 10))
+    );
+    assert_eq!(profile.players(Era::Film).players, None);
+    assert_eq!(
+        profile.players(Era::Chamber).players,
+        Some(PlayerRange::NOT_USED)
     );
 }
 
