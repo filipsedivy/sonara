@@ -327,8 +327,8 @@
       "entries": [
         {
           "type": "item",
-          "id": "ai-composer",
-          "text": "AI Composer…",
+          "id": "ai-chat",
+          "text": "AI Chat (Beta)…",
           "shortcut": null
         }
       ]

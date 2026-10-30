@@ -311,7 +311,6 @@ fn dialog_of(action: MenuAction) -> Option<&'static str> {
         MenuAction::NewProject => "new-project",
         MenuAction::ImportAudio => "import-audio",
         MenuAction::ExportAudio => "export-audio",
-        MenuAction::AiComposer => "ai-composer",
         MenuAction::AgentConnection => "agent-connection",
         _ => return None,
     })
@@ -386,6 +385,11 @@ fn run_in_desktop(app: &AppHandle, action: MenuAction) {
         MenuAction::RemoveUnusedMedia => crate::dialogs::remove_unused_media(app),
         MenuAction::Undo => crate::commands::step_from_menu(app, false),
         MenuAction::Redo => crate::commands::step_from_menu(app, true),
+        MenuAction::AiChat => {
+            if let Err(error) = crate::window::open_chat(app) {
+                log::warn!("cannot open the AI Chat: {error}");
+            }
+        }
         other => log::warn!("menu {}: not the desktop's", other.id()),
     }
 }

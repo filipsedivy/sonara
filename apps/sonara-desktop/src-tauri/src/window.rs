@@ -4,7 +4,8 @@
 //! main window's page is told about when it opens and closes (`mixer-window`). That window's
 //! place and size are saved when it closes and when Sonara quits, with whether it was open then,
 //! and it opens there again, at startup too when it was open (the prototype's
-//! `restoreState` reopened a floating Editors dock).
+//! `restoreState` reopened a floating Editors dock). The AI Chat has a window of its own too, which
+//! opens centred ([`open_chat`]).
 
 use serde::Serialize;
 use sonara_app::window_layout::{
@@ -21,6 +22,16 @@ pub const MAIN: &str = "main";
 /// The label of the mixer's own window (`capabilities/default.json`). It loads the same
 /// page, which shows only the mixer for this label.
 pub const MIXER: &str = "mixer";
+
+/// The label of the AI Chat's window (`capabilities/default.json`). It loads the same page,
+/// which shows only the chat for this label.
+pub const CHAT: &str = "chat";
+
+/// The chat window's first size.
+const CHAT_SIZE: (f64, f64) = (520.0, 720.0);
+
+/// The smallest size the chat window can be given.
+const CHAT_MIN_SIZE: (f64, f64) = (380.0, 480.0);
 
 /// The mixer window's first size.
 const MIXER_SIZE: (f64, f64) = (1000.0, 560.0);
@@ -199,4 +210,25 @@ pub fn open_mixer(app: &AppHandle) -> tauri::Result<()> {
     window.set_focus()?;
     report_mixer(app, true);
     Ok(())
+}
+
+/// Opens the AI Chat in a window of its own, or brings that window to the front. The window
+/// has no saved place: it opens centred, and closing it wipes the chat ([`crate::chat`]).
+///
+/// # Errors
+///
+/// A Tauri error when the window cannot be created or shown.
+pub fn open_chat(app: &AppHandle) -> tauri::Result<()> {
+    if let Some(window) = app.get_webview_window(CHAT) {
+        window.unminimize()?;
+        window.show()?;
+        return window.set_focus();
+    }
+    let window = WebviewWindowBuilder::new(app, CHAT, WebviewUrl::App("index.html".into()))
+        .title("AI Chat (Beta)")
+        .inner_size(CHAT_SIZE.0, CHAT_SIZE.1)
+        .min_inner_size(CHAT_MIN_SIZE.0, CHAT_MIN_SIZE.1)
+        .center()
+        .build()?;
+    window.set_focus()
 }
