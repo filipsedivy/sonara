@@ -61,4 +61,5 @@ pub mod templates;
 pub mod transport;
 pub mod transport_control;
 pub mod view;
+pub mod vocabulary;
 pub mod window_layout;

@@ -547,14 +547,18 @@ impl ProjectService {
 
     /// Opens the project at `path` (bundle or archive). With `recover_autosave`, a newer
     /// autosave replaces the saved project and the project is dirty; a project recovered from
-    /// a backup is dirty too.
+    /// a backup is dirty too. A part instrument or note articulation the orchestration metadata
+    /// does not know is kept and reported in the warnings ([`crate::vocabulary::warnings`]).
     ///
     /// # Errors
     ///
     /// The errors of [`ProjectStore::open`].
     pub fn open_project(&self, path: &Path, recover_autosave: bool) -> AppResult<LoadedProject> {
         let path = resolve(&expand_user(path));
-        let loaded = self.store.open(&path, recover_autosave)?;
+        let mut loaded = self.store.open(&path, recover_autosave)?;
+        loaded
+            .warnings
+            .extend(crate::vocabulary::warnings(&loaded.project));
         let location = ProjectLocation {
             path: Some(loaded.path.clone()),
             workspace: loaded.workspace.clone(),

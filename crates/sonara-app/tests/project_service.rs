@@ -755,3 +755,62 @@ fn a_save_in_place_backs_up_with_the_frozen_clock() {
         recorded
     );
 }
+
+/// A part instrument and note articulations the orchestration metadata does not know open with
+/// a warning each and stay in the project, so saving writes them back (project schema 2).
+#[test]
+fn unknown_orchestration_ids_open_with_warnings_and_are_kept() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let tmp = fs::canonicalize(dir.path()).expect("resolved");
+    let app = app(&tmp, true);
+    let svc = app.projects();
+    let bundle = tmp.join("Score.sonara");
+    fs::create_dir_all(&bundle).expect("bundle");
+    let notes = json!([
+        {"id": "n_1", "pitch": 67, "start": 0.0, "length": 1.0, "velocity": 90, "channel": 0,
+         "articulation": "stacato"},
+        {"id": "n_2", "pitch": 69, "start": 1.0, "length": 1.0, "velocity": 90, "channel": 0,
+         "articulation": "pizzicato"}
+    ]);
+    let doc = json!({
+        "format": "sonara.project", "schema_version": 2, "id": "prj_score", "name": "Score",
+        "settings": {"sample_rate": 48000}, "tempo_map": [{"beat": 0, "bpm": 90}],
+        "time_signatures": [{"bar": 0, "numerator": 4, "denominator": 4}],
+        "tracks": [
+            {"id": "trk_vln", "name": "Violins I", "kind": "instrument",
+             "part": {"instrument": "violn", "players": 16},
+             "clips": [{"type": "midi", "id": "clp_1", "start": 0.0, "length": 4.0,
+                        "notes": notes}]},
+            {"id": "trk_hrn", "name": "Horn 1", "kind": "instrument",
+             "part": {"instrument": "horn_f", "solo": true}}
+        ],
+        "master": {"id": "master", "name": "Master", "kind": "master"}
+    });
+    fs::write(bundle.join(PROJECT), doc.to_string()).expect("written");
+    let loaded = svc.open_project(&bundle, false).expect("opened");
+    assert_eq!(loaded.migrated_from, None);
+    assert_eq!(
+        loaded.warnings,
+        [
+            "manifest.json is missing; it will be recreated on save",
+            "track 'Violins I' names an unknown instrument 'violn'; it is kept",
+            "1 note(s) name an unknown articulation 'stacato'; it is kept",
+        ]
+    );
+    svc.save(None, None).expect("saved");
+    let saved: Value =
+        serde_json::from_slice(&fs::read(bundle.join(PROJECT)).expect("read")).expect("JSON");
+    assert_eq!(saved["schema_version"], 2);
+    assert_eq!(
+        saved["tracks"][0]["part"],
+        json!({"instrument": "violn", "players": 16})
+    );
+    assert_eq!(
+        saved["tracks"][0]["clips"][0]["notes"][0]["articulation"],
+        "stacato"
+    );
+    assert_eq!(
+        saved["tracks"][1]["part"],
+        json!({"instrument": "horn_f", "solo": true})
+    );
+}

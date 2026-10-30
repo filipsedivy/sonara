@@ -116,7 +116,9 @@ part of a score it plays.
 
 Only the fields a part states are written; an absent field means the instrument's default.
 Instrument type and articulation ids are lowercase letters, digits and underscores, starting with
-a letter. The schema checks only that form, so a new id never needs a new schema version.
+a letter. The schema checks only that form, so a new id never needs a new schema version. When a
+project opens, Sonara checks the ids against its orchestration metadata: an id it does not know
+stays in the project and is reported as a warning.
 
 **Clips.**
 
