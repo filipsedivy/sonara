@@ -9,7 +9,10 @@ ships no samples (ADR 0010).
    [orchestral-audio-engine-research.md](orchestral-audio-engine-research.md), section 5.
    For a start: **VSCO 2 Community Edition** (CC0), branch `SFZ` of
    <https://github.com/sgossner/VSCO-2-CE>. Clone or download that branch so the `.sfz` files
-   and their `Samples` folders stay together.
+   and their `Samples` folders stay together. **VCSL** (CC0) adds keyboards, saxophones and
+   percussion; its `.sfz` files exist only in tag `v1.2.2-RC` of
+   <https://github.com/sgossner/VCSL>, not on its default branch, so check out or download that
+   tag.
 2. Add the library's directory to the settings file (`settings.json` in Sonara's config
    directory; unknown keys are kept):
 
@@ -21,7 +24,8 @@ ships no samples (ADR 0010).
    hidden folders, symbolic links and folders named `includes` skipped, at most 5,000 patches).
    An `includes` folder holds the fragments that a library's patches include (Sonatina has 190
    of them), which cannot be played on their own, so they are not offered as instruments. Nor
-   is a patch file that is empty, unreadable or listed by the library's manifest but missing.
+   is a patch file that is empty, unreadable, or listed by the library's manifest or by Sonara's
+   profile of the library but missing.
 
 To replace or add a library, edit the list and restart.
 
@@ -45,6 +49,20 @@ path lies below a configured library: Sonara reads it as the preset of that patc
 project unchanged until you choose the instrument again, which stores the ID. A tool call or
 script that passes such a path to `set_instrument` or as the `instrument` parameter stores the
 preset ID too.
+
+## VSCO 2 CE and VCSL
+
+Sonara carries a profile of each of these two libraries
+([instrument-catalog.md](instrument-catalog.md), "What the profiles say"). It lists every patch of
+the revision named above, with what the patch plays, and gives VSCO 2 CE's patches readable
+names: the Instrument combo shows `ViolinEns-KS` as "Violin Section, key switches" and `FHornMute`
+as "Horn, muted sustain". VCSL's patches keep their file names. A patch the profile lists that
+your copy lacks is not offered. A manifest in the library's folder overrides the profile.
+
+Some key-switch patches use switch keys that the instrument can play: VSCO 2 CE's
+`CelloEns-KS` (C6 to D#6) and VCSL's `Timpani 1 - Keyswitch` (C2 and C#2),
+`Renaissance Organ - Keyswitch` and `Xylophone - Keyswitch`. A note there changes the
+articulation instead of sounding. The libraries' single-articulation patches switch nothing.
 
 ## Try an instrument
 

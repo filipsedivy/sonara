@@ -14,7 +14,7 @@ and adds no agent tool (CTR-01). Sonara ships no samples and no library.
 | `family` | `strings`, `woodwinds`, `brass`, `percussion`, `keyboards`, `plucked`, `choir` or `other`, with its source: **declared** (manifest), **inferred** (words in the path, below) or **unknown**. An inferred family is a guess; treat it as one. The family is the orchestration metadata's ([orchestration-metadata.md](orchestration-metadata.md)), so a preset and an instrument type share one family type; a manifest must spell the slug exactly, in lower case. |
 | `articulations` | Only what the library's manifest declares: the names of a version 1 manifest, the articulation IDs of a version 2 one. Empty means **not verified**, never "none". Keyswitch labels in a patch are not read. |
 | `license` | The licence the library's manifest states for this recording (a version 2 entry's own `license`), else for the library. `None` means **unknown**: read the library's own terms. |
-| `availability` | `available` (a regular, non-empty, readable file inside the library), `missing` (listed by the manifest, not on disk) or `invalid` with a reason. |
+| `availability` | `available` (a regular, non-empty, readable file inside the library), `missing` (listed by the manifest or by Sonara's profile of the library, not on disk) or `invalid` with a reason. |
 | `patch_path` | The `.sfz` file on this machine. |
 
 SFZ patches have no bank or program number, so presets carry none.
@@ -184,8 +184,9 @@ manifest.
 
 ## Libraries Sonara recognizes
 
-Sonara carries the identity of two free libraries, so that their preset IDs are the same on every
-machine and survive renaming the folder, with or without a manifest:
+Sonara carries a profile of two free libraries: their identity, so that their preset IDs are the
+same on every machine and survive renaming the folder, with or without a manifest, and what each
+of their patches plays:
 
 | Library | ID | Recognized by these files below its root |
 |---|---|---|
@@ -194,10 +195,66 @@ machine and survive renaming the folder, with or without a manifest:
 
 A library whose manifest declares no `id`, or that has no manifest, and that holds all of one
 row's files as regular files takes that row's ID and name. A library whose manifest declares one
-of these IDs is that library too. A manifest `id` always wins. The two profiles give the identity
-only so far: they list no patches, and the licence and articulations still come only from a
-manifest. A folder that holds the files of both libraries takes neither ID and is reported in
-`issues()`; two copies of one library both take its ID, so the second is skipped as a duplicate.
+of these IDs is that library too. A manifest `id` always wins. A folder that holds the files of
+both libraries takes neither ID and is reported in `issues()`; two copies of one library both take
+its ID, so the second is skipped as a duplicate.
+
+### What the profiles say
+
+Each profile is a version 2 manifest that Sonara carries in `crates/sonara-app/profiles/`:
+Sonara's own data, file names and facts read from the library's patch files, with no samples and
+no SFZ text. It lists every patch of its revision, 75 for VSCO 2 CE and 183 for VCSL, so a patch
+your copy lacks shows as `missing`. The catalog shows each patch's name from the profile: VSCO 2
+CE's file names are short codes, so its profile spells them out (`ViolinEnsSusVib` is "Violin
+Section, sustain vibrato"), while VCSL's patches keep their file names. The licence and the
+articulations still come only from a manifest of the library's own. The rest of the profile is
+read and checked, and the catalog does not show it yet:
+
+- **What a patch plays:** the instrument type and solo or section. VSCO 2 CE's `Ens` strings are
+  sections; everything else in both libraries is taken as solo, as the single-instrument names
+  suggest (neither library says). A patch of an instrument the orchestration
+  metadata does not know (recorders, harmonicas, congas, the TX81Z synthesizer and the like)
+  claims only a family.
+- **Articulations:** each switch of a key-switch patch that the articulation vocabulary names,
+  with the library's own label, and the articulation of each single-articulation patch. The one
+  marked `default` is the switch the patch itself starts on (`sw_default`) when that is an
+  ordinary sound. The VCSL vibraphone starts on the bow, so its soft mallets are marked instead,
+  and the Flemish harpsichord and the Renaissance organ start on a 4' stop, so their 8' stop is.
+  Switches between registrations, stops, mallets or drums, which the vocabulary does not name,
+  are left out, apart from the ordinary one, which is mapped as `ordinario`.
+- **Vibrato and mutes:** a recording is marked `vibrato_on` only beside a plain sustain of the same
+  instrument (VSCO 2 CE's `TrumpetSusVib` beside `TrumpetSus`) and `non_vibrato` only beside one
+  with vibrato (`FluteSusNV` beside `FluteSusVib`), so each instrument keeps one plain `sustain`.
+  A muted recording is `sustain` with its mute: `con_sordino` for the horn's mute and the
+  trumpet's straight mute, `mute_harmon` for the harmon mute.
+- **Sets:** an instrument's single-articulation patches form a set, for example VSCO 2 CE's
+  `@horn` (`FHornSus`, `FHornStac`, `FHornMute`) and VCSL's `@timpani-1` (`Timpani 1 - Hit` and
+  `- Roll`). A second, quieter sustain recording (VSCO 2 CE's `-Quiet` patches) stays out of its
+  set.
+- **Key offset:** VSCO 2 CE's piccolo, glockenspiel and xylophone and VCSL's glockenspiel and
+  xylophones are keyed an octave below the pitch they sound (measured from one sample of each), so
+  their entries carry `key_offset: -12`. The marimbas, vibraphones, harps and tubular bells sound
+  at their keys.
+- **Percussion:** a patch with one sound per key has a key map of the keys whose sound the
+  orchestration metadata names; keys of other instruments (VSCO 2 CE's congas, cowbell, claves
+  and ratchet, for example) and sounds without an articulation ID are left out. VSCO 2 CE's
+  `GM-StylePerc` is not a General MIDI kit: keys 42 and 46 are a gong, 47, 48 and 50 cymbal swells.
+- **Dynamics:** the velocity, for every patch.
+- **Verdicts,** checked on 2026-10-30 by reading every patch file, with velocity crossfades and
+  `amp_veltrack` counted as played. A `partly` verdict names what is lost: envelope decay
+  (`ampeg_decay` with `ampeg_sustain`) and `rt_decay`, which the sampler does not play; the
+  sustain-pedal gates (`locc64`, `hicc64`) of VCSL's Steinway B, whose pedal-up and pedal-down
+  samples sound together, and the pedal noises of the Knight upright; and switch keys inside the
+  instrument's playable range: VSCO 2 CE's `CelloEns-KS` (84 to 87) and VCSL's
+  `Timpani 1 - Keyswitch` (36 and 37), `Renaissance Organ - Keyswitch` (93 to 96) and
+  `Xylophone - Keyswitch` (48 to 51, which the sounding C4 to D#4 reach through the offset). A
+  note on such a key changes the articulation and does not sound; use the separate patches for a
+  part that goes there. Every VSCO 2 CE patch sets `ampeg_dynamic`, which changes nothing audible.
+- **Not claimed:** legato times (they wait for a listening check), whether the library was
+  recorded in seating position, and licences per patch: both libraries are CC0 as a whole.
+
+A manifest in the library's folder lies over its profile field by field (above), so you can
+rename a preset, correct a claim or clear one with `null`.
 
 ## Licence and installation notes
 
@@ -217,6 +274,6 @@ No agent tool, CLI command or GUI lists the catalog itself yet. The sampler's `i
 are its available presets' IDs; the device editor shows them as the presets' names grouped by
 library (`InstalledInstruments::by_library`), and a preset whose name another preset of the same
 library shares also shows its patch path below the library. Of a version 2 manifest the catalog
-shows only the name, family, articulation IDs and licence of each patch, and it lists no set as a
-preset. A General MIDI or SF2 source would add bank and program. Sound quality of any library has
-not been judged.
+shows only the name, family, articulation IDs and licence of each patch, of Sonara's profiles only
+the names and the patches they list, and it lists no set as a preset. A General MIDI or SF2 source
+would add bank and program. Sound quality of any library has not been judged.
