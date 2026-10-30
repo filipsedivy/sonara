@@ -388,9 +388,11 @@ dependencies. All eleven feature keys checked (the nine used plus `codex_hooks` 
 - Whether `$CODEX_HOME` `hooks.json` loads under `--ignore-user-config` (`AGENTS.md` and skills were checked: they do, item 9 below).
 - The Codex minimum version 0.147.0 is a bisect result, and the full `-c` set was only run on
   0.166.0.
-- A live deny test (shell, write, save, export, user MCP servers) for Codex and Gemini, and for
-  Claude Code in the chat (`apps/sonara/tests/chat_live.rs` exists, is ignored by default, and has
-  no recorded run).
+- A live deny test (shell, write, save, export, user MCP servers) for Codex and Gemini. For
+  Claude Code in the chat the four tests of `apps/sonara/tests/chat_live.rs` were run on
+  2026-10-30 against Claude Code 2.1.308 and passed (no shell, no file written, no save, a plain
+  answer, an edit in the pinned session); the file's Codex tests have no recorded run, and user
+  MCP servers and hooks were not part of those four tests.
 - Whether a Sonara call made from inside Codex's code-mode `exec` shows up as an `mcp_tool_call`
   item (that the lists filter inside `exec` was verified, item 10), and whether the code-mode `exec` tool can be disabled at all (`features.code_mode` and
   `features.code_mode_host` did not remove it).

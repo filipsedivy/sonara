@@ -398,6 +398,10 @@ of the message.
     with the composer's command line:
     `cargo test -p sonara --test composer_live -- --ignored --nocapture`.
 
-No live Codex turn has been recorded: the Codex stream is verified against fixtures and a fake
-CLI, and its boundary against the real binary only as far as configuration loading and the
-offered tools go. This document does not record a run of `chat_live.rs` for either provider.
+The four Claude Code tests of `chat_live.rs` were run on 2026-10-30 (Claude Code 2.1.308, the
+default model of that install, all four passed in 23 s): a shell command and a file in `/tmp`
+did not happen, `save_project` was not available and no project file appeared, a plain question
+was answered, and an edit reached the pinned session. The Codex tests of the file have no
+recorded run: no live Codex turn has been recorded, so the Codex stream is verified against
+fixtures and a fake CLI, and its boundary against the real binary only as far as configuration
+loading and the offered tools go.
