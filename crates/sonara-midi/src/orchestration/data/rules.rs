@@ -741,8 +741,10 @@ const VOI_08: Rule = rule(
     HINT,
     Provenance::Cited {
         source: cite!(
-            rimsky_korsakov: "Ch. III, Harmony in combined groups, p. 90: the enclosure of \
-                clarinets between horns, or of horns between bassoons",
+            rimsky_korsakov: "Ch. III, Harmony in combined groups, p. 90: bassoons may be \
+                written inside the horns, but the inverse is not to be recommended, and \
+                clarinets, on account of their tone quality, should rarely be set inside the \
+                horns",
         ),
     },
 );
