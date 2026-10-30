@@ -7,19 +7,28 @@
 
 mod articulation;
 mod data;
+mod id;
 mod instrument;
 mod pitch;
 
 pub use articulation::{Articulation, ArticulationAvailability};
 pub use data::INSTRUMENTS;
+pub use id::InstrumentType;
 pub use instrument::{
     CheckError, Family, Instrument, InstrumentError, PitchModel, Pitched, Provenance, RangeCheck,
     SourcedRange,
 };
 pub use pitch::{PitchRange, RangeError, SoundingPitch, Transposition, WrittenPitch};
 
-/// The instrument with id `id`, or `None` for an unknown id.
+/// The instrument with id `id`, or `None` for an unknown id or a type without a record. The id
+/// must match exactly ([`InstrumentType::from_id`]).
 #[must_use]
 pub fn instrument(id: &str) -> Option<&'static Instrument> {
-    INSTRUMENTS.iter().find(|instrument| instrument.id() == id)
+    InstrumentType::from_id(id).and_then(InstrumentType::get)
+}
+
+/// Every instrument record, in score order (the order of [`InstrumentType::ALL`]).
+#[must_use]
+pub fn instruments() -> &'static [Instrument] {
+    &INSTRUMENTS
 }

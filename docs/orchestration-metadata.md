@@ -13,6 +13,20 @@ preset. They are independent of the preset ids of the instrument catalog
 identifiers. Family slugs equal the catalog's (`strings`, `woodwinds`, `brass`, `percussion`,
 `keyboards`, `plucked`, `choir`, `other`).
 
+`InstrumentType` is the typed id: one variant for each of the 85 instrument types the metadata
+knows, from the piccolo to the double bass. `id()` gives the string id, which is the external form
+and is never renamed; `from_id` accepts only an exact id. Each type has one family, which its
+record shares: voices, solo and choral, are `choir`, and no type is `other`.
+
+The variants are in **score order**, the order of the staves in a full score: woodwinds, brass,
+percussion, harp and the other plucked strings, keyboards, voices, strings. Within a family the
+order follows the usual conventions (auxiliary instruments beside their family, saxophones after
+the clarinets, horns at the top of the brass, timpani first in the percussion, then untuned and
+tuned instruments, solo voices before the choir); the order inside the untuned percussion, the
+keyboards and the low brass is an estimate. `InstrumentType::ALL` lists the types in that order,
+and each family is one block of it. The order is not stored anywhere, so a later type may be
+inserted anywhere in it.
+
 ## Pitch conventions
 
 - Pitches are MIDI note numbers, middle C = 60 = C4, the convention of `theory`. The model is in
@@ -34,8 +48,9 @@ identifiers. Family slugs equal the catalog's (`strings`, `woodwinds`, `brass`, 
 `check_sounding` and `check_written` return `Within`, `OutsideComfortable` (a warning: still
 playable), `BelowPlayable` or `AbovePlayable`. Nothing is clamped or changed. Unpitched
 instruments (the snare drum) have no range and the check returns `CheckError::Unpitched`; a
-written pitch that converts outside MIDI returns `ConversionOutOfRange`. An unknown instrument id
-is `instrument(id) == None`; no generic range is substituted.
+written pitch that converts outside MIDI returns `ConversionOutOfRange`. An unknown instrument id,
+or a type without a record, is `instrument(id) == None` (and `InstrumentType::get` is `None`); no
+generic range is substituted.
 
 ## Provenance
 
@@ -63,15 +78,21 @@ modelled.
 ## Validation
 
 `PitchRange::try_new` and `Instrument::try_new` reject inverted or non-MIDI ranges, a comfortable
-range outside the playable one, a transposition that moves the range outside MIDI, a malformed id
-and duplicate articulations. The shipped data is built with the panicking `new` in a `static`,
-so invalid data is a compile error; `crates/sonara-midi/tests/orchestration.rs` also checks
-unique ids, provenance and that bad fixtures are rejected.
+range outside the playable one, a transposition that moves the range outside MIDI and duplicate
+articulations. A record is keyed by its `InstrumentType`, so its id cannot be malformed. The
+shipped data is built with the panicking `new` in a `static`, so invalid data is a compile error.
+Compile-time checks also hold the identity together: every type id is unique lower-case
+`snake_case`, `InstrumentType::ALL` lists every type once in declaration order, each family is one
+block of the score order, and `INSTRUMENTS` lists at most one record per type, in score order.
+`crates/sonara-midi/tests/orchestration.rs` also checks the type ids against an independently
+written list, provenance, the score-order conventions above and that bad fixtures are rejected.
 
 ## Coverage
 
-16 instruments: violin, cello, double bass, flute, piccolo, oboe, English horn, Bb clarinet,
-bassoon, contrabassoon, horn in F, Bb trumpet, tenor trombone, glockenspiel, xylophone, snare
-drum. Not covered: viola, harp, timpani, tuba, bass clarinet, other transposing clarinets and
-trumpets, voices, keyboards, alternative tunings and extended techniques. Absence of an
-instrument means "no metadata", not "unrestricted".
+16 of the 85 types have a record, listed in score order by `INSTRUMENTS` and `instruments()`:
+piccolo, flute, oboe, English horn, Bb clarinet, bassoon, contrabassoon, horn in F, Bb trumpet,
+tenor trombone, snare drum, glockenspiel, xylophone, violin, cello, double bass. The records live
+in one file per family under `crates/sonara-midi/src/orchestration/data/`. The other types
+(among them the viola, harp, timpani, tuba, bass clarinet, the other clarinets and trumpets, the
+voices and the keyboards) have no record yet; alternative tunings and extended techniques are not
+modelled. Absence of a record means "no metadata", not "unrestricted".

@@ -3,11 +3,12 @@
 use thiserror::Error;
 
 use super::articulation::{Articulation, ArticulationAvailability};
+use super::id::InstrumentType;
 use super::pitch::{PitchRange, SoundingPitch, Transposition, WrittenPitch};
 
 /// The instrument family. The slugs equal the family slugs of the instrument catalog
-/// (`sonara_app::instruments`), so the two map by string. `Choir` and `Other` exist for that
-/// mapping; the shipped dataset does not use them.
+/// (`sonara_app::instruments`), so the two map by string. Voices, solo and choral, are `Choir`;
+/// `Other` exists for that mapping, and no instrument type has it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Family {
     /// Bowed strings.
@@ -117,9 +118,6 @@ pub enum CheckError {
 /// Why instrument metadata is invalid.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Error)]
 pub enum InstrumentError {
-    /// The id is empty or not lower-case `snake_case`.
-    #[error("instrument id must be non-empty lower-case snake_case")]
-    BadId,
     /// The comfortable range is not inside the playable range.
     #[error("comfortable range is not inside the playable range")]
     ComfortableOutsidePlayable,
@@ -133,14 +131,14 @@ pub enum InstrumentError {
 
 /// Metadata of one instrument type, such as `violin` or `clarinet_bb`.
 ///
-/// The id names the acoustic instrument, not a sample preset: it is independent of the preset ids
-/// of the instrument catalog, which may map to it later. The data does not depend on any audio
-/// engine, library or UI.
+/// The record is keyed by its [`InstrumentType`], which gives its id and family. The type names
+/// the acoustic instrument, not a sample preset: it is independent of the preset ids of the
+/// instrument catalog, which may map to it later. The data does not depend on any audio engine,
+/// library or UI.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Instrument {
-    id: &'static str,
+    kind: InstrumentType,
     name: &'static str,
-    family: Family,
     pitch: PitchModel,
     articulations: &'static [Articulation],
     articulations_provenance: Provenance,
@@ -150,19 +148,15 @@ impl Instrument {
     /// Builds the record after checking its invariants.
     ///
     /// # Errors
-    /// [`InstrumentError`] for a malformed id, a comfortable range outside the playable one, a
-    /// transposition that moves the playable range outside MIDI, or a duplicate articulation.
+    /// [`InstrumentError`] for a comfortable range outside the playable one, a transposition that
+    /// moves the playable range outside MIDI, or a duplicate articulation.
     pub const fn try_new(
-        id: &'static str,
+        instrument_type: InstrumentType,
         name: &'static str,
-        family: Family,
         pitch: PitchModel,
         articulations: &'static [Articulation],
         articulations_provenance: Provenance,
     ) -> Result<Self, InstrumentError> {
-        if !is_snake_case(id) {
-            return Err(InstrumentError::BadId);
-        }
         if let PitchModel::Pitched(pitched) = &pitch {
             if let Some(comfortable) = &pitched.comfortable
                 && !pitched.playable.range.encloses(comfortable.range)
@@ -188,9 +182,8 @@ impl Instrument {
             i += 1;
         }
         Ok(Self {
-            id,
+            kind: instrument_type,
             name,
-            family,
             pitch,
             articulations,
             articulations_provenance,
@@ -203,17 +196,15 @@ impl Instrument {
     /// When [`Instrument::try_new`] would fail.
     #[must_use]
     pub const fn new(
-        id: &'static str,
+        instrument_type: InstrumentType,
         name: &'static str,
-        family: Family,
         pitch: PitchModel,
         articulations: &'static [Articulation],
         articulations_provenance: Provenance,
     ) -> Self {
         match Self::try_new(
-            id,
+            instrument_type,
             name,
-            family,
             pitch,
             articulations,
             articulations_provenance,
@@ -223,10 +214,16 @@ impl Instrument {
         }
     }
 
-    /// The stable identifier.
+    /// The instrument type the record describes.
+    #[must_use]
+    pub const fn instrument_type(&self) -> InstrumentType {
+        self.kind
+    }
+
+    /// The stable identifier, the id of [`Instrument::instrument_type`].
     #[must_use]
     pub const fn id(&self) -> &'static str {
-        self.id
+        self.kind.id()
     }
 
     /// The English display name. Not an identifier.
@@ -235,10 +232,10 @@ impl Instrument {
         self.name
     }
 
-    /// The family.
+    /// The family, that of [`Instrument::instrument_type`].
     #[must_use]
     pub const fn family(&self) -> Family {
-        self.family
+        self.kind.family()
     }
 
     /// The pitch capabilities.
@@ -342,20 +339,4 @@ impl Instrument {
             ArticulationAvailability::NotIdiomatic
         }
     }
-}
-
-const fn is_snake_case(id: &str) -> bool {
-    let bytes = id.as_bytes();
-    if bytes.is_empty() {
-        return false;
-    }
-    let mut i = 0;
-    while i < bytes.len() {
-        let b = bytes[i];
-        if !(b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_') {
-            return false;
-        }
-        i += 1;
-    }
-    true
 }
