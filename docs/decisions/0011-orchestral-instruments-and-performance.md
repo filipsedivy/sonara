@@ -135,14 +135,19 @@ Decided:
 3. Library profiles ship for VSCO 2 CE and VCSL only; none for Sonatina or CC BY libraries (A6, A17).
 4. Articulation shape B: one primary id per note, mute and vibrato as passage states (A16); no id means ordinario
    (A14); `col_legno_battuto` stays apart from `col_legno` (A12).
+5. The remaining recommendations are accepted (second round, the same day): ensembles in the GUI now and agent tools
+   only by a later versioned decision (A7); overlap legato on sustain samples, kept if the listening check B2 passes
+   (A9); a GM engine decided in O6 after the recount (A10); GM data keeps exact programs and substitutes apart, with an
+   orchestral percussion map beside `GM_MAP` (A11); the cards' range values, notation (tenor at transposition 0 with a
+   treble-8 clef, Wagner tuba tenor at −2), ids, families and controls, and the data.rs corrections (A18–A23); the code
+   fixes outside the contracts, each with a test (A24); coverage reported in both counts (A25); humanization on by
+   default (P2); download links only for VSCO 2 CE and VCSL (U2).
+6. Of the 34 invented articulation ids, only those that at least one library records enter the first frozen list;
+   the others are appended later (A13). Mallet rolls use `tremolo` and drums and timpani use `roll`, as the existing ids
+   define them (A15).
+7. The owner asked for the full implementation of the plan.
 
-Still open, each gating only the work items that need it (see the implementation plan's owner gates): the invented
-articulation ids and candidate merges (A13), mallet rolls (A15), GM numbers (A11), range semantics, notation, ids and
-controls (A18–A22), adopting the card values (A23), catalog keywords (A24), overlap legato after the listening check
-(A9, B2), humanization by default (P2), the download-page allow-list (U2), ensemble and orchestration tools (A7) and a
-GM engine (A10).
-
-The recommendation for each is in section 5 of [orchestra-design.md](../orchestra-design.md).
+The options and the recommendation for each are in section 5 of [orchestra-design.md](../orchestra-design.md).
 
 The detailed questions, with options and the research's recommendations, are A1–A25 in
 [open-questions.md](../orchestra/open-questions.md).

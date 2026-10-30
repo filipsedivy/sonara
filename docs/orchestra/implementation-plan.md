@@ -1,13 +1,13 @@
 # Orchestral instruments: implementation plan
 
-_Status: accepted with ADR 0011 (2026-10-30). Merges the implementation tables of the four layer designs into one backlog. The decisions behind it are in [../orchestra-design.md](../orchestra-design.md) and [ADR 0011](../decisions/0011-orchestral-instruments-and-performance.md); nothing is implemented yet._
+_Status: accepted with ADR 0011 (2026-10-30); every owner decision is taken. Merges the implementation tables of the four layer designs into one backlog. The decisions behind it are in [../orchestra-design.md](../orchestra-design.md) and [ADR 0011](../decisions/0011-orchestral-instruments-and-performance.md); nothing is implemented yet._
 
 ## How to read it
 
 - 113 work items: IM (layer [a](design/instrument-model.md), the instrument model), SS (layer [b](design/sound-source.md), the sound source), PF (layer [c](design/performance.md), the performance layer and agents), UI (layer [d](design/ui.md), the interface). Each item's detail, tests and risks are in its layer; SS-36 and PF-23 were added when the owner accepted phase 2.
 - Sizes are the layers' relative estimates (S small, M medium, L large); no calendar time is attached. IM-17 and PF-8 are placeholders merged into SS-14 and SS-35.
 - **The owner accepted phase 2 together with phase 1 on 2026-10-30:** project schema v2 (a track `part` and a note `articulation`), per-note articulation in the agent API, and a tool that writes MIDI CC. These items moved out of O6 into the milestones that need them. They are versioned changes (CTR-01): project schema 2 with a lowest-version writer, and agent API 1.1 (additive) with golden-delta tests (PF-23).
-- **Owner gate**: what is decided and what is still open before a milestone starts (ids from [open-questions.md](open-questions.md), and P/U from the layers). Items that do not touch an open question do not wait for it.
+- **Owner gate**: the decisions each milestone rests on (ids from [open-questions.md](open-questions.md), and P/U from the layers); the owner took all of them on 2026-10-30.
 - No item depends on an item of a later milestone (checked when this table was built). Every milestone ends with `scripts/dev.sh rust` and `scripts/dev.sh frontend` passing, the changelog and status table updated (DOC-01), and its own done criteria below.
 
 ## The first audible result
@@ -22,18 +22,18 @@ The model (IM-1 … IM-18) is the long pole. 5 O2 items are in the set, none on 
 
 ## Owner gates
 
-| Milestone | Decided, and still open |
+| Milestone | Decisions it rests on |
 |---|---|
-| O1 | decided: shape B with mute and vibrato as passage states (A16), no id = ordinario (A14), `col_legno_battuto` kept apart from `col_legno` (A12). Open: A11 (GM numbers), A13 (the invented ids and candidate merges), A15 (mallet rolls), A18–A23 (range semantics, notation, ids, controls, the data.rs corrections) |
-| O2 | decided: ADR 0011 accepted, so the SFZ fixes follow ARIA and sfizz where the specification is silent (decision 5, A8); preset ids amend ADR 0010 (A5); schema v2 with a track `part` and a note `articulation` (A1, A3 option b) |
-| O3 | decided: articulation per note plus the sampler's `articulation` state (A3), dynamics in clips as CC through the CC tool plus the sampler's `dynamics` trim (A4), profiles for VSCO 2 CE and VCSL only, none for Sonatina or CC BY libraries (A6, A17). Open: A9 (overlap legato, after the listening check B2), A24 |
-| O4 | decided with ADR 0011 decision 9: staged planner validation with undo rollback (P1), the AI Composer reference (P3). Open: P2 (humanization on by default) |
-| O5 | decided with ADR 0011 decision 10: the GUI edits CC 64 and CC 11 (U1). Open: U2 (download-page allow-list) |
-| O6 | open: A7 (ensemble, orchestrate and check tools), A10 (a GM engine); plugin hosting (M5) |
+| O1 | all decided on 2026-10-30: shape B with mute and vibrato as passage states (A16), no id = ordinario (A14), `col_legno_battuto` kept apart (A12), only the invented ids a library records in the first list (A13), `tremolo` for mallets and `roll` for drums (A15), exact GM programs with substitutes apart and an orchestral percussion map beside `GM_MAP` (A11), the cards' values, notation, ids, controls and data.rs corrections (A18–A23) |
+| O2 | all decided: ADR 0011 accepted, so the SFZ fixes follow ARIA and sfizz where the specification is silent (decision 5, A8); preset ids amend ADR 0010 (A5); schema v2 with a track `part` and a note `articulation` (A1, A3 option b); the code fixes outside the contracts with tests (A24) |
+| O3 | all decided: articulation per note plus the sampler's `articulation` state (A3), dynamics in clips as CC plus the sampler's `dynamics` trim (A4), profiles for VSCO 2 CE and VCSL only (A6, A17), overlap legato kept if the listening check B2 passes (A9), coverage reported in both counts (A25) |
+| O4 | all decided: staged planner validation with undo rollback (P1), humanization on by default (P2), the AI Composer reference (P3) |
+| O5 | all decided: the GUI edits CC 64 and CC 11 (U1); download links only for VSCO 2 CE and VCSL (U2); ensembles in the GUI (A7) |
+| O6 | decided to wait: ensemble and orchestration tools only by a later versioned decision (A7); a GM engine decided here, after the recount (A10); plugin hosting (M5) |
 
 ## O1. Instrument model
 
-17 items (S 5, M 8, L 4), in dependency order. **Owner gate:** decided: shape B with mute and vibrato as passage states (A16), no id = ordinario (A14), `col_legno_battuto` kept apart from `col_legno` (A12). Open: A11 (GM numbers), A13 (the invented ids and candidate merges), A15 (mallet rolls), A18–A23 (range semantics, notation, ids, controls, the data.rs corrections).
+17 items (S 5, M 8, L 4), in dependency order. **Owner gate:** all decided on 2026-10-30: shape B with mute and vibrato as passage states (A16), no id = ordinario (A14), `col_legno_battuto` kept apart (A12), only the invented ids a library records in the first list (A13), `tremolo` for mallets and `roll` for drums (A15), exact GM programs with substitutes apart and an orchestral percussion map beside `GM_MAP` (A11), the cards' values, notation, ids, controls and data.rs corrections (A18–A23).
 
 | # | Item | Layer | Crate / module | Size | Depends on |
 |---|---|---|---|---|---|
@@ -63,7 +63,7 @@ The model (IM-1 … IM-18) is the long pole. 5 O2 items are in the set, none on 
 
 ## O2. Sampler conformance, preset ids and project schema v2
 
-13 items (S 8, M 4, L 1), in dependency order. **Owner gate:** decided: ADR 0011 accepted, so the SFZ fixes follow ARIA and sfizz where the specification is silent (decision 5, A8); preset ids amend ADR 0010 (A5); schema v2 with a track `part` and a note `articulation` (A1, A3 option b).
+13 items (S 8, M 4, L 1), in dependency order. **Owner gate:** all decided: ADR 0011 accepted, so the SFZ fixes follow ARIA and sfizz where the specification is silent (decision 5, A8); preset ids amend ADR 0010 (A5); schema v2 with a track `part` and a note `articulation` (A1, A3 option b); the code fixes outside the contracts with tests (A24).
 
 | # | Item | Layer | Crate / module | Size | Depends on |
 |---|---|---|---|---|---|
@@ -90,7 +90,7 @@ The model (IM-1 … IM-18) is the long pole. 5 O2 items are in the set, none on 
 
 ## O3. Sound mapping and expression
 
-26 items (S 9, M 13, L 2), in dependency order. **Owner gate:** decided: articulation per note plus the sampler's `articulation` state (A3), dynamics in clips as CC through the CC tool plus the sampler's `dynamics` trim (A4), profiles for VSCO 2 CE and VCSL only, none for Sonatina or CC BY libraries (A6, A17). Open: A9 (overlap legato, after the listening check B2), A24.
+26 items (S 9, M 13, L 2), in dependency order. **Owner gate:** all decided: articulation per note plus the sampler's `articulation` state (A3), dynamics in clips as CC plus the sampler's `dynamics` trim (A4), profiles for VSCO 2 CE and VCSL only (A6, A17), overlap legato kept if the listening check B2 passes (A9), coverage reported in both counts (A25).
 
 | # | Item | Layer | Crate / module | Size | Depends on |
 |---|---|---|---|---|---|
@@ -130,7 +130,7 @@ The model (IM-1 … IM-18) is the long pole. 5 O2 items are in the set, none on 
 
 ## O4. Performance layer, agents and agent API 1.1
 
-18 items (S 4, M 11, L 3), in dependency order. **Owner gate:** decided with ADR 0011 decision 9: staged planner validation with undo rollback (P1), the AI Composer reference (P3). Open: P2 (humanization on by default).
+18 items (S 4, M 11, L 3), in dependency order. **Owner gate:** all decided: staged planner validation with undo rollback (P1), humanization on by default (P2), the AI Composer reference (P3).
 
 | # | Item | Layer | Crate / module | Size | Depends on |
 |---|---|---|---|---|---|
@@ -162,7 +162,7 @@ The model (IM-1 … IM-18) is the long pole. 5 O2 items are in the set, none on 
 
 ## O5. Interface
 
-33 items (S 13, M 17, L 3), in dependency order. **Owner gate:** decided with ADR 0011 decision 10: the GUI edits CC 64 and CC 11 (U1). Open: U2 (download-page allow-list).
+33 items (S 13, M 17, L 3), in dependency order. **Owner gate:** all decided: the GUI edits CC 64 and CC 11 (U1); download links only for VSCO 2 CE and VCSL (U2); ensembles in the GUI (A7).
 
 | # | Item | Layer | Crate / module | Size | Depends on |
 |---|---|---|---|---|---|
@@ -207,7 +207,7 @@ The model (IM-1 … IM-18) is the long pole. 5 O2 items are in the set, none on 
 
 ## O6. Open decisions and plugin hosting
 
-6 items (S 2, M 2, L 2), in dependency order. **Owner gate:** open: A7 (ensemble, orchestrate and check tools), A10 (a GM engine); plugin hosting (M5).
+6 items (S 2, M 2, L 2), in dependency order. **Owner gate:** decided to wait: ensemble and orchestration tools only by a later versioned decision (A7); a GM engine decided here, after the recount (A10); plugin hosting (M5).
 
 | # | Item | Layer | Crate / module | Size | Depends on |
 |---|---|---|---|---|---|

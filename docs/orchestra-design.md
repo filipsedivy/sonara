@@ -258,7 +258,9 @@ Orchestrate… field, PF-15) needs 34 of the 113 items.
 
 ## 5. Owner decisions
 
-The owner decided on 2026-10-30 where the row says **Decided**; the other rows keep their recommendation and stay open.
+The owner decided every row on 2026-10-30, in two rounds: the rows marked **Decided** as stated, and every other row
+as recommended. A13 was decided as "only the invented ids a library records", A15 as "`tremolo` for mallets, `roll` for
+drums". The owner then asked for the full implementation.
 
 | Question | Recommendation | Ids |
 |---|---|---|

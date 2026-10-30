@@ -43,8 +43,8 @@ Conventions:
 ## A. Owner decisions
 
 **Decided on 2026-10-30.** The owner accepted [ADR 0011](../decisions/0011-orchestral-instruments-and-performance.md)
-together with the phase-2 contract core, and decided A1, A3, A4, A5, A6, A12, A14, A16 and A17 (marked below). The other
-A items stay open; [implementation-plan.md](implementation-plan.md) shows which work items wait for which of them.
+together with the phase-2 contract core, and decided every A item (marked below), in two rounds; P2 and U2 were accepted too. A9 still depends on the
+listening check B2, and A10 is decided in O6.
 
 ### A1. Where an instrument's identity and part live in a project
 
@@ -150,6 +150,8 @@ A items stay open; [implementation-plan.md](implementation-plan.md) shows which 
 
 ### A7. Ensemble templates: GUI only, or the `create_project` enum
 
+**Decided 2026-10-30 by the owner:** the GUI offers ensembles now; ensemble and orchestration tools only by a later versioned decision.
+
 - **Question.** `create_project.template` is a fixed enum pinned by `golden/contracts/tools.json`, while
   the GUI's New Project dialog lists the backend's `TEMPLATES`. The `orchestral` template is golden-covered
   (the Ascension workflow, `golden/workflows/cinematic_orchestral`) and a measured render-load baseline
@@ -190,6 +192,8 @@ A items stay open; [implementation-plan.md](implementation-plan.md) shows which 
 
 ### A9. Sampler features: legato, crossfades, velocity and pitch bend
 
+**Decided 2026-10-30 by the owner:** overlap legato on sustain samples first, kept if the listening check B2 passes; velocity crossfades and `amp_veltrack` come with it.
+
 - **Question.** Which playing features the sampler gains, and whether true legato waits for plugin
   hosting.
 - **Options.** (a) `trigger=first` and `trigger=legato` plus an overlap rule that crossfades into the new
@@ -209,6 +213,8 @@ A items stay open; [implementation-plan.md](implementation-plan.md) shows which 
 
 ### A10. A General MIDI fallback engine
 
+**Decided 2026-10-30 by the owner:** decide in O6, after the recount of the ids no free SFZ plays.
+
 - **Question.** ADR 0010 deferred `rustysynth`, so Sonara plays no SF2, and the one SFZ GM bank found is
   mostly stubs. About 36 ids have no free SFZ that plays (recounted in coverage.md), so the degradation chain falls from a family
   neighbour straight to Poly Synth or Drum Kit.
@@ -221,6 +227,8 @@ A items stay open; [implementation-plan.md](implementation-plan.md) shows which 
   OQ10, sections 4 and 5; [cards/free_libraries.md](cards/free_libraries.md).
 
 ### A11. GM numbers for ids without a GM1 program, and the Drum Kit map
+
+**Decided 2026-10-30 by the owner:** exact GM programs only, substitutes kept apart (`GmVoice`); an orchestral percussion map beside `GM_MAP`, not a change to it.
 
 - **Question.** The cards are not uniform. Some store a substitute in `gm_program`: the six solo voices
   54 Voice Oohs; cornet, flugelhorn and piccolo trumpet 57 Trumpet; the studio grand 2, a Sonara choice.
@@ -264,6 +272,8 @@ A items stay open; [implementation-plan.md](implementation-plan.md) shows which 
 
 ### A13. Articulation vocabulary: the 34 invented ids and the candidate merges
 
+**Decided 2026-10-30 by the owner:** only the invented ids that at least one library records enter the first frozen list; the others are appended later.
+
 - **Question.** Approve or reject the ids the cards coined (status "invented" in
   [articulation-vocabulary.md](articulation-vocabulary.md)): `fingered_tremolo` (the two-note wind and
   string tremolo, which four card groups ask to split from `tremolo`), `multi_tongue`, `detache`,
@@ -306,6 +316,8 @@ A items stay open; [implementation-plan.md](implementation-plan.md) shows which 
   [cards/tuned_percussion.md](cards/tuned_percussion.md) OQ13; [cards/electric_keys.md](cards/electric_keys.md) FC.
 
 ### A15. Articulation vocabulary: mallet rolls as `tremolo` or `roll`
+
+**Decided 2026-10-30 by the owner:** `tremolo` for mallet instruments, `roll` for drums and timpani, as the existing ids define them.
 
 - **Question.** Every library calls a mallet tremolo a "roll", while the vocabulary keeps `roll` for drums
   and timpani and `tremolo` (doc comment: "bowed or mallet") for mallets.
@@ -360,6 +372,8 @@ A items stay open; [implementation-plan.md](implementation-plan.md) shows which 
 
 ### A18. What `playable` and `comfortable` mean
 
+**Decided 2026-10-30 by the owner:** the cards' values as stated.
+
 - **Question.** The cards follow different conventions, so one written definition is needed for each
   field.
   - `comfortable`: the horn's 41-72 covers any horn part, Forsyth's 48-65 is safe for all four players;
@@ -385,6 +399,8 @@ A items stay open; [implementation-plan.md](implementation-plan.md) shows which 
 
 ### A19. Range model extensions: extensions, gaps, variants and a third tier
 
+**Decided 2026-10-30 by the owner:** optional fields later; the stored values are those of section C until then.
+
 - **Question.** One contiguous playable range cannot express: low extensions on some instruments
   (bassoon A1 = 33, contrabassoon A0 = 21, English horn E♭3 = 51, bass clarinet low C); gaps (the tenor
   trombone's pedals E1-B♭1 below a gap, gaps on three-valve bass Wagner tubas); per-instance choices (the
@@ -406,6 +422,8 @@ A items stay open; [implementation-plan.md](implementation-plan.md) shows which 
 
 ### A20. Notation: one transposition per instrument, and clefs
 
+**Decided 2026-10-30 by the owner:** defaults plus a per-part override; tenor at transposition 0 with a `treble_8vb` clef; Wagner tuba tenor at −2.
+
 - **Question.** Each instrument has one transposition and a list of clefs, but parts are written in
   several ways: the bass clarinet in French treble notation (−14) or German bass-clef notation (−2); the
   tenor Wagner tuba in B♭ (−2, Strauss and VSL) or in F like the bass (−7, modern parts), and in older
@@ -424,6 +442,8 @@ A items stay open; [implementation-plan.md](implementation-plan.md) shows which 
   [cards/saxophones.md](cards/saxophones.md) OQ11.
 
 ### A21. Instrument ids: what to add or split, and families
+
+**Decided 2026-10-30 by the owner:** the cards' proposals (accordion with keyboards, carillon with percussion, temple blocks unpitched with ordered keys, prepared piano pitched).
 
 - **Question.** Which ids to add, split or merge, and how to classify borderline instruments.
   - Missing ids found while building templates: natural horn and natural trumpet, alto trombone, E♭
@@ -449,6 +469,8 @@ A items stay open; [implementation-plan.md](implementation-plan.md) shows which 
 
 ### A22. Instrument controls and multi-zone keyboards
 
+**Decided 2026-10-30 by the owner:** controls are track or device controls, never articulation ids; the pedal list stays open.
+
 - **Question.** Several things the cards met are controls, not articulations, and have no place yet: the
   Rhodes and Wurlitzer tremolo ("vibrato" on the instruments), phaser, chorus, drive and wah; the Clavinet's
   tone tabs, pickup switches and mute slider; harp pedal states; organ registration, Hammond drawbars and
@@ -468,6 +490,8 @@ A items stay open; [implementation-plan.md](implementation-plan.md) shows which 
   3.3 (last rows).
 
 ### A23. Adopting the card values in `data.rs`
+
+**Decided 2026-10-30 by the owner:** adopt the card values in data.rs.
 
 - **Question.** The cards propose changes to the 16 instruments in
   `crates/sonara-midi/src/orchestration/data.rs`: ranges (violin playable 108 → 105 and comfortable
@@ -489,6 +513,8 @@ A items stay open; [implementation-plan.md](implementation-plan.md) shows which 
 
 ### A24. Small fixes outside the contracts
 
+**Decided 2026-10-30 by the owner:** make the code fixes, each with a test.
+
 - **Question.** Accept the small corrections the research found, none of which touches a contract.
   - `crates/sonara-app/src/instruments/family.rs` lacks the keywords rhodes, wurlitzer, clavinet, clav
     (or epiano), chimes, tubular (VSCO's `TubularBells.sfz` reads as one word), crotales, carillon, vibes,
@@ -505,6 +531,8 @@ A items stay open; [implementation-plan.md](implementation-plan.md) shows which 
   and N3; [cards/free_libraries.md](cards/free_libraries.md) OQ2.
 
 ### A25. How coverage is counted
+
+**Decided 2026-10-30 by the owner:** report both the loose count and its parts.
 
 - **Question.** "About 48 of 85 ids" counts partly playing patches and substitutes, such as the mixed
   chorus for each choir part. Should a coverage metric count only patches that play as is or partly, with
@@ -755,3 +783,4 @@ Triage of 2026-10-30. What this file did with its inputs:
 - C113 and C114 updated after the cards were corrected (VCSL SFZ in the tag; the Wurlitzer licence caveat).
 - A24 and C124: the correction of `docs/orchestral-audio-engine-research.md` is done.
 - Recorded the owner's decisions of 2026-10-30 (A1, A3, A4, A5, A6, A12, A14, A16, A17).
+- Recorded the owner's second round of decisions on 2026-10-30 (A7, A9, A10, A11, A13, A15, A18-A25).
