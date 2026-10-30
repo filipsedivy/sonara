@@ -16,6 +16,20 @@
 //!   `memories`, `tool_suggest`, `request_permissions_tool` off; `agents.enabled=false`
 //!   (measured: with only `features.multi_agent=false` the default model is still offered the
 //!   sub-agent tools of `multi_agent_v2`); `--ignore-user-config` and `--ignore-rules`.
+//! - **User skills:** `skills.include_instructions=false` keeps the catalog of the skills in
+//!   `$CODEX_HOME/skills` out of the prompt (verified against a fake Responses endpoint on
+//!   0.166.0: with the flag set alone, the skill's description is in the request, without it
+//!   it is not). `--ignore-user-config` does not do that.
+//! - **A known gap, not closed:** the user's global instructions, `$CODEX_HOME/AGENTS.md`, are
+//!   still read and sent to the model with every run. `--ignore-user-config` does not skip
+//!   them, and no `-c` key does either (verified 2026-10-30 on 0.166.0 with a fake Responses
+//!   endpoint: `project_doc_max_bytes` set to 0 and to 1, `include_environment_context`,
+//!   `instructions`, `skills.*`, `project_doc_fallback_filenames` all leave the file in the
+//!   request; `user_instructions` is not a key). It is text the model reads, not a tool: the
+//!   shell is off, the sandbox is read-only and the Sonara tools are a fixed list, so the
+//!   file can steer the model but cannot add a capability. `tests/chat_codex_binary.rs`
+//!   pins both facts, and the hint of a ready Codex says that the user's global instructions
+//!   apply.
 //! - **Only our MCP server:** `mcp_servers.sonara` with `required=true` (a server that does not
 //!   start aborts the run before any event), `enabled_tools` (every tool of the Agent API that is
 //!   not denied) and, again, `disabled_tools` ([`DENIED_SONARA_TOOLS`]).
@@ -122,6 +136,7 @@ fn overrides(sonara_cli: &Path, cwd: &Path, home: &Path) -> Vec<String> {
         .collect();
     keys.extend([
         "agents.enabled=false".to_owned(),
+        "skills.include_instructions=false".to_owned(),
         format!("web_search={}", toml_string("disabled")),
         format!("approvals_reviewer={}", toml_string("user")),
         format!(
@@ -365,6 +380,7 @@ mod tests {
             config(format!("features.{feature}=false"));
         }
         config("agents.enabled=false".to_owned());
+        config("skills.include_instructions=false".to_owned());
         config(r#"web_search="disabled""#.to_owned());
         config(r#"approvals_reviewer="user""#.to_owned());
         config(format!(
@@ -391,6 +407,14 @@ mod tests {
         config("mcp_servers.sonara.startup_timeout_sec=30".to_owned());
         expected.push("-".to_owned());
         assert_eq!(args, expected);
+    }
+
+    #[test]
+    fn the_catalog_of_the_users_skills_is_kept_out_of_the_prompt() {
+        let (cli, cwd, home) = paths();
+        let args = texts(&args(&cli, &cwd, &home));
+        let overrides = overrides_of(&args);
+        assert_eq!(value(&overrides, "skills.include_instructions"), "false");
     }
 
     #[test]
@@ -490,6 +514,7 @@ mod tests {
             .chain(
                 [
                     "agents.enabled",
+                    "skills.include_instructions",
                     "web_search",
                     "approvals_reviewer",
                     "developer_instructions",

@@ -7,9 +7,13 @@
 //! - [`tools`]: the Sonara tools the run may call.
 //!
 //! Codex handles only the first `SIGINT` (it interrupts the turn, writes no `turn.*` event and
-//! exits 1) and no `SIGTERM`, so a stop is `SIGINT`, [`STOP_POLICY`]'s short graces, and a
-//! `SIGKILL` of the process group. Whether the task is cancelled is the host's stop flag, never
-//! the exit.
+//! exits 1) and has no `SIGTERM` handler, so `SIGTERM` simply ends it. A stop is `SIGINT`, then
+//! [`STOP_POLICY`]'s 4 s, then `SIGTERM` to the process group (which also ends `sonara mcp`),
+//! then 2 s, then `SIGKILL` to the group. Whether the task is cancelled is the host's stop flag,
+//! never the exit.
+//!
+//! **Not closed:** the user's global `$CODEX_HOME/AGENTS.md` still reaches the model, because no
+//! switch of Codex 0.166.0 leaves it out (see [`invocation`]). The availability hint says so.
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;

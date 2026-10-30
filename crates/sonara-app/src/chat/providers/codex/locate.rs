@@ -42,6 +42,11 @@ pub const LOGIN_TIMEOUT: Duration = Duration::from_secs(10);
 /// What the user does when the CLI is not signed in.
 const SIGN_IN_HINT: &str = "Run codex login in a terminal, then check again.";
 
+/// What the hint of a ready Codex adds: a chat run cannot leave out the user's own instructions
+/// (`$CODEX_HOME/AGENTS.md`), because Codex has no switch for that (ADR 0011).
+const GLOBAL_INSTRUCTIONS_NOTE: &str =
+    " Your global Codex instructions (AGENTS.md in your Codex home) also apply to chat runs.";
+
 /// The environment variable `codex exec` reads an API key from.
 const API_KEY_VARIABLE: &str = "CODEX_API_KEY";
 
@@ -218,7 +223,10 @@ pub fn detect_in(
             Availability::Ready,
             Some(found.version.to_string()),
             Some(&found.path),
-            format!("Codex CLI {}. {note}", found.version),
+            format!(
+                "Codex CLI {}. {note}{GLOBAL_INSTRUCTIONS_NOTE}",
+                found.version
+            ),
         )
     };
     match login(&found.path) {
@@ -346,6 +354,11 @@ mod tests {
         assert_eq!(status.path.as_deref(), Some("/x/codex"));
         assert_eq!(status.min_version, "0.147.0");
         assert!(status.hint.contains("0.166.0"), "{}", status.hint);
+        assert!(
+            status.hint.contains("global Codex instructions"),
+            "a ready Codex says that the user's own instructions apply: {}",
+            status.hint
+        );
         let located = status.located.expect("an installation");
         assert_eq!(located.path, Path::new("/x/codex"));
         assert_eq!(located.version.to_string(), "0.166.0");

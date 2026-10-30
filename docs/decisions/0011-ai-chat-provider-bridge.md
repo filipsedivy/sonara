@@ -196,7 +196,7 @@ defined in the last section.
 | No shell | `--disallowedTools Bash`, `--permission-mode dontAsk`, `--permission-prompts none`; `Bash` is not in `--allowedTools` | `-c features.shell_tool=false` (shell and unified-exec tools are not registered, from source); `-s read-only`; exec forces approval policy `never` | deny-all policy rule (`toolName="*"`, priority 900) plus the headless denial of `run_shell_command`; `tools.core=[]` in the injected system settings |
 | No file write | `--disallowedTools Edit,Write,NotebookEdit` | `-s read-only` with approval `never`. `apply_patch` cannot be removed by config: the model still sees it and the call is rejected by sandbox and approval policy (`file_change` item, status `failed`). | the same deny-all rule; `write_file` and `replace` are denied in headless mode by default |
 | No web | **Not blocked, by design**: `WebSearch` and `WebFetch` are in `--allowedTools` (prompt-injection risk accepted and documented in `ai-chat.md`) | `-c web_search="disabled"` | optional allow rules for `google_web_search` and `web_fetch`; read-only tools such as `read_file` are allowed by default, so deny-all is needed |
-| No other tool sources | `--strict-mcp-config` with our `--mcp-config`: the user's MCP servers do not load | `-c features.apps=false`, `features.plugins=false`, `features.multi_agent=false`, `features.view_image=false`, `features.hooks=false`, `features.memories=false`, `features.tool_suggest=false`, `features.request_permissions_tool=false`, **and `-c agents.enabled=false`**: with `features.multi_agent=false` alone the model is still offered `spawn_agent`, `send_message` and `followup_task` (found with `codex debug prompt-input` on 0.166.0); `--ignore-user-config` (no `$CODEX_HOME/config.toml`), `--ignore-rules` | `--allowed-mcp-server-names sonara`; `hooksConfig.enabled=false` in the injected settings |
+| No other tool sources | `--strict-mcp-config` with our `--mcp-config`: the user's MCP servers do not load | `-c features.apps=false`, `features.plugins=false`, `features.multi_agent=false`, `features.view_image=false`, `features.hooks=false`, `features.memories=false`, `features.tool_suggest=false`, `features.request_permissions_tool=false`, **and `-c agents.enabled=false`**: with `features.multi_agent=false` alone the model is still offered `spawn_agent`, `send_message` and `followup_task` (found with `codex debug prompt-input` on 0.166.0), `-c skills.include_instructions=false` (the user's skill catalog stays out of the prompt), `--ignore-user-config` (no `$CODEX_HOME/config.toml`), `--ignore-rules`. **Not closed:** the user's global `$CODEX_HOME/AGENTS.md` still loads (see "Corrections after the implementation", item 9) | `--allowed-mcp-server-names sonara`; `hooksConfig.enabled=false` in the injected settings |
 | Only our MCP server | `--mcp-config` with `sonara` (`env` map) | `-c mcp_servers.sonara.command`, `.args`, `.env`, `.required=true`, `.enabled_tools`, `.disabled_tools`, `.startup_timeout_sec=30`. `required=true` makes a server that fails to start abort the run before any event, exit 1 (run). The rest of the argv is `exec --json --ephemeral --skip-git-repo-check --color never -s read-only` and the prompt on stdin (`-`). | system settings `mcpServers.sonara` through `GEMINI_CLI_SYSTEM_SETTINGS_PATH` (merged last) |
 | Sonara tool deny list | `--disallowedTools` with 13 `mcp__sonara__*` names; deny wins over the server-wide allow `mcp__sonara` | `enabled_tools` with 44 of the 57 tools (every tool of the Agent API that is not denied; a test compares the list with `docs/agent-api.md` in both directions) and `disabled_tools` (the same 13 bare names) after it. In addition, tools annotated `destructiveHint=true` (`create_project`, `open_project`, `delete_track`, `export_audio`, `export_stems`, `export_midi`) are denied by Codex under approval `never` (from source), so `delete_track` is blocked even on an empty track, where Claude allows it without a confirmation (not verified at run time) | `--policy` file, user tier: allow `mcpName="sonara"` at 950, deny list at 990 |
 | No prompts, no escalation | `dontAsk` and `--permission-prompts none` | exec's harness policy is `never`; `-c approvals_reviewer="user"` (the schema default) so a user config cannot route to `auto_review`; exec auto-cancels MCP elicitations and rejects other approval requests. Never `--yolo` or any `--dangerously-bypass-*` flag. | `--approval-mode default`; `ask_user` is denied in headless mode; folder trust needs `--skip-trust` in the app-owned empty cwd |
@@ -230,8 +230,10 @@ defined in the last section.
   approval policy, and the MCP resource tools reach only the `sonara` server. Whether a Sonara
   call made inside `exec` shows up as an `mcp_tool_call` item is **not verified**. There is no
   "only these tools" switch, so the boundary is a list of keys that must be re-checked on each
-  Codex upgrade. Whether `$CODEX_HOME` level `AGENTS.md`, skills and `hooks.json` still load
-  under `--ignore-user-config` was not verified. Auth stays in the real `CODEX_HOME`.
+  Codex upgrade. `$CODEX_HOME` level `AGENTS.md` and skills do load under
+  `--ignore-user-config` (verified 2026-10-30 on 0.166.0, see "Corrections after the
+  implementation", item 9); whether `hooks.json` does was not verified. Auth stays in the real
+  `CODEX_HOME`.
 - **Gemini:** user-level `GEMINI.md` and extensions still load; the policy file and `tools.core=[]`
   are untested at run time.
 
@@ -377,7 +379,7 @@ dependencies. All eleven feature keys checked (the nine used plus `codex_hooks` 
 - **Claude resume across working directories** was never run; only error paths were probed.
 - **Cold-start latency** of any provider plus `sonara mcp` is unmeasured.
 - **Whether `sonara mcp` exits on stdin EOF** is unmeasured.
-- Whether `$CODEX_HOME` `AGENTS.md`, skills and `hooks.json` load under `--ignore-user-config`.
+- Whether `$CODEX_HOME` `hooks.json` loads under `--ignore-user-config` (`AGENTS.md` and skills were checked: they do, item 9 below).
 - The Codex minimum version 0.147.0 is a bisect result, and the full `-c` set was only run on
   0.166.0.
 - A live deny test (shell, write, save, export, user MCP servers) for Codex and Gemini, and for
@@ -418,3 +420,23 @@ sections above.
    `--strict-config` and the developer instructions round-trip exactly.
 8. **`Provider::build` takes the path of the `sonara` tool**, and chat turns put the addendum in
    the same `--append-system-prompt` value as the composer's prompt.
+9. **A global Codex `AGENTS.md` and skills load into a chat run, and only the skills can be left
+   out. This is a known gap of the Beta provider.** Verified on 2026-10-30 on codex 0.166.0: a
+   `codex exec` with the full command line, `CODEX_API_KEY` set to a made-up key and
+   `-c openai_base_url` pointed at a fake Responses endpoint on 127.0.0.1 (no login, no quota),
+   with a private `CODEX_HOME` that held a canary `AGENTS.md` and a canary skill. The request
+   Codex sent contained `# AGENTS.md instructions` with the canary and the canary skill's
+   catalog entry, although `--ignore-user-config` and every `-c` key of the boundary were
+   passed. Tried against
+   the same endpoint: `skills.include_instructions=false` removes the skill entry (and is now
+   part of the command line); `project_doc_max_bytes` set to 0 and to 1,
+   `include_environment_context=false`, `instructions=""`, `skills.bundled.enabled=false`,
+   `features.skip_host_skill_discovery=true` and `project_doc_fallback_filenames=[]` leave the
+   `AGENTS.md` in the request, and `user_instructions` is not a key (`--strict-config` rejects
+   it). Codex 0.166.0 has no switch for the global `AGENTS.md`. What the file can do is instruction injection: the shell
+   is off, the sandbox is read-only and the Sonara tools are a fixed list, so it can steer the
+   model but cannot add a capability. The boundary is therefore not closed for Codex. The module
+   docs say so, the availability hint of a ready Codex tells the user that their global Codex
+   instructions apply, and `chat_codex_binary.rs` pins the gap (it fails when a release makes
+   closing it possible). A private `CODEX_HOME` would close it, but would also lose the sign-in,
+   and Sonara never reads or copies credentials.

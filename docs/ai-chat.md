@@ -189,7 +189,7 @@ against the tool headings of [agent-api.md](agent-api.md) in both directions.
 | No file write | `--disallowedTools Edit,Write,NotebookEdit` | `-s read-only` with approval `never`. `apply_patch` cannot be removed by configuration (below) |
 | No web | **Not blocked, by design**: `WebSearch` and `WebFetch` are in `--allowedTools`. A web page can carry a prompt injection, which is why the agent has no shell and no way to write files | `-c web_search="disabled"` |
 | No question to the user | `AskUserQuestion` is in `--disallowedTools` | exec auto-cancels MCP elicitations and rejects other approval requests (from source); `request_user_input` stays offered (below) |
-| No other tool source | `--strict-mcp-config` with our own `--mcp-config`: the user's MCP servers do not load | `-c features.<name>=false` for `apps`, `plugins`, `multi_agent`, `view_image`, `hooks`, `memories`, `tool_suggest` and `request_permissions_tool`; `-c agents.enabled=false`; `--ignore-user-config` (no `$CODEX_HOME/config.toml`); `--ignore-rules` |
+| No other tool source | `--strict-mcp-config` with our own `--mcp-config`: the user's MCP servers do not load | `-c features.<name>=false` for `apps`, `plugins`, `multi_agent`, `view_image`, `hooks`, `memories`, `tool_suggest` and `request_permissions_tool`; `-c agents.enabled=false`; `-c skills.include_instructions=false` (the catalog of the user's skills stays out of the prompt); `--ignore-user-config` (no `$CODEX_HOME/config.toml`); `--ignore-rules`. **Not closed:** the user's global `$CODEX_HOME/AGENTS.md` still reaches the model (below) |
 | Only our MCP server | `--mcp-config` with `sonara` (the bundled `sonara mcp`, `--connect always`, `SONARA_HOME` of the run folder) | `-c mcp_servers.sonara.command`, `.args`, `.env`, `.required=true` (a server that does not start aborts the run before any event), `.startup_timeout_sec=30` |
 | Sonara tool lists | `--allowedTools mcp__sonara` and the 13 names as `mcp__sonara__*` in `--disallowedTools`; a deny rule wins over the server-wide allow | `.enabled_tools` with the 44 of the 57 tools that are not denied, and `.disabled_tools` with the 13 denied names (applied after `enabled_tools`) |
 | No prompt, no escalation | `dontAsk` and `--permission-prompts none` | `-c approvals_reviewer="user"` (the schema default, so a user config cannot route to `auto_review`); never `--yolo`, `--dangerously-bypass-*`, `--full-auto`, `--oss`, `--add-dir` or `-m` |
@@ -239,8 +239,26 @@ never in the arguments). Each `-c` value travels as one argument, with no shell 
   tools annotated that way, five are on the deny list anyway; `delete_track` is the sixth, so on
   Codex it is blocked even though Claude Code may call it (with a confirmation). Whether it is
   blocked for a track without content was not run.
-- **Whether `$CODEX_HOME` `AGENTS.md`, skills and `hooks.json` still load** under
-  `--ignore-user-config` was not verified. Codex keeps its sign-in in the real `CODEX_HOME`.
+- **The user's global `$CODEX_HOME/AGENTS.md` loads into every Codex chat run.** This is a
+  known gap of the Beta provider, and one reason the live test matters. It was verified on
+  2026-10-30 on Codex 0.166.0 with a fake Responses endpoint on 127.0.0.1 (`CODEX_API_KEY` set to
+  a made-up key, `-c openai_base_url` pointed at the endpoint, a private `CODEX_HOME` with a
+  canary `AGENTS.md` and a canary skill; no login, no quota): the request Codex sent held the
+  canary text with `--ignore-user-config` and the whole `-c` set. None of these keys removes it:
+  `project_doc_max_bytes` (0 and 1), `include_environment_context`, `instructions`,
+  `skills.bundled.enabled`, `features.skip_host_skill_discovery`,
+  `project_doc_fallback_filenames`; `user_instructions` is not a key under `--strict-config`.
+  What the file can do is instruction injection: the shell is off, the sandbox is read-only and
+  the Sonara tools are a fixed list, so it can steer the model but cannot add a tool. The hint of
+  a ready Codex tells the user that their global Codex instructions apply. A private
+  `CODEX_HOME` would close it but would also lose the sign-in, which Sonara never reads or
+  copies. `chat_codex_binary.rs` pins the gap (`#[ignore]`d, local): it fails when a Codex
+  release lets it be closed.
+- **The user's skills** are kept out with `skills.include_instructions=false`: with it, the
+  catalog entry of a canary skill is not in the request; without it, it is (the same test). An
+  explicit `$skill-name` mention in the prompt was not tried. Whether `hooks.json` loads under
+  `--ignore-user-config` was not verified (`features.hooks=false` is set). Codex keeps its
+  sign-in in the real `CODEX_HOME`.
 - **No live deny test has been recorded for Codex.** See "Tests".
 
 ## Stopping
@@ -258,7 +276,13 @@ The Codex graces are constants chosen for a quick answer to the button, and were
 a real turn. Whether a task is `cancelled` is decided by the host's stop flag, never by the exit
 code (Codex exits 1 on both a failure and an interrupt) or by a missing result.
 
-Quitting Sonara stops a run the same way and refuses further calls.
+Quitting Sonara ends the run before it exits, because the escalation above runs on a timer
+thread that does not outlive the application, and an agent that ignores `SIGINT` would be left
+running with its `sonara mcp`. It sends `SIGINT`, waits up to 2 s for the process to end, then
+sends `SIGTERM` to the process group, and `SIGKILL` 0.3 s later, all on the quitting thread, and
+refuses further calls. A helper outside the process group that keeps the output pipes open delays
+the end of a run by at most 2 s: after that the exit is reported without the rest of the
+output.
 
 ## Lifecycle and privacy
 
@@ -317,6 +341,11 @@ of the message.
 - Every task starts a new provider process and a new `sonara mcp`; this cold start was not
   measured. Whether `sonara mcp` exits on its own after its provider was killed is not
   measured either.
+- An edit that an old run still lands after a wipe (the stop is a `SIGINT`, and a tool call that
+  is already in flight completes) is not sealed into an undo step of its own: the history is
+  sealed when the controller publishes a change, and the exit of a wiped generation publishes
+  none. It can merge with the user's next edit, and after a project was replaced it lands in the
+  new project.
 - macOS (Unix) only: the run module uses process groups and signals.
 
 ## Tests

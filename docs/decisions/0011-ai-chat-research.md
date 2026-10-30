@@ -113,7 +113,8 @@ Source: `codex-rs/exec/src/exec_events.rs` and `event_processor_with_jsonl_outpu
 | `features.multi_agent=false` is not enough to remove the sub-agent tools; `agents.enabled=false` is | run (the model was still offered `spawn_agent`, `send_message` and `followup_task` with the first alone) | `codex debug prompt-input`, 0.166.0; the test asserts they are gone with both |
 | `features.code_mode` and `features.code_mode_host` do not remove `exec` | run (reported by the implementer; no committed test) | `codex debug prompt-input`, 0.166.0 |
 | The Sonara MCP tools are among the tools nested in `exec`; whether a nested call is an `mcp_tool_call` item | the first part: run (reported by the implementer); the second: not verified | `codex debug prompt-input`, 0.166.0 |
-| Hooks under `--ignore-user-config`, `$CODEX_HOME` `AGENTS.md` and skills | whether they still load | assumption (not checked) | |
+| `$CODEX_HOME` `AGENTS.md` and skills under `--ignore-user-config` | both still load: the request held a canary `AGENTS.md` and a canary skill's catalog entry. `skills.include_instructions=false` removes the skill entry. No `-c` key removes the `AGENTS.md` (`project_doc_max_bytes` 0 and 1, `include_environment_context`, `instructions`, `skills.bundled.enabled`, `features.skip_host_skill_discovery`, `project_doc_fallback_filenames` tried; `user_instructions` is not a key). A known gap of the Beta provider | run, 2026-10-30, codex 0.166.0: a fake Responses endpoint on 127.0.0.1 with `CODEX_API_KEY` set to a made-up key and `-c openai_base_url`, a private `CODEX_HOME`; no login, no quota | `chat_codex_binary.rs` (`a_chat_turn_carries_no_user_skills_but_still_the_global_agents_md`) |
+| Hooks under `--ignore-user-config` | whether they still load | assumption (not checked) | |
 | Whether `model_catalog_json` can remove `apply_patch` | not checked | assumption | |
 
 ### 2.4 Signals, auth, sessions

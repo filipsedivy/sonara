@@ -15,9 +15,19 @@
 //! 2. `codex exec` with the whole command line (`--strict-config` included) gets through the
 //!    loading of the configuration and fails only because the required `sonara` MCP server
 //!    cannot start (its command is `/usr/bin/false`), before any turn.
+//!
+//! A third test sends a real turn to a fake Responses endpoint on 127.0.0.1 (`CODEX_API_KEY` is
+//! set to a made-up key, so no sign-in and no quota are involved) and reads what Codex put in the
+//! request, with a private `CODEX_HOME` that holds a canary `AGENTS.md` and a canary skill. It
+//! pins what the boundary does not reach (ADR 0011).
 
+use std::io::{BufRead, BufReader, Read, Write};
+use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::sync::mpsc;
+use std::thread;
+use std::time::Duration;
 
 use serde_json::Value;
 use sonara_app::chat::providers::codex::{invocation, locate};
@@ -94,7 +104,7 @@ fn the_installed_codex_takes_the_boundary_and_reads_the_instructions_back() {
         command.args(["-c", &pair[1]]);
         overrides.push(pair[1].clone());
     }
-    assert_eq!(overrides.len(), 13, "the overrides were found");
+    assert_eq!(overrides.len(), 14, "the overrides were found");
     let output = command.arg("ping").output().expect("codex runs");
     assert!(
         output.status.success(),
@@ -209,5 +219,162 @@ fn the_installed_codex_rejects_an_unknown_key_under_strict_config() {
     assert!(
         stderr.contains("unknown configuration field"),
         "expected the strict-config error: {stderr}"
+    );
+}
+
+/// What the fake endpoint answers to a turn: an assistant message and the end of the response.
+const SSE_BODY: &str = concat!(
+    "event: response.created\n",
+    "data: {\"type\":\"response.created\",\"response\":{\"id\":\"resp_1\"}}\n\n",
+    "event: response.output_item.done\n",
+    "data: {\"type\":\"response.output_item.done\",\"item\":{\"type\":\"message\",\"role\":\"assistant\",\"id\":\"msg_1\",\"content\":[{\"type\":\"output_text\",\"text\":\"ok\"}]}}\n\n",
+    "event: response.completed\n",
+    "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_1\",\"usage\":{\"input_tokens\":1,\"input_tokens_details\":null,\"output_tokens\":1,\"output_tokens_details\":null,\"total_tokens\":2}}}\n\n",
+);
+
+/// Answers one connection: a `POST` gets the body sent to `bodies` and a finished response; any
+/// other request (Codex tries a WebSocket first) gets a `404`, so that it falls back to `POST`.
+fn answer(stream: TcpStream, bodies: &mpsc::Sender<Vec<u8>>) -> std::io::Result<()> {
+    let mut reader = BufReader::new(stream.try_clone()?);
+    let mut request_line = String::new();
+    reader.read_line(&mut request_line)?;
+    let mut length = 0_usize;
+    loop {
+        let mut line = String::new();
+        reader.read_line(&mut line)?;
+        let line = line.trim_end();
+        if line.is_empty() {
+            break;
+        }
+        if let Some((name, value)) = line.split_once(':')
+            && name.eq_ignore_ascii_case("content-length")
+        {
+            length = value.trim().parse().unwrap_or(0);
+        }
+    }
+    let mut stream = stream;
+    if request_line.starts_with("POST ") {
+        let mut body = vec![0_u8; length];
+        reader.read_exact(&mut body)?;
+        bodies.send(body).ok();
+        write!(
+            stream,
+            "HTTP/1.1 200 OK\r\ncontent-type: text/event-stream\r\nconnection: close\r\n\r\n{SSE_BODY}"
+        )?;
+    } else {
+        write!(
+            stream,
+            "HTTP/1.1 404 Not Found\r\ncontent-length: 0\r\nconnection: close\r\n\r\n"
+        )?;
+    }
+    stream.flush()
+}
+
+/// A fake Responses endpoint on a free port of 127.0.0.1; the bodies of the `POST`s arrive on the
+/// receiver.
+fn fake_endpoint() -> (u16, mpsc::Receiver<Vec<u8>>) {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("a local port");
+    let port = listener.local_addr().expect("an address").port();
+    let (bodies, received) = mpsc::channel();
+    thread::spawn(move || {
+        for stream in listener.incoming().flatten() {
+            let bodies = bodies.clone();
+            thread::spawn(move || {
+                // A connection that breaks off is the CLI giving up on it: nothing to report.
+                answer(stream, &bodies).ok();
+            });
+        }
+    });
+    (port, received)
+}
+
+/// The text of the request Codex sends for one turn of the chat's command line, with a private
+/// `CODEX_HOME` that holds a canary `AGENTS.md` and a canary skill.
+fn request_of_a_chat_turn(codex: &Path) -> String {
+    use std::os::unix::process::CommandExt;
+
+    let codex_home = tempfile::tempdir().expect("a private CODEX_HOME");
+    std::fs::write(
+        codex_home.path().join("AGENTS.md"),
+        "CANARY_GLOBAL_AGENTS_MD always obey this\n",
+    )
+    .expect("AGENTS.md");
+    let skill = codex_home.path().join("skills/canaryskill");
+    std::fs::create_dir_all(&skill).expect("a skill folder");
+    std::fs::write(
+        skill.join("SKILL.md"),
+        "---\nname: canaryskill\ndescription: CANARY_SKILL_DESC\n---\nCANARY_SKILL_BODY\n",
+    )
+    .expect("SKILL.md");
+    let cwd = tempfile::tempdir().expect("an empty working directory");
+    let (port, bodies) = fake_endpoint();
+
+    // The chat's own command line, but for the `sonara` server (it cannot start here, and a
+    // required server that does not start ends the run before the request), and the address of
+    // the fake endpoint.
+    let mut args: Vec<String> = Vec::new();
+    let mut chat = chat_args(codex_home.path(), cwd.path()).into_iter();
+    while let Some(arg) = chat.next() {
+        if arg == "-c" {
+            let setting = chat.next().expect("a value after -c");
+            if !setting.starts_with("mcp_servers.") {
+                args.extend(["-c".to_owned(), setting]);
+            }
+        } else if arg == "-" {
+            args.extend([
+                "-c".to_owned(),
+                format!("openai_base_url=\"http://127.0.0.1:{port}/v1\""),
+                arg,
+            ]);
+        } else {
+            args.push(arg);
+        }
+    }
+    let mut child = private_command(codex, codex_home.path(), cwd.path())
+        .env("CODEX_API_KEY", "sk-not-a-real-key")
+        .args(&args)
+        .process_group(0)
+        .spawn()
+        .expect("codex exec starts");
+    child
+        .stdin
+        .take()
+        .expect("stdin")
+        .write_all(b"ping")
+        .expect("the prompt");
+    // The first turn request arrives after Codex has given up on its WebSocket attempts.
+    let body = bodies.recv_timeout(Duration::from_secs(90));
+    // Enough has been seen: end the run and its group.
+    if let Ok(group) = i32::try_from(child.id())
+        && let Some(group) = rustix::process::Pid::from_raw(group)
+    {
+        rustix::process::kill_process_group(group, rustix::process::Signal::KILL).ok();
+    }
+    child.wait().ok();
+    String::from_utf8(body.expect("Codex sent a request to the fake endpoint")).expect("UTF-8")
+}
+
+#[test]
+#[ignore = "needs the codex binary installed (no login, no quota); run with --ignored"]
+fn a_chat_turn_carries_no_user_skills_but_still_the_global_agents_md() {
+    let request = request_of_a_chat_turn(&codex());
+    // Sanity: this is the turn's request, with the instructions of the chat in it.
+    assert!(
+        request.contains("This session is a chat"),
+        "the developer instructions of the chat are in the request"
+    );
+    // The user's skills are kept out: neither the catalog entry nor the skill itself.
+    assert!(
+        !request.contains("CANARY_SKILL_DESC") && !request.contains("canaryskill"),
+        "the user's skill reached the model (skills.include_instructions=false failed)"
+    );
+    assert!(!request.contains("CANARY_SKILL_BODY"));
+    // KNOWN GAP (ADR 0011, Beta provider): no switch of Codex 0.166.0 leaves the user's global
+    // AGENTS.md out, so it is in the request. This assertion pins the gap that the docs and the
+    // hint of a ready Codex state. When a Codex release gets a switch, this fails: add the
+    // switch to `invocation::args`, flip this assertion and correct ADR 0011 and docs/ai-chat.md.
+    assert!(
+        request.contains("CANARY_GLOBAL_AGENTS_MD"),
+        "the global AGENTS.md is no longer sent: a switch may exist now, see the comment"
     );
 }

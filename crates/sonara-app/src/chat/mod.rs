@@ -9,9 +9,10 @@
 //! - [`task`], [`mod@error`]: the data and the errors that cross to the window.
 //! - [`controller`]: runs the tasks one after the other through a provider and tells the
 //!   window ([`event`]); [`replay`] gives each task the earlier conversation as context.
-//! - [`provider`], [`providers`], [`boundary`]: the seam to the agent CLIs, and the Claude Code
-//!   adapters for Claude Code and Codex CLI. Every provider runs under the safety boundary of the
-//!   composer.
+//! - [`provider`], [`providers`], [`boundary`]: the seam to the agent CLIs, and the adapters
+//!   for Claude Code and Codex CLI. Every provider runs under the safety boundary of the
+//!   composer, with one known gap: a Codex run still reads the user's global `AGENTS.md`
+//!   (ADR 0011).
 
 pub mod boundary;
 pub mod controller;
