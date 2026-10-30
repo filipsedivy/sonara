@@ -12,9 +12,6 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::PathBuf;
 
-/// The commands of the chat that the window does not call: the menu opens the window.
-const NOT_CALLED_BY_THE_WINDOW: [&str; 1] = ["open_chat_window"];
-
 fn desktop() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..")
 }
@@ -172,7 +169,7 @@ fn every_command_the_window_invokes_is_registered_and_defined() {
 }
 
 #[test]
-fn every_registered_chat_command_is_called_by_the_window_or_by_the_menu() {
+fn every_registered_chat_command_is_called_by_the_window() {
     let invoked = invoked();
     let registered = registered();
     let defined = defined();
@@ -183,7 +180,7 @@ fn every_registered_chat_command_is_called_by_the_window_or_by_the_menu() {
     );
     for name in &registered {
         assert!(
-            invoked.contains_key(name) || NOT_CALLED_BY_THE_WINDOW.contains(&name.as_str()),
+            invoked.contains_key(name),
             "{name} is registered but the window never invokes it"
         );
     }

@@ -192,7 +192,6 @@ fn invoke_handler() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + 
         chat::chat_stop,
         chat::chat_resume,
         chat::chat_clear,
-        chat::open_chat_window,
         dialogs::about_info,
         dialogs::open_link,
         dialogs::browser_devices,

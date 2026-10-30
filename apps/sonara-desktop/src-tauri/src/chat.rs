@@ -168,7 +168,8 @@ fn wipe(app: &AppHandle, why: &'static str) {
     }
 }
 
-/// Sonara quits: stops the run and refuses further calls.
+/// Sonara quits: ends the run (it waits a bounded time, see `ChatController::shutdown`, so that
+/// an agent that ignores `SIGINT` is not left running) and refuses further calls.
 pub fn shutdown(app: &AppHandle) {
     if let Some(host) = app.try_state::<ChatHost>() {
         host.controller.shutdown();
@@ -300,16 +301,6 @@ pub async fn chat_resume(host: State<'_, ChatHost>) -> Result<ChatState, ChatErr
 #[tauri::command]
 pub async fn chat_clear(host: State<'_, ChatHost>) -> Result<ChatState, ChatError> {
     blocking(&host, |controller| Ok(controller.clear())).await
-}
-
-/// Opens the AI Chat in its window, or brings that window to the front.
-///
-/// # Errors
-///
-/// The reason the window cannot be created or shown.
-#[tauri::command]
-pub async fn open_chat_window(app: AppHandle) -> Result<(), String> {
-    crate::window::open_chat(&app).map_err(|error| format!("cannot open the AI Chat: {error}"))
 }
 
 #[cfg(test)]
