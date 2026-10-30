@@ -8,6 +8,13 @@ break the API. The project format is versioned independently, see
 
 ## [Unreleased]
 
+### Changed
+
+- **AI Composer: a whole run is one undo step.** Edit → "Undo AI Composer" reverts everything the
+  run did, and Redo brings it back. Before, every tool call of the agent was a step of its own. An
+  edit you make yourself while the run goes stays a separate step. No tool, schema or CLI
+  contract changes.
+
 ## [0.1.11] — 2026-10-29
 
 ### Added
