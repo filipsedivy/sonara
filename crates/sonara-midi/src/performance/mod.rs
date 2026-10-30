@@ -19,6 +19,7 @@
 //!
 //! Nothing here runs on a real-time thread (RT-01).
 
+pub mod check;
 mod seed;
 pub mod voicing;
 

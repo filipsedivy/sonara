@@ -433,8 +433,9 @@ Beethoven's alto trombone, the part plays it and its note says so.
 
 ## Rules
 
-`orchestration::rules` holds orchestration rules as data. The predicates that check a project are
-code elsewhere; this module holds what they read, and nothing in it runs on a real-time thread.
+`orchestration::rules` holds orchestration rules as data. The predicates that check notes against
+them are code in `sonara_midi::performance::check` (below); this module holds what they read, and
+nothing in it runs on a real-time thread.
 
 `RULES` holds 67 rules keyed by `RuleId`, whose stable `code()` is the external form: `RNG-01` to
 `RNG-04` (ranges), `SPC-01` to `SPC-08` (spacing and low intervals), `DBL-01` to `DBL-09`
@@ -535,6 +536,25 @@ moderate time), `RUN_NOTES` (four notes in a row make a doubled line or a run), 
 into a number and are estimates; a rule that compares with an estimated threshold is never
 stronger than a warning. Durations are `Span`s and convert at `MODERATO_BPM`, as the playability
 facts do.
+
+`sonara_midi::performance::check` checks notes against the twenty rules whose inputs a project
+holds today (`CHECKED_RULES`: `RNG-01` to `RNG-03`, `SPC-01`, `SPC-02`, `DBL-02` to `DBL-04`,
+`DBL-09`, `VOI-12`, `PLY-01`, `PLY-02`, `PLY-04` to `PLY-06`, `PLY-12`, `PLY-14`, `PLY-15`,
+`TEX-01` and `TEX-02`). `check` takes the parts as `Line`s (a part id, its instrument and its
+notes at sounding pitch) with a `ScoreContext` for the tempo and the metre, and gives one `Hit`
+per place a rule finds: the rule, its level for the case, the parts and notes concerned, where
+it starts and ends, and the numbers in words. `check_rule` runs one rule. A note's dynamic is
+read from its velocity (`velocity_band`: 1–54 soft, 55–84 medium, 85–127 loud, an estimate), a
+muted note carries its mute as its articulation and a plucked note `pizzicato`; whether an
+instrument double-tongues comes from its articulations, so the clarinets, horns and trumpets do
+and the oboes, bassoons and trombones do not. A span the sources give in moderate time converts
+at the moderate tempo, and the time a piece leaves is measured at its own tempo. The other rules
+need a part's role, the harmony or a notated dynamic; the voicing helpers apply those while
+they write. Two derivations work out what a player sets: `harp_pedals` a pedal setting per
+passage (the fewest changes that keep each foot's changes within the time the music leaves; the
+enharmonic choice is an estimate) and `timpani_tunings` the drums' pitches per passage (a
+semitone's retuning taking half the record's whole tone), each with the notes no setting covers
+and the changes that come too soon.
 
 ## Fallbacks
 
@@ -675,6 +695,9 @@ top in woodwind order and that a played articulation is one its instruments list
 weights of every instrument, the register factors, the low-interval limits and the function table
 with tables written from the sources, checks that every sustaining instrument has a weight, that registers lie inside
 the playable range and that the bands cover MIDI, and rejects a fixture breaking each check.
+`crates/sonara-midi/tests/check.rs` gives every checked rule a passage written by hand that fires
+it and one that stays quiet, checks the harp and timpani derivations on known passages and, as
+properties, that every passage's setting or tuning sounds its notes, and rejects invalid inputs.
 
 A fallback row has a `check` that rejects a neighbour that is the instrument itself or listed
 twice, one of another family or one that loses the part's pitch without asking first, a pitched

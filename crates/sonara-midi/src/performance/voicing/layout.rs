@@ -23,7 +23,7 @@
 //! lowest pitches, so equal inputs always give the same layout (TST-04).
 
 use crate::orchestration::PitchRange;
-use crate::orchestration::rules::{LOW_DISSONANCE, LOW_INTERVAL_LIMITS, Limit};
+use crate::performance::check::{below_low_limit, is_low_dissonance};
 use crate::theory::Chord;
 
 /// Semitones in an octave.
@@ -32,13 +32,6 @@ const OCTAVE: i64 = 12;
 /// How many of the lowest voices follow the harmonic series when a family carries the bass:
 /// Rimsky-Korsakov's rule is about the bottom of the chord.
 const SERIES_VOICES: usize = 4;
-
-/// The semitones modulo the octave of the intervals the low-bass rule calls dissonant: seconds,
-/// fourths, the tritone and sevenths; the ninths are seconds an octave up.
-const DISSONANT: [i64; 6] = [1, 2, 5, 6, 10, 11];
-
-/// The widest interval the low-bass rule names, a major ninth.
-const WIDEST_DISSONANCE: i64 = 14;
 
 /// What a layout must satisfy besides the voices' ranges.
 pub(super) struct Rules<'a> {
@@ -301,17 +294,7 @@ impl Search<'_> {
 /// Whether two notes `lower` and `upper` sounding together clear the low-interval limit of their
 /// interval (SPC-01) and, for a dissonance, lie at or above D3 (SPC-02).
 pub(super) fn clears_limits(lower: i64, upper: i64) -> bool {
-    let semitones = upper - lower;
-    let above_limit = u8::try_from(semitones)
-        .ok()
-        .and_then(|semitones| LOW_INTERVAL_LIMITS.of(semitones))
-        .is_none_or(|limit| match limit {
-            Limit::Lowest(pitch) => lower >= pitch.get(),
-            Limit::Unlimited => true,
-        });
-    let dissonant =
-        semitones <= WIDEST_DISSONANCE && DISSONANT.contains(&semitones.rem_euclid(OCTAVE));
-    above_limit && !(dissonant && lower < LOW_DISSONANCE.value.get())
+    !below_low_limit(lower, upper) && !is_low_dissonance(lower, upper)
 }
 
 #[cfg(test)]
