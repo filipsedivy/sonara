@@ -8,7 +8,7 @@
 //!
 //! **Forgery.** An answer is text the agent wrote after reading web pages and tool results, so
 //! it can try to pass as the host: a `User:` turn, the `New request from the user:` marker, or
-//! the end of the block. [`clip`] neutralises all three in every message and answer, whatever
+//! the end of the block. `clip` neutralises all three in every message and answer, whatever
 //! their case or spacing: a line that starts with a label gets a visible `> ` in front of it, so
 //! the only labels at the start of a line are the host's own, and the name of the block tag is
 //! changed wherever it occurs. The system prompt's "context only" sentence stays the second line
