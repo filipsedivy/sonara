@@ -5,7 +5,7 @@
 use std::fs;
 use std::path::Path;
 
-use sonara_dsp::bank::{LoopMode, Trigger};
+use sonara_dsp::bank::{Keyswitches, LoopMode, SampleBank, Trigger};
 use sonara_media::{MediaError, sfz::load_sfz};
 
 /// A 16-bit mono PCM WAV of `frames` frames of the constant `value`.
@@ -95,11 +95,105 @@ fn reads_regions_with_their_inherited_opcodes() {
         (-12.0, -3.0, 0.02)
     );
     assert_eq!(bank.regions[4].trigger, Trigger::Release);
-    let switches = bank.keyswitches.expect("keyswitches");
-    assert_eq!(
-        (switches.lo, switches.hi, switches.default),
-        (24, 26, Some(24))
+    let switches = bank.keyswitches;
+    assert_eq!(switches.keys().collect::<Vec<_>>(), [24, 25, 26]);
+    assert_eq!(switches.default, Some(24));
+}
+
+/// Loads `text` as a patch beside the fixture's `Samples` folder.
+fn load_patch(dir: &tempfile::TempDir, text: &str) -> SampleBank {
+    let path = dir.path().join("patch.sfz");
+    fs::write(&path, text).expect("write");
+    load_sfz(&path).expect("loads")
+}
+
+#[test]
+fn sw_default_in_the_first_group_survives_later_groups() {
+    // VSCO 2 CE's key-switch layout (TST-06): the default sits only in the first group, and a
+    // later `<control>` and `<group>` repeat the range without it.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<control> default_path=Samples/\n\
+         <group> sw_lokey=c2 sw_hikey=d#2 sw_default=c2 sw_last=c2 lokey=c3 hikey=c5\n\
+         <region> sample=soft1.wav\n\
+         <control> default_path=Samples/\n\
+         <group> sw_lokey=c2 sw_hikey=d#2 sw_last=c#2 lokey=c3 hikey=c5\n\
+         <region> sample=loud1.wav\n",
     );
+    assert_eq!(bank.keyswitches.default, Some(36), "c2 is key 36");
+    assert_eq!(
+        bank.keyswitches.keys().collect::<Vec<_>>(),
+        [36, 37, 38, 39]
+    );
+    assert_eq!(
+        bank.regions.iter().map(|r| r.sw_last).collect::<Vec<_>>(),
+        [Some(36), Some(37)]
+    );
+}
+
+#[test]
+fn region_level_switch_range_is_read() {
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<group> lokey=c3 hikey=c5\n\
+         <region> sw_lokey=c1 sw_hikey=c#1 sw_last=c1 sample=Samples/soft1.wav\n\
+         <region> sw_lokey=c1 sw_hikey=c#1 sw_last=c#1 sw_default=c#1 sample=Samples/loud1.wav\n",
+    );
+    assert_eq!(bank.keyswitches.keys().collect::<Vec<_>>(), [24, 25]);
+    assert_eq!(
+        bank.keyswitches.default,
+        Some(25),
+        "a region-level sw_default counts"
+    );
+}
+
+#[test]
+fn disjoint_switch_ranges_leave_the_keys_between_them_playable() {
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<group> sw_lokey=c1 sw_hikey=c#1 sw_last=c1 lokey=c3 hikey=c5\n\
+         <region> sample=Samples/soft1.wav\n\
+         <group> sw_lokey=g1 sw_hikey=g#1 sw_last=g1 lokey=c3 hikey=c5\n\
+         <region> sample=Samples/loud1.wav\n",
+    );
+    assert_eq!(
+        bank.keyswitches.keys().collect::<Vec<_>>(),
+        [24, 25, 31, 32]
+    );
+    assert!(
+        (26..=30).all(|key| !bank.keyswitches.contains(key)),
+        "the keys between the ranges are notes"
+    );
+    assert_eq!(bank.keyswitches.default, None, "no sw_default anywhere");
+}
+
+#[test]
+fn the_last_valid_sw_default_in_the_file_wins() {
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<global> sw_lokey=c1 sw_hikey=d1 sw_default=c1\n\
+         <group> sw_default=d1 sw_last=c1 lokey=c3 hikey=c5\n\
+         <region> sample=Samples/soft1.wav\n\
+         <group> sw_last=d1 lokey=c3 hikey=c5\n\
+         <region> sample=Samples/loud1.wav sw_default=c#1\n\
+         <group> sw_default=x9\n",
+    );
+    assert_eq!(
+        bank.keyswitches.default,
+        Some(25),
+        "the region's c#1 is the last valid one; x9 is no key"
+    );
+}
+
+#[test]
+fn a_patch_without_switch_opcodes_has_no_keyswitches() {
+    let dir = library();
+    let bank = load_patch(&dir, "<region> sample=Samples/soft1.wav sw_last=c1\n");
+    assert_eq!(bank.keyswitches, Keyswitches::NONE);
 }
 
 #[test]

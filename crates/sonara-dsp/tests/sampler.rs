@@ -215,11 +215,7 @@ fn keyswitch_selects_the_articulation() {
     let bank = SampleBank {
         samples: vec![constant(0.5), constant(0.25)],
         regions: vec![articulation(0, 24), articulation(1, 25)],
-        keyswitches: Some(Keyswitches {
-            lo: 24,
-            hi: 25,
-            default: Some(24),
-        }),
+        keyswitches: switches(&[(24, 25)], Some(24)),
         ..SampleBank::default()
     };
     let mut processor = sampler(bank);
@@ -234,6 +230,87 @@ fn keyswitch_selects_the_articulation() {
         level(&run(&mut *processor, &[event(EventKind::NoteOn, 62, 127)])),
         0.25,
     );
+}
+
+/// Keyswitches on the keys of `ranges` (inclusive) with the default switch `default`.
+fn switches(ranges: &[(u8, u8)], default: Option<u8>) -> Keyswitches {
+    let mut switches = Keyswitches::NONE;
+    switches.default = default;
+    for (lo, hi) in ranges {
+        switches.add_range(*lo, *hi);
+    }
+    switches
+}
+
+#[test]
+fn keys_between_disjoint_switch_ranges_play_notes() {
+    // Switch keys 24-25 and 30-31; the regions play on 26-29, between the ranges.
+    let articulation = |sample, switch| Region {
+        sw_last: Some(switch),
+        key_lo: 26,
+        key_hi: 29,
+        ..region(sample)
+    };
+    let bank = SampleBank {
+        samples: vec![constant(0.5), constant(0.25)],
+        regions: vec![articulation(0, 24), articulation(1, 30)],
+        keyswitches: switches(&[(24, 25), (30, 31)], Some(24)),
+        ..SampleBank::default()
+    };
+    let mut processor = sampler(bank);
+    // Key 27 lies inside 24..=31 but in neither range: it plays the default articulation
+    // instead of switching to a switch no region answers.
+    close(
+        level(&run(&mut *processor, &[event(EventKind::NoteOn, 27, 127)])),
+        0.5,
+    );
+    run(&mut *processor, &[event(EventKind::AllNotesOff, 0, 0)]);
+    let switched = run(&mut *processor, &[event(EventKind::NoteOn, 30, 127)]);
+    close(level(&switched), 0.0);
+    close(
+        level(&run(&mut *processor, &[event(EventKind::NoteOn, 28, 127)])),
+        0.25,
+    );
+}
+
+#[test]
+fn a_default_switch_without_switch_keys_selects_its_articulation() {
+    let articulation = |sample, switch| Region {
+        sw_last: Some(switch),
+        ..region(sample)
+    };
+    let bank = SampleBank {
+        samples: vec![constant(0.5), constant(0.25)],
+        regions: vec![articulation(0, 24), articulation(1, 25)],
+        keyswitches: switches(&[], Some(25)),
+        ..SampleBank::default()
+    };
+    let mut processor = sampler(bank);
+    close(
+        level(&run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)])),
+        0.25,
+    );
+    // Key 24 is no switch key here: it plays as a note and leaves the switch alone.
+    run(&mut *processor, &[event(EventKind::AllNotesOff, 0, 0)]);
+    run(&mut *processor, &[event(EventKind::NoteOn, 24, 127)]);
+    run(&mut *processor, &[event(EventKind::AllNotesOff, 0, 0)]);
+    close(
+        level(&run(&mut *processor, &[event(EventKind::NoteOn, 62, 127)])),
+        0.25,
+    );
+}
+
+#[test]
+fn keyswitch_ranges_keep_only_midi_keys() {
+    let mut keys = switches(&[(120, 200), (10, 5)], None);
+    assert_eq!(
+        keys.keys().collect::<Vec<_>>(),
+        (120..=127).collect::<Vec<_>>()
+    );
+    assert!(!keys.contains(200), "200 is no MIDI key");
+    keys.add_range(0, 0);
+    assert_eq!(keys.keys().next(), Some(0));
+    assert_eq!(Keyswitches::default(), Keyswitches::NONE);
 }
 
 #[test]

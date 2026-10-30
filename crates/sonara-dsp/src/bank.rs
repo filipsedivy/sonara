@@ -131,15 +131,54 @@ impl Default for Region {
     }
 }
 
-/// The keyswitch range of a patch (SFZ `sw_lokey`, `sw_hikey`, `sw_default`).
+/// The keyswitches of a patch: the keys that select an articulation (SFZ `sw_lokey`/`sw_hikey`)
+/// and the switch that is active before any of them is pressed (SFZ `sw_default`).
+///
+/// The keys are a set, not one range: when the groups of a patch declare disjoint ranges, only
+/// the keys inside them switch, and the keys between them stay playable notes. A patch without
+/// keyswitches has no keys and no default ([`Keyswitches::NONE`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Keyswitches {
-    /// Lowest keyswitch key.
-    pub lo: u8,
-    /// Highest keyswitch key.
-    pub hi: u8,
-    /// The keyswitch that is active before any key is pressed.
+    /// Whether each MIDI key is a keyswitch.
+    keys: [bool; 128],
+    /// The keyswitch that is active before any key is pressed (SFZ `sw_default`), with or
+    /// without keyswitch keys.
     pub default: Option<u8>,
+}
+
+impl Keyswitches {
+    /// No keyswitch keys and no default switch.
+    pub const NONE: Self = Self {
+        keys: [false; 128],
+        default: None,
+    };
+
+    /// Setup: makes the keys `lo..=hi` keyswitches. An inverted range adds no key; values above
+    /// 127 are no MIDI keys and are left out.
+    pub fn add_range(&mut self, lo: u8, hi: u8) {
+        for key in lo..=hi {
+            if let Some(slot) = self.keys.get_mut(usize::from(key)) {
+                *slot = true;
+            }
+        }
+    }
+
+    /// Whether a press of `key` selects an articulation.
+    #[must_use]
+    pub fn contains(&self, key: u8) -> bool {
+        self.keys.get(usize::from(key)).copied().unwrap_or(false)
+    }
+
+    /// The keyswitch keys, ascending.
+    pub fn keys(&self) -> impl Iterator<Item = u8> + '_ {
+        (0..=127_u8).filter(|key| self.contains(*key))
+    }
+}
+
+impl Default for Keyswitches {
+    fn default() -> Self {
+        Self::NONE
+    }
 }
 
 /// A loaded instrument: its samples and regions. Immutable and shared.
@@ -149,8 +188,8 @@ pub struct SampleBank {
     pub samples: Vec<Sample>,
     /// The regions, in patch order.
     pub regions: Vec<Region>,
-    /// The patch's keyswitches, if it has any.
-    pub keyswitches: Option<Keyswitches>,
+    /// The patch's keyswitches; [`Keyswitches::NONE`] when it has none.
+    pub keyswitches: Keyswitches,
     /// How long the instrument can keep sounding after the last key release, in seconds: the
     /// longest release and the longest release-trigger sample.
     pub tail_seconds: f64,

@@ -14,6 +14,12 @@
 //! `#define`/`#include` directives. Every other opcode is recorded in
 //! [`SampleBank::ignored_opcodes`] and has no effect.
 //!
+//! **Keyswitches.** The switch keys are the union of the `sw_lokey`..`sw_hikey` ranges of every
+//! region, each with the opcodes it inherits from its headers or writes itself, so disjoint
+//! ranges switch only on their own keys. The default switch is the last valid `sw_default` in
+//! the file, at any level, as the reference player sfizz reads it: a later header that does not
+//! repeat it (VSCO 2 CE's key-switch patches start a new `<control>` and `<group>`) keeps it.
+//!
 //! Samples are decoded whole, at their own rate, into `f32` (no streaming yet): memory is the
 //! decoded size of the samples the patch names, capped at [`MAX_BANK_BYTES`].
 
@@ -147,7 +153,7 @@ fn strip_block_comments(text: &str) -> String {
 
 struct Parsed {
     regions: Vec<Opcodes>,
-    keyswitches: Option<Keyswitches>,
+    keyswitches: Keyswitches,
     ignored: Vec<String>,
 }
 
@@ -198,6 +204,8 @@ fn parse(text: &str) -> Parsed {
     let mut current: Option<(usize, String)> = None; // (scope, opcode) being extended
     let mut in_other = false;
     let mut open_scope = 0;
+    // The last valid `sw_default` at any level; no later header clears it.
+    let mut sw_default = None;
     let finish =
         |region: &mut Option<Opcodes>, scopes: &[Opcodes; 4], regions: &mut Vec<Opcodes>| {
             if let Some(own) = region.take() {
@@ -244,6 +252,11 @@ fn parse(text: &str) -> Parsed {
             if !SUPPORTED.contains(&name.as_str()) && !HARMLESS.contains(&name.as_str()) {
                 ignored.push(name_without_digits(&name));
             }
+            if name == "sw_default"
+                && let Some(key) = note(value)
+            {
+                sw_default = Some(key);
+            }
             let scope = if region.is_some() { 4 } else { open_scope };
             let target = match scope {
                 4 => region.as_mut(),
@@ -266,18 +279,14 @@ fn parse(text: &str) -> Parsed {
         }
     }
     finish(&mut region, &scopes, &mut regions);
-    let merged_scopes: Opcodes = scopes.iter().flat_map(Clone::clone).collect();
-    let keyswitches = match (
-        merged_scopes.get("sw_lokey").and_then(|v| note(v)),
-        merged_scopes.get("sw_hikey").and_then(|v| note(v)),
-    ) {
-        (Some(lo), Some(hi)) => Some(Keyswitches {
-            lo,
-            hi,
-            default: merged_scopes.get("sw_default").and_then(|v| note(v)),
-        }),
-        _ => None,
-    };
+    let mut keyswitches = Keyswitches::NONE;
+    keyswitches.default = sw_default;
+    for opcodes in &regions {
+        let range = |name: &str| opcodes.get(name).and_then(|v| note(v));
+        if let (Some(lo), Some(hi)) = (range("sw_lokey"), range("sw_hikey")) {
+            keyswitches.add_range(lo, hi);
+        }
+    }
     Parsed {
         regions,
         keyswitches,

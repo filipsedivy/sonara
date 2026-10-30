@@ -5,7 +5,9 @@
 //! the golden data does not cover it; `tests/sampler.rs` pins its behaviour.
 //!
 //! - **Layers and articulations.** A key press starts every region whose key range, velocity
-//!   range, keyswitch, random range and round-robin position match.
+//!   range, keyswitch, random range and round-robin position match. A press of one of the
+//!   patch's keyswitch keys makes it the active switch; the patch's default switch is active
+//!   until then, also when the patch has no keyswitch keys.
 //! - **Round robin.** `seq_length`/`seq_position` follow one counter that advances on each
 //!   key press that matched a round-robin region. `lorand`/`hirand` use a fixed-seed generator,
 //!   so a render is deterministic (TST-04).
@@ -159,11 +161,7 @@ impl Sampler {
         self.voices = [Voice::IDLE; MAX_VOICES];
         self.key_velocity = [0; 128];
         self.key_down = [false; 128];
-        self.last_switch = self
-            .bank
-            .as_ref()
-            .and_then(|bank| bank.keyswitches)
-            .and_then(|k| k.default);
+        self.last_switch = self.bank.as_ref().and_then(|bank| bank.keyswitches.default);
         self.round_robin = 0;
         self.rng = RNG_SEED;
         self.bend = 0.0;
@@ -230,9 +228,7 @@ impl Sampler {
             return;
         };
         let key = event.pitch;
-        if let Some(sw) = bank.keyswitches
-            && (sw.lo..=sw.hi).contains(&key)
-        {
+        if bank.keyswitches.contains(key) {
             self.last_switch = Some(key);
         }
         if let Some(down) = self.key_down.get_mut(usize::from(key)) {
