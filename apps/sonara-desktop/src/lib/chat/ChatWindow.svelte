@@ -1,10 +1,20 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
+  import type { ChatState } from "./api";
   import BetaBadge from "./BetaBadge.svelte";
   import { chat } from "./chat.svelte";
   import ChatInput from "./ChatInput.svelte";
   import ClearDialog from "./ClearDialog.svelte";
-  import { canClear, clearNeedsConfirm, composerEnabled, phase, queuedTasks, runningTask, selectedProvider } from "./model";
+  import {
+    canClear,
+    clearNeedsConfirm,
+    composerEnabled,
+    endAnnouncement,
+    phase,
+    queuedTasks,
+    runningTask,
+    selectedProvider,
+  } from "./model";
   import ProviderPicker from "./ProviderPicker.svelte";
   import QueueList from "./QueueList.svelte";
   import Thread from "./Thread.svelte";
@@ -17,6 +27,31 @@
 
   let confirming = $state(false);
   let input: ChatInput | undefined = $state();
+  let conversation: Thread | undefined = $state();
+
+  // What a screen reader is told when a task ends. The streamed text is not announced (the log is
+  // aria-live off); the end of a task is, in a few words, from the state change that shows it.
+  let announcement = $state("");
+  let previous: ChatState | null = null;
+
+  async function announce(text: string) {
+    // Emptied first, so that the same words twice in a row are announced twice.
+    announcement = "";
+    await tick();
+    announcement = text;
+  }
+
+  $effect(() => {
+    if (thread === null) return;
+    const text = endAnnouncement(previous, thread);
+    previous = thread;
+    if (text !== null) void announce(text);
+  });
+
+  /** Where the focus goes when the element that had it left the page: the box, else the thread. */
+  function focusLost() {
+    if (!input?.focus()) conversation?.focus();
+  }
 
   const status = $derived.by(() => {
     if (thread === null) return "Loading…";
@@ -92,7 +127,7 @@
     oncheck={() => void chat.refreshProviders()}
   />
 
-  <Thread {view} />
+  <Thread bind:this={conversation} {view} />
 
   {#if thread}
     <QueueList
@@ -102,10 +137,12 @@
       onmove={(id, direction) => chat.move(id, direction)}
       onstop={() => void chat.stop()}
       onresume={() => void chat.resume()}
+      onfocuslost={focusLost}
     />
   {/if}
 
   <ChatInput bind:this={input} enabled={composerEnabled(view)} {hint} onsend={(prompt) => chat.send(prompt)} />
+  <div class="sr" role="status" aria-live="polite" aria-atomic="true" aria-label="Task outcome">{announcement}</div>
 </main>
 
 {#if confirming && thread}
@@ -142,6 +179,13 @@
     color: var(--text-dim);
     font-size: 12px;
     text-align: right;
+  }
+  .sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
   }
   .problem {
     display: flex;

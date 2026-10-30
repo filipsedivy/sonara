@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import { rememberFocus, trapTab } from "../a11y/focus";
+  import { clearSentence } from "./model";
 
   // The confirmation of Clear history, in the window (a `<dialog>`, so the rest is inert while it
   // is open). It is asked only when clearing would stop a running task or drop queued ones.
@@ -25,11 +26,9 @@
   // Taken before the dialog takes the focus.
   onDestroy(rememberFocus());
 
-  const what = $derived(
-    [running ? "stop the running task" : null, queued > 0 ? `drop ${queued === 1 ? "1 queued task" : `${queued} queued tasks`}` : null]
-      .filter((part) => part !== null)
-      .join(" and "),
-  );
+  // The state can change under the open dialog (a task ends, the thread is wiped): the sentence
+  // follows it and stays whole when nothing runs or waits any more.
+  const sentence = $derived(clearSentence(running, queued));
 </script>
 
 <dialog
@@ -44,7 +43,7 @@
 >
   <h2 id="clear-title">Clear the history?</h2>
   <p id="clear-body">
-    This will {what}, and erase the conversation. Edits already made to the project stay; Undo steps back through them.
+    {sentence} Edits already made to the project stay; Undo steps back through them.
   </p>
   <div class="buttons">
     <button type="button" bind:this={cancelButton} onclick={oncancel}>Cancel</button>

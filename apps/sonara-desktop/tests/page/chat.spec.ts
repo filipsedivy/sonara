@@ -1,7 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 import type { ChatState, ProviderStatus, TaskLog, TaskView } from "../../src/lib/chat/api";
 import { MIN_TEXT_CONTRAST, contrastRatio } from "../../src/lib/chat/contrast";
-import { BETA_EXPLANATION, MAX_PROMPT_CHARS } from "../../src/lib/chat/model";
+import { BETA_EXPLANATION, MAX_PROMPT_CHARS, MAX_PROMPT_UNITS } from "../../src/lib/chat/model";
 import { PALETTES, type ThemeName } from "../../src/lib/theme";
 import { calls, emit, mockTauri, type Responses } from "./tauri-mock";
 
@@ -39,7 +39,7 @@ const READY_CLAUDE: ProviderStatus = {
   version: "2.1.312",
   path: "/opt/homebrew/bin/claude",
   hint: "Signed in.",
-  beta: true,
+  beta: false,
   min_version: "2.1.0",
 };
 const SIGNED_OUT_CODEX: ProviderStatus = {
@@ -733,6 +733,255 @@ test("a focused task answers to Enter (edit) and Delete (remove), for a WebKit T
   // The task beside the removed one gets the focus once the backend's event shows the new list.
   await changed(chatState([task(1, "running"), task(2), task(4)]));
   await expect(page.locator('[data-task="4"]')).toBeFocused();
+});
+
+// -- input methods, the counter and the labels -------------------------------------------------
+
+const NOTE = "\u{1D11E}"; // two UTF-16 units, one code point
+
+/**
+ * WebKit's order for the Enter that accepts an input method's candidate: compositionend, then a
+ * keydown with isComposing false (and, in the second form, keyCode 229), all in one task. Returns
+ * whether the page prevented the key.
+ */
+async function commitComposition(page: Page, selector: string, keyCode229: boolean): Promise<boolean> {
+  return page.evaluate(
+    ([sel, legacy]) => {
+      const field = document.querySelector(sel as string);
+      if (!field) throw new Error(`no ${sel}`);
+      const key = new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true });
+      if (legacy) Object.defineProperty(key, "keyCode", { get: () => 229 });
+      else {
+        field.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
+        field.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: "か" }));
+      }
+      field.dispatchEvent(key);
+      return key.defaultPrevented;
+    },
+    [selector, keyCode229] as const,
+  );
+}
+
+for (const keyCode229 of [false, true]) {
+  const how = keyCode229 ? "keyCode 229" : "compositionend then Enter";
+  test(`the Enter that commits an input method's candidate does not send (${how})`, async ({ page }) => {
+    await openChat(page);
+    await input(page).fill("かんじ");
+    expect(await commitComposition(page, "#chat-input", keyCode229)).toBe(false);
+    expect((await chatCalls(page)).some((c) => c.cmd === "chat_enqueue")).toBe(false);
+    await expect(input(page)).toHaveValue("かんじ");
+    // The user's own Enter, a task later, sends.
+    await input(page).press("Enter");
+    await expect.poll(async () => (await chatCalls(page)).filter((c) => c.cmd === "chat_enqueue").map((c) => c.args)).toEqual([{ prompt: "かんじ" }]);
+  });
+
+  test(`the Enter that commits an input method's candidate does not save a queued edit (${how})`, async ({ page }) => {
+    await openChat(page, { state: RUNNING });
+    const item = page.locator('[data-task="3"]');
+    await item.getByRole("button", { name: "Edit" }).click();
+    const box = item.getByRole("textbox", { name: "Edit the queued task" });
+    await box.fill("かんじ");
+    expect(await commitComposition(page, '[data-task="3"] textarea', keyCode229)).toBe(false);
+    expect((await chatCalls(page)).some((c) => c.cmd === "chat_edit")).toBe(false);
+    await expect(box).toHaveValue("かんじ");
+    await box.press("Enter");
+    await expect.poll(async () => (await chatCalls(page)).filter((c) => c.cmd === "chat_edit").map((c) => c.args)).toEqual([{ id: 3, prompt: "かんじ" }]);
+  });
+}
+
+test("the boxes cap a paste at twice the limit in units, and count code points", async ({ page }) => {
+  await openChat(page, { state: RUNNING });
+  await expect(input(page)).toHaveAttribute("maxlength", String(MAX_PROMPT_UNITS));
+  // The limit is in code points: astral text at the limit is sent, and the counter says so.
+  await input(page).fill(NOTE.repeat(MAX_PROMPT_CHARS));
+  await expect(page.getByText(`${MAX_PROMPT_CHARS} / ${MAX_PROMPT_CHARS}`)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Send" })).toBeEnabled();
+  // One code point over, in 31 991 units: the counter is not the unit count.
+  await input(page).fill(`${NOTE.repeat(MAX_PROMPT_CHARS - 10)}${"a".repeat(11)}`);
+  await expect(page.getByText(`${MAX_PROMPT_CHARS + 1} / ${MAX_PROMPT_CHARS}: too long`)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Send" })).toBeDisabled();
+  // A paste beyond twice the limit in units is cut at it.
+  await input(page).fill("a".repeat(MAX_PROMPT_UNITS + 500));
+  await expect(input(page)).toHaveValue("a".repeat(MAX_PROMPT_UNITS));
+  // The editor of a queued task is guarded and counts the same way.
+  const item = page.locator('[data-task="3"]');
+  await item.getByRole("button", { name: "Edit" }).click();
+  const box = item.getByRole("textbox", { name: "Edit the queued task" });
+  await expect(box).toHaveAttribute("maxlength", String(MAX_PROMPT_UNITS));
+  await box.fill(NOTE.repeat(MAX_PROMPT_CHARS));
+  await expect(item.getByText(`${MAX_PROMPT_CHARS} / ${MAX_PROMPT_CHARS}`)).toBeVisible();
+  await expect(item.getByRole("button", { name: "Save" })).toBeEnabled();
+  await box.fill(`${NOTE.repeat(MAX_PROMPT_CHARS - 10)}${"a".repeat(11)}`);
+  await expect(item.getByRole("button", { name: "Save" })).toBeDisabled();
+});
+
+test("a queued task's label is cut by characters, never inside a surrogate pair", async ({ page }) => {
+  const prompt = NOTE.repeat(81);
+  await openChat(page, { state: chatState([task(1, "running"), task(2, "queued", { prompt })]) });
+  const item = page.locator('[data-task="2"]');
+  await expect(item).toHaveAttribute("aria-label", `1 of 1: ${NOTE.repeat(79)}…`);
+  await expect(item.locator(".text")).toHaveText(`${NOTE.repeat(79)}…`);
+});
+
+// -- the Clear dialog follows the state ------------------------------------------------------------
+
+test("a dialog left open while the task ends says so without an empty fragment", async ({ page }) => {
+  await openChat(page, { state: chatState([task(1, "running")]) });
+  await page.getByRole("button", { name: "Clear history" }).click();
+  const dialog = page.getByRole("dialog", { name: "Clear the history?" });
+  await expect(dialog).toContainText("This will stop the running task, and erase the conversation.");
+  await changed(chatState([task(1, "done")]));
+  await expect(dialog).toContainText("This erases the conversation. Edits already made to the project stay");
+  await expect(dialog).not.toContainText("This will");
+  await expect(dialog).not.toContainText(" , ");
+});
+
+// -- focus after the last queued task is removed ---------------------------------------------------
+
+test("removing the only queued task by keyboard moves the focus to the message box", async ({ page }) => {
+  await openChat(page, { state: chatState([task(1)]) });
+  const item = page.locator('[data-task="1"]');
+  await item.focus();
+  await page.keyboard.press("Delete");
+  await expect.poll(async () => (await chatCalls(page)).filter((c) => c.cmd === "chat_remove").map((c) => c.args)).toEqual([{ id: 1 }]);
+  await changed(chatState([]));
+  await expect(page.getByRole("region", { name: "Queue" })).toHaveCount(0);
+  await expect(input(page)).toBeFocused();
+});
+
+test("the same while a task still runs, where only the list goes", async ({ page }) => {
+  await openChat(page, { state: chatState([task(1, "running"), task(2)]) });
+  await page.locator('[data-task="2"]').focus();
+  await page.keyboard.press("Delete");
+  await expect.poll(async () => (await chatCalls(page)).filter((c) => c.cmd === "chat_remove")).toHaveLength(1);
+  await changed(chatState([task(1, "running")]));
+  await expect(page.locator('[data-task="2"]')).toHaveCount(0);
+  await expect(input(page)).toBeFocused();
+});
+
+test("when the message box cannot take the focus, the conversation does", async ({ page }) => {
+  const providers: ProviderStatus[] = [{ ...READY_CLAUDE, availability: "not_signed_in" }];
+  await openChat(page, { state: chatState([task(1)]), providers });
+  await expect(input(page)).toBeDisabled();
+  await page.locator('[data-task="1"]').focus();
+  await page.keyboard.press("Delete");
+  await expect.poll(async () => (await chatCalls(page)).filter((c) => c.cmd === "chat_remove")).toHaveLength(1);
+  await changed(chatState([]));
+  await expect(thread(page)).toBeFocused();
+});
+
+// -- what a screen reader is told ------------------------------------------------------------------------
+
+test("the end of a task is announced in a polite live region, streamed text is not", async ({ page }) => {
+  await openChat(page, { state: chatState([task(1, "running"), task(2), task(3)]) });
+  const outcome = page.getByRole("status", { name: "Task outcome" });
+  await expect(outcome).toHaveAttribute("aria-live", "polite");
+  await expect(outcome).toHaveText("");
+  // Nothing said on a reload: the state was there at the start.
+  // Streamed words change the log only.
+  await emit(page, "chat-event", { kind: "run", task_id: 1, generation: 1, event: { kind: "text", text: "Adding a bass" } });
+  await expect(thread(page)).toContainText("Adding a bass");
+  await expect(outcome).toHaveText("");
+  await expect(thread(page)).toHaveAttribute("aria-live", "off");
+  // The task ends: its answer is announced.
+  const answer = { text: "All set. I added a bass line.", duration_ms: 1, num_turns: 1, cost_usd: null, input_tokens: 1, output_tokens: 1, session_id: null, denied_tools: [] };
+  await changed(chatState([task(1, "done", { result: answer }), task(2, "running"), task(3)]));
+  await expect(outcome).toHaveText("Task done: All set. I added a bass line.");
+  // The next one fails, with its reason.
+  await changed(chatState([task(1, "done", { result: answer }), task(2, "failed", { error: "Not logged in" }), task(3)], { mode: "paused" }));
+  await expect(outcome).toHaveText("Task failed: Not logged in");
+  // The third is stopped: the same words as before are announced again, not swallowed.
+  await changed(chatState([task(1, "done"), task(2, "failed"), task(3, "cancelled")], { mode: "paused" }));
+  await expect(outcome).toHaveText("Task cancelled");
+});
+
+test("a reloaded window does not announce the tasks it already had", async ({ page }) => {
+  await openChat(page, { state: chatState([task(1, "done", { result: { text: "Old.", duration_ms: 1, num_turns: 1, cost_usd: null, input_tokens: 1, output_tokens: 1, session_id: null, denied_tools: [] } })]) });
+  await expect(page.getByRole("status", { name: "Task outcome" })).toHaveText("");
+});
+
+// -- the Beta flag of a provider -----------------------------------------------------------------------------
+
+test("a provider the backend marks Beta shows the word next to its name", async ({ page }) => {
+  await openChat(page);
+  const group = page.getByRole("group", { name: "Provider" });
+  const codex = group.locator("li", { hasText: "Codex CLI" });
+  const claude = group.locator("li", { hasText: "Claude Code" });
+  await expect(codex.getByText("Beta", { exact: true })).toBeVisible();
+  await expect(claude.getByText("Beta", { exact: true })).toHaveCount(0);
+});
+
+// -- the Beta popover closes from anywhere ---------------------------------------------------------------
+
+test("a popover pinned by a click closes on Escape from anywhere and on a press outside", async ({ page }) => {
+  await openChat(page);
+  const badge = page.getByRole("button", { name: "Beta, experimental feature" });
+  const tip = page.getByRole("tooltip");
+  // WebKit does not focus a button on a click: the key goes to the document, not to the badge.
+  await badge.click();
+  await page.mouse.move(400, 400);
+  await expect(tip).toBeVisible();
+  await page.evaluate(() => document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+  await expect(tip).toBeHidden();
+  // Pinned again: a press on the message box (outside the badge) closes it too.
+  await badge.click();
+  await page.mouse.move(400, 400);
+  await expect(tip).toBeVisible();
+  await page.evaluate(() => document.getElementById("chat-input")?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));
+  await expect(tip).toBeHidden();
+  // A real press elsewhere and a real Escape do the same.
+  await badge.click();
+  await page.mouse.move(400, 400);
+  await expect(tip).toBeVisible();
+  await page.getByRole("heading", { level: 1 }).click();
+  await expect(tip).toBeHidden();
+  await badge.click();
+  await page.mouse.move(400, 400);
+  await expect(tip).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(tip).toBeHidden();
+  // A press on the badge itself is not "outside": the click that follows toggles as before.
+  await badge.click();
+  await expect(tip).toBeVisible();
+});
+
+// -- the first snapshot, disturbed by events ---------------------------------------------------------------
+
+test("a first snapshot that events kept disturbing is read once more, so a dropped end shows", async ({ page }) => {
+  pageOf = page;
+  const stale = chatState([task(1, "running", { prompt: "Make a beat" })]);
+  const final = chatState([task(1, "done", { prompt: "Make a beat" })]);
+  await mockTauri(
+    page,
+    { gui_theme: "dark", chat_snapshot: { state: stale, logs: [] }, chat_providers: [READY_CLAUDE, SIGNED_OUT_CODEX] },
+    "chat",
+  );
+  // Runs after the mock: an event arrives during each of the first five reads (the store drops
+  // them while it loads), and the follow-up read finds the task done.
+  await page.addInitScript(
+    ([before, after]) => {
+      const win = window as unknown as {
+        __TAURI_INTERNALS__: { invoke: (cmd: string, args: unknown) => Promise<unknown> };
+        __sonaraMock: { emit: (event: string, payload: unknown) => void };
+      };
+      const invoke = win.__TAURI_INTERNALS__.invoke;
+      let reads = 0;
+      win.__TAURI_INTERNALS__.invoke = async (cmd, args) => {
+        if (cmd !== "chat_snapshot") return invoke(cmd, args);
+        await invoke(cmd, args);
+        reads += 1;
+        if (reads <= 5) {
+          win.__sonaraMock.emit("chat-event", { kind: "changed", state: before });
+          return { state: before, logs: [] };
+        }
+        return { state: after, logs: [] };
+      };
+    },
+    [stale, final] as const,
+  );
+  await page.goto("/");
+  await expect(statusLine(page)).toHaveText("Idle");
+  expect((await chatCalls(page)).filter((c) => c.cmd === "chat_snapshot")).toHaveLength(6);
 });
 
 // -- colours, in both themes -------------------------------------------------------------------

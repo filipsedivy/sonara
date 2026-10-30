@@ -14,6 +14,11 @@
   let scroller: HTMLDivElement | undefined = $state();
   let following = true;
 
+  /** Moves the focus to the conversation (where it goes when nothing else can take it). */
+  export function focus() {
+    scroller?.focus({ preventScroll: true });
+  }
+
   function onScroll() {
     if (!scroller) return;
     following = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 24;
@@ -42,7 +47,7 @@
   }
 </script>
 
-<div class="thread" role="log" aria-label="Conversation" aria-live="off" bind:this={scroller} onscroll={onScroll}>
+<div class="thread" role="log" aria-label="Conversation" aria-live="off" tabindex="-1" bind:this={scroller} onscroll={onScroll}>
   {#if tasks.length === 0}
     <p class="empty">Describe what you want. The agent edits the open project while you watch; Undo steps back.</p>
   {/if}
@@ -131,6 +136,10 @@
     background: var(--panel);
     -webkit-user-select: text;
     user-select: text;
+  }
+  .thread:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
   }
   .empty,
   .note {

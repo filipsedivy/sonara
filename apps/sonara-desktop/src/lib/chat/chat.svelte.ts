@@ -22,9 +22,7 @@ import {
   type TaskId,
 } from "./api";
 import { applyEvent, emptyView, moveTarget, resync, withProviders, type MoveDirection } from "./model";
-
-/** How often the first snapshot is fetched again when events arrive while it is on its way. */
-const SNAPSHOT_TRIES = 5;
+import { RESYNC_DELAY_MS, readFollowUp, readUntilQuiet, type EventFlag } from "./snapshot";
 
 class Chat {
   /** Replaced as a whole on every change, so the deep proxy of `$state` is not needed. */
@@ -33,28 +31,29 @@ class Chat {
   /** Detection is running (the first one, or Check again). */
   checking = $state(false);
 
-  /** Set by an event while the first snapshot is on its way: that snapshot may be older. */
-  private dirty = false;
+  /** Set by an event while a snapshot is on its way: that snapshot may be older. */
+  private flag: EventFlag = { arrived: false };
   private loading = true;
+  private resyncTimer: ReturnType<typeof setTimeout> | undefined;
+  private stopped = false;
 
   /**
    * Starts following the chat: listens first, then reads the snapshot, so no change is missed.
-   * Events that arrive while a snapshot is on its way are not applied (it may be older or newer
-   * than them); the snapshot is read again instead, until it is quiet. Returns the stop.
+   * Events that arrive while the first snapshot is on its way are not applied (it may be older or
+   * newer than them); the snapshot is read again instead, until it is quiet. If it never is, the
+   * last one is applied and read once more after a pause, so that a dropped final event does not
+   * leave the view stale. Returns the stop.
    */
   async init(): Promise<() => void> {
     this.loading = true;
+    this.stopped = false;
     let unlisten: () => void = () => {};
     try {
       unlisten = await onChatEvent((event) => this.apply(event));
       void this.refreshProviders();
-      for (let attempt = 0; attempt < SNAPSHOT_TRIES; attempt += 1) {
-        this.dirty = false;
-        const snapshot = await chatSnapshot();
-        if (this.dirty && attempt + 1 < SNAPSHOT_TRIES) continue;
-        this.view = resync(this.view, snapshot);
-        break;
-      }
+      const { snapshot, quiet } = await readUntilQuiet(chatSnapshot, this.flag);
+      this.view = resync(this.view, snapshot);
+      if (!quiet) this.resyncTimer = setTimeout(() => void this.followUp(), RESYNC_DELAY_MS);
     } catch (error) {
       // No listener (the window lacks the `listen` permission) or no snapshot: say so, and stay
       // usable for what still works rather than wait for a state that never comes.
@@ -62,14 +61,27 @@ class Chat {
     } finally {
       this.loading = false;
     }
-    return unlisten;
+    return () => {
+      this.stopped = true;
+      clearTimeout(this.resyncTimer);
+      unlisten();
+    };
+  }
+
+  /** The second look at a first snapshot that events disturbed; events apply live meanwhile. */
+  private async followUp() {
+    this.resyncTimer = undefined;
+    try {
+      const snapshot = await readFollowUp(chatSnapshot, this.flag);
+      if (snapshot !== null && !this.stopped) this.view = resync(this.view, snapshot);
+    } catch {
+      // The live events are all there is; the view stays as it is.
+    }
   }
 
   private apply(event: ChatEvent) {
-    if (this.loading) {
-      this.dirty = true;
-      return;
-    }
+    this.flag.arrived = true;
+    if (this.loading) return;
     this.view = applyEvent(this.view, event);
   }
 

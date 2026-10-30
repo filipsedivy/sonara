@@ -134,17 +134,110 @@ export function composerEnabled(view: ChatView): boolean {
   return view.state !== null && selectedProvider(view)?.availability === "ready";
 }
 
-/** The characters of `text` as the limit counts them (a code point is one). */
+/**
+ * The most UTF-16 units a message box takes: twice the limit, because a code point is at most two
+ * units. A hard guard against a huge paste; the counter and the limit still count code points.
+ */
+export const MAX_PROMPT_UNITS = 2 * MAX_PROMPT_CHARS;
+
+/**
+ * The characters of `text` as the limit counts them (a code point is one). The same number as
+ * `[...text].length` (a lone surrogate counts as one), without building the array.
+ */
 export function promptLength(text: string): number {
-  return [...text].length;
+  let count = 0;
+  for (let at = 0; at < text.length; at += 1) {
+    count += 1;
+    const unit = text.charCodeAt(at);
+    // A high surrogate followed by a low one is one code point: skip the low one.
+    if (unit >= 0xd800 && unit <= 0xdbff) {
+      const next = text.charCodeAt(at + 1);
+      if (next >= 0xdc00 && next <= 0xdfff) at += 1;
+    }
+  }
+  return count;
 }
 
 export type PromptProblem = "empty" | "too_long";
 
-/** Why `text` cannot be sent, or null. */
+/**
+ * Why `text` cannot be sent, or null. A code point is one or two UTF-16 units, so a text of at
+ * most the limit in units is surely within it and one of more than twice the limit surely is not:
+ * only the texts in between are counted.
+ */
 export function promptProblem(text: string): PromptProblem | null {
-  if (text.trim() === "") return "empty";
-  return promptLength(text.trim()) > MAX_PROMPT_CHARS ? "too_long" : null;
+  const trimmed = text.trim();
+  if (trimmed === "") return "empty";
+  if (trimmed.length <= MAX_PROMPT_CHARS) return null;
+  if (trimmed.length > MAX_PROMPT_UNITS) return "too_long";
+  return promptLength(trimmed) > MAX_PROMPT_CHARS ? "too_long" : null;
+}
+
+/**
+ * `text` cut to at most `max` characters (code points, never inside a surrogate pair), with an
+ * ellipsis in place of the rest. Short text is returned as it is.
+ */
+export function clip(text: string, max: number): string {
+  if (text.length <= max) return text;
+  let units = 0;
+  let points = 0;
+  let cutAt = 0;
+  for (const point of text) {
+    if (points === max - 1) cutAt = units;
+    points += 1;
+    units += point.length;
+    if (points > max) return `${text.slice(0, cutAt)}…`;
+  }
+  return text;
+}
+
+/** The longest label of a task, in characters. */
+export const EXCERPT_CHARS = 80;
+
+/** The first line of a prompt, short enough for a label. */
+export function excerpt(text: string): string {
+  return clip(text.trim().split("\n")[0], EXCERPT_CHARS);
+}
+
+/** What Clear history says it will do, before "and erase the conversation". */
+export function clearSentence(running: boolean, queued: number): string {
+  const what = [
+    running ? "stop the running task" : null,
+    queued > 0 ? `drop ${queued === 1 ? "1 queued task" : `${queued} queued tasks`}` : null,
+  ].filter((part) => part !== null);
+  // Nothing runs or waits (the state changed under the open dialog): no empty fragment.
+  return what.length === 0 ? "This erases the conversation." : `This will ${what.join(" and ")}, and erase the conversation.`;
+}
+
+// -- what a screen reader is told ----------------------------------------------------------------
+
+/** The characters of the answer a task's announcement carries. */
+export const ANNOUNCE_CHARS = 80;
+
+/** How one task's end is announced. */
+function endText(task: TaskView): string {
+  switch (task.state) {
+    case "done": {
+      const answer = clip((task.result?.text ?? "").trim().replace(/\s+/g, " "), ANNOUNCE_CHARS);
+      return answer === "" ? "Task done" : `Task done: ${answer}`;
+    }
+    case "failed":
+      return task.error ? `Task failed: ${task.error}` : "Task failed";
+    default:
+      return "Task cancelled";
+  }
+}
+
+/**
+ * What to announce when the state moves from `before` to `after`: one sentence for each task that
+ * was queued or running and has ended since. Nothing before the first state or across a new
+ * generation (a reloaded window must not announce the old tasks), and not for streamed text.
+ */
+export function endAnnouncement(before: ChatState | null, after: ChatState): string | null {
+  if (before === null || before.generation !== after.generation) return null;
+  const open = new Set(before.tasks.filter((task) => task.state === "queued" || task.state === "running").map((task) => task.id));
+  const ended = after.tasks.filter((task) => open.has(task.id) && task.state !== "queued" && task.state !== "running");
+  return ended.length === 0 ? null : ended.map(endText).join(" ");
 }
 
 /** Why a provider cannot run, in words. */

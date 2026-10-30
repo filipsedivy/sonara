@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { MAX_PROMPT_CHARS, promptLength, promptProblem } from "./model";
+  import { Composition } from "./ime";
+  import { MAX_PROMPT_CHARS, MAX_PROMPT_UNITS, promptLength, promptProblem } from "./model";
 
   // The message box. Enter (or Send) queues the message, also while a task runs; Shift+Enter
   // starts a new line. The text is kept when the backend refuses the message.
@@ -18,14 +19,19 @@
   let sending = $state(false);
   let box: HTMLTextAreaElement | undefined = $state();
 
-  // The count is the one the limit uses: without the outer blanks, as Send judges it.
+  const composition = new Composition();
+
+  // The count is the one the limit uses: without the outer blanks, as Send judges it. Each is
+  // worked out once per change of the text, not once per use.
   const count = $derived(promptLength(text.trim()));
   const over = $derived(count > MAX_PROMPT_CHARS);
-  const canSend = $derived(enabled && !sending && promptProblem(text) === null);
+  const problem = $derived(promptProblem(text));
+  const canSend = $derived(enabled && !sending && problem === null);
 
-  /** Moves the focus into the box (after a Clear, for instance). */
-  export function focus() {
+  /** Moves the focus into the box (after a Clear, for instance); false when it cannot take it. */
+  export function focus(): boolean {
     box?.focus();
+    return box !== undefined && document.activeElement === box;
   }
 
   async function send() {
@@ -38,7 +44,8 @@
   }
 
   function keydown(event: KeyboardEvent) {
-    if (event.key !== "Enter" || event.shiftKey || event.altKey || event.isComposing) return;
+    // The Enter that commits an input method's candidate is not a send.
+    if (event.key !== "Enter" || event.shiftKey || event.altKey || composition.handles(event)) return;
     event.preventDefault();
     void send();
   }
@@ -57,6 +64,9 @@
     bind:this={box}
     bind:value={text}
     onkeydown={keydown}
+    oncompositionstart={composition.start}
+    oncompositionend={composition.end}
+    maxlength={MAX_PROMPT_UNITS}
     disabled={!enabled}
     aria-describedby="chat-input-count"
     placeholder="Describe the music or the change you want (Enter sends, Shift+Enter adds a line)"

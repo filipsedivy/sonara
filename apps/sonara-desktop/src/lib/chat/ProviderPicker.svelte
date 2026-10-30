@@ -53,6 +53,7 @@
               onchange={(event) => change(event, provider.id)}
             />
             <span class="name">{provider.name}</span>
+            {#if provider.beta}<span class="beta">Beta</span>{/if}
             {#if provider.version}<span class="version">{provider.version}</span>{/if}
             <span class="status" class:bad={provider.availability !== "ready"}>{availabilityText(provider)}</span>
           </label>
@@ -102,6 +103,15 @@
     accent-color: var(--accent);
   }
   .name {
+    font-weight: 600;
+  }
+  /* A text tag, not only a colour: its outline marks it, its word says it. */
+  .beta {
+    padding: 0 6px;
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    color: var(--text);
+    font-size: 11px;
     font-weight: 600;
   }
   .version,

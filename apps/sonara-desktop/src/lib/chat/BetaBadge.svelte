@@ -1,22 +1,47 @@
 <script lang="ts">
   // The Beta badge: the word "Beta" (never only a colour) on a button that explains it. The
   // explanation shows on hover, on keyboard focus and on a click (a click keeps it open until the
-  // next click, Escape or the focus leaving), is hoverable and dismissible with Escape (WCAG
-  // 1.4.13), and is the badge's accessible description.
+  // next click, Escape, a click elsewhere or the focus leaving), is hoverable and dismissible with
+  // Escape (WCAG 1.4.13), and is the badge's accessible description. WebKit does not focus a
+  // button on a click, so a pinned explanation is closed by listeners on the document, not by the
+  // button's own key and blur events.
   import { BETA_EXPLANATION } from "./model";
 
   let hovered = $state(false);
   let focused = $state(false);
   let pinned = $state(false);
   let dismissed = $state(false);
+  let wrap: HTMLSpanElement | undefined = $state();
   const shown = $derived(!dismissed && (hovered || focused || pinned));
+
+  function dismiss() {
+    dismissed = true;
+    pinned = false;
+  }
 
   function keydown(event: KeyboardEvent) {
     if (event.key !== "Escape" || !shown) return;
     event.stopPropagation();
-    dismissed = true;
-    pinned = false;
+    dismiss();
   }
+
+  // While it is open: Escape from anywhere, and a press outside the badge, close it. (Capture, so
+  // that a field which handles Escape itself does not hide the key from here.)
+  $effect(() => {
+    if (!shown) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") dismiss();
+    };
+    const onPress = (event: PointerEvent) => {
+      if (!(event.target instanceof Node && wrap?.contains(event.target))) dismiss();
+    };
+    document.addEventListener("keydown", onKey, true);
+    document.addEventListener("pointerdown", onPress, true);
+    return () => {
+      document.removeEventListener("keydown", onKey, true);
+      document.removeEventListener("pointerdown", onPress, true);
+    };
+  });
 
   /** A click pins the explanation open; a click on a pinned one closes it. */
   function click() {
@@ -35,7 +60,7 @@
   }
 </script>
 
-<span class="wrap" role="presentation" onmouseenter={enter} onmouseleave={() => (hovered = false)}>
+<span class="wrap" role="presentation" bind:this={wrap} onmouseenter={enter} onmouseleave={() => (hovered = false)}>
   <button
     type="button"
     class="beta"
