@@ -496,7 +496,9 @@ states.
   new folders merge into existing family folders of the same name. The S9 service also creates the
   family buses and sets pan only for sources not recorded in situ; the preview shows both, and the
   dialog does not expose them separately in phase 1.
-- Agents reach ensembles through the planner (S9, S10); a tool is A7 (CTR-01, layer c's PF-22).
+- In phase 1 the ensemble service and the planner are reached from the GUI (New Project, Add Ensemble…, Orchestrate…);
+  MCP agents and the AI Composer build ensembles from existing tools, guided by the orchestration reference (S9, S10).
+  Ensemble and orchestrate tools are O6 (A7, CTR-01; layer c's PF-19, PF-22).
 - **Orchestrate…** (Track menu) is layer c's text field for its planner (PF-15, O5): the request,
   then the planner's questions, substitutions and confirmation in the same sheet, applied inside one
   undo group. This layer gives it the sheet's place; PF-15 builds it.
@@ -797,8 +799,8 @@ assumed:
    carries the states as `articulation` choices in phase 1 (its 5.7), so the Mute and Vibrato rows
    are filtered views of that combo, and offers two more automatable enums as optional SS-34 after
    A16. The sampler is not golden (ADR 0010 decision 4), so GLD-01 and CTR-01 are unaffected.
-2. **One global, append-only `articulation` choice list** (layer b's deviation 1; S4 says "the
-   preset's mapped articulation ids"). Choices belong to the plugin descriptor and enum automation
+2. **One global, append-only `articulation` choice list** (layer b's deviation 1; the spine's earlier
+   wording of S4 said "the preset's mapped articulation ids", now folded in). Choices belong to the plugin descriptor and enum automation
    stores indices ("Today"), so the per-preset set is a filtered view in the GUI, not the
    descriptor's list; `auto` is its default (layer b's deviation 2).
 3. **Pad and key labels from the S7 profile**: layer b's `keymap[].name` (its 2.2, deviation 4).

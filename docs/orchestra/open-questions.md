@@ -475,8 +475,9 @@ Conventions:
     (sfz-conformance C22).
   - The `load_sfz` doc says a region without a sample is malformed, but the code skips it (N3; QG-05).
   - `docs/orchestral-audio-engine-research.md` section 5 calls the FreePats harp CC BY-NC (only the page
-    photo is; the sounds are CC0) and the VSCO 2 CE "bass" a section (it is a solo contrabass).
-- **Recommendation.** Make them, with a test where code changes.
+    photo is; the sounds are CC0) and the VSCO 2 CE "bass" a section (it is a solo contrabass). **Done
+    2026-10-30:** that document now carries both corrections.
+- **Recommendation.** Make the code ones with a test; the documentation one is done.
 - **Discussed in.** [cards/electric_keys.md](cards/electric_keys.md) (open questions table);
   [cards/tuned_percussion.md](cards/tuned_percussion.md) OQ16; [sfz-conformance.md](sfz-conformance.md) C22
   and N3; [cards/free_libraries.md](cards/free_libraries.md) OQ2.
@@ -675,7 +676,7 @@ Each row names the values the sources give, the value the card adopted (as store
 | C121 | Kawai upright licence | GPL v3+ with an exception (MuseScore handbook) vs CC0 1.0 (current FreePats page) | The FreePats page, the current download's source; its relicensing date is not documented | [cards/free_libraries.md](cards/free_libraries.md) OQ4 |
 | C122 | Maestro Concert Grand licence | "Custom" in the SFZ Instruments catalogue vs all rights reserved, no modifying or spreading (its readme) | Not a free licence | [cards/free_libraries.md](cards/free_libraries.md) OQ5 |
 | C123 | VPO3 licence | copying and redistribution with credit (the site) vs CC BY-SA and Sampling Plus components and Philharmonia samples | Never bundled (A17) | [cards/free_libraries.md](cards/free_libraries.md) OQ8, FC |
-| C124 | Sonara's own research doc | `docs/orchestral-audio-engine-research.md` calls the FreePats harp CC BY-NC and VSCO's "bass" a section | The harp sounds are CC0 (only the photo is BY-NC); VSCO's bass is a solo contrabass. The doc fix is A24 | [cards/free_libraries.md](cards/free_libraries.md) OQ2 |
+| C124 | Sonara's own research doc | `docs/orchestral-audio-engine-research.md` calls the FreePats harp CC BY-NC and VSCO's "bass" a section | The harp sounds are CC0 (only the photo is BY-NC); VSCO's bass is a solo contrabass. The doc is corrected (A24) | [cards/free_libraries.md](cards/free_libraries.md) OQ2 |
 | C125 | Download sizes | MuseScore_General 35.9 MB SF3 and 208 MB SF2 (handbook) vs 39.9 MB and 215.6 MB (server); BBC SO Discover 240 MB vs 360 MB on one page | Not used; a different file version is the likelier cause for MuseScore | [cards/free_libraries.md](cards/free_libraries.md) OQ6, OQ7 |
 | C126 | Logic's Scripter setting | "Enable Complete Features" in the Advanced settings (Scripter page) vs no Advanced pane since 12.0 (What's New) | The newer 12.0 statement | [cards/apple.md](cards/apple.md) OQ3, FC |
 
@@ -730,3 +731,4 @@ Triage of 2026-10-30. What this file did with its inputs:
 7. **Count.** 25 owner decisions (A1-A25), 8 human checks (B1-B8), 126 data disagreements (C1-C126) and
    11 research follow-ups (D1-D11): 170 items.
 - C113 and C114 updated after the cards were corrected (VCSL SFZ in the tag; the Wurlitzer licence caveat).
+- A24 and C124: the correction of `docs/orchestral-audio-engine-research.md` is done.

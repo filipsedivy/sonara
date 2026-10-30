@@ -3,6 +3,10 @@
 Verified on 2026-10-28. The conventions and the dataset are in
 [orchestration-metadata.md](orchestration-metadata.md).
 
+_Update 2026-10-30: these 16 entries were re-verified against handbooks and other sources; 14 of them get corrected
+ranges, proposed, not applied. See [orchestra-research.md](orchestra-research.md) section 3 and
+[orchestra/model.md](orchestra/model.md), "Proposed corrections to data.rs"._
+
 ## Repository state
 
 - Pitches are `i64` MIDI notes with middle C = 60 (`sonara_midi::theory::bass_note`). No P05

@@ -66,7 +66,7 @@ licence).
 
 | Library | Format | Licence | Bundle? | Notes |
 |---|---|---|---|---|
-| **VSCO 2 CE** ([repo](https://github.com/sgossner/VSCO-2-CE), [licence](https://raw.githubusercontent.com/sgossner/VSCO-2-CE/master/LICENSE)) | WAV + SFZ (`SFZ` branch: 75 `.sfz`, 3,168 `.wav`) | CC0 | possible (provenance of every sample UNKNOWN) | Strings (solo violin, violin/viola/cello sections, bass), woodwinds, brass, harp, timpani, tubular bells, pianos, percussion. SFZ files use a small opcode set, which the Sonara sampler plays. |
+| **VSCO 2 CE** ([repo](https://github.com/sgossner/VSCO-2-CE), [licence](https://raw.githubusercontent.com/sgossner/VSCO-2-CE/master/LICENSE)) | WAV + SFZ (`SFZ` branch: 75 `.sfz`, 3,168 `.wav`) | CC0 | possible (provenance of every sample UNKNOWN) | Strings (solo violin, violin/viola/cello sections, a solo double bass: corrected 2026-10-30, see [orchestra/cards/free_libraries.md](orchestra/cards/free_libraries.md)), woodwinds, brass, harp, timpani, tubular bells, pianos, percussion. SFZ files use a small opcode set, which the Sonara sampler plays. |
 | **VCSL** ([repo](https://github.com/sgossner/VCSL)) | WAV (+ SFZ generator) | CC0 | possible | Large, 1–3 velocity layers and about 1 round robin per articulation (VERIFIED from the README). |
 | **Sonatina Symphonic Orchestra** ([repo](https://github.com/peastman/sso)) | SFZ, WAV/FLAC | CC Sampling Plus 1.0 (retired) | **unresolved, no** | Full orchestra with keyswitched and performance patches; performance patches use CC 1 and CC 21, which the Sonara sampler does not play. Some sample origins unknown. User-installed use is fine. |
 | **Virtual Playing Orchestra 3** ([page](https://virtualplaying.com/virtual-playing-orchestra/)) | WAV + SFZ | author's terms plus CC BY-SA parts | **unresolved, no** | "Not right to repackage and sell"; share-alike parts clash with `LICENSE`. |
@@ -74,7 +74,7 @@ licence).
 | **U. Iowa MIS** ([page](https://theremin.music.uiowa.edu/MIS.html)) | recordings | "any projects, without restrictions"; silent on redistribution | unresolved | No SFZ mapping supplied. |
 | **FluidR3_GM**, **MuseScore_General** ([licence](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General_License.md)) | SF2 (SF3) | MIT, notices required | possible | GM sets: 128 programs, no articulations. Not played by the Sonara sampler. |
 | **GeneralUser GS** ([licence](https://raw.githubusercontent.com/mrbumpy409/GeneralUser-GS/main/documentation/LICENSE.txt)) | SF2 | custom; author admits uncertain sample provenance | unresolved | |
-| **Salamander Grand Piano** ([FreePats](https://freepats.zenvoid.org/Piano/acoustic-grand-piano.html)) | SFZ + FLAC | CC BY 3.0 | possible with attribution | 16 velocity layers (per MuseScore's handbook). Other FreePats entries differ (the harp is CC BY-NC). |
+| **Salamander Grand Piano** ([FreePats](https://freepats.zenvoid.org/Piano/acoustic-grand-piano.html)) | SFZ + FLAC | CC BY 3.0 | possible with attribution | 16 velocity layers (per MuseScore's handbook). Other FreePats entries differ (corrected 2026-10-30: the FreePats Concert Harp sounds are CC0 1.0; only the page photo is CC BY-NC, see [orchestra/cards/free_libraries.md](orchestra/cards/free_libraries.md)). |
 | **Arachno** | SF2 | personal use | no | |
 | **BBCSO Discover, Spitfire LABS, Berlin Free Orchestra** | proprietary | EULA | no | Run only in their own players (INFERRED for the last two). |
 

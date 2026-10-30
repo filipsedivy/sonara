@@ -15,7 +15,8 @@ and is milestone O4.
   wood-wind interlocking, horn pairs, brass chorale); orchestrates a reduction (melody, harmony, bass)
   for an ensemble; and checks range, spacing, doubling and playability by the rule ids of
   [../doubling-and-balance.md](../doubling-and-balance.md) section 6. Everything is deterministic for
-  a seed (TST-04). No new crate and no new dependency in `sonara-midi`.
+  a seed (TST-04). No new crate, and no dependency in `sonara-midi` beyond layer (a)'s `serde` and
+  `unicode-normalization` edges.
 - **The agent side.** `sonara_agent::orchestration` learns instrument and ensemble requests in
   English and Czech ("strings play a legato melody, horns and timpani underneath"; "smyčce hrají
   legato melodii, lesní rohy a tympány pod tím"). It resolves aliases, asks clarification questions,
@@ -69,7 +70,7 @@ equal `main` at `a212544` (`git diff a212544 HEAD -- crates apps` is empty). Sam
 | The AI Composer's system prompt is 3,960 bytes, included at compile time and passed with `--append-system-prompt`; a test checks needles in it; each tool call is its own undo step | `crates/sonara-app/src/composer/invocation.rs:33,252-253,460-470`; `docs/ai-composer.md:70` |
 | A committed generated doc is kept current by an example whose test fails on a difference | `crates/sonara-agent/examples/gen_agent_docs.rs:1-11` |
 | `unicode-normalization` 0.1 is a workspace dependency (MIT/Apache-2.0); `strsim` 0.11 (MIT/Apache-2.0) is in the lock file through clap | `Cargo.toml:106`; `docs/dependencies.md:43,57`; `crates/sonara-media/src/names.rs` |
-| Not in `a212544`: `ProjectSession::begin_undo_group`/`end_undo_group`, wrapped by `sonara_app::edit` and used by the desktop composer, collapse the `agent` steps of a run into one undo step | branch `feature/ai-composer-finish` of the main checkout, commits `a1df620` and `0bba2b3`: `crates/sonara-core/src/session.rs:397-419`, `crates/sonara-app/src/edit.rs:669-678`, `apps/sonara-desktop/src-tauri/src/composer.rs:171-184` |
+| In main since 0.1.12 (merged from `feature/ai-composer-finish` after this design was first written against `a212544`): `ProjectSession::begin_undo_group`/`end_undo_group`, wrapped by `sonara_app::edit` and used by the desktop composer, collapse the `agent` steps of a run into one undo step | main at 0.1.12 (`558f898`): `crates/sonara-core/src/session.rs:400-407`, `crates/sonara-app/src/edit.rs:670-676`, `apps/sonara-desktop/src-tauri/src/composer.rs:171-184` |
 
 ## Proposal
 
@@ -151,7 +152,7 @@ emulation by rewriting notes (a written-out trill, a roll as repeated strokes), 
 so.
 
 **Legato overlaps.** For a passage the request calls legato, the layer writes overlaps of
-min(30 ms, 25 % of the shorter note), at least 10 ms [Estimate]. Notes are frame-accurate
+min(30 ms, 25 % of the shorter note), at least 10 ms [Estimate: a starting value for the overlap crossfade, to be tuned by the listening check B2]. Notes are frame-accurate
 (`schedule.rs:6-15`), and layer (b)'s overlap legato fires on a note-on while another key is held
 (or within `gap_ms` of a note-off) and crossfades over the profile's `crossfade_ms`, whatever the
 overlap ([sound-source.md](sound-source.md) 6.3); the 10 ms floor only keeps the overlap positive
@@ -253,7 +254,7 @@ velocity 1-127.
 deep `verify` decodes the patch, off the real-time thread (layer (b) SS-35); a profile's `attack_ms`
 overrides it (layer (b) 2.2). Long notes are
 advanced by it, shorts are not; a legato note after the first fades in over `crossfade_ms` past its
-sample's attack (layer (b) 6.3), so it is advanced by half that [Estimate]. A note at clip start
+sample's attack (layer (b) 6.3), so it is advanced by half that [Estimate: half the measured attack keeps the perceived onset near the beat; design judgement, to be tuned by listening]. A note at clip start
 cannot move earlier (`midi.rs:53`), so generated clips start one beat before the material when there
 is room; otherwise the first note is reported as uncompensated.
 
@@ -426,7 +427,7 @@ pub struct StepRef { pub arg: &'static str, pub step: usize, pub pointer: &'stat
    rollback and is reported, while one with the same label, or a user pan change merged within 1.5 s,
    cannot be told apart (Risks). The status is `Failed` with the rolled-back steps listed. When the
    GUI wraps `execute` in `sonara_app::edit::begin_undo_group`/`end_undo_group`
-   (`feature/ai-composer-finish`), a plan becomes one step "Orchestrate"; inside the group `undo`
+   (in main since 0.1.12), a plan becomes one step "Orchestrate"; inside the group `undo`
    still undoes one step, so rollback works there too.
 
 The guarantee in `docs/orchestration.md:30-31` ("A refusal changes nothing") and
@@ -643,7 +644,7 @@ and key switches at output ([../cards/apple.md](../cards/apple.md) 3.1), through
 | PF-12 Step references, staged validation, rollback, report | O4 | `sonara-agent` `orchestration::refs`, `mod` | M | — |
 | PF-13 `Orchestration` → steps (tracks, instrument, clips, lanes, routing, pan) | O4 | `sonara-agent` `orchestration::ensemble` | M | PF-7, PF-9, PF-12, PF-20, SS-26 |
 | PF-14 Composer reference renderer, profile block, size and drift tests, generator example | O4 | `sonara-midi` `orchestration::reference`; `sonara-app` `composer::invocation` | M | IM-1..IM-14, SS-12 |
-| PF-15 Orchestrate field, undo-group wrapping, measured plan wall time (QG-11) | O5 | `apps/sonara-desktop` (`src-tauri`, Svelte) through `sonara_app::edit` | S | PF-13; merge of `feature/ai-composer-finish` |
+| PF-15 Orchestrate field, undo-group wrapping, measured plan wall time (QG-11) | O5 | `apps/sonara-desktop` (`src-tauri`, Svelte) through `sonara_app::edit` | S | PF-13; the undo groups of 0.1.12 |
 | PF-16 Docs (DOC-01) | O4 | `docs/` | S | PF-1-PF-14, PF-20 |
 | PF-17 Listening checks of thresholds, overlap and crossfade times (B2), recorded locally | O4 | `docs/performance.md` | S | SS-24, PF-2-PF-4 |
 | PF-18 Per-note articulation: `NoteInput.articulation` and a `part` argument on `create_track` (golden `tools.json`), per-note inference output | O6 | `performance::articulate`; `sonara-agent` contract | M | IM-19; owner (A1, A3 b, A16) |

@@ -4,7 +4,8 @@
 - **Research:** [orchestra-research.md](../orchestra-research.md) and [orchestra/](../orchestra/README.md)
 - **Design:** [orchestra-design.md](../orchestra-design.md) and its four layer documents
 - **Amends, if accepted:** [ADR 0010](0010-sample-based-orchestral-instruments.md) decision 4 (the sampler's
-  `instrument` parameter)
+  `instrument` parameter) and two of its consequences: a live graph rebuild reuses an unchanged sampler instead of
+  restarting its notes, and the 3 GiB cap applies per device
 
 ## Context
 
@@ -17,7 +18,7 @@ device card for every instrument.
 The research mapped 85 instruments with sourced, fact-checked cards, ensemble templates, 67 doubling and balance rules,
 the free libraries and their licences, and how the sampler reads them. It found that:
 
-- the sampler diverges from the SFZ format in eleven confirmed places and six more (Q1–Q11, N1–N6 in
+- the sampler diverges from the SFZ format in eleven confirmed places, and seven more findings follow (Q1–Q11, N1–N7 in
   [sfz-conformance.md](../orchestra/sfz-conformance.md)), so key-switch patches, the free grand pianos and several
   saxophones play wrongly or not at all;
 - legato is both an engine gap (`trigger=first`/`legato` become attacks) and a sound gap (no free library records
@@ -38,19 +39,23 @@ path), LIC-01 and ADR 0010 (nothing bundled).
 2. **Articulations:** one primary id per note from a canonical vocabulary of 96 ids in ten kinds (the 15 existing ids
    keep their spelling; the list only grows at the end); no id means ordinario; mute and vibrato are passage states; an
    unrecorded combination falls back by dropping the state and says so.
-3. **Phase 1 changes no contract.** Instrument identity is derived, in this order of trust: the user's
-   `instrument_type` sampler parameter, the library's manifest, Sonara's shipped profile, a guess from the track name.
+3. **Phase 1 changes no contract.** Instrument identity is derived, in this order of trust: *named* (the user's
+   `instrument_type` sampler parameter, not `auto`), *declared* (the library's manifest), *profile* (Sonara's shipped
+   profile), *inferred* (an alias match on the patch path, or on the track name for Poly Synth and Drum Kit tracks).
    Articulation and dynamics reach the library through two new automatable sampler parameters written with the existing
    `create_automation`: `articulation`, an enum with one frozen, append-only choice list for every preset (`auto`,
-   `ordinario`, then the vocabulary), applied inside the sampler by a table lookup without key-switch notes; and
-   `dynamics`, a ratio to velocity or an absolute controller value depending on the profile (default 1.0, no change).
+   `ordinario`, then the vocabulary), applied inside the sampler by a table lookup without key-switch notes, a choice the
+   preset lacks falling back to the nearest articulation; and `dynamics` (0–1, default 1.0), a ratio to the note's
+   velocity in the profile's `velocity` and `fixed` modes (1.0 leaves today's render unchanged) or an absolute
+   controller value in its `cc` mode (1.0 selects the loudest layer).
    Device parameters are sampled once per block, so a change lands up to one block late and a seek restores the right
    articulation. The sampler is not a golden built-in, so its descriptor may grow.
-4. **The sampler's `instrument` parameter stores catalog preset ids** (`<library>/<patch path>`, `<library>/@<set>` for
-   an articulation set); absolute paths from older projects are mapped to ids on load. A library that matches a shipped
+4. **The sampler's `instrument` parameter stores catalog preset ids** (`<library>/<patch path without .sfz>`,
+   `<library>/@<set>` for an articulation set); absolute paths from older projects are mapped to ids on load. A library that matches a shipped
    profile takes the profile's id. This amends ADR 0010 decision 4.
 5. **Sampler engine work**, pure Rust and real-time safe, no new dependency, each item with its regression test, following
-   ARIA and sfizz where the SFZ specification is silent: the conformance fixes first (Q1–Q4, Q7, Q11, N1–N3, C8), then velocity and controller crossfades, `amp_veltrack` and
+   ARIA and sfizz where the SFZ specification is silent: the conformance fixes first (Q1 with N4, Q2–Q4, the key half of
+   Q7, Q11, N1–N3, N5–N7, sfz-conformance C8), with the controller half of Q7 joining the crossfades, then velocity and controller crossfades, `amp_veltrack` and
    `off_mode` (Q6, Q8, Q9), then `trigger=first`/`legato` with an overlap-crossfade legato on sustain samples, then
    multi-patch articulation sets per device.
 6. **Library profiles:** `sonara-library.json` version 2 maps each preset to an instrument id, solo or section,
@@ -58,21 +63,26 @@ path), LIC-01 and ADR 0010 (nothing bundled).
    own data, no samples) for VSCO 2 CE and VCSL v1.2.2-RC. A user's manifest overrides a shipped profile.
 7. **A degradation chain** in `sonara-app` resolves every request from the exact preset down to silence and reports each
    substitution.
-8. **Ensembles** are data applied through existing commands as one undo step; the GUI offers them, agents reach them
-   through the planner. The golden `orchestral` template stays unchanged.
+8. **Ensembles** are data applied through existing commands as one undo step. In phase 1 the GUI's New Project, Add
+   Ensemble… and Orchestrate… reach them; MCP agents and the AI Composer build ensembles from existing tools, guided by
+   the orchestration reference. The golden `orchestral` template stays unchanged.
 9. **Agents:** a generated orchestration reference (at most 24,000 characters, tested for size and drift) in the AI
    Composer's system prompt; instrument and ensemble requests in the deterministic planner (English and Czech), with
-   staged validation and undo rollback replacing the guarantee that a refusal changes nothing; orchestration findings in
+   a read-only catalog query, and staged validation with undo rollback (through the undo groups of 0.1.12) replacing the
+   guarantee that a refusal changes nothing; orchestration findings in
    `sonara_app::quality`, by rule id. No new tool in phase 1.
 10. **Interface:** a Library browser by family and instrument, family panels, an instrument-aware track header,
-    piano-roll range shading, a written/sounding view, articulation and dynamics lanes, ensembles in New Project, all
-    measured against ADR 0009.
+    piano-roll range shading, a written/sounding view, articulation, dynamics, CC 64 and CC 11 lanes (the CC lanes edit
+    clip events through the core command `SetControlEvents`, before any agent tool can), ensembles in New Project and
+    Add Ensemble…, all measured against ADR 0009.
 11. **Phase 2 is a separate, versioned decision (CTR-01):** project schema v2 with an optional track `part` and note
-    `articulation`, written only when a document needs them (the golden version-1 bytes stay valid, GLD-01); a CC-writing
+    `articulation`, written only when a document needs them (the golden version-1 bytes stay valid, and an unchanged v1
+    document opens without a reported migration, GLD-01, CTR-01); a CC-writing
     tool, an ensemble tool, orchestrate and check tools; and whether to add a GM fallback engine (`rustysynth`). Plugin
     hosting (M5) reuses the same articulation maps.
 12. **Dependencies:** no new crate enters `Cargo.lock`. New edges to crates the workspace already locks (`serde` and
-    `unicode-normalization` in `sonara-midi`, `strsim` in `sonara-agent`) are allowed and recorded in
+    `unicode-normalization` in `sonara-midi`, `strsim` in `sonara-agent`, `proptest` as a dev-dependency of
+    `sonara-app`) are allowed and recorded in
     `docs/dependencies.md` (QG-10).
 
 ## Alternatives considered
@@ -83,8 +93,9 @@ path), LIC-01 and ADR 0010 (nothing bundled).
 | Key-switch notes written into clips as the authoring path | Works under today's contracts, but clutters clips, breaks range checks, depends on per-library key numbers and loses the switch on a seek (C11); kept only for imported MIDI |
 | Replacing the `orchestral` template with a real orchestra | It is golden-covered (Ascension, its golden workflow and a render-load baseline); GLD-01 forbids it |
 | Working around the SFZ divergences in the profiles | Leaves about 75 key-switch files and every free grand piano broken for users without profiles |
-| An FFI engine (sfizz, FluidSynth) | Needs an RT-10 amendment; sfizz is archived; unchanged from ADR 0010 |
-| A GM fallback engine first | Adds a second engine for low-quality voices before the conformance work shows how many ids still lack a free SFZ |
+| An FFI engine: sfizz (BSD-2-Clause, archived) or FluidSynth (LGPL-2.1, only as a replaceable dynamic library with its source shipped, LIC-01) | Both need an RT-10 amendment; unchanged from ADR 0010 |
+| A GM fallback engine first: `rustysynth` (MIT, pure Rust, on the real-time path, so RT-02..RT-05 must be shown) | Adds a second engine for low-quality voices before the conformance work shows how many ids still lack a free SFZ |
+| Commercial libraries through plugin hosting (M5; the VST3 SDK and CLAP are MIT) | The quality ceiling, but a separate milestone with its own sandboxing design ([plugin-hosting.md](../plugin-hosting.md)) |
 | Bundling a library | ADR 0010 and LIC-01; shipped profiles give most of the benefit without redistributing samples |
 
 ## Consequences
@@ -111,8 +122,12 @@ path), LIC-01 and ADR 0010 (nothing bundled).
 3. Ship library profiles for VSCO 2 CE and VCSL; no shipped profile for Sonatina or CC BY libraries.
 4. The articulation vocabulary points: the `col_legno` merge, the invented ids, the ordinario rule, mallet rolls, shape B.
 5. The planner's staged validation with undo rollback; humanization on by default; the AI Composer reference.
-6. The reading of "no new dependency" in decision 12.
-7. Defer phase 2 (schema v2, CC tool, ensemble and orchestration tools, GM fallback) to a later ADR.
+6. The interface points: GUI editing of the CC 64 and CC 11 lanes before any agent tool, and an allow-list of library
+   download pages.
+7. The reading of "no new dependency" in decision 12.
+8. Defer phase 2 (schema v2, CC tool, ensemble and orchestration tools, GM fallback) to a later ADR.
+
+The full list, with the recommendation for each, is section 5 of [orchestra-design.md](../orchestra-design.md).
 
 The detailed questions, with options and the research's recommendations, are A1–A25 in
 [open-questions.md](../orchestra/open-questions.md).

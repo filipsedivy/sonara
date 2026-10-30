@@ -158,14 +158,14 @@ PartialEq, Eq`, which tests that iterate the static by value need (`contracts.rs
 | Category | Members | Selection |
 |---|---|---|
 | `piano` | the six acoustic pianos | default `piano_concert_grand` (spine) |
-| `electric_piano` | `electric_piano_rhodes`, `electric_piano_wurlitzer` | default Rhodes [Estimate] |
-| `organ` | `organ_pipe`, `organ_hammond` | default `organ_pipe` [Estimate] |
+| `electric_piano` | `electric_piano_rhodes`, `electric_piano_wurlitzer` | default Rhodes [Estimate: the most common electric piano in the card's repertoire; design judgement] |
+| `organ` | `organ_pipe`, `organ_hammond` | default `organ_pipe` [Estimate: the orchestral organ; design judgement] |
 | `clarinet` | `clarinet_bb`, `clarinet_a`, `clarinet_eb`, `bass_clarinet` | default `clarinet_bb` (spine) |
-| `saxophone` | the four saxophones | default `saxophone_alto` [Estimate] |
-| `trumpet` | `trumpet_bb`, `trumpet_c`, `trumpet_piccolo` | default `trumpet_bb` [Estimate] |
-| `trombone` | `trombone_tenor`, `trombone_bass` | default `trombone_tenor` [Estimate] |
+| `saxophone` | the four saxophones | default `saxophone_alto` [Estimate: the saxophone orchestral scores use most, per the saxophone card; design judgement] |
+| `trumpet` | `trumpet_bb`, `trumpet_c`, `trumpet_piccolo` | default `trumpet_bb` [Estimate: the trumpet of most modern parts and libraries; design judgement] |
+| `trombone` | `trombone_tenor`, `trombone_bass` | default `trombone_tenor` [Estimate: the ordinary orchestral trombone; design judgement] |
 | `wagner_tuba` | tenor, bass | `All` (they are written in pairs) |
-| `cymbals` | `clash_cymbals`, `suspended_cymbal` | default `clash_cymbals` [Estimate] |
+| `cymbals` | `clash_cymbals`, `suspended_cymbal` | default `clash_cymbals` [Estimate: "cymbals" in a score means the clash pair; design judgement] |
 | `choir` | the four `choir_*` sections | `All` (SATB) |
 | `solo_voice` | the six `voice_*` | `Ask` |
 | `bells` | `tubular_bells`, `glockenspiel`, `crotales`, `carillon` | `Ask` |
@@ -247,7 +247,7 @@ Ranges, `Transposition`, `check_sounding` and `check_written` stay as they are; 
 
 - `Clef` enum with the seven slugs the cards use: `treble`, `treble_8vb`, `bass`, `alto`, `tenor`,
   `percussion`, `single_line`; `clefs: &'static [Clef]` in order of use (bassoon: bass, tenor, treble).
-- **Tenor voices** (spine S2 owner point 3, A20). The cards store `voice_tenor` and `choir_tenor` as
+- **Tenor voices** (the overview's S1 owner list and section 5, A20). The cards store `voice_tenor` and `choir_tenor` as
   −12 with clef `treble_8vb`, but a tenor part on a shared bass-clef staff is written at pitch, so a
   fixed −12 mis-transposes it. Recommendation: transposition 0 for both, and
   `Clef::Treble8vb.octave() == -1`, so the written view shifts by the clef in use. Octave-transposing
@@ -341,8 +341,8 @@ differs on three axes, action, pedal set and timbre state, from [../model.md](..
 | `piano_felt` | upright with felt rail | as upright | as upright | Felt, darker and shorter | Substitute 1, weak |
 | `piano_prepared` | grand | as concert grand | partly suppressed | Prepared, pitch unreliable | NoEquivalent |
 | `piano_honky_tonk` | old upright | sustain 64, soft 67 | as upright | DetunedUnisons, wavering | Program 4 |
-| `electric_piano_rhodes` | tine hammer | sustain 64 | weak [Estimate] | –, long | Program 5 |
-| `electric_piano_wurlitzer` | reed hammer, 64 keys | sustain 64 | weak [Estimate] | –, shorter | Program 5 |
+| `electric_piano_rhodes` | tine hammer | sustain 64 | weak [Estimate: tines have no free strings to resonate; reading of cards/electric_keys.md] | –, long | Program 5 |
+| `electric_piano_wurlitzer` | reed hammer, 64 keys | sustain 64 | weak [Estimate: reeds have no free strings to resonate; reading of cards/electric_keys.md] | –, shorter | Program 5 |
 
 Controls that are not articulations (A22: Rhodes tremolo, Clavinet pickups, drawbars, Leslie, harp
 pedal state, vibraphone motor) are not modelled here; they are track or device controls.
@@ -746,7 +746,7 @@ sonara-agent (`architecture.rs:60`).
 | [A16](../open-questions.md#a16-articulation-vocabulary-flat-list-or-separate-axes-mutes-beaters-vowels-shapes) | confirm shape B (primary id plus mute and vibrato) |
 | [A18](../open-questions.md#a18-what-playable-and-comfortable-mean) | the meaning of the two ranges; fixes the flute top, violin top and horn comfortable values |
 | [A19](../open-questions.md#a19-range-model-extensions-extensions-gaps-variants-and-a-third-tier) | recommended: defer optional range fields |
-| [A20](../open-questions.md#a20-notation-one-transposition-per-instrument-and-clefs) | per-clef tenor octave (spine S2 point 3) and per-part notation overrides |
+| [A20](../open-questions.md#a20-notation-one-transposition-per-instrument-and-clefs) | per-clef tenor octave (the overview's section 5) and per-part notation overrides |
 | [A21](../open-questions.md#a21-instrument-ids-what-to-add-or-split-and-families) | ids to add or split; accordion and carillon families as the cards propose |
 | [A22](../open-questions.md#a22-instrument-controls-and-multi-zone-keyboards) | controls stay out of the vocabulary; the pedal list stays open |
 | [A23](../open-questions.md#a23-adopting-the-card-values-in-datars) | adopt the card values (the spine recommends it) |
@@ -757,11 +757,11 @@ sonara-agent (`architecture.rs:60`).
 
 No decision of the spine is contradicted. Refinements and one correction:
 
-1. **Correction of a count.** S1 says "the 13 corrections"; the table in [../model.md](../model.md)
+1. **Correction of a count (now folded into S1).** The spine's earlier wording said "the 13 corrections"; the table in [../model.md](../model.md)
    changes 14 of the 16 ids (20 values marked "changed" plus one provenance change), as
    [../doubling-and-balance.md](../doubling-and-balance.md) 6.1 also counts 14 ids. This design
    applies the table, whatever the number.
-2. **Ten kinds, not nine.** S2 lists nine kinds but takes the vocabulary of
+2. **Ten kinds, not nine (now folded into S2).** The spine's earlier wording listed nine kinds but takes the vocabulary of
    [../articulation-vocabulary.md](../articulation-vocabulary.md), which has ten; `KeyboardControl`
    (`let_ring`, `damped`, `cluster`) is kept.
 3. **Naming.** The GM variant `None` is `NoEquivalent`, so it cannot be confused with `Option::None`

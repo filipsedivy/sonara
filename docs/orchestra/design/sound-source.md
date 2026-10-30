@@ -832,7 +832,7 @@ different sink.
 
 ## Deviation from the spine
 
-1. **S4, the `articulation` choices.** The spine says the choices are the preset's mapped ids plus
+1. **S4, the `articulation` choices (now folded into S4).** The spine's earlier wording said the choices are the preset's mapped ids plus
    `ordinario`. This design uses one fixed list for every device: `auto`, `ordinario`, then the
    vocabulary in a frozen order; the preset's mapped subset plays exactly, every other choice
    resolves through step 2. Reason: a `ParamSpec` belongs to the plugin descriptor, not to a device
@@ -842,7 +842,7 @@ different sink.
 2. **S4, the added `auto` default.** Not in the spine; it keeps today's sound for existing projects
    and imported key-switch MIDI, apart from the intended conformance fixes of 6.1 (CTR-01, no silent
    behaviour change). The owner decides it with A14.
-3. **S4, the timing statement.** The spine says a switch "lands at the start of the block that holds
+3. **S4, the timing statement (now folded into S4).** The spine's earlier wording said a switch "lands at the start of the block that holds
    its beat". The code evaluates lanes at the block's start beat (T9), so a point inside a block
    takes effect at the next block, up to 511 frames later. Layer (c) owns the lead rule (its section
    2); this layer adds the optional SS-33. This corrects a fact; the decision stands.

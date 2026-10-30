@@ -2,6 +2,8 @@
 
 - **Status:** Accepted (2026-10-27)
 - **Research:** [orchestral-audio-engine-research.md](../orchestral-audio-engine-research.md)
+- **Amendment proposed:** [ADR 0011](0011-orchestral-instruments-and-performance.md) (proposed) would amend decision 4
+  and two consequences (live rebuilds, the memory cap)
 
 ## Context
 

@@ -5,7 +5,8 @@ _Date: 2026-10-30 · Status: research complete · Design: [orchestra-design.md](
 [docs/orchestra/](orchestra/README.md)_
 
 **Reading guide.** Every fact in the research records is tagged **Cited** (a source that was opened states it; the
-record's Sources table names it) or **Estimate** (with the reason). The records hold 7,289 Cited and 993 Estimate tags.
+record's Sources table names it) or **Estimate** (with the reason). The 17 records in
+[orchestra/cards/](orchestra/cards/) hold 7,476 `[Cited …]` and 1,083 `[Estimate: …]` tags (counted on 2026-10-30).
 **Nobody listened to any audio** for this research, and nothing was rendered: what Sonara's sampler does with a
 library comes from reading its code ([sfz-conformance.md](orchestra/sfz-conformance.md)). Wikipedia was used only as a
 secondary source for numbers, and its text is paraphrased (it is CC BY-SA; the repository is 0BSD).
@@ -22,7 +23,7 @@ orchestra and the keyboard instruments as data and as practice, and checks what 
    transposition and clef, dynamics and colour by register, articulations and how sample libraries realize them, solo and
    section, role and doublings, variants, General MIDI and existing Sonara metadata, and free sound sources. Each card
    has a machine-readable json block per instrument.
-2. **Adversarial fact-check.** A second agent per card reopened the cited sources, re-did every note-name conversion
+2. **Adversarial fact-check.** A second, independent fact-check pass per card reopened the cited sources, re-did every note-name conversion
    (C4 = 60), corrected wrong values and downgraded unverifiable claims to Estimate. The records of free libraries and of
    Apple's products got the same pass, licences first.
 3. **Synthesis.** Score order, seating and ensemble templates; doubling and balance as checkable rules; the mapping of
@@ -71,7 +72,8 @@ speed are instrument **controls**, not articulations.
 ## 3. The existing metadata, verified
 
 `crates/sonara-midi/src/orchestration/data.rs` holds 16 instruments today. The research confirms every transposition
-and changes a range or adds a comfortable range for 14 of them (21 values); the table is in
+and changes a range or adds a comfortable range for 14 of them (20 range values, plus the horn's playable range, whose
+value stays but becomes cited); the table is in
 [model.md, "Proposed corrections to data.rs"](orchestra/model.md#proposed-corrections-to-datars). The largest changes:
 violin playable top A7 (105) instead of C8, with a comfortable top of A6 (93); cello C2–E6 instead of the estimated
 C2–A6; horn in F now cited (Forsyth: written F#2–C6); trumpet in Bb playable to G6; glockenspiel C5–C8 and xylophone
@@ -104,14 +106,16 @@ and the MIT-licensed General MIDI SoundFonts MuseScore_General and FluidR3 (SF2,
 
 [sfz-conformance.md](orchestra/sfz-conformance.md) checked, line by line in `crates/sonara-media/src/sfz.rs` and
 `crates/sonara-dsp/src/processors/sampler.rs`, how the sampler reads the SFZ files of these libraries. Eleven
-divergences from the SFZ specification are confirmed (Q1–Q11) and six more were found (N1–N6). Their consequences:
+divergences from the SFZ specification are confirmed (Q1–Q11) and seven more were found (N1–N7, some latent or minor).
+Their consequences:
 
 - key-switch settings are read only from the scopes open at the end of a file, and a `<control>` header clears the
   enclosing `<global>` (Q1, Q11): three VSCO key-switch patches are silent until a switch key is played, and most Sonatina
   key-switch patches stack their articulations;
 - `#include` mid-line, `$define`s in include paths and nested include directories are mishandled (Q2–Q4): the
-  Salamander remap, Splendid, Sonatina's grand piano and the MTG saxophones do not play, so **no free grand piano plays
-  as is**;
+  Salamander remap, Splendid, Sonatina's grand piano and the MTG saxophones do not play, and with `key=-1` pedal noises
+  on every key (Q7) and lost release tails under the pedal (N1), **no free grand piano plays as is**
+  ([coverage.md](orchestra/coverage.md), gap 5);
 - `trigger=first`/`legato` become plain attacks and the old voice is choked after 10 ms (Q5, Q9): **legato patches play
   as a retriggered sustain**;
 - velocity and CC crossfades are ignored (Q6), release samples do not play for keys released under the sustain pedal
