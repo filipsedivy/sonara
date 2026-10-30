@@ -135,6 +135,24 @@ test("a snapshot rebuilds a reloaded window: its tasks, steps and results", asyn
   await expect(statusLine(page)).toHaveText("Working");
 });
 
+test("a window that cannot read the chat says so instead of waiting for it", async ({ page }) => {
+  pageOf = page;
+  await mockTauri(
+    page,
+    {
+      gui_theme: "dark",
+      chat_snapshot: { reject: { code: "ENGINE_UNAVAILABLE", message: "The chat is not available." } },
+      chat_providers: [READY_CLAUDE],
+    },
+    "chat",
+  );
+  await page.goto("/");
+  await expect(page.getByRole("alert")).toContainText("The chat is not available.");
+  // Nothing was learnt about the thread, so nothing can be sent.
+  await expect(input(page)).toBeDisabled();
+  await expect(page.getByText("Loading…").first()).toBeVisible();
+});
+
 // -- the providers -------------------------------------------------------------------------------
 
 test("each provider shows its availability, and one that is not ready cannot be chosen", async ({ page }) => {
@@ -271,6 +289,10 @@ test("the limit is shown, and a message over it cannot be sent", async ({ page }
   await expect(page.getByRole("button", { name: "Send" })).toBeDisabled();
   await input(page).press("Enter");
   expect((await chatCalls(page)).some((c) => c.cmd === "chat_enqueue")).toBe(false);
+  // The outer blanks are not counted: the counter and Send agree.
+  await input(page).fill(`${"x".repeat(MAX_PROMPT_CHARS)}  \n `);
+  await expect(page.getByText(`${MAX_PROMPT_CHARS} / ${MAX_PROMPT_CHARS}`)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Send" })).toBeEnabled();
 });
 
 test("a message the backend refuses is explained and kept", async ({ page }) => {

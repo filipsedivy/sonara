@@ -161,8 +161,8 @@
                   onkeydown={(event) => editKey(event, task.id)}
                 ></textarea>
                 <div class="row">
-                  <span id="edit-count" class="note" class:over={promptLength(editing.text) > MAX_PROMPT_CHARS}>
-                    {promptLength(editing.text)} / {MAX_PROMPT_CHARS}
+                  <span id="edit-count" class="note" class:over={promptLength(editing.text.trim()) > MAX_PROMPT_CHARS}>
+                    {promptLength(editing.text.trim())} / {MAX_PROMPT_CHARS}
                   </span>
                   <button type="button" onclick={() => closeEdit(task.id)}>Cancel</button>
                   <button type="button" class="primary" onclick={() => void save()} disabled={saving || promptProblem(editing.text) !== null}>

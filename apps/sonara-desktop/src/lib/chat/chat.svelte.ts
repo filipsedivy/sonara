@@ -44,9 +44,10 @@ class Chat {
    */
   async init(): Promise<() => void> {
     this.loading = true;
-    const unlisten = await onChatEvent((event) => this.apply(event));
-    void this.refreshProviders();
+    let unlisten: () => void = () => {};
     try {
+      unlisten = await onChatEvent((event) => this.apply(event));
+      void this.refreshProviders();
       for (let attempt = 0; attempt < SNAPSHOT_TRIES; attempt += 1) {
         this.dirty = false;
         const snapshot = await chatSnapshot();
@@ -55,6 +56,8 @@ class Chat {
         break;
       }
     } catch (error) {
+      // No listener (the window lacks the `listen` permission) or no snapshot: say so, and stay
+      // usable for what still works rather than wait for a state that never comes.
       this.error = chatError(error);
     } finally {
       this.loading = false;

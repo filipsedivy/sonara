@@ -18,7 +18,8 @@
   let sending = $state(false);
   let box: HTMLTextAreaElement | undefined = $state();
 
-  const count = $derived(promptLength(text));
+  // The count is the one the limit uses: without the outer blanks, as Send judges it.
+  const count = $derived(promptLength(text.trim()));
   const over = $derived(count > MAX_PROMPT_CHARS);
   const canSend = $derived(enabled && !sending && promptProblem(text) === null);
 
