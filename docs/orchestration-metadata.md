@@ -323,8 +323,10 @@ once per record. Most records have none. The kinds:
 - `Breath { held_note }`: the longest one note can be held in the medium register at piano, from
   Widor's experiments: about 40 seconds on the clarinets in B♭ and A (p. 33), at most 10 bars of
   moderate 4/4 on the saxophones (p. 127) and 12 bars at crotchet = 120 on the trumpets in C and B♭
-  (p. 70; half as long forte). Other winds and the voices have no breath fact: no source that was
-  read gives that figure for them.
+  (p. 70; half as long forte). Other winds and the voices have none. Widor's horn figures (p. 61)
+  come from an experiment he calls a dangerous one in the orchestra, his bassoon and contrabassoon
+  figures (pp. 45, 48) are for the low and upper registers, and no other source that was read
+  gives the figure.
 - `MuteChange { on, off }`: the time to put a mute on and take it off. The strings take a couple
   of bars of moderate time on and a little less off (Forsyth, p. 374); every brass instrument with
   a mute takes an estimated two bars each way. The flugelhorn, which lists no mute, has none.
