@@ -374,9 +374,14 @@ dependencies. All eleven feature keys checked (the nine used plus `codex_hooks` 
 
 - **No Codex login on this machine**, so no real turn was recorded. The Codex fixture is
   reconstructed from source, and the text of a denied-tool error is approximate.
-- **No `gemini` binary.** Nothing about Gemini was run; its boundary is read from source.
+- **Gemini was run only as far as an unauthenticated ACP handshake** (2026-10-30, gemini 0.66.0
+  from Homebrew): `initialize` works without a login and reports the auth methods and the MCP
+  capabilities, but `session/new` is refused until the user signs in, so the hand-off of the
+  `sonara` server and the boundary of a Gemini run were not exercised. The boundary is read from
+  source.
 - **The ACP spike used the researcher's own agent and client.** It proves the SDK wire shapes
-  and the stdio MCP entry, not the behaviour of `claude-agent-acp`, `codex-acp` or `gemini --acp`.
+  and the stdio MCP entry, not the behaviour of `claude-agent-acp` or `codex-acp`; the only real
+  ACP agent run is the `gemini --acp` handshake above.
 - **Claude resume across working directories** was never run; only error paths were probed.
 - **Cold-start latency** of any provider plus `sonara mcp` is unmeasured.
 - **Whether `sonara mcp` exits on stdin EOF** is unmeasured.

@@ -186,6 +186,10 @@ Every event has `type` and an ISO `timestamp`. There is no thinking event and no
 | `session/request_permission`: options `allow_once`, `allow_always`, `reject_once`, `reject_always`; agents MAY ask | docs; run in a spike (the researcher's own agent and client) | protocol/tool-calls; spike |
 | Client `fs` and `terminal` capabilities announce client-provided services; they do not disable the agent's own tools | docs; source | protocol/initialization; `claude-agent-acp` 0.99.1 |
 | The spike used its own agent and client, so it proves the SDK wire shapes only, not the behaviour of any real adapter | fact about the evidence | |
+| Gemini CLI 0.66.0 installed through Homebrew, `gemini --acp` driven by a raw newline-delimited JSON-RPC client over stdio (private `GEMINI_CLI_HOME`, no login): `initialize` answers in about 0.9 s with `protocolVersion` 1, `agentInfo` gemini-cli 0.66.0, `agentCapabilities {loadSession: true, promptCapabilities {image, audio, embeddedContext}, mcpCapabilities {http: true, sse: true}}` and four `authMethods` (`oauth-personal`, `gemini-api-key`, `vertex-ai`, `gateway`) | run, 2026-10-30, gemini 0.66.0 | |
+| The same session: `session/new` (with a stdio `mcpServers` entry) is refused before any model call with error -32000 "Gemini API key is missing or not configured", so passing an MCP server and enforcing a boundary through ACP cannot be tried without a Google login or an API key | run, 2026-10-30, gemini 0.66.0 | |
+| The same session: closing the agent's stdin ends the process with exit code 0 | run, 2026-10-30, gemini 0.66.0 | |
+| The Homebrew formula `gemini-cli` 0.66.0 is marked deprecated upstream ("will be disabled on 2026-12-18") and installs Node 26 as a dependency, so on this machine Gemini needs a Node runtime | run, `brew info`/`brew install`, 2026-10-30 | |
 
 ### 4.2 Rust SDK (spike on the pinned toolchain 1.99.1)
 
