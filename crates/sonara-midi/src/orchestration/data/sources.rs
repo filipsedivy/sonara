@@ -358,6 +358,14 @@ define_sources! {
     taming_the_saxophone_score_layout => "Taming the Saxophone, Orchestration: Score Layout, \
         https://tamingthesaxophone.com/composition-score",
 
+    // Arranging courses and tutorials.
+    hoffmann_low_interval_limits => "Robin Hoffmann, Low Interval Limits, \
+        https://www.robin-hoffmann.com/dfsb/low-interval-limits",
+    rogers_big_band_voicings => "Evan Rogers, Big Band Arranging, 11: Voicings (Part 2), \
+        https://www.evanrogersmusic.com/blog-contents/big-band-arranging/voicings-part2",
+    sleepfreaks_low_interval_limit => "Sleepfreaks, Voicing, Arpeggios, and Low Interval Limit, \
+        https://sleepfreaks-dtm.com/en/music-theory-beginner/voicing-arpeggio/",
+
     // General MIDI tables and notation software data.
     finale_2010_gm_table => "MakeMusic, Finale 2010 user manual, General MIDI Table, \
         https://usermanuals.finalemusic.com/Finale2010Mac/Content/Finale/General_MIDI_Table.htm",

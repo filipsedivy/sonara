@@ -6,7 +6,8 @@ articulations they idiomatically play, how they appear in ensembles, their Gener
 for the instruments played from a keyboard how the keyboard makes and stops the sound, and the
 playability facts that rules read, such as how long a mute takes to put on (SON-P06). It also
 holds ensemble templates: the parts of an orchestra or a smaller group in score order, with
-their players, string sizes and stereo places.
+their players, string sizes and stereo places, and a catalogue of orchestration rules with the
+thresholds their checks compare with.
 It is plain Rust data and pure functions. It depends on no audio engine, sample library or UI,
 adds no agent tool and changes no contract (CTR-01).
 
@@ -399,6 +400,42 @@ band's guitar and drum kit, so the big band lists 15 of its 17 players. Where a 
 in, such as the horn in F for the Classical orchestra's natural horn or the tenor trombone for
 Beethoven's alto trombone, the part plays it and its note says so.
 
+## Rules
+
+`orchestration::rules` holds orchestration rules as data. The predicates that check a project are
+code elsewhere; this module holds what they read, and nothing in it runs on a real-time thread.
+
+`RULES` holds 67 rules keyed by `RuleId`, whose stable `code()` is the external form: `RNG-01` to
+`RNG-04` (ranges), `SPC-01` to `SPC-08` (spacing and low intervals), `DBL-01` to `DBL-09`
+(doubling), `BAL-01` to `BAL-09` (balance), `MSK-01` to `MSK-04` (masking), `VOI-01` to `VOI-12`
+(voicing), `PLY-01` to `PLY-15` (playability) and `TEX-01` to `TEX-06` (texture). `from_code`
+accepts only an exact code. A rule holds:
+
+- a `title` and a `check`: what the check looks for, in words, with the numbers it compares;
+- its `inputs` (`RuleInput`): the instrument, notes, dynamic, tempo, metre, part, role, harmony,
+  articulation, weights, register factors, harp pedals or timpani tuning it needs;
+- its `severity`: a `Level` (`hint`, `warning`, `error`) that is `Fixed`, `ByDynamic` (one level
+  from pp to mf and a stronger one at f and ff) or `ByCase` (a stronger level in a case the check
+  tells apart, such as a harp chord of more than eight notes). Which level a rule deserves is an
+  estimate throughout: a judgement of how firmly its source states it;
+- its `provenance`: the handbook passage it comes from (Rimsky-Korsakov, Forsyth, Widor, and an
+  arranging course for the low-bass dissonance), with a remark when a number in it is estimated.
+  The two range rules rest on the records' own ranges and say so.
+
+`DynamicBand` groups the notated dynamics as the sources compare them: `Soft` (pp, p), `Medium`
+(mp, mf) and `Loud` (f, ff); where mp falls is an estimate.
+
+The numbers a check compares with are named thresholds, `Threshold<T>`, each with the rules that
+use it and its own provenance: `SUSTAINED_HIGH_BRASS` (two bars of moderate 4/4),
+`UNDOUBLED_HIGH_MELODY` and `UNDOUBLED_LOW_MELODY` (MIDI 90 and 42), `LOW_DISSONANCE` (D3, MIDI
+50), `BASS_SPACING` and `MIDDLE_GAP` (an octave), `WEAK_CHORD_MEMBER` (half the strongest part),
+`MELODY_MARGIN` (1.5 times the accompaniment), `SOLO_STRING_ACCOMPANIMENT` (2 units),
+`FEWEST_FIRST_VIOLINS` (8), `LOUD_DIVISI` (four ways), `WIND_PHRASE` (eight bars of moderate
+4/4), `SOFT_SLUR` and `MANY_NOTE_SLUR` (four and two bars of moderate time) and
+`CHARACTERISTIC_COLOUR_SHARE` (more than half the bars). Most of them turn a source's words into
+a number and are estimates; a rule that compares with an estimated threshold is never stronger
+than a warning. Durations are `Span`s and convert at `MODERATO_BPM`, as the playability facts do.
+
 ## Validation
 
 A record is an `InstrumentSpec` checked by `Instrument::try_new(instrument_type, spec)`. Records
@@ -469,6 +506,14 @@ template is a compile error. `crates/sonara-midi/tests/ensembles.rs` compares ev
 parts, string sizes, seatings and pans with tables written from the cited scorings and seating
 plans, checks the track and player counts the sources state, and rejects a fixture breaking each
 check.
+
+A rule is a `RuleSpec` checked by `Rule::try_new(id, spec)`, which rejects a blank title or
+check, no inputs or an input listed twice, a graded severity that does not rise from its usual
+level or names no case, and a blank provenance. The catalogue is built with the panicking
+`Rule::new` in a `static`, and a compile-time check places each rule at its id's place, so an
+invalid rule does not compile. `crates/sonara-midi/tests/rules.rs` compares the codes, grades and
+thresholds with tables written from the sources, checks that every rule is traceable and that an
+estimated threshold backs no error, and rejects a fixture breaking each check.
 
 ## Coverage
 

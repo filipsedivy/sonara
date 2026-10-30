@@ -44,6 +44,7 @@ mod ensembles;
 mod keyboards;
 mod percussion;
 mod plucked;
+pub(super) mod rules;
 mod sources;
 mod strings;
 mod voices;
@@ -52,6 +53,7 @@ mod woodwinds;
 pub(super) use categories::{FAMILY_ALIASES, category, family_aliases};
 pub use ensembles::ENSEMBLES;
 pub(super) use ensembles::ensemble;
+pub(super) use rules::rule_record;
 
 use super::ensemble_profile::{EraPlayers, PlayerRange};
 use super::general_midi::{GmNote, GmProgram, GmTarget, GmVoice, SubstituteFit};
