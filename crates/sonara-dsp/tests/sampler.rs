@@ -1,6 +1,6 @@
 //! `sonara.sampler` against synthetic banks: layers, round robin, release, release triggers,
-//! the sustain pedal, keyswitches, exclusive groups, polyphony and the real-time rules (TST-10: every check
-//! compares against a value that follows from the bank, not "it ran").
+//! the sustain pedal, keyswitches, exclusive groups, polyphony and the real-time rules (TST-10:
+//! every check compares against a value that follows from the bank, not "it ran").
 //!
 //! The samples are constants, so a voice's steady-state output is its sample value times the
 //! velocity gain `(velocity / 127)²`, which the tests compute independently of the engine.
@@ -461,6 +461,90 @@ fn keyswitch_selects_the_articulation() {
         level(&run(&mut *processor, &[event(EventKind::NoteOn, 62, 127)])),
         0.25,
     );
+}
+
+#[test]
+fn all_notes_off_keeps_the_switch() {
+    // Pins the current behaviour: all notes off (also sent on a seek or a loop wrap while
+    // playing) silences the voices but keeps the last keyswitch, so the articulation chosen
+    // before the jump stays active after it.
+    let articulation = |sample, switch| Region {
+        sw_last: Some(switch),
+        key_lo: 36,
+        ..region(sample)
+    };
+    let bank = SampleBank {
+        samples: vec![constant(0.5), constant(0.25)],
+        regions: vec![articulation(0, 24), articulation(1, 25)],
+        keyswitches: switches(&[(24, 25)], Some(24)),
+        ..SampleBank::default()
+    };
+    let mut processor = sampler(bank);
+    // The default articulation sounds; the switch press changes only the next notes.
+    let before = run(
+        &mut *processor,
+        &[
+            event(EventKind::NoteOn, 60, 127),
+            event(EventKind::NoteOn, 25, 127),
+        ],
+    );
+    close(level(&before), 0.5);
+    let silenced = run(&mut *processor, &[event(EventKind::AllNotesOff, 0, 0)]);
+    close(level(&silenced), 0.0);
+    assert_eq!(processor.report().entries(), [("voices", 0.0)]);
+    close(
+        level(&run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)])),
+        0.25,
+    );
+}
+
+#[test]
+fn an_empty_key_range_never_plays() {
+    // Pins the current behaviour: a region whose lowest key lies above its highest matches no
+    // key, neither its attack on a press nor its release region on a release; the others play.
+    let bank = SampleBank {
+        samples: vec![constant(0.5), constant(0.25), constant(0.125)],
+        regions: vec![
+            Region {
+                key_lo: 61,
+                key_hi: 60,
+                ..region(0)
+            },
+            Region {
+                key_lo: 61,
+                key_hi: 60,
+                trigger: Trigger::Release,
+                ..region(1)
+            },
+            Region {
+                key_lo: 72,
+                key_hi: 72,
+                ..region(2)
+            },
+        ],
+        ..SampleBank::default()
+    };
+    let mut processor = sampler(bank);
+    let mut events: Vec<_> = (0..=127)
+        .filter(|key| *key != 72)
+        .map(|key| event(EventKind::NoteOn, key, 127))
+        .collect();
+    events.extend(
+        (0..=127)
+            .filter(|key| *key != 72)
+            .map(|key| InstrumentEvent {
+                offset: BLOCK / 2,
+                ..event(EventKind::NoteOff, key, 0)
+            }),
+    );
+    let out = run(&mut *processor, &events);
+    assert!(out.iter().flatten().all(|v| *v == 0.0), "no region sounds");
+    assert_eq!(processor.report().entries(), [("voices", 0.0)]);
+    close(
+        level(&run(&mut *processor, &[event(EventKind::NoteOn, 72, 127)])),
+        0.125,
+    );
+    assert_eq!(processor.report().entries(), [("voices", 1.0)]);
 }
 
 /// Keyswitches on the keys of `ranges` (inclusive) with the default switch `default`.
