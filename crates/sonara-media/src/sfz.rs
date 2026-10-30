@@ -14,6 +14,12 @@
 //! `#define`/`#include` directives. Every other opcode is recorded in
 //! [`SampleBank::ignored_opcodes`] and has no effect.
 //!
+//! **Header scopes.** A region inherits the opcodes of the open `<control>`, `<global>`,
+//! `<master>` and `<group>` headers. `<global>`, `<master>` and `<group>` each start their own
+//! scope afresh and clear the scopes inside it; `<control>` clears only the control scope, so a
+//! file included under a `<global>` may start with its own `<control>` and keep that global's
+//! opcodes.
+//!
 //! **Keyswitches.** The switch keys are the union of the `sw_lokey`..`sw_hikey` ranges of every
 //! region, each with the opcodes it inherits from its headers or writes itself, so disjoint
 //! ranges switch only on their own keys. The default switch is the last valid `sw_default` in
@@ -224,7 +230,13 @@ fn parse(text: &str) -> Parsed {
             finish(&mut region, &scopes, &mut regions);
             match token {
                 "<control>" => {
-                    scopes = Default::default();
+                    // A new `<control>` resets only the control scope (`default_path` and the
+                    // like), as ARIA and sfizz read it: the enclosing `<global>`, `<master>` and
+                    // `<group>` keep their opcodes, so a switch range written before an
+                    // `#include` that starts with `<control>` still reaches its regions.
+                    if let Some(control) = scopes.first_mut() {
+                        control.clear();
+                    }
                     open_scope = 0;
                 }
                 "<global>" => {

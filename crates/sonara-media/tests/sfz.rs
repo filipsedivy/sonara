@@ -133,6 +133,83 @@ fn sw_default_in_the_first_group_survives_later_groups() {
 }
 
 #[test]
+fn control_header_keeps_the_enclosing_global_switch() {
+    // Sonatina's key-switch layout (TST-06): each articulation is a `<global>` with the switch
+    // range and its `sw_last`, followed by an `#include` of a file that may start with its own
+    // `<control>`. The control header must not clear the global's switch opcodes.
+    let dir = library();
+    fs::write(
+        dir.path().join("sustain.sfz"),
+        "<control> default_path=Samples/\n\
+         <group> lokey=c3 hikey=c5\n\
+         <region> sample=soft1.wav\n",
+    )
+    .expect("write");
+    fs::write(
+        dir.path().join("staccato.sfz"),
+        "<group> lokey=c3 hikey=c5\n\
+         <region> sample=loud1.wav\n",
+    )
+    .expect("write");
+    let bank = load_patch(
+        &dir,
+        "<global> sw_lokey=c2 sw_hikey=a2 sw_default=c2 sw_last=c2\n\
+         #include \"sustain.sfz\"\n\
+         <global> sw_lokey=c2 sw_hikey=a2 sw_default=c2 sw_last=c#2\n\
+         #include \"staccato.sfz\"\n",
+    );
+    assert_eq!(
+        bank.regions.iter().map(|r| r.sw_last).collect::<Vec<_>>(),
+        [Some(36), Some(37)],
+        "each articulation keeps its own switch"
+    );
+    assert_eq!(
+        bank.keyswitches.keys().collect::<Vec<_>>(),
+        (36..=45).collect::<Vec<_>>(),
+        "c2..a2 are keys 36..45"
+    );
+    assert_eq!(bank.keyswitches.default, Some(36));
+}
+
+#[test]
+fn control_header_keeps_master_and_group_opcodes() {
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<master> volume=-6\n\
+         <group> lokey=c3 hikey=c5 sw_last=c1 sw_lokey=c1 sw_hikey=d1\n\
+         <control> default_path=Samples/\n\
+         <region> sample=soft1.wav\n",
+    );
+    let region = &bank.regions[0];
+    assert_eq!((region.key_lo, region.key_hi), (48, 72));
+    assert_eq!(region.volume_db, -6.0);
+    assert_eq!(region.sw_last, Some(24));
+    assert_eq!(bank.keyswitches.keys().collect::<Vec<_>>(), [24, 25, 26]);
+}
+
+#[test]
+fn a_new_control_header_resets_default_path() {
+    // The second region names its sample from the patch folder: a `default_path` left over from
+    // the first `<control>` would look for `Samples/Samples/loud1.wav`.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<control> default_path=Samples/\n\
+         <region> sample=soft1.wav\n\
+         <control>\n\
+         <region> sample=Samples/loud1.wav\n",
+    );
+    assert_eq!(bank.regions.len(), 2);
+    assert_eq!(bank.samples.len(), 2, "two distinct files are decoded");
+    let loud = &bank.samples[bank.regions[1].sample];
+    assert!(
+        (f64::from(loud.data[0]) - 20_000.0 / 32_768.0).abs() < 1e-6,
+        "the second region plays loud1.wav"
+    );
+}
+
+#[test]
 fn region_level_switch_range_is_read() {
     let dir = library();
     let bank = load_patch(
