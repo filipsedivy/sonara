@@ -484,7 +484,7 @@ Recommendation: model the A clarinet's sound with the same samples as the B♭ (
 | Sonatina sampled range | `d2`–`d5` | 38–74 | [Cited S20] |
 
 - Low extension: most modern Boehm bass clarinets have an extension key to written E♭ (sounding D♭2 = 37), first added for parts written for the bass clarinet in A; professional models go to low C (sounding B♭1 = 34), the three lowest semitones on right-thumb keys [Cited S7].
-- Recommended: playable 34–86 (low-C instrument, S7's infobox top) and comfortable 37–74 (top = S7's "commonly encountered" written E6); an instrument without the extension stops at sounding D2 = 38 [Estimate: choice between the cited values; the model cannot express per-instrument extensions]. S7's fingering charts to written C8 (sounding 94) are an extreme, not a part-writing limit [Estimate].
+- Recommended: playable 34–86 (low-C instrument, S7's infobox top) and comfortable 37–74 (top = S7's "commonly encountered" written E6); an instrument without the extension stops at sounding D2 = 38 [Estimate: choice between the cited values; the model cannot express per-instrument extensions]. S7's fingering charts to written C8 (sounding 94) are an extreme, not a part-writing limit [Estimate: interpretation of S7, which gives the charts without calling them a writing limit and names written E6 as the common top].
 - Shostakovich uses the low concert C and B♭ in Symphonies 4, 6, 7, 8 and 11 [Cited S7]; Wagner's *Tristan* part for bass clarinet in A touches the low E sounding C♯ [Cited S2].
 - Registers by the soprano's written boundaries: chalumeau sounding D2–D3 (38–50), throat E♭3–A♭3 (51–56), clarion A3–B♭4 (57–70), altissimo B4 up [Cited S10 for written boundaries; sounding values are arithmetic].
 
@@ -600,11 +600,11 @@ _Adversarial fact-check, 2026-10-30. Every source below was re-opened in the fac
 - Sonara docs (S26): sampler plays velocity layers, round robin, keyswitches, `trigger=release`, `group`/`off_by`, CC 7, CC 11, CC 64, pitch bend; CC-driven layers and filters not supported; orchestration-metadata lists bass clarinet and "other transposing clarinets" as not covered.
 
 **Changed (was → now, why)**
-1. clarinet_eb, section 1, Italian name: "clarinetto piccolo; ... [Cited S6]" → *quartino* / *terzino in Mi♭* / *Elafà* [Cited S6], and "clarinetto piccolo (in mi♭)" as a separate row tagged [Estimate]. Why: S6 does not contain "clarinetto piccolo" (checked in the raw wikitext); no handbook read gives it either. The json name is kept as the conventional orchestral form.
+1. clarinet_eb, section 1, Italian name: "clarinetto piccolo; ... [Cited S6]" → *quartino* / *terzino in Mi♭* / *Elafà* [Cited S6], and "clarinetto piccolo (in mi♭)" as a separate row tagged Estimate. Why: S6 does not contain "clarinetto piccolo" (checked in the raw wikitext); no handbook read gives it either. The json name is kept as the conventional orchestral form.
 2. bass_clarinet, section 1: Italian "clarinetto basso [Cited S7]", German "Bassklarinette [Cited S7]", French "[Cited S2, S7]" → [Cited S11] / [Cited S11] (with Forsyth's "Bass Klarinette" [Cited S2]) / [Cited S2, S11]. Why: S7 gives no foreign names; S11's infobox lists "clarinetto basso", "Bassklarinette", "clarinette basse".
 3. bass_clarinet json `range_provenance.comfortable`: "Estimate: ... top = written E6, inside the sampled tops ..." → "Cited S7 for the top ... (sounding D5 = 74); low end Estimate ...". Why: S7's Range text states written E6 as the highest note commonly encountered in modern solo literature. Value unchanged (37–74).
 4. bass_clarinet, section 3: added the S7 Range-text row (fingerings to sounding B♭6 = 94; common top 74) and the matching sentence in "Recommended"; open question 1 rewritten to record that S7's infobox (86) and its text (74 common, 94 extreme) disagree.
-5. bass_clarinet, section 4: "'phenomenal powers' of crescendo and diminuendo" and "Pathétique bassoon solo marked *pppppp* ... [Cited S2]" → the words "crescendo/diminuendo" and the *pppppp* marking flagged as image content garbled in the OCR, *pppppp* tagged [Estimate]. Why: S2's OCR text has only hairpin glyphs ("— i z. -.") and "PPPPIv-" there.
+5. bass_clarinet, section 4: "'phenomenal powers' of crescendo and diminuendo" and "Pathétique bassoon solo marked *pppppp* ... [Cited S2]" → the words "crescendo/diminuendo" and the *pppppp* marking flagged as image content garbled in the OCR, *pppppp* tagged Estimate. Why: S2's OCR text has only hairpin glyphs ("— i z. -.") and "PPPPIv-" there.
 6. clarinet_eb, section 7: Walküre "D, usually played on E♭" → Widor's actual wording "frequently transposes ... on the ordinary instrument in E♭". Why: S3 says "frequently", not "usually".
 7. clarinet_eb, section 3: "the widest value a source states" → "the widest value a handbook or encyclopedia states; OT's sample range reaches 97". Why: OT's converted sample top (97) is wider than 96.
 8. clarinet_bb, section 2: "a modern soprano has seven finger holes and 17 keys" → seven tone holes closed by the fingertips, the rest worked by 17 keys. Why: that is what S5 says of the modern instrument; "seven finger holes" in S5 refers to Müller's 1812 instrument.
@@ -614,7 +614,7 @@ _Adversarial fact-check, 2026-10-30. Every source below was re-opened in the fac
 12. clarinet_a, section 4: added S10's view (A slightly gentler, difference hard to notice) to the timbre table.
 13. Sources table: S7 and S11 descriptions extended; S12 and S13 marked as not re-verified (HTTP 403 on re-fetch).
 14. clarinet_bb, section 4, Chalumeau row: Rimsky's "gloomy character" was presented as a plain register description → now quoted in its context (the bassoon + clarinet doubling, S1 line "The gloomy character of the clarinet prevails in the lower register"). Why: context.
-15. clarinet_a, section 2: "the A is slightly longer [Estimate]" → "69 cm vs 71 cm [Cited S10]". Why: S10 states both lengths.
+15. clarinet_a, section 2: "the A is slightly longer (Estimate)" → "69 cm vs 71 cm [Cited S10]". Why: S10 states both lengths.
 
 Also re-checked after the first pass and confirmed: Forsyth's throat-register quote "the very worst part of the instrument, the weakest in quality" and "in the pp, almost inaudible" (S2), Berlioz's "The clarinet in C is harder than that in B♭" (S4), Rimsky's "Ringing, threatening" low-register table (S1).
 
@@ -640,3 +640,4 @@ _Consistency review, 2026-10-30: json against prose, the Verification table and 
 - clarinet_bb section 5: a 19-word verbatim quote from the BBCSO manual (S18) about legato by note overlap was paraphrased.
 - Open questions 2 and 8: state that the note names are written and the MIDI numbers in parentheses are sounding, since the two differ for the bass and E♭ clarinets.
 - Open question 5: replaces the guess that other groups "may propose `double_tongue`" with what they actually use (`multitongue` in the flute cards, `double_tonguing` in the high-brass cards).
+- Gave every bare Estimate tag its reason (1 tag); Fact-check log changes 1, 5 and 15 now write the old tags as "tagged Estimate" or "(Estimate)" instead of bare bracket tags (3 more).

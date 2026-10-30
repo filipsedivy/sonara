@@ -221,7 +221,7 @@ Reading notes that apply to every card below:
 |---|---|---|
 | English | altos; contraltos | [Cited S1] (chorus types "soprano, alto or contralto, tenor and bass") |
 | Czech | alt (A); kontraalt (cA) is a separate, lower type | [Cited S11]; plural "alty" [Estimate: standard Czech] |
-| Italian | contralto | [Cited S2] (Berlioz discusses "the Italian word Contralto"); plural "contralti" [Estimate] |
+| Italian | contralto | [Cited S2] (Berlioz discusses "the Italian word Contralto"); plural "contralti" [Estimate: standard Italian plural; no Italian source gives it] |
 | German | Alt | [Cited S4] ("Dramatischer Alt", "Tiefer Alt") |
 | French | altos (chœur) | [Estimate: no French source read] |
 
@@ -387,7 +387,7 @@ Reading notes that apply to every card below:
 | staccato | EW HC staccato inside vowel patches [Cited S19]; Epic Choir "Short Staccato Syllables" for Tenors & Basses [Cited S17] |
 | humming | Epic Choir "Long Mmm" [Cited S17]; EWC 'mmm' [Cited S16] |
 | text | EW HC WordBuilder; consonant patches Mm, D, RR (tongue roll) [Cited S19] |
-| falsetto | no read library documents a choral falsetto patch [Estimate] |
+| falsetto | no read library documents a choral falsetto patch [Estimate: by absence in the library pages read, S16-S23] |
 | vibrato_on / non_vibrato | EWC "Nonvib to vib" [Cited S16] |
 | crescendo_swell, sforzando, tenuto, marcato, portamento, whisper | [Estimate: notated, rendered with the dynamics controller] |
 
@@ -454,7 +454,7 @@ Reading notes that apply to every card below:
 | Czech | bas (B); oktávista (O) for the lowest Russian type | [Cited S11]; plural "basy" [Estimate: standard Czech] |
 | Italian | bassi; basso profondo, basso cantante | [Cited S2] ("Bassi" in the example; the OCR reads "Basai"), [Cited S1] (basso cantante, basso profondo) |
 | German | Bass | [Cited S4] ("Jugendlicher Bass", "Spielbass") |
-| French | basses (chœur); "contrebasses" for Russian octavists | [Cited S1] (translator's footnote on "Contrebasses voices"); "basses" [Estimate] |
+| French | basses (chœur); "contrebasses" for Russian octavists | [Cited S1] (translator's footnote on "Contrebasses voices"); "basses" [Estimate: standard French; no French source read] |
 
 - Score: "Basses I / Basses II" [Cited S1]; letter B in SATB [Cited S8]. Family `choir` [Cited S27].
 
@@ -685,7 +685,7 @@ Reading notes that apply to every card below:
 | Czech | mezzosoprán (mS) | [Cited S11] |
 | Italian | mezzosoprano | [Estimate: standard Italian] |
 | German | Mezzosopran (Koloratur-, Lyrischer, Dramatischer Mezzosopran) | [Cited S4] |
-| French | mezzo-soprano | [Estimate] |
+| French | mezzo-soprano | [Estimate: standard French; no French source read] |
 
 - S1 calls it the voice "between sop. and alto" and abbreviates "M.-sopr." [Cited S1]. Family `choir` [Cited S27].
 - S3 lists lyric, coloratura and dramatic mezzo-sopranos [Cited S3].
@@ -869,7 +869,7 @@ Reading notes that apply to every card below:
 | Czech | tenor (T) | [Cited S11] |
 | Italian | tenore (tenore di grazia, tenore robusto) | [Cited S5] |
 | German | Tenor (Lyrischer Tenor, Jugendlicher Heldentenor, Heldentenor, Spieltenor) | [Cited S4] |
-| French | ténor; "haute-contre" for the old French high tenor | [Cited S2] (haute-contre); "ténor" [Estimate] |
+| French | ténor; "haute-contre" for the old French high tenor | [Cited S2] (haute-contre); "ténor" [Estimate: standard French; no French source read] |
 
 - Score abbreviation "Ten." [Cited S1]. Family `choir` [Cited S27].
 - S1's sub-types: "light tenor, tenorino-altino, ... lyric tenor, dramatic tenor" [Cited S1].
@@ -917,7 +917,7 @@ Reading notes that apply to every card below:
 | legato | VoR true legato vowels (Ah, Oo core) [Cited S22] |
 | staccato | VoR vowel staccatos and Latin poly-staccatos [Cited S22] |
 | text | VoR Latin poly-sustains [Cited S22] |
-| falsetto | head voice to Eb5/F5 [Cited S2]; no read library documents a falsetto patch [Estimate] |
+| falsetto | head voice to Eb5/F5 [Cited S2]; no read library documents a falsetto patch [Estimate: by absence in the library pages read] |
 | humming, whisper, trill, portamento, vibrato_on, non_vibrato, crescendo_swell, sforzando, tenuto, marcato | [Estimate: none documented by a read library] |
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
@@ -1017,7 +1017,7 @@ Reading notes that apply to every card below:
 | sustain / vowel, legato, staccato, text | [Cited S1] | no solo baritone library was read; Voices of Rapture covers soprano, alto, tenor and bass [Cited S22] |
 | humming | [Cited S15] | GM2 54 bank 1 "Humming" [Cited S13] |
 | falsetto | buffo only [Cited S2] | none read |
-| whisper, trill, portamento, vibrato_on, non_vibrato, crescendo_swell, sforzando, tenuto, marcato | [Estimate] | none read |
+| whisper, trill, portamento, vibrato_on, non_vibrato, crescendo_swell, sforzando, tenuto, marcato | [Estimate: general vocal practice; no read source lists these for the baritone] | none read |
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 - One singer. Duets: "M.-sopr./Bar." related within an octave; Sopr./Bar. in tenths "is fairly common"
@@ -1288,3 +1288,4 @@ transposition; tag hygiene; quote length; paths._
   root".
 - Open question 12: removed a reference to the research brief; the sizes are now described as often quoted for
   planning.
+- Gave every bare Estimate tag its reason (7 tags).

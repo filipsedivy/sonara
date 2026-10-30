@@ -139,7 +139,7 @@ Recommendation: keep all three Italian names as aliases; "tamburo militare" goes
 | drag (2-6 strokes before an accent) | `drag` (preferred list) | [Cited S4] | none found |
 | rimshot (head and rim together) | `rimshot` (preferred list) | [Cited S6] | VSCO 1 raw samples `snare1_rimshot_f/mf/fff`, `snare1_rim_fff` [Cited S24] |
 | rim click, cross-stick | `rim` (preferred list) | [Cited S6] | GM1 37 Side Stick [Cited S1] |
-| snares off, "sans timbre" | `snares_off` (new: snare drum played with the snares disengaged; Fr. "sans timbre" [Cited S5]; It. "senza corde" [Estimate]) | [Cited S4] [Cited S5] [Cited S6] | VSCO: 40 hit and 41 roll "NS" [Cited S24] (no snares [Estimate: file names only]); VSCO 1 raw `snare1_nosnare_*` [Cited S24]; BBC SO Discover lists only "Tenor Drum (Snares Off)" at D3 [Cited S28] |
+| snares off, "sans timbre" | `snares_off` (new: snare drum played with the snares disengaged; Fr. "sans timbre" [Cited S5]; It. "senza corde" [Estimate: usual Italian score marking; no source read gives it]) | [Cited S4] [Cited S5] [Cited S6] | VSCO: 40 hit and 41 roll "NS" [Cited S24] (no snares [Estimate: file names only]); VSCO 1 raw `snare1_nosnare_*` [Cited S24]; BBC SO Discover lists only "Tenor Drum (Snares Off)" at D3 [Cited S28] |
 | muffled (cloth over the head) | `con_sordino` (listed in the JSON beside `snares_off`; Widor says sans timbre is obtained "either by loosening the snares, or by muffling", the choice left to the player; see Open question 18) | [Cited S5] [Cited S4] | none found |
 | taps, ghost notes | velocity, not an id | ghost notes "very light filler notes" [Cited S6] | VSCO key 37 "Snare2-taps" [Cited S24] |
 | brushes | beater, not an id (see Open questions) | [Cited S6] | none found |
@@ -149,7 +149,7 @@ Mechanisms. Unpitched libraries put each technique on its own key, use velocity 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
 - One drum per part in the orchestra [Estimate: general practice]. Military funerals use several muffled side drums with a muffled bass drum [Cited S4].
-- No divisi. Doubling another percussion part is a matter of players, not of unison [Estimate].
+- No divisi. Doubling another percussion part is a matter of players, not of unison [Estimate: general orchestral practice; no source read states it].
 
 ### 7. Role in the orchestra and typical doublings
 
@@ -257,13 +257,13 @@ Mechanisms. Unpitched libraries put each technique on its own key, use velocity 
 | damped short note ("damp") | `damped` (preferred list) | [Cited S4] | none found |
 | let vibrate | `let_ring` (preferred list) | write the real length [Cited S4] | release time of the sample; none labelled |
 | birch switch | `rute` (new: the drum or shell struck with a bundle of twigs, Ger. Rute/Ruthe) | [Cited S4] [Cited S3] | none found |
-| rub (friction) | none | VSCO `bassdrum_rub1-4` on keys 32-35 [Cited S24] | meaning of "rub" not documented [Estimate] |
+| rub (friction) | none | VSCO `bassdrum_rub1-4` on keys 32-35 [Cited S24] | meaning of "rub" not documented [Estimate: the sample name is the only evidence; VSCO documents none (Open question 15)] |
 
 Libraries map the bass drum to one key with velocity layers (VSCO, SSO) [Cited S24] [Cited S27]; London Orchestral Percussion adds a pattern sequencer and a Crush effect to its bass drums [Cited S29]. Mechanisms common to this file are described under snare_drum, section 5.
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One player and one drum normally [Estimate]. Beethoven's Battle of Vittoria uses three bass drums, one in the orchestra and two for the cannonade [Cited S4].
+- One player and one drum normally [Estimate: general orchestral practice; no source read gives a player count (Open question 9)]. Beethoven's Battle of Vittoria uses three bass drums, one in the orchestra and two for the cannonade [Cited S4].
 - Some players fasten a cymbal plate to the bass drum and play both at once; Forsyth calls it "an unfortunate accident" that destroys the drum's tone [Cited S4].
 
 ### 7. Role in the orchestra and typical doublings
@@ -382,7 +382,7 @@ A damped or choked cymbal in a sampler needs a note-off that cuts the tail: eith
 ### 9. General MIDI and existing Sonara metadata
 
 - GM1 has no clash cymbals; 49 Crash Cymbal 1 and 57 Crash Cymbal 2 are drum-kit crashes and are the nearest substitute [Cited S1; substitution is an Estimate].
-- GS ORCHESTRA kit: 57 Concert Cymbal2, 59 Concert Cymbal1 [Cited S2]. That they are clash cymbals is not stated [Estimate]. On that kit note 49 sounds Timpani c#, so of the two GM crash notes only 57 stays a cymbal there [Cited S2; numbering derived, see Open question 1].
+- GS ORCHESTRA kit: 57 Concert Cymbal2, 59 Concert Cymbal1 [Cited S2]. That they are clash cymbals is not stated [Estimate: inferred from Roland's name "Concert Cymbal"; S2 gives names only]. On that kit note 49 sounds Timpani c#, so of the two GM crash notes only 57 stays a cymbal there [Cited S2; numbering derived, see Open question 1].
 - Sonara: no `clash_cymbals` in `data.rs`; `GM_MAP` 49 and 57 `crash`, 59 `ride`; `DRUM_NAMES` `crash` = 49; `crash_on_first` adds 49 on beat 1 [Cited S31].
 
 ### 10. Free or licensable sound sources and their coverage (library, licence as stated, what of this instrument it covers)
@@ -459,12 +459,12 @@ A swell recorded at a fixed length only fits one tempo; a CC-driven swell or a G
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One cymbal per part; composers often condense clash and suspended cymbal into one part [Cited S8]. Several suspended cymbals of different sizes in one set-up are common [Estimate].
+- One cymbal per part; composers often condense clash and suspended cymbal into one part [Cited S8]. Several suspended cymbals of different sizes in one set-up are common [Estimate: general percussion practice; no source read states it].
 
 ### 7. Role in the orchestra and typical doublings
 
 - Swells into climaxes and soft shimmering colour; in Widor's two roll types it is the piano/crescendo option [Cited S5].
-- Doubles trumpets and horns on sustained chords [Cited S3]; timpani rolls and crescendos [Estimate].
+- Doubles trumpets and horns on sustained chords [Cited S3]; timpani rolls and crescendos [Estimate: general orchestration practice; no source read pairs it with the timpani].
 
 ### 8. Variants and related instruments (when a player changes instrument)
 
@@ -545,11 +545,11 @@ A swell recorded at a fixed length only fits one tempo; a CC-driven swell or a G
 | scrape with a triangle beater (Rite of Spring) | `scrape` (new, defined under suspended_cymbal) | [Cited S11] | VSCO `gongscrape` pp/mf on key 42; VSCO 1 `gong_scrape_1-3` [Cited S24] |
 | bowed (Crumb, rosined bass bow) | `bowed` (new) | [Cited S11] | none found |
 | water gong (lowered into water after the stroke) | none (effect) | [Cited S11] | none found |
-| "smack" | none | VSCO 1 raw `gong_smack_*` [Cited S24] | meaning not documented [Estimate] |
+| "smack" | none | VSCO 1 raw `gong_smack_*` [Cited S24] | meaning not documented [Estimate: the sample name is the only evidence; VSCO documents none (Open question 15)] |
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One instrument and one player normally [Estimate]. Parsifal at Bayreuth: four tam-tams tuned to the four bell notes, plus a fifth rolled continuously [Cited S4]; S11 confirms that four tam-tams are used at Bayreuth [Cited S11].
+- One instrument and one player normally [Estimate: general orchestral practice; no source read gives a player count (Open question 9)]. Parsifal at Bayreuth: four tam-tams tuned to the four bell notes, plus a fifth rolled continuously [Cited S4]; S11 confirms that four tam-tams are used at Bayreuth [Cited S11].
 
 ### 7. Role in the orchestra and typical doublings
 
@@ -566,8 +566,8 @@ A swell recorded at a fixed length only fits one tempo; a CC-driven swell or a G
 | term "gong" | in Western symphonic music "reserved for the bossed type only"; a footnote says modern orchestras use "gong" and "tam-tam" interchangeably | [Cited S11] |
 | sets of tuned gongs | Messiaen (Des canyons aux étoiles) | [Cited S11] |
 | Puccini | used "gongs and tam-tams" in his operas | [Cited S11] |
-| tuned-gong ranges | not stated by any source read; a pitched `gong_tuned` id needs its own source | [Estimate] |
-| player changes | the tam-tam is usually one station of a multi-instrument player | [Estimate] |
+| tuned-gong ranges | not stated by any source read; a pitched `gong_tuned` id needs its own source | [Estimate: design judgement; S11 gives tuned-gong sizes but no pitch ranges] |
+| player changes | the tam-tam is usually one station of a multi-instrument player | [Estimate: general orchestral practice; no source read states it] |
 
 ### 9. General MIDI and existing Sonara metadata
 
@@ -599,7 +599,7 @@ A swell recorded at a fixed length only fits one tempo; a CC-driven swell or a G
 | Italian | "Triangolo" | [Cited S4] [Cited S5] [Cited S23] |
 | German | "Triangel" | [Cited S4] [Cited S5] [Cited S23] |
 | French | "Triangle" | [Cited S4] [Cited S5] [Cited S23] |
-| Score | single line or treble-clef stave; abbreviation "Trgl." | [Cited S4] [Cited S5] for the stave; [Estimate] for the abbreviation |
+| Score | single line or treble-clef stave; abbreviation "Trgl." | [Cited S4] [Cited S5] for the stave; [Estimate: common score abbreviation; no source read gives it] for the abbreviation |
 | Family | percussion, metal, indefinite pitch | [Cited S4] [Cited S12] |
 
 ### 2. Sound production
@@ -638,13 +638,13 @@ A swell recorded at a fixed length only fits one tempo; a CC-driven swell or a G
 | half-open | none | — | SSO 56 half-open (3 RR) [Cited S27] |
 | roll (between two sides) | `roll` | [Cited S4] [Cited S12] | SSO 58: held roll sample, `trigger=release_key` tail, 300 Hz high-pass filter [Cited S27]; VSCO raw `Triangle3-Roll`, `Triangle6-Roll` [Cited S24] |
 | choke of an open note | `damped` | [Cited S12] | GS: 80/81 in exclusive group EXC5, "Percussion sound of the same number will not be heard at the same time" [Cited S2]; SSO: the open triangle (`group=2`) is cut by the muted and half-open strokes (`off_by=1`) [Cited S27] |
-| accented stroke, grace groups | `marcato`; grace notes as separate notes | [Cited S4] [Cited S5] | velocity [Estimate] |
+| accented stroke, grace groups | `marcato`; grace notes as separate notes | [Cited S4] [Cited S5] | velocity [Estimate: inferred from the libraries read, which map dynamics to velocity (snare_drum section 5); none labels an accent sample] |
 
 The exclusive-group choke (open cut by muted) is the one percussion mechanism every source read agrees on: GM pairs the two sounds [Cited S1], GS makes them exclusive [Cited S2], SSO implements it [Cited S27], and the Sonara sampler plays `group`/`off_by` [Cited S31].
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One triangle and one player [Estimate]. Liszt's E-flat piano concerto raises it to a solo instrument [Cited S4] [Cited S12].
+- One triangle and one player [Estimate: general orchestral practice; no source read gives a player count (Open question 9)]. Liszt's E-flat piano concerto raises it to a solo instrument [Cited S4] [Cited S12].
 
 ### 7. Role in the orchestra and typical doublings
 
@@ -687,7 +687,7 @@ The exclusive-group choke (open cut by muted) is the one percussion mechanism ev
 | German | "Schellentrommel" (Forsyth, Widor); "Baskische Trommel", "Tambourin" (Forsyth); "Tamburin" (de Wikipedia) | [Cited S4] [Cited S5] [Cited S23] |
 | French | "Tambour de Basque" | [Cited S4] [Cited S5] |
 | Warning | German "Tambourin" also names the Provençal long drum; French "tambourin" is the long drum of Provence | [Cited S4] [Cited S13] |
-| Score | single line or treble stave; abbreviation "Tamb." | [Cited S4] [Cited S5] for the stave; [Estimate] for the abbreviation |
+| Score | single line or treble stave; abbreviation "Tamb." | [Cited S4] [Cited S5] for the stave; [Estimate: common score abbreviation; no source read gives it] for the abbreviation |
 | Family | percussion, membrane with jingles, indefinite pitch | [Cited S4] |
 
 Recommendation: `names.de` = "Schellentrommel" (both handbooks), aliases "Tamburin"; `names.it` = "tamburino", alias "tamburello" [Estimate: choice of primary alias].
@@ -728,7 +728,7 @@ Recommendation: `names.de` = "Schellentrommel" (both handbooks), aliases "Tambur
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One tambourine and one player [Estimate].
+- One tambourine and one player [Estimate: general orchestral practice; no source read gives a player count (Open question 9)].
 
 ### 7. Role in the orchestra and typical doublings
 
@@ -768,7 +768,7 @@ Recommendation: `names.de` = "Schellentrommel" (both handbooks), aliases "Tambur
 | German | "Kastagnetten" | [Cited S4] [Cited S5] [Cited S23] |
 | French | "Castagnettes" | [Cited S4] [Cited S5] [Cited S23] |
 | Spanish | "Castañuelas" | [Cited S5] [Cited S4] |
-| Score | single line without clef; abbreviation "Cast." | [Cited S5] for the line; [Estimate] for the abbreviation |
+| Score | single line without clef; abbreviation "Cast." | [Cited S5] for the line; [Estimate: common score abbreviation; no source read gives it] for the abbreviation |
 | Family | percussion, wood, indefinite pitch | [Cited S4] |
 
 Recommendation: `names.it` = "castagnette" (both handbooks), alias "nacchere" (modern Italian usage per S23) [Estimate: choice].
@@ -861,7 +861,7 @@ Recommendation: `names.it` = "castagnette" (both handbooks), alias "nacchere" (m
 ### 3. Range, transposition and clef (sounding and written; comfortable and extreme; register breaks)
 
 - No pitch range, no transposition; usually a high and a low block [Estimate: GM1 lists Hi and Low Wood Block (S1); S15 does not discuss pitch].
-- Notation: a single line, or two lines for high and low [Estimate].
+- Notation: a single line, or two lines for high and low [Estimate: engraving practice; no source read describes wood-block notation].
 
 ### 4. Dynamics by register, colour by register, agility, breath/bow/physical limits
 
@@ -869,19 +869,19 @@ Recommendation: `names.it` = "castagnette" (both handbooks), alias "nacchere" (m
 |---|---|---|
 | Colour | dry, sharp crack with sticks; fuller knock with mallets | [Cited S15] |
 | Dynamics | short decay at every level; loud strokes risk cracking a wooden block | [Estimate: no source read] |
-| Agility | very fast single strokes and rolls are possible with two sticks | [Estimate] |
+| Agility | very fast single strokes and rolls are possible with two sticks | [Estimate: general percussion practice; S15 does not discuss agility] |
 
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
 | Technique | Vocabulary id | Source | Library implementation |
 |---|---|---|---|
 | stroke, high and low block | plain note, `marcato` | [Cited S15] for the strokes | GM 76/77 [Cited S1]; SSO 74 low, 75 high [Cited S27]; BBC SO Discover D4 [Cited S28] |
-| roll | `roll` | [Estimate] | none found |
+| roll | `roll` | [Estimate: general percussion practice, as the json provenance says; S15 names only stick and mallet strokes] | none found |
 | beater (stick, mallet) | beater, not an id | [Cited S15] | none found |
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One player, usually as part of a multi-percussion station [Estimate].
+- One player, usually as part of a multi-percussion station [Estimate: general orchestral practice; no source read gives a player count (Open question 9)].
 
 ### 7. Role in the orchestra and typical doublings
 
@@ -920,7 +920,7 @@ Recommendation: `names.it` = "castagnette" (both handbooks), alias "nacchere" (m
 | Italian | "Temple block" (it Wikipedia title) | [Cited S23] |
 | German | "Tempelblock" (de Wikipedia title) | [Cited S23] |
 | French | "Bloc chinois" (fr Wikipedia title) | [Cited S23] |
-| Score | "T.Bl."; usually a five-line stave, one line per block or a pitched-looking layout | [Estimate] |
+| Score | "T.Bl."; usually a five-line stave, one line per block or a pitched-looking layout | [Estimate: common abbreviation and engraving practice; no source read gives either] |
 | Family | percussion, wood | [Cited S16] |
 
 Warning: "Chinese block" in English often means the wood block or wooden fish, while French "bloc chinois" is the title for temple blocks [Cited S15] [Cited S23]; ids, not names, must carry the meaning [Estimate: recommendation].
@@ -947,19 +947,19 @@ Warning: "Chinese block" in English often means the wood block or wooden fish, w
 | Colour | darker and hollower than a woodblock | [Cited S16] |
 | Imitation | in Leroy Anderson's Sleigh Ride and The Syncopated Clock they imitate a ticking clock and a galloping horse | [Cited S16] |
 | Melody | can double melodic motifs (John Barnes Chance, Incantation and Dance; Variations on a Korean Folk Song) | [Cited S16] |
-| Dynamics, agility | short decay, fast patterns across the set | [Estimate] |
+| Dynamics, agility | short decay, fast patterns across the set | [Estimate: general percussion practice; S16 does not discuss dynamics or agility] |
 
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
 | Technique | Vocabulary id | Source | Library implementation |
 |---|---|---|---|
-| stroke on one block | plain note, `marcato` | [Estimate] | none in VSCO, VCSL, SSO or BBC SO Discover lists [Cited S24] [Cited S26] [Cited S27] [Cited S28] |
-| roll | `roll` | [Estimate] | none found |
-| sweep across the set | `glissando` (preferred list) | [Estimate] | none found |
+| stroke on one block | plain note, `marcato` | [Estimate: general percussion practice; S16 names no techniques] | none in VSCO, VCSL, SSO or BBC SO Discover lists [Cited S24] [Cited S26] [Cited S27] [Cited S28] |
+| roll | `roll` | [Estimate: general percussion practice; S16 names no techniques] | none found |
+| sweep across the set | `glissando` (preferred list) | [Estimate: general percussion practice; S16 names no techniques] | none found |
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One set, one player [Estimate].
+- One set, one player [Estimate: general orchestral practice; no source read gives a player count (Open question 9)].
 
 ### 7. Role in the orchestra and typical doublings
 
@@ -992,12 +992,12 @@ Warning: "Chinese block" in English often means the wood block or wooden fish, w
 | Language | Name | Provenance |
 |---|---|---|
 | English | sleigh bells, jingle bells | [Cited S17] |
-| Czech | "Rolnička" (cs title, singular); "rolničky" (plural) | [Cited S23] for the title; [Estimate] for the plural form as the score term |
+| Czech | "Rolnička" (cs title, singular); "rolničky" (plural) | [Cited S23] for the title; [Estimate: Czech plural of the cs title; no Czech score or handbook was read] for the plural form as the score term |
 | Italian | "sonagli" | [Estimate: the it title linked from "Jingle bell" is "Campane tintinnanti" [Cited S23]] |
 | German | "Schellen" | [Estimate: the de title linked from "Jingle bell" is "Glockenstab" [Cited S23], which looks like a different object] |
 | French | "Grelot (instrument)" (fr title); "grelots" | [Cited S23] |
-| Score | "Sl. B." | [Estimate] |
-| Family | percussion, metal, indefinite pitch | [Estimate] |
+| Score | "Sl. B." | [Estimate: common score abbreviation; no source read gives it] |
+| Family | percussion, metal, indefinite pitch | [Estimate: inferred from S17's description of metal bells; no handbook read classes them] |
 
 ### 2. Sound production
 
@@ -1009,27 +1009,27 @@ Warning: "Chinese block" in English often means the wood block or wooden fish, w
 
 ### 3. Range, transposition and clef (sounding and written; comfortable and extreme; register breaks)
 
-- No pitch range, no transposition [Estimate]. Single line [Estimate].
+- No pitch range, no transposition [Estimate: no handbook read describes sleigh bells; S17 states no pitch]. Single line [Estimate: engraving practice; no source read gives the notation].
 
 ### 4. Dynamics by register, colour by register, agility, breath/bow/physical limits
 
 | Aspect | Fact | Provenance |
 |---|---|---|
 | Colour | bright jingle "especially in large numbers" | [Cited S17] |
-| Dynamics | quiet to loud; library samples run from quiet to loud hits | [Cited S24] for the samples; the rest [Estimate] |
-| Agility | steady shaken rhythms; accents by striking the mount | [Estimate] |
+| Dynamics | quiet to loud; library samples run from quiet to loud hits | [Cited S24] for the samples; the rest [Estimate: general percussion practice; no source read states a dynamic range] |
+| Agility | steady shaken rhythms; accents by striking the mount | [Estimate: general percussion practice; S17 does not describe technique] |
 
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
 | Technique | Vocabulary id | Source | Library implementation |
 |---|---|---|---|
-| hit (accent) | plain note, `marcato` | [Estimate] | VSCO 82 `Sleighbells_Hit` (2 RR); VSCO 1 raw `sleighbell1_hit_*`, `_hit_loud`, `_hit_quiet` [Cited S24]; SSO 70 f and mf [Cited S27] |
-| single shake | `shake_stroke` (new, defined under tambourine) | [Estimate] | VSCO 1 raw `sleighbell1_shake1`, `sleighbell2_shake1` [Cited S24] |
-| continuous shake | `roll` | [Estimate] | none labelled |
+| hit (accent) | plain note, `marcato` | [Estimate: general percussion practice; no source read describes the technique, only VSCO's sample names (S24)] | VSCO 82 `Sleighbells_Hit` (2 RR); VSCO 1 raw `sleighbell1_hit_*`, `_hit_loud`, `_hit_quiet` [Cited S24]; SSO 70 f and mf [Cited S27] |
+| single shake | `shake_stroke` (new, defined under tambourine) | [Estimate: general percussion practice; no source read describes the technique, only VSCO's sample names (S24)] | VSCO 1 raw `sleighbell1_shake1`, `sleighbell2_shake1` [Cited S24] |
+| continuous shake | `roll` | [Estimate: general percussion practice; no source read describes a sustained shake] | none labelled |
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One set, one player [Estimate].
+- One set, one player [Estimate: general orchestral practice; no source read gives a player count (Open question 9)].
 
 ### 7. Role in the orchestra and typical doublings
 
@@ -1068,7 +1068,7 @@ Warning: "Chinese block" in English often means the wood block or wooden fish, w
 | Italian | "Maracas" | [Cited S23] |
 | German | "Maracas" | [Cited S23] |
 | French | "Maraca" (fr title); "maracas" | [Cited S23] |
-| Score | "Mar." or "Mrcs." | [Estimate] |
+| Score | "Mar." or "Mrcs." | [Estimate: common score abbreviation; no source read gives it] |
 | Family | percussion, rattle (shaken idiophone) | [Cited S18] for the shaking; the class name is an Estimate |
 
 ### 2. Sound production
@@ -1081,7 +1081,7 @@ Warning: "Chinese block" in English often means the wood block or wooden fish, w
 
 ### 3. Range, transposition and clef (sounding and written; comfortable and extreme; register breaks)
 
-- No pitch range, no transposition; one line, often two (left and right maraca) [Estimate].
+- No pitch range, no transposition; one line, often two (left and right maraca) [Estimate: engraving practice; S18 gives no pitch or notation].
 
 ### 4. Dynamics by register, colour by register, agility, breath/bow/physical limits
 
@@ -1089,15 +1089,15 @@ Warning: "Chinese block" in English often means the wood block or wooden fish, w
 |---|---|---|
 | Role | "a primarily rhythmic role, accentuating the beat"; Latin styles (son cubano, salsa, mambo, samba) | [Cited S18] |
 | Accents | shakers "may also be struck for a greater accent on certain beats" | [Cited S19] |
-| Dynamics, agility | soft to moderately loud; fast subdivisions; each pair can alternate | [Estimate] |
+| Dynamics, agility | soft to moderately loud; fast subdivisions; each pair can alternate | [Estimate: general percussion practice; S18 does not discuss dynamics or agility] |
 
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
 | Technique | Vocabulary id | Source | Library implementation |
 |---|---|---|---|
 | shake (one gesture) | `shake_stroke` (new, defined under tambourine) | [Cited S18] | VSCO 1 raw `maraca1.wav` to `maraca5.wav` and `maraca_shake.wav`, unmapped [Cited S24]; GM 70 [Cited S1] |
-| accent | `marcato` | [Cited S19] | velocity [Estimate] |
-| continuous shake | `roll` | [Estimate] | none found |
+| accent | `marcato` | [Cited S19] | velocity [Estimate: inferred from the libraries read, which map dynamics to velocity (snare_drum section 5); none labels an accent sample] |
+| continuous shake | `roll` | [Estimate: general percussion practice; S18 and S19 describe shaking, not a sustained roll] | none found |
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
@@ -1139,8 +1139,8 @@ Warning: "Chinese block" in English often means the wood block or wooden fish, w
 | Czech | "šejkr" | [Estimate: no cs article in S23] |
 | Italian | "Shaker (strumento musicale)" | [Cited S23] |
 | German | "Shaker (Musik)" | [Cited S23] |
-| French | "Instrument à secouer" (fr title); "shaker" in practice | [Cited S23]; [Estimate] for the practice |
-| Score | "Shk." | [Estimate] |
+| French | "Instrument à secouer" (fr title); "shaker" in practice | [Cited S23]; [Estimate: common French usage; no French source was read] for the practice |
+| Score | "Shk." | [Estimate: common score abbreviation; no source read gives it] |
 | Family | percussion, shaken idiophone; a generic class, not one instrument | [Cited S19] |
 
 Scope: this id is the tube or egg shaker class. Maracas have their own id; cabasa, caxixi and rainstick are variants [Cited S19 for the class members; the split is a recommendation].
@@ -1155,32 +1155,32 @@ Scope: this id is the tube or egg shaker class. Maracas have their own id; cabas
 
 ### 3. Range, transposition and clef (sounding and written; comfortable and extreme; register breaks)
 
-- No pitch range, no transposition; single line [Estimate].
+- No pitch range, no transposition; single line [Estimate: engraving practice; S19 gives no pitch or notation].
 
 ### 4. Dynamics by register, colour by register, agility, breath/bow/physical limits
 
 | Aspect | Fact | Provenance |
 |---|---|---|
 | Role | "often used in rock and other popular styles of music to provide the ride pattern" | [Cited S19] |
-| Dynamics, agility | soft; continuous subdivisions; accents by striking | [Cited S19] for accents; the rest [Estimate] |
+| Dynamics, agility | soft; continuous subdivisions; accents by striking | [Cited S19] for accents; the rest [Estimate: general percussion practice; S19 does not discuss dynamics] |
 
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
 
 | Technique | Vocabulary id | Source | Library implementation |
 |---|---|---|---|
 | single shake | `shake_stroke` (new, defined under tambourine) | [Cited S19] | SSO 64-66 `shaker-a/b/c` (plus unmapped `shaker-hi/lo` files) [Cited S27]; VSCO 1 raw "Camo's Shaker" `shake1-7` [Cited S24]; GS 82 Shaker [Cited S2] |
-| accent (struck) | `marcato` | [Cited S19] | velocity [Estimate] |
-| continuous shake | `roll` | [Estimate] | none labelled |
+| accent (struck) | `marcato` | [Cited S19] | velocity [Estimate: inferred from the libraries read, which map dynamics to velocity (snare_drum section 5); none labels an accent sample] |
+| continuous shake | `roll` | [Estimate: general percussion practice; S19 describes single shakes back and forth, not a sustained roll] | none labelled |
 
 A shaker groove alternates forward and backward strokes of different colour, which libraries cover with two or more samples [Estimate: the SSO a/b/c naming suggests it, but no documentation was read].
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One player [Estimate].
+- One player [Estimate: general orchestral practice; no source read gives a player count (Open question 9)].
 
 ### 7. Role in the orchestra and typical doublings
 
-- Not an orchestral-handbook instrument: a full-text search of S3, S4 and S5 finds no shaker, maracas, whip, wood block, temple blocks or sleigh bells [Cited S3] [Cited S4] [Cited S5]. Pop, film and hybrid scoring [Estimate].
+- Not an orchestral-handbook instrument: a full-text search of S3, S4 and S5 finds no shaker, maracas, whip, wood block, temple blocks or sleigh bells [Cited S3] [Cited S4] [Cited S5]. Pop, film and hybrid scoring [Estimate: S19 names only rock and other popular styles; film and hybrid use is general scoring practice].
 
 ### 8. Variants and related instruments (when a player changes instrument)
 
@@ -1228,14 +1228,14 @@ A shaker groove alternates forward and backward strokes of different colour, whi
 
 ### 3. Range, transposition and clef (sounding and written; comfortable and extreme; register breaks)
 
-- No pitch range, no transposition; single line [Estimate].
+- No pitch range, no transposition; single line [Estimate: engraving practice; S20 gives no pitch or notation].
 
 ### 4. Dynamics by register, colour by register, agility, breath/bow/physical limits
 
 | Aspect | Fact | Provenance |
 |---|---|---|
 | Dynamics | loud by nature; the two-handed whip is louder than the slapstick | [Cited S20] |
-| Agility | one crack per gesture; a two-handed whip needs time to reopen, so rapid repeats need a slapstick or two instruments | [Estimate] |
+| Agility | one crack per gesture; a two-handed whip needs time to reopen, so rapid repeats need a slapstick or two instruments | [Estimate: inferred from the hinged boards S20 describes; no source states a repeat speed] |
 | Character | imitates a whip on a horse (Anderson's Sleigh Ride) | [Cited S20] |
 
 ### 5. Articulations and techniques, and how MIDI libraries implement them (key switch, CC, separate patch, velocity, note overlap for legato; name the library/manual you read)
@@ -1246,7 +1246,7 @@ A shaker groove alternates forward and backward strokes of different colour, whi
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
-- One player [Estimate].
+- One player [Estimate: general orchestral practice; no source read gives a player count (Open question 9)].
 
 ### 7. Role in the orchestra and typical doublings
 
@@ -1274,15 +1274,15 @@ A shaker groove alternates forward and backward strokes of different colour, whi
 
 1. **GS ORCHESTRA note numbers are derived.** S2's text copy gives sounds row by row; the numbers come from aligning rows with the STANDARD column in GM order. Spot checks agree (Kick Drum2 = 35, Open Triangle = 81, 13 chromatic timpani F-f = 41-53) [Cited S2], but a Roland PDF with explicit numbers was not readable (encrypted). Verify before shipping a GS map.
 2. **GS "Slap" (STANDARD 28)** may or may not be a slapstick or whip sound; S2 names it only [Cited S2].
-3. **"Gong" versus "tam-tam".** S11 says Western symphonic usage reserves "gong" for the bossed (tuned) type, but also that players read "gong" as tam-tam and that modern orchestras use the words interchangeably [Cited S11]; Forsyth and Widor head the tam-tam chapter "The Gong" [Cited S4] [Cited S5]. Recommendation: `tam_tam` with the alias "gong"; a separate pitched id (for example `gong_tuned`) once a source for tuned-gong pitches is read [Estimate].
-4. **Tam-tam dynamics.** Forsyth: hardly more than a single p or mp stroke; a heavy blow sounds dull [Cited S4]. Widor: "terrifying when struck forte" [Cited S5]. S11 explains the difference with priming [Cited S11]. Recommendation: allow the full dynamic range and model the slow "bloom" of an unprimed stroke [Estimate].
+3. **"Gong" versus "tam-tam".** S11 says Western symphonic usage reserves "gong" for the bossed (tuned) type, but also that players read "gong" as tam-tam and that modern orchestras use the words interchangeably [Cited S11]; Forsyth and Widor head the tam-tam chapter "The Gong" [Cited S4] [Cited S5]. Recommendation: `tam_tam` with the alias "gong"; a separate pitched id (for example `gong_tuned`) once a source for tuned-gong pitches is read [Estimate: design judgement from S4, S5 and S11].
+4. **Tam-tam dynamics.** Forsyth: hardly more than a single p or mp stroke; a heavy blow sounds dull [Cited S4]. Widor: "terrifying when struck forte" [Cited S5]. S11 explains the difference with priming [Cited S11]. Recommendation: allow the full dynamic range and model the slow "bloom" of an unprimed stroke [Estimate: design judgement from S4, S5 and S11].
 5. **Gossec's first orchestral tam-tam**: 1790 in one passage of S11, 1791 (Mirabeau funeral march) in another [Cited S11].
 6. **Snare drum in symphonies.** Widor (1906): never used in a symphony [Cited S5]; S6 lists Nielsen's Fifth Symphony and Ravel's Bolero [Cited S6]. Historical, not a data conflict.
 7. **Tabor snare.** Forsyth: a single hemp snare (and says the best authorities agree); Widor: "without timbre" [Cited S4] [Cited S5].
 8. **Names.** Italian snare: "tamburo militare" (S4), "tamburo piccolo" (S5), "rullante" (S23). Italian castanets: "castagnette" (S5) vs "nacchere" (S23). German tambourine: "Schellentrommel" (S4, S5) vs "Tamburin" (S23). Czech: the Wikipedia titles "Vířivý buben" and "Basový buben" (S23) differ from the common score terms "malý buben" and "velký buben" (Estimate); a Czech orchestration source is needed. Missing cs, de or fr titles (suspended cymbal, clash cymbals, wood block, temple blocks, shaker, whip) are Estimates.
 9. **Number of percussionists.** No source read states it (S21 lists instruments per era; S22 gives no count). Every `typical_players` count in this file is an Estimate.
-10. **Sonara `GM_MAP` lacks GM1 triangles (80, 81)** and 11 other GM1 notes [Cited S1] [Cited S31]; the Drum Kit's 29 sounds have golden vectors (GLD-01) [Cited S31]. Adding orchestral names to `GM_MAP` is an owner decision; an orchestral map beside it avoids touching golden data [Estimate].
-11. **The word "shaker".** Sonara's `shaker` = GM 69/70 (Cabasa, Maracas); GS 82 = Shaker; this file's `shaker` id = the shaker class [Cited S1] [Cited S2] [Cited S31]. A rename needs a decision because `DRUM_NAMES` is generator API [Estimate].
+10. **Sonara `GM_MAP` lacks GM1 triangles (80, 81)** and 11 other GM1 notes [Cited S1] [Cited S31]; the Drum Kit's 29 sounds have golden vectors (GLD-01) [Cited S31]. Adding orchestral names to `GM_MAP` is an owner decision; an orchestral map beside it avoids touching golden data [Estimate: reading of the project rules, not an owner decision].
+11. **The word "shaker".** Sonara's `shaker` = GM 69/70 (Cabasa, Maracas); GS 82 = Shaker; this file's `shaker` id = the shaker class [Cited S1] [Cited S2] [Cited S31]. A rename needs a decision because `DRUM_NAMES` is generator API [Estimate: reading of the Sonara code (S31) and the contract rules, not an owner decision].
 12. **Clash cymbals fallback.** GM has only kit crashes (49, 57); GS ORCHESTRA puts Concert Cymbal1 on 59, which GM and Sonara treat as ride [Cited S1] [Cited S2] [Cited S31].
 13. **Sonara sampler opcodes.** `docs/sample-libraries.md` lists `trigger=release` but not `trigger=release_key`, and says filters and CC-driven crossfades are unsupported [Cited S31]. SSO's percussion uses `release_key` (snare and triangle rolls), `xfin`/`xfout` velocity crossfades (bass drum) and `fil_type=hpf_2p` (triangle roll, finger cymbal) [Cited S27]. Whether `release_key` and velocity crossfades play correctly in Sonara is unverified.
 14. **VSCO `GM-StylePerc.sfz` is not GM.** Despite its name it puts snare rolls on 39 and 41 (GM Hand Clap, Low Floor Tom), gong on 42 and 46 (GM hi-hats), log drums on 76/77 (GM wood blocks) and sleigh bells on 82 (GS Shaker) [Cited S24] [Cited S1] [Cited S2]. It also puts ratchets on 69-71 (GM Cabasa, Maracas, Short Whistle), suspended-cymbal crescendos on 47, 48 and 50 (GM toms), suspended-cymbal hits on 51 and 59 (GM ride cymbals), an anvil on 67 and a brake drum on 68 (GM agogos), and bell-tree strokes on 83-86 (GS Jingle Bell, Bell Tree, Castanets, Mute Surdo) [Cited S24] [Cited S1] [Cited S2]. A GM file played through it gives wrong sounds; a remap is needed.
@@ -1290,7 +1290,7 @@ A shaker groove alternates forward and backward strokes of different colour, whi
 16. **Rimsky's "little bells"** in the high group: sleigh bells or a glockenspiel-like set? [Cited S3].
 17. **Beaters as a separate dimension.** Sources distinguish hard stick, soft (timpani) stick, mallet, brush and rute on the same instrument [Cited S4] [Cited S6] [Cited S15]. A `beater` field (stick, soft_mallet, hard_mallet, brush, rute, hand, bow) would avoid multiplying articulation ids; `rute` and `bowed` are proposed as ids here only because the vocabulary has no beater field [Estimate: modelling recommendation].
 18. **Snares off versus muffled.** Widor says "sans timbre" is obtained by loosening the snares or by muffling, at the player's choice [Cited S5]; this file proposes `snares_off` and keeps `con_sordino` for a covered head. The owner may prefer one id.
-19. **Temple blocks: pitched or not.** Usually five blocks in a pentatonic tuning, yet "not commonly treated as pitched percussion" [Cited S16]. Recommendation: unpitched with five ordered keys [Estimate].
+19. **Temple blocks: pitched or not.** Usually five blocks in a pentatonic tuning, yet "not commonly treated as pitched percussion" [Cited S16]. Recommendation: unpitched with five ordered keys [Estimate: design judgement from S16].
 20. **Vendor note names are not MIDI numbers here.** The BBC SO Discover key list (S28) and the London Orchestral Percussion manual (S29: hits from C3, timpani key switches C0-F0, scene triggers C6-G6) give note names without stating an octave convention [Cited S28] [Cited S29]. This file quotes them verbatim and never converts them; they must not be read as C4 = 60 names. Many Kontakt and Spitfire products call middle C "C3" [Estimate: vendor practice, not stated on the pages read]. SSO note names, by contrast, are converted with the SFZ default c4 = 60 [Estimate: the file does not state its octave offset]; VSCO keys are plain integers [Cited S24].
 21. **Clefs of the tam-tam and castanets.** Forsyth's text says the Gong is written "on one line without clef" and Widor says the same of the Castanets, while Forsyth's instrument table gives the Gong "Conventional bass-clef" and the Castanets "Conventional treble-clef", each "or a single line" [Cited S4] [Cited S5]. The JSON lists both; the table's column alignment comes from OCR text.
 
@@ -1349,10 +1349,11 @@ _Adversarial check, 2026-10-30. I reopened every source below in this session. M
 Review of 2026-10-30 against the JSON blocks, section 3, section 9, the data.rs table, the fact-check log, tag hygiene and quote licence. Every json correction in the fact-check log (tam_tam and castanets clefs, suspended_cymbal provenance, the mapping-table GS column) was found applied in both json and prose; every [Cited Sn] points to an existing source row.
 
 - S31 source row: the absolute local path in the URL column was replaced by "local checkout of the Sonara repository, branch `research/orchestra-instruments`".
-- New convention paragraph under the Sources table: `percussion` in every `clefs` list is the modern engraving default [Estimate]; before, the json listed it on all 14 cards while only snare_drum section 3 mentioned it.
+- New convention paragraph under the Sources table: `percussion` in every `clefs` list is the modern engraving default [Estimate: modern engraving practice; no source read states it]; before, the json listed it on all 14 cards while only snare_drum section 3 mentioned it.
 - snare_drum json: `con_sordino` added to `articulations_existing_vocab`, matching section 5 (muffled = `con_sordino`), section 6 (muffled side drums, S4), Open question 18 ("keeps `con_sordino` for a covered head") and the json's own provenance ("S4 ... muffled"); the data.rs verification row and the section 5 row now say so.
 - suspended_cymbal section 4, Swell: a 16-word verbatim Wikipedia quotation (S10) paraphrased; fact-check change 2 now quotes only a short part of it.
 - temple_blocks section 2: a 16-word verbatim Wikipedia quotation (S16) on the pentatonic set of five paraphrased.
 - sleigh_bells section 2: the S17 sentence on how the simplest bells are made reworded as a precaution against close paraphrase (S17 was not reopened).
-- tam_tam section 1: added the score abbreviation "T.-t." [Estimate], which the json carried but no prose mentioned.
+- tam_tam section 1: added the score abbreviation "T.-t." [Estimate: common abbreviation, no source read], which the json carried but no prose mentioned.
 - Fact-check log, remaining concerns: "every score abbreviation remain Estimates" corrected; "S.D.", "B.D.", "Cym." (S4) and "sus. cym." (S9) are cited.
+- Gave every bare Estimate tag its reason (61 tags); the parenthesised "(Estimate)" markers inside the json strings were left unchanged.

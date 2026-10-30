@@ -145,7 +145,7 @@ Conventions used in all cards: MuseScore pitch ranges (S34-S40) are read as soun
 | Czech | trubka in B ("Nejběžnějším typem trubky je trubka in B") | [Cited S26] |
 | Italian | tromba; 1914 name of the valved instrument "Tromba ventile" | [Cited S1 p. 89]; "in si♭" key suffix [Estimate: standard Italian key naming] |
 | German | Trompete; 1914 "Ventiltrompete"; "in B" (German B = English B♭) | [Cited S1 p. 89]; key suffix [Estimate: standard German key naming] |
-| French | trompette; 1914 "Trompette à pistons" | [Cited S31, S1 p. 89]; "en si♭" [Estimate] |
+| French | trompette; 1914 "Trompette à pistons" | [Cited S31, S1 p. 89]; "en si♭" [Estimate: standard French key naming] |
 | Score label | "B♭ Trumpet", short "B♭ Tpt."; generic "Tpt." | [Cited S34, S40]; English abbreviation "Tp" in the French table [Cited S31] |
 | Family | brass (Sonara slug `brass`) | [Cited S33] |
 | Score position | with the brass, after the horns | [Estimate: standard score order; no source read] |
@@ -285,8 +285,8 @@ Mutes in detail:
 | VSCO 2 CE | CC0 1.0 Universal | solo trumpet: sustain, sustain with vibrato, staccato (3 velocity layers, 2 round robins), straight-mute sustain, harmon-mute sustain; keys 52-84 (mutes 58-84); samples named in C3 = 60 style (file "A#3" has `pitch_keycenter=70`); which key of trumpet is not stated | yes: opcodes are `lokey/hikey`, `lovel/hivel`, `pitch_keycenter`, `seq_*`, `lorand`, `ampeg_attack/release`, `volume`, all listed as supported; `ampeg_dynamic` is not in Sonara's list | [Cited S24, S33]; `ampeg_dynamic` is not in the parser's supported list, so it is recorded in `ignored_opcodes` and has no effect [Cited S43] |
 | Sonatina Symphonic Orchestra | "Creative Commons Sampling Plus 1.0" | solo trumpet and trumpet section: sustain (looped, non-looped, decay), marcato, staccato, legato; solo mapped e3-e6 = 52-88, one sample per minor third | partly: keyswitches (`sw_*`) work; Performance patches put dynamics on CC1 crossfades and low-pass filters, which Sonara does not play; Notation patches use velocity plus `fil_veltrack` filters | [Cited S25, S33]; `Trumpet Solo Legato.sfz` has 3 `trigger=first` and 3 `trigger=legato` groups [Cited S25]; Sonara's parser accepts `trigger` but maps every value other than `release` to an ordinary attack [Cited S43], so first-note and legato-transition regions would both sound on every key press [Estimate: follows from the code read; not rendered]; S33 rates the licence "unresolved" for bundling [Cited S33] |
 | MuseScore_General, FluidR3_GM | MIT, notices required | GM program 57 and 60 only, no articulations | no (SF2; Sonara's sampler reads SFZ) | [Cited S33] |
-| Logic Pro Studio Horns | Apple software (licence not read) | solo trumpet and 4-trumpet sections; sustain, staccato, marcato, expressive, falls, doit, shake, scoop, growl, legato transitions | no (Logic only) | [Cited S19-S21]; licence [Estimate] |
-| Samplemodeling The Trumpet 3 | commercial (EULA not read) | three B♭ trumpets, German trumpet, cornet, flugelhorn, piccolo; all mutes; falls, shakes, growl | no (Kontakt Player) | [Cited S23]; licence [Estimate] |
+| Logic Pro Studio Horns | Apple software (licence not read) | solo trumpet and 4-trumpet sections; sustain, staccato, marcato, expressive, falls, doit, shake, scoop, growl, legato transitions | no (Logic only) | [Cited S19-S21]; licence [Estimate: the licence was not read; S19-S21 are user-guide pages] |
+| Samplemodeling The Trumpet 3 | commercial (EULA not read) | three B♭ trumpets, German trumpet, cornet, flugelhorn, piccolo; all mutes; falls, shakes, growl | no (Kontakt Player) | [Cited S23]; licence [Estimate: the EULA was not read; S23 is the user manual] |
 | VSL Studio Trumpet (B♭ and C, muted) | commercial (EULA not read) | sold separately within Studio Special Brass | no (VSL player) | [Cited S10] |
 
 ## trumpet_c: Trumpet in C
@@ -539,7 +539,7 @@ Old scores often write "Trumpets in [crook]" in C notation, for example Strauss'
 ### 4. Dynamics by register, colour by register, agility, breath/bow/physical limits
 - Timbre homogeneous; best between C5 and C6 (sounding) [Cited S4]. "Sounds 'smaller' and brighter than the B♭ trumpet" [Cited S23].
 - Single, double and triple tonguing "with great precision at the fastest tempi" and at extreme dynamic levels; runs and large legato and staccato leaps are easy [Cited S4].
-- VSL lists and defines sforzando, sforzandissimo and fortepiano for the piccolo [Cited S4]; that they are especially idiomatic [Estimate].
+- VSL lists and defines sforzando, sforzandissimo and fortepiano for the piccolo [Cited S4]; that they are especially idiomatic [Estimate: inferred from VSL listing and defining them, S4; S4 does not call them idiomatic].
 - Endurance: the high register is tiring and piccolo solos are usually short [Estimate: brass practice; no source read].
 - Rimsky-Korsakov invented a small trumpet in E♭/D "to realise the very high trumpet notes without difficulty" (*Mlada*); a B♭/A small trumpet "sounding an octave higher than the ordinary trumpet has not yet appeared in musical literature" (his time) [Cited S2].
 
@@ -557,7 +557,7 @@ Old scores often write "Trumpets in [crook]" in C notation, for example Strauss'
 | double_tonguing, triple_tonguing | new | see `trumpet_bb` | [Cited S4] |
 | vibrato_on, non_vibrato | new | "Portato long, senza/molto vibrato" | [Cited S7] |
 - VSL Studio Piccolo Trumpet (B♭ only): short and long notes, performance interval (legato), dynamics, flutter tongue, trills, performance and fast repetitions, upbeats, grace notes, scale runs, mordents; the screenshot shows a patch "08 Piccolo trumpet - VelXF sus" (velocity crossfade) [Cited S7]. How articulations switch is not stated [Cited S7].
-- Samplemodeling: the piccolo is part of the package whose single controller scheme (CC11 dynamics, overlap legato, CC1 vibrato, CC100 mutes) the manual documents [Cited S23]; per-instrument differences are not stated [Estimate].
+- Samplemodeling: the piccolo is part of the package whose single controller scheme (CC11 dynamics, overlap legato, CC1 vibrato, CC100 mutes) the manual documents [Cited S23]; per-instrument differences are not stated [Estimate: S23 documents one controller scheme for the package and names no per-instrument difference].
 
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 - A solo instrument, "often played at the player's discretion for high passages rather than being specifically called for" [Cited S12]. Two piccolos in thirds occur in Baroque double-trumpet parts [Estimate: repertoire; no source read].
@@ -674,7 +674,7 @@ Old scores often write "Trumpets in [crook]" in C notation, for example Strauss'
 | Italian | cornetta | [Estimate: Forsyth's 1914 Italian name is OCR-garbled ("Cornetto ... (or Cornetto)") [Cited S1 p. 103]; not the Renaissance cornetto] |
 | German | Kornett | [Estimate: modern spelling; S1 p. 103 gives 1914 "Cornett"] |
 | French | cornet à pistons; abbreviated "Piston" by the French | [Cited S1 p. 103, S31] |
-| Score label | "B♭ Cornet", "B♭ Cnt." | [Cited S38]; the French table's English abbreviation "Cor" [Cited S31] collides with French *cor* (horn); not recommended [Estimate] |
+| Score label | "B♭ Cornet", "B♭ Cnt." | [Cited S38]; the French table's English abbreviation "Cor" [Cited S31] collides with French *cor* (horn); not recommended [Estimate: design judgement; the collision follows from S31] |
 | Family | brass | [Cited S33 slugs] |
 Not to be confused with the Renaissance cornett (zink, cornetto, cornet à bouquin) [Cited S1 pp. 71, 103].
 
@@ -707,7 +707,7 @@ Not to be confused with the Renaissance cornett (zink, cornetto, cornet à bouqu
 |---|---|---|---|
 | sustain, legato, staccato | vocab | "Long notes", "Performance legato", "Staccato" | [Cited S8] |
 | marcato | vocab | "Portato long marcato" | [Cited S8] |
-| tenuto | vocab | | [Estimate] |
+| tenuto | vocab | | [Estimate: no source read] |
 | trill | vocab | shakes free and easy | [Cited S1 p. 107] |
 | flutter_tongue | vocab | "Fluttertongue" patch | [Cited S8] |
 | con_sordino | vocab | mute "similar to that of the Trumpet, but not so effectively acid in the f"; optional "echo-attachment" reduces the tone "to a stifled whisper" | [Cited S1 p. 107] |
@@ -887,7 +887,7 @@ Not to be confused with the Renaissance cornett (zink, cornetto, cornet à bouqu
 | Flugelhorn in C | 0 | [Cited S14, S32] |
 | Four-valve flugelhorn; one maker's quarter-tone fourth valve | -2 | [Cited S14] |
 | Alto flugelhorn (Althorn) in E♭ | -9 | [Cited S1 p. 165]; semitones [Estimate: E♭ alto sounds a major sixth below written] |
-| Tenor in B♭ (Austrian "Bassflügelhorn") | -14 | [Cited S1 p. 163]; semitones [Estimate] |
+| Tenor in B♭ (Austrian "Bassflügelhorn") | -14 | [Cited S1 p. 163]; semitones [Estimate: a B♭ tenor sounds a major ninth below written] |
 | Trumpet, cornet | | the usual doubler is a trumpet player [Cited S16, S27: trumpet and cornet players can learn it after adapting to the mouthpiece] |
 
 ### 9. General MIDI and existing Sonara metadata
@@ -909,7 +909,7 @@ Not to be confused with the Renaissance cornett (zink, cornetto, cornet à bouqu
 3. **Forsyth's writing rule** (written C4-G5, "only for special purposes above high G") is stricter than every modern source; it is recorded but not used as `comfortable`.
 4. **Yamaha** says the B♭ trumpet ranges from "Concert F# to D two octaves higher" (S32); its low note contradicts S11 and S1 (sounding E3). Not used.
 5. **Piccolo valves and low end.** VSL says three Périnet valves (S4) but gives D4 as the bottom, which needs a fourth valve; S12 and S28 say almost all have four. Low end: VSL 62, de.wikipedia "d (max. des)" (62, 61 at most, if read as sounding; S28 does not say), MuseScore 59, Samplemodeling 56 (below the four-valve limit, rejected). Recommended playable low 59, comfortable low 62.
-6. **Piccolo comfortable top.** VSL's "sound develops best" C5-C6 (72-84) would warn on ordinary Baroque high parts; the card uses MuseScore's amateur top 86 instead. Repertoire tops for the Brandenburg Concerto No. 2 and the B minor Mass were not checked against a score [Estimate].
+6. **Piccolo comfortable top.** VSL's "sound develops best" C5-C6 (72-84) would warn on ordinary Baroque high parts; the card uses MuseScore's amateur top 86 instead. Repertoire tops for the Brandenburg Concerto No. 2 and the B minor Mass were not checked against a score [Estimate: general repertoire knowledge; no score of either work was opened].
 7. **Lip trill versus shake.** VSL: lip trills "cannot be played on the trumpet" (S3); S11 describes rapid alternation between adjacent partials; S23 models a "three-semitones shake". Recommendation: keep `trill` for valve trills and add `shake` for the jazz lip shake.
 8. **Balance.** VSL: one middle-register trumpet equals four horns (S3); Rimsky-Korsakov: two horns balance one trumpet in forte (S2). Recommendation: use the handbook's 2:1 for forte tutti.
 9. **Mutes as articulations.** This file proposes `mute_cup`, `mute_harmon`, `mute_plunger`, `mute_bucket` and `wah_wah`, with `con_sordino` meaning straight. A cleaner model would be a separate `mute` field (none, straight, cup, harmon stem in/out, plunger, bucket, solotone, practice) combinable with any articulation, as Samplemodeling's CC100 does (S23). Owner decision.
@@ -953,7 +953,7 @@ _Adversarial fact-check, 2026-10-30. The card format says the file ends with "Op
 2. Piccolo `range_provenance.playable`: misquote "the scale usually goes up to G6" -> verbatim "As a rule the scale goes up to G6 ..."; S23 now carries the playable top, and the note says VSL treats G6 as its normal top, not an extreme.
 3. Piccolo `range_provenance.comfortable` and section 3 (two rows) plus Open question 5: "S28 agrees" -> S28's "eingestrichenen d (max. des)" does not say written or sounding or which key; the sounding reading is now an Estimate.
 4. Piccolo section 5 `con_sordino`: misquotes "gentle and glassy" / "shrill and piercing" -> "very gentle, glassy and subtle" / "shrill, piercing, cutting" (S4).
-5. "sffz" (S4 has no sffz) -> "sforzandissimo" in the `trumpet_bb` fortepiano row and the piccolo row; piccolo section 4 "are idiomatic" (tagged Cited) -> VSL lists and defines them [Cited S4], "idiomatic" [Estimate].
+5. "sffz" (S4 has no sffz) -> "sforzandissimo" in the `trumpet_bb` fortepiano row and the piccolo row; piccolo section 4 "are idiomatic" (tagged Cited) -> VSL lists and defines them [Cited S4], "idiomatic" tagged Estimate.
 6. Rimsky-Korsakov formations (`trumpet_bb` JSON `typical_players.romantic`, `trumpet_bb` section 6, `cornet` section 6): "cornets may replace the third trumpet part" / "threes and fours: 3 (third part may be ... cornets)" -> the threes formation has 3 trumpets or, instead, 2 cornets + 2 trumpets; the fours formation has 3 trumpets with II a small trumpet and III an alto or bass trumpet; no cornets in fours.
 7. `mute_plunger / wah_wah` row and the `wah_wah` definition: S15 does not describe the plunger as "wah-wah" (it gives the plunger "speech-like sounds" and attributes "wa-wa" to a hand in front of the harmon mute) -> plunger wah-wah now cited to S23, which states it.
 8. Forsyth's writing rule row: the MIDI octaves of "low C" and "high G" (staff examples lost in OCR) -> quote Cited, octave assignment Estimate with the reasoning.
@@ -990,3 +990,4 @@ _Consistency review, 2026-10-30: JSON against prose, range arithmetic, tag hygie
 - `cornet` section 4: the 16-word Wikipedia (S13) quotation on agility is paraphrased.
 - Checked, no change needed: written = sounding - transposition (54-93, 54-89, 49-81, 54-93, 54-86); comfortable inside playable; transpositions, treble clef and GM 57 agree with sections 3 and 9; the Verification of data.rs table matches the `trumpet_bb` JSON; every Fact-check log correction is applied in both JSON and prose; S42 (not opened) is not cited; the remaining quotes longer than 15 words are from public-domain handbooks (S1 Forsyth 1914, S2 Rimsky-Korsakov); no attribution lines.
 - Articulation ids in the json blocks of `trumpet_bb`, `trumpet_c`, `trumpet_piccolo`, `cornet`, `flugelhorn` were harmonized to the shared vocabulary (`multitongue`, `double_tonguing` and `triple_tonguing` become `multi_tongue`; `muted_string` becomes `palm_mute`; `pitch_bend` becomes `portamento`); the prose keeps the original wording.
+- Gave every bare Estimate tag its reason (9 tags); Fact-check log change 5 now says "idiomatic" tagged Estimate instead of a bare bracket tag (1 more).

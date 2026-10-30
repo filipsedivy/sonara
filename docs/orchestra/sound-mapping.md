@@ -37,7 +37,7 @@ _Synthesized 2026-10-30 from the research cards in [cards/](cards/); code claims
 | S28 | Spitfire Audio support: "Switching articulations in Spitfire libraries" | https://support.spitfireaudio.com/en/articles/11816120-switching-articulations-in-spitfire-libraries | library maker | yes |
 | S29 | Wikipedia: General MIDI (program list, percussion key map, GS extension notes) | https://en.wikipedia.org/wiki/General_MIDI | encyclopedia | yes |
 | S30 | rustysynth README | https://github.com/sinshu/rustysynth | other (library) | yes |
-| S31 | Sonara repository, read only (branch `research/orchestra-instruments` @ dc96c29): `crates/sonara-media/src/sfz.rs`, `crates/sonara-dsp/src/bank.rs`, `crates/sonara-dsp/src/processors/sampler.rs`, `crates/sonara-engine/src/schedule.rs`, `crates/sonara-core/src/plugins/builtin.rs`, `crates/sonara-midi/src/gm.rs`, `crates/sonara-midi/src/orchestration/articulation.rs`, `crates/sonara-app/src/samples.rs`, `crates/sonara-app/src/instruments/model.rs`, `crates/sonara-agent/src/contract/args.rs`, `crates/sonara-project/schemas/project-v1.schema.json`, `docs/agent-api.md`, `docs/decisions/0010-sample-based-orchestral-instruments.md`, `docs/instrument-catalog.md`, `docs/sample-libraries.md`, `docs/orchestration.md`, `.claude/rules/project.md` | this repository, branch `research/orchestra-instruments` @ dc96c29 | other | yes |
+| S31 | Sonara repository, read only, main @ a212544 (the code is unchanged on this branch): `crates/sonara-media/src/sfz.rs`, `crates/sonara-dsp/src/bank.rs`, `crates/sonara-dsp/src/processors/sampler.rs`, `crates/sonara-engine/src/schedule.rs`, `crates/sonara-core/src/plugins/builtin.rs`, `crates/sonara-midi/src/gm.rs`, `crates/sonara-midi/src/orchestration/articulation.rs`, `crates/sonara-app/src/samples.rs`, `crates/sonara-app/src/instruments/model.rs`, `crates/sonara-agent/src/contract/args.rs`, `crates/sonara-project/schemas/project-v1.schema.json`, `docs/agent-api.md`, `docs/decisions/0010-sample-based-orchestral-instruments.md`, `docs/instrument-catalog.md`, `docs/sample-libraries.md`, `docs/orchestration.md`, `.claude/rules/project.md` | this repository, main @ a212544 (the code is unchanged on this branch) | other | yes |
 | S32 | sfzformat.com: `<control>` header | https://sfzformat.com/headers/control | spec | yes |
 | S33 | Sonatina key-switch files re-read for header order, with the first-level includes of `1st Violins KS`, `Basses KS`, `Violin Solo 1 KS`, `Horn Solo KS`, `Trumpets KS`, `Flutes KS`, `Clarinet Solo KS`, `Harpsichord KS`, `Organ Combinations` | https://raw.githubusercontent.com/peastman/sso/master/Sonatina%20Symphonic%20Orchestra/ + path | library maker | yes |
 | S34 | Verification of this file's code claims against Sonara's source, with spec pages and the sfizz reference player: [sfz-conformance.md](sfz-conformance.md) (Q1-Q11 confirmed; C1-C24; new behaviours N1-N7, of which N7 is minor and not listed here) | [sfz-conformance.md](sfz-conformance.md) | other (verification) | yes |
@@ -221,7 +221,7 @@ redistribution grant [Card cards/free_libraries.md#vsco_2_ce].
 All 75 patches sit at the branch root, so the id is `vsco2ce/<file stem>` [Cited S1]. Key switches
 are given as MIDI numbers with the SFZ convention c4 = 60, so `c2` = 36 and `c6` = 84
 [Cited S31: sfz.rs `note`]. Whether the winds and brass are solo is not stated. Treat them as solo:
-single-instrument names in a chamber library [Estimate].
+single-instrument names in a chamber library [Estimate: not stated by the library; inferred from the single-instrument file names].
 
 | Preset id(s) | Sonara id | Solo/section | Articulations and how | Verdict | Source |
 |---|---|---|---|---|---|
@@ -230,23 +230,23 @@ single-instrument names in a chamber library [Estimate].
 | `vsco2ce/SViolin-KS` | violin | solo | KS 36-39 as `ViolinEns-KS`; `sw_default` repeated in every group | as is | [Cited S2, S34] |
 | `vsco2ce/SViolinVib`, `-Vib-Quiet`, `-Trem`, `-Spic`, `-Pizz` | violin | solo | separate patches | as is [Estimate: same generator as the files read] | [Cited S1] |
 | `vsco2ce/ViolaEns-KS` | viola | section | KS 36 sustain, 37 tremolo, 38 spiccato, 39 pizzicato | as is | [Cited S2] |
-| `vsco2ce/ViolaEnsSusVib`, `-SusVib-Quiet`, `-Trem`, `-Spic`, `-Pizz` | viola | section | separate patches | as is [Estimate] | [Cited S1] |
+| `vsco2ce/ViolaEnsSusVib`, `-SusVib-Quiet`, `-Trem`, `-Spic`, `-Pizz` | viola | section | separate patches | as is [Estimate: not read; same generator as the files read] | [Cited S1] |
 | `vsco2ce/CelloEns-KS` | cello | section | KS 84 sustain (vibrato), 85 tremolo, 86 spiccato, 87 pizzicato | as is; but the switch keys 84-87 lie inside the cello's playable range (36-88 in [model.md](model.md), above its comfortable top of 76), so a part that reaches C6 needs the separate patches | [Cited S2] |
 | `vsco2ce/CelloEnsSusVib`, `-SusVib-Quiet`, `-Trem`, `-Spic`, `-Pizz` | cello | section | separate patches | as is (`Pizz` read) | [Cited S1, S2] |
 | `vsco2ce/Contrabass-KS` | double_bass | solo | KS 84 sustain non-vibrato, 85 sustain vibrato, 86 tremolo, 87 spiccato, 88 pizzicato | as is | [Cited S2; Card cards/free_libraries.md#vsco_2_ce for "solo"] |
-| `vsco2ce/ContrabassSusNV`, `-SusVB`, `-SusVB-Quiet`, `-Trem`, `-Spic`, `-Pizz` | double_bass | solo | separate patches | as is [Estimate] | [Cited S1] |
-| `vsco2ce/PiccoloSus`, `PiccoloStac` | piccolo | solo | separate patches: sustain, staccato | as is [Estimate] | [Cited S1] |
+| `vsco2ce/ContrabassSusNV`, `-SusVB`, `-SusVB-Quiet`, `-Trem`, `-Spic`, `-Pizz` | double_bass | solo | separate patches | as is [Estimate: not read; same generator as the files read] | [Cited S1] |
+| `vsco2ce/PiccoloSus`, `PiccoloStac` | piccolo | solo | separate patches: sustain, staccato | as is [Estimate: not read; same generator as the files read] | [Cited S1] |
 | `vsco2ce/Flute-KS` | flute | solo | KS 36 sustain non-vibrato, 37 sustain vibrato, 38 "expression vibrato", 39 staccato | partly: Q1 | [Cited S2] |
-| `vsco2ce/FluteSusNV`, `FluteSusVib`, `FluteExpVib`, `FluteStac` | flute | solo | separate patches | as is [Estimate] | [Cited S1] |
+| `vsco2ce/FluteSusNV`, `FluteSusVib`, `FluteExpVib`, `FluteStac` | flute | solo | separate patches | as is [Estimate: not read; same generator as the files read] | [Cited S1] |
 | `vsco2ce/OboeSusVib`, `OboeSusNV`, `OboeStac` | oboe | solo | separate patches | as is (`SusVib` read) | [Cited S1, S2] |
 | `vsco2ce/Clarinet-KS` | clarinet_bb | solo | KS 36 sustain long, 37 staccato | partly: Q1 | [Cited S2]; B♭ key [Estimate: not stated] |
-| `vsco2ce/ClarinetSus`, `ClarinetStac` | clarinet_bb | solo | separate patches | as is [Estimate] | [Cited S1] |
-| `vsco2ce/BassoonSus`, `BassoonVib`, `BassoonStac` | bassoon | solo | separate patches: sustain, sustain with vibrato, staccato | as is [Estimate] | [Cited S1] |
+| `vsco2ce/ClarinetSus`, `ClarinetStac` | clarinet_bb | solo | separate patches | as is [Estimate: not read; same generator as the files read] | [Cited S1] |
+| `vsco2ce/BassoonSus`, `BassoonVib`, `BassoonStac` | bassoon | solo | separate patches: sustain, sustain with vibrato, staccato | as is [Estimate: not read; same generator as the files read] | [Cited S1] |
 | `vsco2ce/FHornSus`, `FHornStac`, `FHornMute` | horn_f | solo | separate patches; `FHornMute` = con_sordino sustain | as is (`FHornMute` read) | [Cited S1, S2] |
-| `vsco2ce/TrumpetSus`, `TrumpetSusVib`, `TrumpetStac`, `TrumpetStraightMuteSus`, `TrumpetHarmonMuteSus` | trumpet_bb | solo | separate patches; two mute patches = con_sordino (straight, harmon) | as is (`SusVib` read) | [Cited S1, S2]; B♭ key [Estimate] |
-| `vsco2ce/TromboneSus`, `TromboneVib`, `TromboneStac` | trombone_tenor | solo | separate patches | as is [Estimate] | [Cited S1]; tenor [Estimate] |
+| `vsco2ce/TrumpetSus`, `TrumpetSusVib`, `TrumpetStac`, `TrumpetStraightMuteSus`, `TrumpetHarmonMuteSus` | trumpet_bb | solo | separate patches; two mute patches = con_sordino (straight, harmon) | as is (`SusVib` read) | [Cited S1, S2]; B♭ key [Estimate: not stated by the library; B♭ is the usual orchestral trumpet] |
+| `vsco2ce/TromboneSus`, `TromboneVib`, `TromboneStac` | trombone_tenor | solo | separate patches | as is [Estimate: not read; same generator as the files read] | [Cited S1]; tenor [Estimate: not stated by the library; the tenor is the standard trombone] |
 | `vsco2ce/Tuba-KS` | tuba | solo | KS 84 sustain, 85 staccato | as is | [Cited S2] |
-| `vsco2ce/TubaSus`, `TubaStac` | tuba | solo | separate patches | as is [Estimate] | [Cited S1] |
+| `vsco2ce/TubaSus`, `TubaStac` | tuba | solo | separate patches | as is [Estimate: not read; same generator as the files read] | [Cited S1] |
 | `vsco2ce/Timpani` | timpani | solo | hits by pitch, 2 round robins | as is | [Cited S2] |
 | `vsco2ce/TimpaniRolls` | timpani | solo | separate patch: roll | as is | [Cited S2] |
 | `vsco2ce/Xylophone`, `Glockenspiel`, `Marimba`, `TubularBells` | xylophone, glockenspiel, marimba, tubular_bells | solo | one articulation each (struck) | as is (`Glockenspiel`, `Marimba` read) | [Cited S1, S2] |
@@ -363,7 +363,7 @@ Section and soloist names map to Sonara ids [Cited S3]:
 | `Trombones` / `Tenor Trombone Solo` | trombone_tenor | section / solo |
 | `Bass Trombone Solo` | trombone_bass | solo |
 | `Tuba` | tuba | solo |
-| `All Strings`, `All Woodwinds`, `All Brass` | several ids (ensemble layer) | do not map to one id [Estimate] |
+| `All Strings`, `All Woodwinds`, `All Brass` | several ids (ensemble layer) | do not map to one id [Estimate: design judgement; one file layers a whole family; not opened] |
 
 Articulation words map to Sonara articulation ids (the vocabulary of `articulation.rs`)
 [Cited S3, S31]:
@@ -425,7 +425,7 @@ Special Sonatina patches:
 | `sso/Chorus - Notation/Mixed Chorus`, `Large Chrous` | choir_soprano/alto/tenor/bass (mixed, no separate parts) | one vowel, velocity | partly: filter and `pan` ignored | [Cited S3, S4] |
 | `sso/Chorus - Performance/Mixed Chorus`, `Large Chorus` | as above | CC1 crossfades dynamics | partly: Q6 on CC1 (`xfin_locc1` ignored: both dynamic layers sound) | [Cited S4] |
 | `sso/Strings - Notation/1st Violins Legato` (and every `* Legato`) | as section | note overlap via `trigger=first`/`legato` | partly: Q5, retriggered monophonic sustain; Q9, the 1 s overlap becomes 10 ms | [Cited S4, S34] |
-| `sso/Strings - Notation/Celli Pizzicato`, `sso/Woodwinds - Notation/Flutes Staccato` | cello, flute | separate patch | partly: `ampeg_decay/sustain/vel2decay` ignored; short samples, so the loss is likely small [Estimate] | [Cited S4] |
+| `sso/Strings - Notation/Celli Pizzicato`, `sso/Woodwinds - Notation/Flutes Staccato` | cello, flute | separate patch | partly: `ampeg_decay/sustain/vel2decay` ignored; short samples, so the loss is likely small [Estimate: pizzicato and staccato samples are short; nothing was rendered] | [Cited S4] |
 
 ### 2.3 VCSL (`vcsl`, CC0, tag `v1.2.2-RC`)
 
@@ -453,7 +453,7 @@ The switch keys of the files read lie outside the instruments' playable ranges i
 | `Chordophones/Zithers/Harpsichord, Flemish - Keyswitch` | harpsichord | KS 94 4', 95 8', 96 full; separate `- 4'`, `- 8'`, `- Full` | partly: Q8, `ampeg_decay/sustain` | [Cited S7] |
 | `Chordophones/Zithers/Harpsichord, English - Normal`, `- Lute`, `- Keyswitch`, `Harpsichord, French`, `Italian`, `Unk` | harpsichord | lute stop as a separate patch | not opened | [Cited S6] |
 | `Chordophones/Composite Chordophones/Concert Harp` | harp | one articulation | partly: Q6 (mp and f layers sound together) | [Cited S7] |
-| `Chordophones/Composite Chordophones/Folk Harp` | harp (folk instrument, substitute only) [Estimate] | | not opened | [Cited S6] |
+| `Chordophones/Composite Chordophones/Folk Harp` | harp (folk instrument, substitute only) [Estimate: judged from the file name; a folk harp is not the orchestral concert harp; not opened] | | not opened | [Cited S6] |
 | `Aerophones/Edge-blown Aerophones/Pipe Organ - Keyswitch` | organ_pipe | KS 100 loud, 101 quiet, 102 loud pedal, 103 quiet pedal; also separate patches `- Loud`, `- Quiet`, `- Loud Pedal`, `- Quiet Pedal` | partly: Q8 (organ follows velocity) | [Cited S6, S7] |
 | `Aerophones/Edge-blown Aerophones/Renaissance Organ - 4'`, `- 8'`, `- 4'+8'`, `- Full`, `- Keyswitch` | organ_pipe (historical) | registrations as patches or KS | not opened | [Cited S6] |
 | `Aerophones/Reed Aerophones/Tenor Saxophone - Keyswitch` | saxophone_tenor | KS 36 vibrato, 37 non-vibrato, 38 staccato; also separate `- Vibrato`, `- Non-Vibrato`, `- Staccato` | as is | [Cited S7] |
@@ -513,7 +513,7 @@ first for piano_studio_grand [Card cards/free_libraries.md#salamander_grand_pian
 | `terkelsen-mandolin/Terkelsen's Mandolin` | mandolin | solo | one articulation | as is (`ampeg_release_oncc*` only) | none in GitHub metadata: unknown | [Cited S9, S19] |
 | `jrhodes3d/jRhodes3d-st-no-xfade` (also `-mono-no-xfade`, `-sv-no-xfade`) | electric_piano_rhodes | solo | one articulation | partly: `width_oncc*`, `ampeg_releasecc*`, `<curve>` ignored | samples CC BY-NC 4.0 per `LICENSE` (control files CC0; music made with it unrestricted); the `.sfz` header's "CC-SA-BY" disagrees, and the dedicated `LICENSE` file is taken as authoritative [Estimate: the stricter reading]. Non-commercial: user install only | [Cited S15; Card cards/free_libraries.md#electric_pianos, cards/electric_keys.md#electric_piano_rhodes] |
 | `jrhodes3d/jRhodes3d-keyswitch` | electric_piano_rhodes | solo | KS G7 to C8 select mono, stereo or vibrato, with or without crossfade | partly: Q6 on the crossfade variants. The switches (103-108) lie inside the 88-key playable range (21-108 in [model.md](model.md)), though above the 73-key Stage's top of 100; use the single files | as above | [Cited S15] |
-| `gs-epianos/Wurlitzer EP200/Wurlitzer EP200` | electric_piano_wurlitzer | solo | one articulation | partly: CC amplitude and pan, `ampeg_decay/sustain/hold`, `note_polyphony` ignored | CC BY 3.0 Unported per the `LICENSE` legal code and README, with the author's request for attribution; GitHub's `NOASSERTION` only means its detector did not classify the file [Estimate] | [Cited S9, S16; Card cards/free_libraries.md#electric_pianos] |
+| `gs-epianos/Wurlitzer EP200/Wurlitzer EP200` | electric_piano_wurlitzer | solo | one articulation | partly: CC amplitude and pan, `ampeg_decay/sustain/hold`, `note_polyphony` ignored | CC BY 3.0 Unported per the `LICENSE` legal code and README, with the author's request for attribution; GitHub's `NOASSERTION` only means its detector did not classify the file [Estimate: reading of GitHub's licence detector; its documentation was not opened] | [Cited S9, S16; Card cards/free_libraries.md#electric_pianos] |
 | `discord-gm/Discord GM/Melodic/<nnn-Name>` | GM fallback (section 5) | | one program per file | no as a bank. Programs 41, 48, 49, 53, 61 and the Orchestra Kit are one-line stubs `sample=*sine`, and Sonara fails each stub patch (silence plus a warning, not a sine; N3). Only 10 programs name real instruments. The master selects programs with `loprog`/`hiprog`, which Sonara ignores. | per instrument file; no repository licence | [Cited S10, S27, S34] |
 
 Not inspected, with the licences the free-libraries card states:
@@ -573,7 +573,7 @@ Not inspected, with the licences the free-libraries card states:
 | CC crossfade (dynamics, vibrato, voices) | CC1/CC11/CC21 crossfades layers or sets vibrato | Sonatina Performance CC1 volume, CC21 vibrato [Cited S4]; Spitfire Dynamics on CC1, vibrato on CC21 [Card cards/strings.md#violin] | CC7 and CC11 act as linear volume (value/127); CC1/CC21 do nothing [Cited S31, S34: C15] |
 | Program change | program number selects a region set | SFZ `loprog`/`hiprog` (SFZ v2) [Cited S27]; GM Tremolo/Pizzicato Strings and Muted Trumpet are programs [Cited S29]; Logic Articulation Set switch types include Program [Card cards/apple.md#3.2] | no: `loprog` ignored; clips cannot hold a program change (control kinds are CC, pitch bend and channel pressure, and the sampler ignores channel pressure too) [Cited S31, S34: C16] |
 | MIDI channel | each articulation or section listens on its own channel | Logic Studio Strings section channels 1-6 (full section, Vn 1, Vn 2, Va, Vc, Cb) [Card cards/apple.md#2.2]; Logic articulations can be chosen by channel [Card cards/apple.md#3.2]; Cubase expression maps can change the channel on output [Estimate: search-result summary, manual not opened] | notes carry a channel, but one sampler ignores it at note-on and keeps one switch state for all channels [Cited S31, S34: C9] |
-| Velocity zone | velocity range selects the articulation | VPO Performance Orchestra: velocity selects the articulation [Card cards/free_libraries.md#virtual_playing_orchestra_3]; Spitfire Performance Legato: velocity picks the transition type [Card cards/strings.md#violin] | yes in principle (lovel/hivel), but it takes velocity away from dynamics [Estimate] |
+| Velocity zone | velocity range selects the articulation | VPO Performance Orchestra: velocity selects the articulation [Card cards/free_libraries.md#virtual_playing_orchestra_3]; Spitfire Performance Legato: velocity picks the transition type [Card cards/strings.md#violin] | yes in principle (lovel/hivel), but it takes velocity away from dynamics [Estimate: a consequence; a note has one velocity, so spending it on the articulation leaves none for dynamics] |
 | Key zone (offset) | the same pitches repeated in another key region play another articulation | Sonatina Timpani: hits from `c2`, rolls from `c4`, crescendos from `c6` [Cited S4] | yes (plain key ranges) |
 | Note overlap (legato) | a note started while another sounds plays a transition | SFZ `trigger=legato`/`first` [Cited S21]; Spitfire overlap legato [Card cards/strings.md#violin] | no: both triggers fire as attacks (Q5) |
 | Second note, same pitch | a following note of the same pitch triggers a fall or doit | Logic Studio Strings and Horns falls [Card cards/apple.md#2.2] | no |
@@ -629,7 +629,7 @@ decision for the owner [Estimate: design]:
      plays any region mapped to its key [Cited S34: C17]. Where they overlap (VCSL Timpani 1),
      use separate patches instead [Cited S7; Card cards/tuned_percussion.md#timpani].
 3. **Velocity or key zone.** Rewrite the velocity or transpose the note into the zone. A velocity
-   zone costs dynamic control [Estimate].
+   zone costs dynamic control [Estimate: a consequence; a note has one velocity, so spending it on the articulation leaves none for dynamics].
 4. **CC, program change, channel, per-note articulation ID.** None of these is possible without
    a contract change (CTR-01): a CC-writing tool, a program-change control kind, a note
    articulation field, or channel routing in the sampler [Cited S31; .claude/rules/project.md
@@ -693,10 +693,10 @@ solo only. Built-in choices are judgements [Estimate: timbre match]. Step 5 is i
 
 | Id | Step 1: presets (best first) | Step 3: solo ↔ section | Step 4: neighbour | Step 6: built-in |
 |---|---|---|---|---|
-| violin | `vsco2ce/SViolin-KS` (solo), `vsco2ce/ViolinEns*` (section), `sso/Strings - Notation/1st Violins *`, `2nd Violins *`, `Violin Solo 1/2 *` | either | viola (low notes) [Estimate] | Poly Synth "Strings" |
-| viola | `vsco2ce/ViolaEns-KS`, `ViolaEns*`; `sso/... Violas *`, `Viola Solo *` | either | violin (high) or cello (low) [Estimate] | "Strings" |
-| cello | `vsco2ce/CelloEns-KS`, `CelloEns*`; `sso/... Celli *`, `Cello Solo *`; `bigcat-cello/*` (partly) | either | viola (high) or double_bass (low) [Estimate] | "Strings" |
-| double_bass | `vsco2ce/Contrabass-KS` (solo); `dsmolken-bass/*` (solo); `sso/... Basses *`, `Bass Solo *` | either | cello [Estimate] | "Strings" |
+| violin | `vsco2ce/SViolin-KS` (solo), `vsco2ce/ViolinEns*` (section), `sso/Strings - Notation/1st Violins *`, `2nd Violins *`, `Violin Solo 1/2 *` | either | viola (low notes) [Estimate: general orchestration practice; the adjacent string register] | Poly Synth "Strings" |
+| viola | `vsco2ce/ViolaEns-KS`, `ViolaEns*`; `sso/... Violas *`, `Viola Solo *` | either | violin (high) or cello (low) [Estimate: general orchestration practice; the adjacent string registers] | "Strings" |
+| cello | `vsco2ce/CelloEns-KS`, `CelloEns*`; `sso/... Celli *`, `Cello Solo *`; `bigcat-cello/*` (partly) | either | viola (high) or double_bass (low) [Estimate: general orchestration practice; the adjacent string registers] | "Strings" |
+| double_bass | `vsco2ce/Contrabass-KS` (solo); `dsmolken-bass/*` (solo); `sso/... Basses *`, `Bass Solo *` | either | cello [Estimate: general orchestration practice; the adjacent string register] | "Strings" |
 | piccolo | `vsco2ce/PiccoloSus`, `PiccoloStac`; `sso/... Piccolo Solo *` | n/a (solo) | flute [Card cards/flutes.md#piccolo] | Poly Synth "Square Lead" or "Warm Pad" (no woodwind preset exists) |
 | flute | `vsco2ce/FluteSus*`, `FluteStac`, `Flute-KS` (Q1); `sso/... Flutes *`, `Flute Solo 1/2 *` | either | alto_flute (low), piccolo (high) [Card cards/flutes.md#flute] | "Warm Pad" |
 | alto_flute | `sso/Woodwinds - Notation/Alto Flute Solo *` | n/a | flute [Card cards/flutes.md#alto_flute] | "Warm Pad" |
@@ -704,17 +704,17 @@ solo only. Built-in choices are judgements [Estimate: timbre match]. Step 5 is i
 | oboe | `vsco2ce/OboeSus*`, `OboeStac`; `sso/... Oboes *`, `Oboe Solo *` | either | english_horn (low) [Card cards/double_reeds.md#oboe] | "Square Lead" |
 | english_horn | `sso/... Cor Anglais Solo *` | n/a | oboe (high), bassoon (low) [Card cards/double_reeds.md#english_horn] | "Square Lead" |
 | oboe_damore | none | n/a | oboe, then english_horn [Card cards/double_reeds.md#oboe_damore] | "Square Lead" |
-| bassoon | `vsco2ce/BassoonSus`, `BassoonVib`, `BassoonStac`; `sso/... Bassoons *`, `Bassoon Solo *` | either | contrabassoon (low), bass_clarinet [Estimate] | "Square Lead" |
+| bassoon | `vsco2ce/BassoonSus`, `BassoonVib`, `BassoonStac`; `sso/... Bassoons *`, `Bassoon Solo *` | either | contrabassoon (low), bass_clarinet [Estimate: general orchestration practice; the next instrument of the family, then a reed of similar register] | "Square Lead" |
 | contrabassoon | `sso/... Contrabassoon Solo *` | n/a | bassoon [Card cards/double_reeds.md#contrabassoon] | "Warm Pad" |
-| clarinet_bb | `vsco2ce/ClarinetSus`, `ClarinetStac`, `Clarinet-KS` (Q1); `sso/... Clarinets *`, `Clarinet Solo *` | either | clarinet_a presets if any; oboe [Estimate] | "Square Lead" |
+| clarinet_bb | `vsco2ce/ClarinetSus`, `ClarinetStac`, `Clarinet-KS` (Q1); `sso/... Clarinets *`, `Clarinet Solo *` | either | clarinet_a presets if any; oboe [Estimate: general orchestration practice; the same instrument in another key, then a reed of similar register] | "Square Lead" |
 | clarinet_a | none | n/a | clarinet_bb (samples are sounding pitch, so only the range matters) [Card cards/clarinets.md#clarinet_a] | "Square Lead" |
 | clarinet_eb | none | n/a | clarinet_bb (top notes need confirmation) [Card cards/clarinets.md#clarinet_eb] | "Square Lead" |
 | bass_clarinet | `sso/... Bass Clarinet Solo *` | n/a | bassoon, clarinet_bb [Card cards/clarinets.md#bass_clarinet] | "Square Lead" |
-| saxophone_soprano | (`mtg-sax/... Soprano Sax`: does not load); `vcsl/... Saxello - *` (not opened) | n/a | saxophone_alto, then oboe [Estimate] | "Square Lead" |
-| saxophone_alto | (`mtg-sax/... Alto Sax`: does not load) | n/a | saxophone_tenor [Estimate] | "Square Lead" |
-| saxophone_tenor | `vcsl/Aerophones/Reed Aerophones/Tenor Saxophone - *` | n/a | saxophone_alto, saxophone_baritone [Estimate] | "Square Lead" |
-| saxophone_baritone | (`mtg-sax/... Baritone Sax`: does not load) | n/a | saxophone_tenor, then bass_clarinet [Estimate] | "Square Lead" |
-| horn_f | `vsco2ce/FHornSus`, `FHornStac`, `FHornMute`; `sso/... Horns *`, `Horn Solo *` | either | trombone_tenor (low), euphonium [Estimate] | Poly Synth "Brass" |
+| saxophone_soprano | (`mtg-sax/... Soprano Sax`: does not load); `vcsl/... Saxello - *` (not opened) | n/a | saxophone_alto, then oboe [Estimate: general orchestration practice; the next saxophone, then a reed of similar register] | "Square Lead" |
+| saxophone_alto | (`mtg-sax/... Alto Sax`: does not load) | n/a | saxophone_tenor [Estimate: general orchestration practice; the adjacent saxophone in register] | "Square Lead" |
+| saxophone_tenor | `vcsl/Aerophones/Reed Aerophones/Tenor Saxophone - *` | n/a | saxophone_alto, saxophone_baritone [Estimate: general orchestration practice; the adjacent saxophones in register] | "Square Lead" |
+| saxophone_baritone | (`mtg-sax/... Baritone Sax`: does not load) | n/a | saxophone_tenor, then bass_clarinet [Estimate: general orchestration practice; the next saxophone, then a reed of similar register] | "Square Lead" |
+| horn_f | `vsco2ce/FHornSus`, `FHornStac`, `FHornMute`; `sso/... Horns *`, `Horn Solo *` | either | trombone_tenor (low), euphonium [Estimate: general orchestration practice; brass of overlapping register] | Poly Synth "Brass" |
 | wagner_tuba_tenor | none | n/a | horn_f, then euphonium, then trombone_tenor [Card cards/horns.md#wagner_tuba_tenor] | "Brass" |
 | wagner_tuba_bass | none | n/a | horn_f, then tuba [Card cards/horns.md#wagner_tuba_bass] | "Brass" |
 | trumpet_bb | `vsco2ce/TrumpetSus*`, `TrumpetStac`, mute patches; `sso/... Trumpets *`, `Trumpet Solo *` | either | cornet, flugelhorn presets if any [Card cards/high_brass.md#cornet] | "Brass" |
@@ -722,53 +722,53 @@ solo only. Built-in choices are judgements [Estimate: timbre match]. Step 5 is i
 | trumpet_piccolo | none | n/a | trumpet_bb (top notes need confirmation) [Card cards/high_brass.md#trumpet_piccolo] | "Brass" |
 | cornet | none | n/a | trumpet_bb [Card cards/high_brass.md#cornet] | "Brass" |
 | flugelhorn | none | n/a | trumpet_bb at lower velocity, then horn_f [Card cards/high_brass.md#flugelhorn] | "Brass" |
-| trombone_tenor | `vsco2ce/TromboneSus`, `TromboneVib`, `TromboneStac`; `sso/... Trombones *`, `Tenor Trombone Solo *` | either | trombone_bass, euphonium, horn_f [Estimate] | "Brass" |
-| trombone_bass | `sso/... Bass Trombone Solo *` | n/a | trombone_tenor (high), tuba (low) [Estimate] | "Brass" |
+| trombone_tenor | `vsco2ce/TromboneSus`, `TromboneVib`, `TromboneStac`; `sso/... Trombones *`, `Tenor Trombone Solo *` | either | trombone_bass, euphonium, horn_f [Estimate: general orchestration practice; brass of overlapping register] | "Brass" |
+| trombone_bass | `sso/... Bass Trombone Solo *` | n/a | trombone_tenor (high), tuba (low) [Estimate: general orchestration practice; brass of overlapping register] | "Brass" |
 | tuba | `vsco2ce/Tuba-KS`, `TubaSus`, `TubaStac`; `sso/... Tuba *`; `war-tuba/*` (partly) | n/a | trombone_bass, cimbasso [Card cards/low_brass.md#cimbasso] | "Brass" |
 | cimbasso | none | n/a | tuba, then trombone_bass [Card cards/low_brass.md#cimbasso] | "Brass" |
 | euphonium | none | n/a | trombone_tenor, then tuba, then horn_f [Card cards/low_brass.md#euphonium] | "Brass" |
 | harp | `vsco2ce/Harp`; `vcsl/... Concert Harp` (partly); `sso/Concert Harp` (partly) | n/a | piano_concert_grand at low velocity for arpeggios; the piano has served as an orchestral substitute for the harp [Card cards/acoustic_pianos.md#piano_concert_grand] | Poly Synth "Pluck" |
-| guitar_classical | none read (FreePats nylon guitar not inspected) | n/a | harp, lute [Estimate] | "Pluck" |
+| guitar_classical | none read (FreePats nylon guitar not inspected) | n/a | harp, lute [Estimate: general orchestration practice; plucked strings of similar register] | "Pluck" |
 | lute | none | n/a | guitar_classical, then harp [Card cards/plucked.md#lute] | "Pluck" |
 | mandolin | `terkelsen-mandolin/Terkelsen's Mandolin` | n/a | guitar_classical [Card cards/plucked.md#mandolin] | "Pluck" |
-| piano_concert_grand | none plays (`sso/Grand Piano/Grand Piano`, `splendid/*`: no) | n/a | piano_studio_grand, then piano_upright [Estimate] | Poly Synth "Electric Keys" |
-| piano_studio_grand | `vcsl/Chordophones/Zithers/Grand Piano, Kawai`, `Grand Piano, Steinway B` (partly); `salamander/*` (no) | n/a | piano_concert_grand, piano_upright [Estimate] | "Electric Keys" |
-| piano_upright | `vsco2ce/UprightPiano`, `VSUpright1`; `vcsl/... Upright Piano, Knight`, `Yamaha` | n/a | piano_studio_grand [Estimate] | "Electric Keys" |
+| piano_concert_grand | none plays (`sso/Grand Piano/Grand Piano`, `splendid/*`: no) | n/a | piano_studio_grand, then piano_upright [Estimate: design judgement; the same instrument in another size] | Poly Synth "Electric Keys" |
+| piano_studio_grand | `vcsl/Chordophones/Zithers/Grand Piano, Kawai`, `Grand Piano, Steinway B` (partly); `salamander/*` (no) | n/a | piano_concert_grand, piano_upright [Estimate: design judgement; the same instrument in another size] | "Electric Keys" |
+| piano_upright | `vsco2ce/UprightPiano`, `VSUpright1`; `vcsl/... Upright Piano, Knight`, `Yamaha` | n/a | piano_studio_grand [Estimate: design judgement; the same instrument in another size] | "Electric Keys" |
 | piano_felt | none | n/a | piano_upright or piano_studio_grand at low velocity [Card cards/acoustic_pianos.md#piano_felt] | "Electric Keys" |
 | piano_prepared | none | n/a | no reasonable neighbour: ask the user [Card cards/acoustic_pianos.md#piano_prepared] | "Pluck", only with confirmation |
 | piano_honky_tonk | none read (FreePats Old Piano FB not inspected) | n/a | piano_upright, the same instrument in tune [Card cards/acoustic_pianos.md#piano_honky_tonk] | "Electric Keys" |
-| electric_piano_rhodes | `jrhodes3d/jRhodes3d-st-no-xfade` (partly; licence unresolved) | n/a | electric_piano_wurlitzer [Estimate] | "Electric Keys" |
-| electric_piano_wurlitzer | `gs-epianos/Wurlitzer EP200/Wurlitzer EP200` (partly) | n/a | electric_piano_rhodes [Estimate] | "Electric Keys" |
+| electric_piano_rhodes | `jrhodes3d/jRhodes3d-st-no-xfade` (partly; licence unresolved) | n/a | electric_piano_wurlitzer [Estimate: design judgement; the other electric piano in the model] | "Electric Keys" |
+| electric_piano_wurlitzer | `gs-epianos/Wurlitzer EP200/Wurlitzer EP200` (partly) | n/a | electric_piano_rhodes [Estimate: design judgement; the other electric piano in the model] | "Electric Keys" |
 | clavinet | none | n/a | harpsichord [Card cards/electric_keys.md#clavinet] | "Pluck" |
-| harpsichord | `vcsl/... Harpsichord, *` (partly), `sso/Harpsichord/*` (single-articulation files, partly; `Harpsichord KS` stacks under Q11) | n/a | clavichord, then piano_upright at low velocity [Estimate] | "Pluck" |
+| harpsichord | `vcsl/... Harpsichord, *` (partly), `sso/Harpsichord/*` (single-articulation files, partly; `Harpsichord KS` stacks under Q11) | n/a | clavichord, then piano_upright at low velocity [Estimate: design judgement; the other early keyboard, then a quiet piano] | "Pluck" |
 | clavichord | none | n/a | harpsichord, quieter [Card cards/historical_keys_organs.md#clavichord] | "Pluck" |
 | celesta | `sso/Percussion/Celeste` (partly) | n/a | piano_upright, as Rimsky-Korsakov advises; glockenspiel only with confirmation, since the same source advises against it [Card cards/historical_keys_organs.md#celesta, section 6] | Poly Synth "Glass Bells" |
-| organ_pipe | `vsco2ce/Organ*`; `vcsl/... Pipe Organ - *`; `sso/Organ/*` | n/a | organ_hammond only for chords [Estimate] | "Warm Pad" |
-| organ_hammond | none read (FreePats setBfree not inspected) | n/a | organ_pipe [Estimate] | "Warm Pad" |
-| accordion | none read (FreePats Button Accordion not inspected) | n/a | organ_pipe reed stop (Sonatina `Swell - Oboe 8ft`) [Estimate] | "Warm Pad" |
-| timpani | `vsco2ce/Timpani`, `TimpaniRolls`; `vcsl/... Timpani 1 - Hit`, `- Roll`, `- Keyswitch`; `sso/Percussion/Timpani` (partly) | n/a | none pitched; bass_drum for accents only, with confirmation [Estimate] | Drum Kit "Cinematic Toms", toms on notes 41, 43, 45, 47, 48 and 50 only (pitch lost) [Cited S34: C22] |
-| xylophone | `vsco2ce/Xylophone`; `vcsl/... Xylophone - *`; `sso/Percussion/Xylophone` | n/a | marimba (low), glockenspiel (high) [Estimate] | "Pluck" |
-| marimba | `vsco2ce/Marimba`; `vcsl/... Marimba` (partly); `sso/Percussion/Marimba Hits`, `Marimba Rolls` | n/a | xylophone, vibraphone [Estimate] | "Pluck" |
-| vibraphone | `vcsl/... Vibraphone - Soft Mallets`, `- Hard Mallets`, `- Bowed`; `sso/Percussion/Vibraphone` (partly) | n/a | glockenspiel, celesta [Estimate] | "Glass Bells" |
+| organ_pipe | `vsco2ce/Organ*`; `vcsl/... Pipe Organ - *`; `sso/Organ/*` | n/a | organ_hammond only for chords [Estimate: design judgement; the other organ, closest in sustained chords] | "Warm Pad" |
+| organ_hammond | none read (FreePats setBfree not inspected) | n/a | organ_pipe [Estimate: design judgement; the other organ in the model] | "Warm Pad" |
+| accordion | none read (FreePats Button Accordion not inspected) | n/a | organ_pipe reed stop (Sonatina `Swell - Oboe 8ft`) [Estimate: timbre judgement on a sustained reed sound; the patch was not opened] | "Warm Pad" |
+| timpani | `vsco2ce/Timpani`, `TimpaniRolls`; `vcsl/... Timpani 1 - Hit`, `- Roll`, `- Keyswitch`; `sso/Percussion/Timpani` (partly) | n/a | none pitched; bass_drum for accents only, with confirmation [Estimate: general orchestration practice; the bass drum gives the weight but not the pitch] | Drum Kit "Cinematic Toms", toms on notes 41, 43, 45, 47, 48 and 50 only (pitch lost) [Cited S34: C22] |
+| xylophone | `vsco2ce/Xylophone`; `vcsl/... Xylophone - *`; `sso/Percussion/Xylophone` | n/a | marimba (low), glockenspiel (high) [Estimate: general orchestration practice; mallet instruments of adjacent register] | "Pluck" |
+| marimba | `vsco2ce/Marimba`; `vcsl/... Marimba` (partly); `sso/Percussion/Marimba Hits`, `Marimba Rolls` | n/a | xylophone, vibraphone [Estimate: general orchestration practice; mallet instruments of adjacent register] | "Pluck" |
+| vibraphone | `vcsl/... Vibraphone - Soft Mallets`, `- Hard Mallets`, `- Bowed`; `sso/Percussion/Vibraphone` (partly) | n/a | glockenspiel, celesta [Estimate: timbre judgement; metallic tuned percussion] | "Glass Bells" |
 | glockenspiel | `vsco2ce/Glockenspiel`; `vcsl/... Glockenspiel` (partly); `sso/Percussion/Glockenspiel` | n/a | celesta, crotales [Card cards/tuned_percussion.md#crotales] | "Glass Bells" |
-| tubular_bells | `vsco2ce/TubularBells`; `vcsl/... Tubular Bells 1`, `2`; `sso/Percussion/Chimes` | n/a | carillon (none), glockenspiel [Estimate] | "Glass Bells" |
+| tubular_bells | `vsco2ce/TubularBells`; `vcsl/... Tubular Bells 1`, `2`; `sso/Percussion/Chimes` | n/a | carillon (none), glockenspiel [Estimate: timbre judgement; other bell sounds] | "Glass Bells" |
 | crotales | `sso/Percussion/Crotales` (not opened) | n/a | glockenspiel [Card cards/tuned_percussion.md#crotales] | "Glass Bells" |
 | carillon | none | n/a | tubular_bells [Card cards/tuned_percussion.md#carillon] | "Glass Bells" |
 | snare_drum | `vcsl/... Snare Drum, Modern 1-3`; `vsco2ce/GM-StylePerc` keys 37-41; `sso/Percussion/Bass Drum & Snare` | n/a | none | Drum Kit note 38 (snare) |
-| bass_drum | `vcsl/... Bass Drum 1-2`; `vsco2ce/GM-StylePerc` 36 (rubs 32-35) | n/a | timpani low note for accents [Estimate] | Drum Kit 36 (kick), "Cinematic Toms" kit |
-| clash_cymbals | `vcsl/... Clash Cymbals 1-2`; `vsco2ce/GM-StylePerc` 49 | n/a | suspended_cymbal hit [Estimate] | Drum Kit 49 (crash) |
-| suspended_cymbal | `vcsl/... Suspended Cymbal 1-2`; `vsco2ce/GM-StylePerc` 47-51, 59, 101-104 | n/a | clash_cymbals for single hits [Estimate] | Drum Kit 51 (ride) for hits, 49 (crash) for swells |
-| tam_tam | `vcsl/... Gong 1-2`; `vsco2ce/GM-StylePerc` 42, 46; `sso/Percussion/Cymbals & Tamtam` | n/a | suspended_cymbal roll [Estimate] | Drum Kit 49 with "Cinematic Toms" long cymbal decay |
-| triangle | `vcsl/... Triangles`; `vsco2ce/GM-StylePerc` 78-81; `sso/Percussion/Triangle` | n/a | crotales, glockenspiel top note [Estimate] | none in the Drum Kit (GM 80/81 are not in `GM_MAP`) → "Glass Bells" high note, or silence |
-| tambourine | `vcsl/... Tambourine 1-2`; `vsco2ce/GM-StylePerc` 53-55 | n/a | sleigh_bells [Estimate] | Drum Kit 54 |
-| castanets | Sonatina castanets per the card's coverage matrix (file not identified in the tree) | n/a | wood_block [Estimate] | Drum Kit 75 (claves) |
+| bass_drum | `vcsl/... Bass Drum 1-2`; `vsco2ce/GM-StylePerc` 36 (rubs 32-35) | n/a | timpani low note for accents [Estimate: general orchestration practice; the other low drum] | Drum Kit 36 (kick), "Cinematic Toms" kit |
+| clash_cymbals | `vcsl/... Clash Cymbals 1-2`; `vsco2ce/GM-StylePerc` 49 | n/a | suspended_cymbal hit [Estimate: timbre judgement; the other cymbal] | Drum Kit 49 (crash) |
+| suspended_cymbal | `vcsl/... Suspended Cymbal 1-2`; `vsco2ce/GM-StylePerc` 47-51, 59, 101-104 | n/a | clash_cymbals for single hits [Estimate: timbre judgement; the other cymbal] | Drum Kit 51 (ride) for hits, 49 (crash) for swells |
+| tam_tam | `vcsl/... Gong 1-2`; `vsco2ce/GM-StylePerc` 42, 46; `sso/Percussion/Cymbals & Tamtam` | n/a | suspended_cymbal roll [Estimate: timbre judgement; the nearest sustained metal wash] | Drum Kit 49 with "Cinematic Toms" long cymbal decay |
+| triangle | `vcsl/... Triangles`; `vsco2ce/GM-StylePerc` 78-81; `sso/Percussion/Triangle` | n/a | crotales, glockenspiel top note [Estimate: timbre judgement; a high metallic ring] | none in the Drum Kit (GM 80/81 are not in `GM_MAP`) → "Glass Bells" high note, or silence |
+| tambourine | `vcsl/... Tambourine 1-2`; `vsco2ce/GM-StylePerc` 53-55 | n/a | sleigh_bells [Estimate: timbre judgement; both are jingles] | Drum Kit 54 |
+| castanets | Sonatina castanets per the card's coverage matrix (file not identified in the tree) | n/a | wood_block [Estimate: timbre judgement; a dry wooden click] | Drum Kit 75 (claves) |
 | wood_block | `vcsl/... Woodblock`; Sonatina wood blocks per the card | n/a | temple_blocks [Card cards/untuned_percussion.md#temple_blocks] | Drum Kit 76/77 |
 | temple_blocks | none | n/a | wood_block [Card cards/untuned_percussion.md#temple_blocks] | Drum Kit 76/77 |
-| sleigh_bells | `vcsl/... Sleigh Bells`; `vsco2ce/GM-StylePerc` 82 | n/a | tambourine shake [Estimate] | Drum Kit 54 |
-| maracas | none with an `.sfz` (VSCO raw folder only) | n/a | shaker [Estimate] | Drum Kit 70 (plays the kit's shaker) |
-| shaker | `vcsl/... Shaker, Small`, `Shaker, Large` | n/a | maracas [Estimate] | Drum Kit 70 |
+| sleigh_bells | `vcsl/... Sleigh Bells`; `vsco2ce/GM-StylePerc` 82 | n/a | tambourine shake [Estimate: timbre judgement; both are jingles] | Drum Kit 54 |
+| maracas | none with an `.sfz` (VSCO raw folder only) | n/a | shaker [Estimate: timbre judgement; both are rattles] | Drum Kit 70 (plays the kit's shaker) |
+| shaker | `vcsl/... Shaker, Small`, `Shaker, Large` | n/a | maracas [Estimate: timbre judgement; both are rattles] | Drum Kit 70 |
 | whip | `vcsl/... Slapstick` | n/a | none [Card cards/untuned_percussion.md#whip] | Drum Kit 39 (clap), only with confirmation; else silence |
-| choir_soprano, choir_alto, choir_tenor, choir_bass | `sso/Chorus - Notation/Mixed Chorus`, `Large Chrous` (mixed, partly) for every part | n/a | the same mixed choir for each part [Estimate] | Poly Synth "Choir Pad" |
+| choir_soprano, choir_alto, choir_tenor, choir_bass | `sso/Chorus - Notation/Mixed Chorus`, `Large Chrous` (mixed, partly) for every part | n/a | the same mixed choir for each part [Estimate: design judgement; the only choir files are mixed, with no separate parts] | Poly Synth "Choir Pad" |
 | voice_soprano, voice_mezzo_soprano, voice_alto, voice_tenor, voice_baritone, voice_bass | none | step 3: choir section of the same voice type (`sso/... Mixed Chorus`), told as "choir instead of a soloist" | none | "Choir Pad" |
 
 Sonara's Drum Kit plays the 34 notes of `GM_MAP`, which include 36, 38, 39, 49, 51, 54, 70, 75, 76 and
@@ -809,7 +809,7 @@ flags are this author's. A GM program plays at sounding pitch, so no fallback tr
 | saxophone_alto | 66 Alto Sax | 65 | |
 | saxophone_tenor | 67 Tenor Sax | 66 | |
 | saxophone_baritone | 68 Baritone Sax | 67 | |
-| horn_f | 61 French Horn | 60 | section: 62 Brass Section [Estimate] |
+| horn_f | 61 French Horn | 60 | section: 62 Brass Section [Estimate: nearest GM ensemble program; GM1 has no horn-section program] |
 | wagner_tuba_tenor, wagner_tuba_bass | none → 61 French Horn (card) | 60 | **weak**: horn mouthpiece and players, but a different instrument [Card cards/horns.md#wagner_tuba_tenor, #wagner_tuba_bass] |
 | trumpet_bb, trumpet_c, trumpet_piccolo, cornet, flugelhorn | 57 Trumpet | 56 | con_sordino: 60 Muted Trumpet; flugelhorn **weak**, with 61 French Horn as the card's alternative for its soft colour [Card cards/high_brass.md#flugelhorn] |
 | trombone_tenor, trombone_bass | 58 Trombone | 57 | |
@@ -821,7 +821,7 @@ flags are this author's. A GM program plays at sounding pitch, so no fallback tr
 | lute | none → 25 Acoustic Guitar (nylon) (card) | 24 | **weak** [Card cards/plucked.md#lute] |
 | mandolin | none → 26 Acoustic Guitar (steel) (card: what a GM2 device plays when its Mandolin variation is missing) | 25 | **weak** [Card cards/plucked.md#mandolin] |
 | piano_concert_grand | 1 Acoustic Grand Piano | 0 | |
-| piano_studio_grand | 2 Bright Acoustic Piano | 1 | the card's choice; 1 is equally defensible [Estimate] |
+| piano_studio_grand | 2 Bright Acoustic Piano | 1 | the card's choice; 1 is equally defensible [Estimate: the card's reasoning that GM defines sounds, not piano sizes] |
 | piano_upright | none → 1 (card) | 0 | approximate: GM1 has no upright program [Card cards/acoustic_pianos.md#piano_upright] |
 | piano_felt | none → 1 (card), at low velocity | 0 | **weak** [Card cards/acoustic_pianos.md#piano_felt; Estimate for the velocity] |
 | piano_prepared | none → 1 only as a last resort (card) | 0 | **no reasonable GM equivalent**: program 1 misrepresents the sound; ask the user [Card cards/acoustic_pianos.md#piano_prepared] |
@@ -855,15 +855,15 @@ cross-checked against the GM key map [Cited S29].
 | bass_drum | 35 Acoustic Bass Drum, 36 Bass Drum 1 | |
 | clash_cymbals | 49 Crash Cymbal 1, 57 Crash Cymbal 2 | |
 | suspended_cymbal | 49 (card); 51/59 ride as the nearest stick sound [Card cards/free_libraries.md#coverage] | swells and bowing: none |
-| tam_tam | none | **no GM equivalent**; 52 Chinese Cymbal is the nearest metal crash [Estimate] |
+| tam_tam | none | **no GM equivalent**; 52 Chinese Cymbal is the nearest metal crash [Estimate: timbre choice; GM1 has none and the card names no substitute] |
 | triangle | 81 Open Triangle, 80 Mute Triangle | |
 | tambourine | 54 Tambourine | |
-| castanets | none in GM1 (85 is GS) | **flag**; 75 Claves as substitute [Estimate] |
+| castanets | none in GM1 (85 is GS) | **flag**; 75 Claves as substitute [Estimate: timbre choice; GM1 has none and the card names no substitute] |
 | wood_block | 76 Hi Wood Block, 77 Low Wood Block; also melodic program 116 Woodblock (sent 115) | |
-| temple_blocks | none | **flag**; 76/77 [Estimate] |
-| sleigh_bells | none in GM1 (83 Jingle Bell is GS) | **flag**; 54 Tambourine [Estimate] |
+| temple_blocks | none | **flag**; 76/77 [Estimate: the card's nearest notes, marked an estimate there] |
+| sleigh_bells | none in GM1 (83 Jingle Bell is GS) | **flag**; 54 Tambourine [Estimate: timbre choice; GM1 has none and the card names no substitute] |
 | maracas | 70 Maracas | |
-| shaker | none in GM1 (82 is GS) | **flag**; 70 Maracas or 69 Cabasa [Estimate] |
+| shaker | none in GM1 (82 is GS) | **flag**; 70 Maracas or 69 Cabasa [Estimate: the card's nearest notes, marked an estimate there] |
 | whip | none | **no GM equivalent** |
 
 Engine options for step 5:
@@ -874,7 +874,7 @@ Engine options for step 5:
 | MuseScore_General | MIT; its acknowledgements and copyright notices must be included in any derivative work; SF2 and SF3; MS Basic is the same bank renamed, per its identical documentation (sample data not compared) | [Card cards/free_libraries.md#musescore_general_and_ms_basic] |
 | FluidR3_GM | MIT with the copyright notice; Debian's packaging files alone are GPL-2+, so they are never shipped (LIC-01) | [Card cards/free_libraries.md#fluidr3_gm] |
 | SFZ General MIDI bank (Discord) | Would avoid a second engine, but today it is mostly stubs, which Sonara fails to load (N3), and it depends on `loprog` | [Cited S10, S34] |
-| Real-time fitness of rustysynth | Not checked (QG-13 step 4) | [Estimate] |
+| Real-time fitness of rustysynth | Not checked (QG-13 step 4) | [Estimate: not in any source opened; no test was run] |
 
 ## Open questions
 
@@ -928,7 +928,7 @@ Engine options for step 5:
    programs. Their verdicts are unknown; their stated licences are listed in section 2.5.
 9. **Which keys do VSCO's woodwinds and brass sound in?** VSCO and Sonatina do not state the key
    of their clarinet and trumpet. Samples are at sounding pitch, so only the range check
-   depends on it [Estimate].
+   depends on it [Estimate: general sampling practice; neither library states the key].
 10. **Step 5 without a second engine?** Is a GM fallback worth it before an SF2 engine exists? A
     user could convert MuseScore_General to SFZ, but that was not tested and its licence notices
     would have to travel with it [Card cards/free_libraries.md#musescore_general_and_ms_basic].
@@ -1016,3 +1016,4 @@ attribution note to 3.2. Open question 7 shrunk accordingly.
 - [cards/free_libraries.md](cards/free_libraries.md) rests Bigcat and D. Smolken on the catalogue
   label; GitHub's licence metadata (S9) also says CC0-1.0.
 - N1, N3 and N5 wording aligned with sfz-conformance.md: N3 is latent, N5 has one harmless hit, the Salamander remap's release sections already load (so N1 applies today), and the VCSL Steinway B is unconfirmed.
+- Gave every bare Estimate tag its reason (65 tags); S31 now cites main @ a212544 (the code is unchanged on this branch) instead of a commit that no longer exists.

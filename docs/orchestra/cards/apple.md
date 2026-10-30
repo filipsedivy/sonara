@@ -612,7 +612,7 @@ What not to copy:
    first "Sections, Double Bass" [Cited S16]; whether the second column means solo instruments is not stated.
    Falls, scoops, crescendos and glissandos are marked only in the second column.
 7. **Library category names** for Logic Pro and **template names** are not documented on the pages read; check
-   them in the app before Sonara copies any naming [Estimate].
+   them in the app before Sonara copies any naming [Estimate: by absence on the guide pages read; not checked in the app].
 8. **"Expressive" and "Passionate"** (Studio Horns) are not defined anywhere in the guide [Cited S18 by absence];
    they need a listening test before any mapping to Sonara ids.
 9. **Simple Pad.** The 12.0 release notes mention Simple Pad next to the new Synth Player styles, and the same
@@ -709,3 +709,5 @@ Horns controls) was corrected and stays Cited.
 - Simple Pad's version (open question 9).
 - Release dates for 10.4 and 10.5 are years from press coverage, not from the opened Apple pages.
 - Pages listed above as not re-opened were taken on trust from the original author.
+
+**Tag hygiene, 2026-10-30:** gave every bare Estimate tag its reason (1 tag).

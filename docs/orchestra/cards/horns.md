@@ -214,8 +214,8 @@ Family: brass, a valved lip-reed aerophone with a moderately conical bore, Hornb
 | Double horn F/B♭ | the horn most used in professional orchestras; a thumb-operated fourth valve switches between the F and B♭ tubes [Cited S6] [Cited S12]; prototype 1897 by Kruspe of Erfurt, whom S6 names inconsistently as Fritz (History) and Eduard (Double horn section) [Cited S6]; full-double and semi-double horns "have the same range" [Cited S12] | **No.** Parts are written for "horn in F" and the cited sounding range is the same; the side used is the player's choice [Estimate: no source names a separate part type for it] |
 | Single F / single B♭ | single horn tuned to F or, less often, B♭; common for students [Cited S6] | No |
 | Descant double (B♭ / high F) and triple (F / B♭ / high F or E♭) | second thumb valve; more security high; heavier, sonority compromises [Cited S6] [Cited S12] | No [Estimate: same written part] |
-| Vienna horn | F crook, double-piston pumpenvalves, warmer and softer, continuous glissando [Cited S6]; wide-bore double horn 11.5-13 mm vs Viennese about 10.8 mm [Cited S5] | Possibly later as a colour, not now [Estimate] |
-| Natural (hand) horn | no valves, one harmonic series per crook, hand-stopping [Cited S6]; Forsyth's old-notation and crook rules apply [Cited S1] | Maybe later (`natural_horn`) for period scores [Estimate] |
+| Vienna horn | F crook, double-piston pumpenvalves, warmer and softer, continuous glissando [Cited S6]; wide-bore double horn 11.5-13 mm vs Viennese about 10.8 mm [Cited S5] | Possibly later as a colour, not now [Estimate: design judgement about Sonara's ids; no source bears on it] |
+| Natural (hand) horn | no valves, one harmonic series per crook, hand-stopping [Cited S6]; Forsyth's old-notation and crook rules apply [Cited S1] | Maybe later (`natural_horn`) for period scores [Estimate: design judgement about Sonara's ids; no source bears on it] |
 | Mellophone, marching horn | F or G mellophone, B♭ or F marching horn, front-facing bell [Cited S6] | No (band instruments) |
 | Wagner tuba | played by horn players; same mouthpiece and fingering [Cited S7] | Yes: `wagner_tuba_tenor`, `wagner_tuba_bass` |
 
@@ -238,7 +238,7 @@ Family: brass, a valved lip-reed aerophone with a moderately conical bore, Hornb
 |---|---|---|---|
 | VSCO 2 CE (`SFZ` branch) | CC0 1.0 Universal [Cited S20] | solo horn ("MOHorn"): sustain 33-77 (1-4 velocity layers), staccato 33-77 (2 round robins), mute 46-77 [Cited S20] | yes: velocity, `lorand/hirand`, no CC [Cited S20] [Cited S26] |
 | Sonatina Symphonic Orchestra | Creative Commons Sampling Plus 1.0; the author admits some sample origins are unknown [Cited S21] | French Horns (ensemble): sustain, marcato, staccato, legato, 40-77; solo French horn: sustain (non-looped, looped, decay), marcato, staccato, legato, 40-76 [Cited S21] | partly: keyswitches and round robin yes; CC1 dynamics crossfades no [Cited S26] |
-| University of Iowa MIS | "may be downloaded and used for any projects, without restrictions" [Cited S28] | "Horn" listed in the pre-2012 and 2012 sets; no SFZ mapping [Cited S28] | needs an SFZ written by us [Estimate] |
+| University of Iowa MIS | "may be downloaded and used for any projects, without restrictions" [Cited S28] | "Horn" listed in the pre-2012 and 2012 sets; no SFZ mapping [Cited S28] | needs an SFZ written by us [Estimate: inferred from S28 (no SFZ mapping) and S26 (the Sonara sampler plays SFZ)] |
 | Philharmonia samples | free incl. commercial work, but not to be sold or made available "as is" as samples or a sampler instrument [Cited S27] | the page claims "all standard orchestral instruments"; horn content not checked [Cited S27] | not bundlable [Cited S27] |
 | Spitfire Studio Brass (commercial) | EULA; Kontakt Player [Cited S15] | Horn Solo 1 and Horns a4, the full list in section 5 [Cited S15] | no (needs plugin hosting, M5) [Cited S26] |
 | CineBrass (commercial) | not read | solo horn, four horns, six horns; "hired 12 horn players" [Cited S22] (edition of a 12-horn patch not stated) | no [Cited S26] |
@@ -341,12 +341,12 @@ Family: brass; a modified horn, "slender half-tube" instrument [Cited S1]; "Belo
 | Notes between the pedal B♭ and low E are "progressively more and more sharp" (4-valve tenor) | B1-E♭2 | 35-39 | [Cited S8] |
 | "Reasonably comfortable right down to the concert A below the bass staff" | A1 | 33 | [Cited S8] |
 | "All notes down to B♭1 can be played at every dynamic level (also ff)" | B♭1 | 34 | [Cited S4] |
-| Upper limit: "above the concert D" uncertain except for professionals | D (octave not stated; D5 assumed) | 74 | [Cited S8]; octave [Estimate] |
+| Upper limit: "above the concert D" uncertain except for professionals | D (octave not stated; D5 assumed) | 74 | [Cited S8]; octave [Estimate: S8 names no octave; D5 (74) is the only D in VSL's high register B4-B♭5, S4] |
 | Forsyth: Wagner's design, "a compass, in actual sounds, of [staff] (about that of the Viola or the B♭-alto Horn)" | B♭2-F5 | 46-77 | [Cited S1] (p.152 staff image, read at full scan resolution: bass clef, B♭ on the 4th line = B♭2; "to", treble clef, whole note centred on the top line = F5) |
 | Wikipedia: possible range "the same as that of the horn", low F♯ to high C "when read in F" | B1-F5 | 35-77 | [Cited S6] |
 
 - **Recommendation.** Playable 27-82 from VSL, the only source that states numbers with a convention [Cited S4]; VSL uses C4 = 60, as its horn page shows (section horn_f 3) [Cited S5]. The disagreement with S6 (35-77) is explained by notation: VSL's top B♭5 is written C6 for an instrument in B♭, while S6's F5 is written C6 "read in F" [Estimate: arithmetic on the two statements]. Forsyth's designed compass B♭2-F5 (46-77) [Cited S1] is narrower than VSL's range at both ends. Comfortable 40-74 [Estimate: see JSON].
-- **Disagreement on the bottom.** VSL E♭1 (27) vs wagner-tuba.com E1 (28); both are pedal notes. Recommend VSL's 27 for "playable" (outer limit) and rely on the comfortable range to warn [Estimate].
+- **Disagreement on the bottom.** VSL E♭1 (27) vs wagner-tuba.com E1 (28); both are pedal notes. Recommend VSL's 27 for "playable" (outer limit) and rely on the comfortable range to warn [Estimate: judgement between the two cited pedal notes].
 - **Transposition.** Tenor in B♭ "sounding one tone lower" (Strauss) [Cited S3]; "sounds a major second lower than written" [Cited S4]. **Store -2.**
 - **Notation confusion.** Wagner "used three different and incompatible notations" in the Ring [Cited S7]:
 
@@ -403,7 +403,7 @@ Switching in Synchron libraries: the product page names only the "Flow View" int
 - Double Wagner tubas: tenor B♭/F and bass F/low B♭ [Cited S4]; "just like a double horn", heavy, slightly duller; compensating doubles exist [Cited S8] [Cited S24]; several makers combine both sizes into one switchable instrument [Cited S7].
 - Mahillon designed a version for trombonists [Cited S7]; by 1914 the instruments had "in most countries" been handed from horn players to military saxhorn players or trombonists, with upward bells and a saxhorn-like build [Cited S1].
 - Related: horn, euphonium (same pitch), tuba [Cited S7] [Cited S8]. Sibling id: `wagner_tuba_bass`.
-- A double instrument does not need its own id: the part, not the instrument, decides tenor or bass [Estimate].
+- A double instrument does not need its own id: the part, not the instrument, decides tenor or bass [Estimate: design judgement about Sonara's ids; no source bears on it].
 
 ### 9. General MIDI and existing Sonara metadata
 - No Wagner tuba program exists in the GM Level 1 list; the brass programs are 57 Trumpet, 58 Trombone, 59 Tuba, 60 Muted Trumpet, 61 French Horn, 62 Brass Section, 63-64 SynthBrass [Cited S11]. **gm_program null**; fallback **61 French Horn** [Estimate: horn mouthpiece, horn players and horn-like timbre per S1/S4, closer than 59 Tuba].
@@ -498,7 +498,7 @@ Switching in Synchron libraries: the product page names only the "Flow View" int
 | Czech | Wagnerova tuba (+ "basová") | [Cited S23]; "basová" [Estimate: by analogy] |
 | Abbreviation | "B. Tb." | [Estimate: no standard found] |
 
-Family: brass, modified horn [Cited S1]. **Name trap:** German "Basstuba" is also the ordinary bass tuba, and scores call both "Tuben" [Cited S7]; Forsyth distinguishes Wagner's "Bass-Tuben" (modified horns) from the "Kontrabass-Tuba" (a true tuba) [Cited S1]. Sonara should map "Basstuba" to this id only with Wagner-tuba context [Estimate].
+Family: brass, modified horn [Cited S1]. **Name trap:** German "Basstuba" is also the ordinary bass tuba, and scores call both "Tuben" [Cited S7]; Forsyth distinguishes Wagner's "Bass-Tuben" (modified horns) from the "Kontrabass-Tuba" (a true tuba) [Cited S1]. Sonara should map "Basstuba" to this id only with Wagner-tuba context [Estimate: design judgement from the name clash in S1 and S7].
 
 ### 2. Sound production
 - Same principle as the tenor: horn mouthpiece, conical bore, left-hand rotary valves, upward bell [Cited S4] [Cited S8] [Cited S25].
@@ -604,9 +604,9 @@ _Adversarial fact-check, 2026-10-30. Every source below was reopened in this ses
 
 **Changes made (was -> now, why)**
 1. Wagner tuba bass `sounding_comfortable`: [35, 72] -> [34, 67]; JSON provenance and section 3 rewritten. Why: the top 72 was justified as "the horn's comfortable top (S1)", but in S1 it is the 2nd/4th horns' "at a pinch" note, and it lay above Wagner's designed bass compass, which S1's p.152 staff gives as B♭1-G4 (34-67) in actual sounds. Still an Estimate.
-2. Wagner tuba tenor section 3, Forsyth row: "staff image only ... could not be read reliably [Estimate]" -> B♭2-F5, 46-77 [Cited S1] (upgrade). JSON comfortable provenance now mentions it; the value 40-74 is unchanged.
-3. Wagner tuba bass section 3, Forsyth row: "not reliably readable [Estimate]" -> B♭1-G4, 34-67 [Cited S1] (upgrade).
-4. Tenor section 6 and open question 5, part numbering: "Forsyth's assignment is not explicit [Estimate]" -> Forsyth's p.154 example puts tenors (treble clef) on 1.2 and basses (bass clef) on 3.4 [Cited S1] (upgrade); conflict with S24 kept and reframed.
+2. Wagner tuba tenor section 3, Forsyth row: "staff image only ... could not be read reliably (Estimate)" -> B♭2-F5, 46-77 [Cited S1] (upgrade). JSON comfortable provenance now mentions it; the value 40-74 is unchanged.
+3. Wagner tuba bass section 3, Forsyth row: "not reliably readable (Estimate)" -> B♭1-G4, 34-67 [Cited S1] (upgrade).
+4. Tenor section 6 and open question 5, part numbering: "Forsyth's assignment is not explicit (Estimate)" -> Forsyth's p.154 example puts tenors (treble clef) on 1.2 and basses (bass clef) on 3.4 [Cited S1] (upgrade); conflict with S24 kept and reframed.
 5. Open question 4: unresolved -> resolved.
 6. Horn section 5 and section 10, VSCO sustain: "up to 3 velocity layers" -> "1 to 4 velocity layers per sampled pitch (4 at keycentres 50 and 60)". Why: parsed `FHornSus.sfz`.
 7. Horn sections 6 and 10, CineBrass: "solo, two, four and six horns, and 12 horns in its Pro edition" -> solo, four, six horns and "hired 12 horn players"; edition of a 12-horn patch not stated. Why: the review mentions no two-horn patch and does not tie the 12 players to Pro.
@@ -648,3 +648,4 @@ _Consistency review, 2026-10-30: JSON against prose, range arithmetic, tag hygie
 - Fact-check log change 8: the old-text fragments "[S1][S5]" and "[S4]" became "(S1, S5)" and "(S4)", so no bare bracket tags remain.
 - Checked, no change needed: written = sounding - transposition (42-84, 29-84, 34-84); comfortable inside playable for all three; transpositions, clefs and GM (61 / null / null) agree with sections 3 and 9; every Fact-check log correction is applied in both JSON and prose; every Cited tag resolves to a Sources row and no source is marked not opened; no attribution lines.
 - Articulation ids in the json blocks of `horn_f`, `wagner_tuba_tenor`, `wagner_tuba_bass` were harmonized to the shared vocabulary (`multitongue`, `double_tonguing` and `triple_tonguing` become `multi_tongue`; `muted_string` becomes `palm_mute`; `pitch_bend` becomes `portamento`); the prose keeps the original wording.
+- Gave every bare Estimate tag its reason (7 tags); in Fact-check log changes 2-4 the quoted old-text tags became "(Estimate)", so no bare bracket tag remains (3 more).

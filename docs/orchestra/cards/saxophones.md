@@ -566,7 +566,7 @@ clef before it and add three flats [Cited S31]. In a concert-pitch score MuseSco
 
 - NI Session Horns Pro includes the baritone among its "three saxophones"; its chart (vibrato/non-vibrato sustains,
   legato intervals, saxophone trills, growl, staccatissimo, marcato, fp-crescendo, falls, doits, rip) is for the
-  library as a whole [Cited S21]; whether each item exists for the baritone patch was not verified [Estimate].
+  library as a whole [Cited S21]; whether each item exists for the baritone patch was not verified [Estimate: S21's chart covers the library as a whole, not each patch].
 - Logic Studio Horns: its sections contain saxophones and its Key Clicks knob applies to saxophone sections and solo
   saxophones [Cited S19]; a solo baritone is not named on the keyswitch page, whose "Lead Instruments" are Trumpet 1,
   Trombone 1, Alto Sax 1 and Tenor Sax 1, so in Logic a baritone is reached only through the "Sections" keyswitches
@@ -625,7 +625,7 @@ No free SFZ baritone saxophone was found in the sources checked [Estimate: limit
    this session.
 2. **Comfortable top: written F6 vs F#6.** S4 calls F the traditional top keyed note [Cited S4]; S31 says big band writing
    goes no higher than F# [Cited S31]; S32 warns that the top three or four semitones are unreliable in a section
-   [Cited S32]. **Recommended: F6**, so a written F#6 is reported as `OutsideComfortable` (still playable) [Estimate].
+   [Cited S32]. **Recommended: F6**, so a written F#6 is reported as `OutsideComfortable` (still playable) [Estimate: design judgement between S4's F and S31's F#].
    The JSON `comfortable` provenance cites the endpoints (the traditional keyed range of S4); calling that range
    "comfortable" is this judgement, and Widor's advice to keep the alto's top 5-6 and the tenor's top 4-5 notes for
    virtuosi [Cited S2] argues for a lower comfortable top (about written C6) if `comfortable` is meant strictly.
@@ -634,7 +634,7 @@ No free SFZ baritone saxophone was found in the sources checked [Estimate: limit
 4. **Historical compasses.** Widor (1906) gives soprano and baritone a top of E♭ and alto and tenor F [Cited S2]; Forsyth
    (1914) says E♮ and F are extra on alto, tenor and baritone and that the low B♭ key was not in general use in England
    [Cited S1]. Modern sources give all four the same keyed range [Cited S4]. The handbooks' compass diagrams were lost in
-   the OCR, so their exact endpoints (octaves) are inferred from the text [Estimate].
+   the OCR, so their exact endpoints (octaves) are inferred from the text [Estimate: octaves inferred from the prose of S1 and S2; their diagrams were lost in the OCR].
 5. **MuseScore amateur range** tops out at written G6 for all four sizes [Cited S15-S18], which S6 calls the first
    altissimo note [Cited S6]; it was not used for `comfortable`.
 6. **Italian Wikipedia soprano** "La♭2-Fa5" (= concert F6 top) contradicts its own "a fifth above the alto" [Cited S37];
@@ -763,3 +763,4 @@ _Consistency review, 2026-10-30: JSON against prose, range arithmetic, tag hygie
 - Fact-check log change 1: the 16-word S8 quotation is paraphrased.
 - Fact-check log tag convention: the placeholder Cited tag with no source number was reworded, so every Cited tag in the file names a real Sources row.
 - Checked, no change needed: written = sounding - transposition (58-96, 58-96, 58-96, 57-96); comfortable inside playable; transpositions, treble clef and GM 65-68 agree with sections 3 and 9; every Fact-check log correction is applied in both JSON and prose; S41-S43 (not opened) are not cited; the remaining quotes longer than 15 words are from public-domain handbooks (S1 Forsyth 1914, S2 Widor 1906, S3 Berlioz 1882 translation); no attribution lines.
+- Gave every bare Estimate tag its reason (3 tags).

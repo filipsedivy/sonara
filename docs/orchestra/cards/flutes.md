@@ -780,7 +780,7 @@ How the libraries switch and control it:
 ### 6. Solo vs section (typical number of players, divisi, unison doubling)
 
 - A solo instrument in practice; no orchestral formation in the handbooks read includes it [Cited S1] [Cited S2]. Libraries record it solo [Cited S9] [Cited S7].
-- No divisi; section use not documented [Estimate].
+- No divisi; section use not documented [Estimate: by absence in the handbooks and libraries read, S1, S2, S7, S9].
 
 ### 7. Role in the orchestra and typical doublings
 
@@ -879,7 +879,7 @@ _Adversarial fact-check, 2026-10-30. Every source named in the check tables belo
 | 10 | piccolo section 8, Berlioz | "minor ninth piccolo (said to be in Eb)" and "tenth piccolo" in Eb | the minor-ninth piccolo's C sounds Db ("said to be in Eb", Berlioz classes it in Db); the tenth piccolo's C sounds Eb ("said to be in F", called in Eb) | S3 text reread; the old wording blurred which key name belongs to which instrument |
 | 11 | alto_flute section 4 and Open question 7 | low-register strength and breath were Estimates only | Wikipedia's "greater dynamic presence in the bottom octave and a half" and "more air volume but a slower airspeed" added as Cited S14; the remaining judgement stays an Estimate | S14 states both; it supports Forsyth's "remarkably strong" |
 | 12 | Open question 13, VSCO | "VSCO's `sw_label` text and sample names use 'C3' for middle C" | the `sw_label` only repeats the opcode name (c2 = 36); the flute sample names use C3 for middle C | "C2 Sustain Non-Vibrato" on `sw_lokey=c2` is no evidence of a C3 convention |
-| 13 | bass_flute section 3, Open question 18 (new), Open question 12, Open question 1 | not stated | written D6 upward tends to be sharp and notes above written A6 are weak unless the body is tapered [Cited S15]; MIS ff reaches Db6 (85), above Wikipedia's C6; the VSCO piccolo offset is probably a naming slip [Estimate]; the S11 infobox still says C4-C7 | additions found while checking; no json value changes |
+| 13 | bass_flute section 3, Open question 18 (new), Open question 12, Open question 1 | not stated | written D6 upward tends to be sharp and notes above written A6 are weak unless the body is tapered [Cited S15]; MIS ff reaches Db6 (85), above Wikipedia's C6; the VSCO piccolo offset is probably a naming slip [Estimate: inference from S23 and S30]; the S11 infobox still says C4-C7 | additions found while checking; no json value changes |
 
 No json range, transposition, clef or GM value changed. Nothing was downgraded from Cited to Estimate: every Cited value rechecked was found in its source (item 2 went the other way, from Estimate to Cited).
 
@@ -910,3 +910,4 @@ _Consistency review, 2026-10-30: json against prose, Verification tables and the
 - bass_flute section 1: "Neither handbook read describes this instrument" became "No handbook read describes this instrument in any detail", because four handbooks were read and Widor (S31) mentions the instrument in passing.
 - Open question 11: records that the clarinet cards spell the multiple-tonguing id `multi_tongue` and the high-brass cards `double_tonguing`; the id `multitongue` is kept here until one spelling is chosen.
 - Articulation ids in the json blocks of `piccolo`, `flute`, `alto_flute`, `bass_flute` were harmonized to the shared vocabulary (`multitongue`, `double_tonguing` and `triple_tonguing` become `multi_tongue`; `muted_string` becomes `palm_mute`; `pitch_bend` becomes `portamento`); the prose keeps the original wording.
+- Gave every bare Estimate tag its reason (2 tags; Fact-check Changes row 13 now repeats the reason of open question 12).

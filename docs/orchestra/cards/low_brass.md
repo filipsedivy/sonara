@@ -295,7 +295,7 @@ Registers (VSL): low Bb0-F2 (22-41) "true trombone bass range… sforzando tones
 | VSCO 2 CE | CC0 [Cited S27] | no bass trombone file in the `SFZ` tree [Cited S27] |
 | Sonatina Symphonic Orchestra | CC Sampling Plus 1.0 [Cited S28] | Solo Bass Trombone 28-67 (`e1`-`g4`): sustain (3 versions), marcato (3), staccato, legato, KS version [Cited S28] |
 | Spitfire Studio Brass / Professional | proprietary [Cited S25] | Bass Trombones a2 (Studio Brass), Bass Trombone Solo (Professional) [Cited S25, S26] |
-| Orchestral Tools Berlin Brass | proprietary [Estimate] | Bass Trombone sustains, legato, shorts, fp, swells; mapped range "D#0-G4" (Eb1-G5 in C4 = 60 numbering, wider than the instrument) [Cited S29; conversion per reading conventions] |
+| Orchestral Tools Berlin Brass | proprietary [Estimate: licence not read; S29 is a notes page] | Bass Trombone sustains, legato, shorts, fp, swells; mapped range "D#0-G4" (Eb1-G5 in C4 = 60 numbering, wider than the instrument) [Cited S29; conversion per reading conventions] |
 
 ## tuba: Tuba
 
@@ -400,7 +400,7 @@ Registers (VSL bass tuba): lower D1-F2 (26-41) soft and unobtrusive; middle F#2-
 | VSCO 2 CE | CC0 [Cited S27] | Tuba sustain and staccato 29-62, keyswitched combo; velocity layers and round robins only, which the Sonara sampler plays [Cited S27, S34] |
 | Sonatina Symphonic Orchestra | CC Sampling Plus 1.0 [Cited S28] | Tuba sustain 28-62 (`e1`-`d4`), marcato, staccato, legato, KS (`c6`...) [Cited S28] |
 | Spitfire Studio Brass / Professional | proprietary [Cited S25] | Tuba (and Contrabass Tuba in Professional) [Cited S25] |
-| Orchestral Tools Berlin Brass | proprietary [Estimate] | Tuba "C0-F3" (C1-F4 = 24-65 in C4 = 60 numbering), incl. trills and playable runs [Cited S29] |
+| Orchestral Tools Berlin Brass | proprietary [Estimate: licence not read; S29 is a notes page] | Tuba "C0-F3" (C1-F4 = 24-65 in C4 = 60 numbering), incl. trills and playable runs [Cited S29] |
 
 ## cimbasso: Cimbasso
 
@@ -423,7 +423,7 @@ Registers (VSL bass tuba): lower D1-F2 (26-41) soft and unobtrusive; middle F#2-
 ### 1. Identity and names (Czech, English, Italian, German, French; how it appears in a score; family)
 - The word is Italian, probably from *corno basso* / *corno di basso* ("bass horn") [Cited S8, S13]. The same name is used in English and German, where it later also meant slide contrabass trombones in F [Cited S13]. Czech, French: "cimbasso" [Estimate: no Czech or French source opened].
 - Verdi's and Puccini's scores call the part "trombone basso" [Cited S12]; the Pelitti instrument is also called "trombone basso Verdi", "trombone contrabbasso Verdi" or "trombone Verdi" [Cited S13].
-- Family: brass; a valved contrabass trombone with forward-facing bell [Cited S8, S13]. Abbreviation "Cimb." [Estimate].
+- Family: brass; a valved contrabass trombone with forward-facing bell [Cited S8, S13]. Abbreviation "Cimb." [Estimate: common engraving practice, no style guide opened].
 
 ### 2. Sound production
 - Modern instrument most often in F, sometimes Eb, low C or Bb [Cited S13]; Wessex says most often F or BBb [Cited S23]; VSL: F and Eb [Cited S8].
@@ -485,7 +485,7 @@ Registers (VSL bass tuba): lower D1-F2 (26-41) soft and unobtrusive; middle F#2-
 | Tuba | the player's main instrument [Cited S13, S23] |
 
 ### 9. General MIDI and existing Sonara metadata
-- GM Level 1 has no cimbasso program (brass group 57-64 is Trumpet, Trombone, Tuba, Muted Trumpet, French Horn, Brass Section, Synth Brass 1 and 2) [Cited S15, S16]. Nearest substitute: 58 Trombone, because the sound belongs to the trombone bass [Estimate: from S13's tone statement]; 59 Tuba as a second choice [Estimate].
+- GM Level 1 has no cimbasso program (brass group 57-64 is Trumpet, Trombone, Tuba, Muted Trumpet, French Horn, Brass Section, Synth Brass 1 and 2) [Cited S15, S16]. Nearest substitute: 58 Trombone, because the sound belongs to the trombone bass [Estimate: from S13's tone statement]; 59 Tuba as a second choice [Estimate: design judgement; 59 is the only other low brass program in the GM list, S15].
 - Not in Sonara's dataset [Cited S34].
 
 ### 10. Free or licensable sound sources and their coverage (library, licence as stated, what of this instrument it covers)
@@ -494,8 +494,8 @@ Registers (VSL bass tuba): lower D1-F2 (26-41) soft and unobtrusive; middle F#2-
 | VSCO 2 CE | CC0 [Cited S27] | none (no cimbasso file in the `SFZ` tree) [Cited S27] |
 | Sonatina Symphonic Orchestra | CC Sampling Plus 1.0 [Cited S28] | none (no cimbasso file) [Cited S28] |
 | Spitfire Studio Brass / Professional | proprietary [Cited S25] | Cimbasso: Fall, FX Swell, Long, Long Cuivre, Rip, Short Marcato, Short Sfz, Staccatissimo, Tenuto [Cited S25, S26] |
-| Orchestral Tools Berlin Brass (SINEplayer notes page) | proprietary [Estimate] | no cimbasso on the page read [Cited S29] |
-- No free SFZ cimbasso was found in the sources read; a free-library user would substitute a tuba or bass trombone patch [Estimate].
+| Orchestral Tools Berlin Brass (SINEplayer notes page) | proprietary [Estimate: licence not read; S29 is a notes page] | no cimbasso on the page read [Cited S29] |
+- No free SFZ cimbasso was found in the sources read; a free-library user would substitute a tuba or bass trombone patch [Estimate: design judgement; the free libraries read, S27 and S28, hold tuba and trombone patches but no cimbasso].
 
 ## euphonium: Euphonium
 
@@ -524,7 +524,7 @@ Registers (VSL bass tuba): lower D1-F2 (26-41) soft and unobtrusive; middle F#2-
 | German | Baryton, Tenorbass, Tenorbasshorn | [Cited S14]; "Euphonium" and Strauss's "Tenortuba" also appear [Estimate: S1 quotes Strauss's "Tenortuba in B" from *Don Quixote*] |
 | French | basse, saxhorn basse, tuba basse | [Cited S14] |
 | Spanish | bombardino | [Cited S14] |
-- Family: brass, conical wide bore, tuba family [Cited S9, S14]. Abbreviation "Euph." [Estimate].
+- Family: brass, conical wide bore, tuba family [Cited S9, S14]. Abbreviation "Euph." [Estimate: common engraving practice, no style guide opened].
 - Caution: "tenor tuba" is ambiguous; VSL uses it for the Bb Wagner tuba [Cited S9]; Forsyth says Wagner's Tenor-Tuben are modified horns, while Strauss's tenor tuba solos in *Don Quixote* were played "with admirable and characteristic results" on the euphonium [Cited S1].
 
 ### 2. Sound production
@@ -583,7 +583,7 @@ Registers (VSL bass tuba): lower D1-F2 (26-41) soft and unobtrusive; middle F#2-
 | Trombone | euphonium parts use bass clef with tenor clef for high passages [Cited S14], the same clefs as trombone parts [Cited S3]; trombonists doubling on euphonium is an Estimate [Estimate: no source read] |
 
 ### 9. General MIDI and existing Sonara metadata
-- GM Level 1 has no euphonium program [Cited S15, S16]. Nearest substitute: 59 Tuba (conical tuba-family timbre) [Estimate: from S14's family statement]; 58 Trombone matches the register better [Estimate].
+- GM Level 1 has no euphonium program [Cited S15, S16]. Nearest substitute: 59 Tuba (conical tuba-family timbre) [Estimate: from S14's family statement]; 58 Trombone matches the register better [Estimate: comparison of S14's euphonium range with the tenor trombone's, S3, S10].
 - Not in Sonara's dataset [Cited S34].
 
 ### 10. Free or licensable sound sources and their coverage (library, licence as stated, what of this instrument it covers)
@@ -592,7 +592,7 @@ Registers (VSL bass tuba): lower D1-F2 (26-41) soft and unobtrusive; middle F#2-
 | VSCO 2 CE | CC0 [Cited S27] | none (no euphonium file) [Cited S27] |
 | Sonatina Symphonic Orchestra | CC Sampling Plus 1.0 [Cited S28] | none (no euphonium file) [Cited S28] |
 | Spitfire Studio Brass Professional | proprietary [Cited S25] | Euphonium: FX Swell, Long, Long Sfz, Short Marcato, Staccatissimo, Tenuto, Legato [Cited S25] |
-| Philharmonia samples, U. Iowa MIS | licences as summarised in Sonara's research doc [Cited S34] | euphonium coverage not checked [Estimate] |
+| Philharmonia samples, U. Iowa MIS | licences as summarised in Sonara's research doc [Cited S34] | euphonium coverage not checked [Estimate: S34 summarises only the licences; neither library's file list was opened] |
 
 ## Open questions and disagreements between sources
 1. **Tenor trombone comfortable top.** D5 = 74 (S10, a "conservative" practical top, kept in data.rs), C5 = 72 (S32, textbook range) and Bb4 = 70 (S1, 1914: "confine the upward compass to the Bb"). Recommendation: keep 74, because two of three sources and modern practice reach above Bb4, but note that S10's value is a practical limit rather than a comfort limit; C5 is the most defensible "ordinary writing" value if a stricter check is wanted.
@@ -600,7 +600,7 @@ Registers (VSL bass tuba): lower D1-F2 (26-41) soft and unobtrusive; middle F#2-
 3. **Pedal register and gaps.** The tenor's pedals E1-Bb1 (S3) are separated from E2 by a gap on a straight instrument (S10). The data model has one contiguous playable range; an optional "extended" range or a gap list would represent pedals, tuba pedals (S6) and euphonium pedals (S14). The cards are not uniform: `trombone_tenor` excludes pedals (gap, data.rs), while `trombone_bass` (Bb0, S4), `tuba` (A0, S7), `cimbasso` (F1, S8) and, after the fact-check, `euphonium` (B0, S14) include them, because on those instruments the valves make the range continuous. A part checker that wants "no pedals" needs a separate floor: bass trombone B1 (35), the first valve note above the Bb1 pedal (S11), euphonium B1 (35) on a compensating four-valve instrument (S14), cimbasso F#1 (30) (S8).
 4. **One `tuba` id for four sizes.** The composite playable range A0-G4 mixes the contrabass tuba's bottom (S7) with the F tuba's top (S6). Alternatives: F tuba only D1-G4 (26-67, S6); Bb contrabass A0-B3 (21-59, S7); Wikipedia's solo extremes Bb0-C5 (22-72, S12). Separate ids (`tuba_f`, `tuba_cc`) would be more exact; the orchestral part itself is size-neutral (S1, S12).
 5. **Bass trombone top.** VSL gives F5 (S4); Wikipedia gives only "at least Bb4" and treats Kodály's B4 as notable (S11). F5 is kept as the outer limit; it may be too generous for a bass trombone part check.
-6. **Trombone legato.** S1 (1914) says there is "no true legato" across slide positions; S3 says seamless legato is possible. Modern libraries record legato transitions (S25, S28, S29). The difference is probably soft-tongued "legato" versus true slur [Estimate].
+6. **Trombone legato.** S1 (1914) says there is "no true legato" across slide positions; S3 says seamless legato is possible. Modern libraries record legato transitions (S25, S28, S29). The difference is probably soft-tongued "legato" versus true slur [Estimate: reconciliation of S1 and S3; neither source states it].
 7. **Glissando limits.** S3 and S4 say "diminished fifth", S10 says "tritone": the same 6 semitones. A Sonara glissando rendered by pitch bend needs a bend range of at least 6 semitones; the sampler bends ±2 (S34).
 8. **Cimbasso keys and range.** S13 says most often F; S23 says F or BBb; S8 says F and Eb. Only S8 gives a range (F cimbasso). Valve counts differ (S8: four and five; S13: four to six in its lead, four to five in its Construction section; S22, S23: five). The designer question is resolved by S13's History section, read in the fact-check: the modern cimbasso emerged in 1985 from Josef Meinl and Thein adopted it (consistent with Thein's "since the mid-80s", S22). The Pelitti date differs: S8 says Verdi had Pelitti build the valved contrabass trombone in 1881, S13 says Pelitti produced the trombone Verdi "by 1887"; the two are compatible (1881 commission, in use by Otello 1887) but neither source states both.
 9. **Cimbasso "trombone basso" naming.** Verdi's "trombone basso" (S12, S13) must map to `cimbasso`, not `trombone_bass`, when parsing Italian opera scores.
@@ -726,3 +726,4 @@ _Consistency review, 2026-10-30: json against prose, written = sounding - transp
 - euphonium json `articulations_provenance`: `vibrato_on` is now an Estimate from brass-band practice, matching §5, instead of "by analogy with the tuba".
 - trombone_tenor Verification of data.rs, articulations row: S31 added to the sources, following C7 (growl Cited S31).
 - trombone_tenor json `typical_players.classical` and §6: "the alto was dropped from Beethoven's middle period on" (untagged) was contradicted by Symphony No. 5 (middle period), which scores alto, tenor and bass trombones; now the trio in Beethoven's Nos. 5 and 9 [Cited S37, S38] and the alto "practically obsolete" by 1914 [Cited S1]. S37 and S38 were opened for this change; no range changed, so written = sounding - transposition is untouched.
+- Gave every bare Estimate tag its reason (10 tags).

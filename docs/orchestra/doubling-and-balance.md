@@ -400,7 +400,7 @@ at the same notated dynamic. A weight compares parts that sound **at the same ma
 relative count of "how many wood-wind players this equals", in Rimsky's own additive arithmetic,
 not a decibel value [Estimate: derived from the ratios in 3.1; no source gives absolute levels].
 
-**Derivation** [Estimate, from S1 Ch. I p. 33]: forte: horn = 2 wood-winds, trumpet = trombone =
+**Derivation** [Estimate: derived from S1 Ch. I p. 33]: forte: horn = 2 wood-winds, trumpet = trombone =
 tuba = 2 horns = 4; one medium-orchestra string department = 2. Piano: every wind = 1 and one string
 department = 1. Mezzo-forte is not given by the source; it takes the geometric midpoint (horn 1.4,
 trumpet 2, string department 1.4).
@@ -412,10 +412,10 @@ trumpet 2, string department 1.4).
 | `saxophone_soprano`, `saxophone_alto`, `saxophone_tenor`, `saxophone_baritone` | 1 | 1.4 | 2 | [Estimate: no opened source gives a ratio; placed with the horn as a provisional value] |
 | `horn_f` (one player, open) | 1 | 1.4 | 2 | [Cited S1 p. 33]; mf [Estimate: midpoint] |
 | `wagner_tuba_tenor`, `wagner_tuba_bass`, `euphonium`, `flugelhorn` | 1 | 1.4 | 2 | [Estimate: conical, horn-like brass; no opened ratio] |
-| `trumpet_bb`, `trumpet_c`, `trumpet_piccolo` | 1 | 2 | 4 | [Cited S1 p. 33] (piccolo trumpet [Estimate: same as trumpet]); mf [Estimate] |
+| `trumpet_bb`, `trumpet_c`, `trumpet_piccolo` | 1 | 2 | 4 | [Cited S1 p. 33] (piccolo trumpet [Estimate: same as trumpet]); mf [Estimate: geometric midpoint of the pp-p and f-ff values, as in the derivation above] |
 | `cornet` | 1 | 1.7 | 3 | [Cited S1 Ch. I brass remarks, pp. 23-24: cornets "have not quite the same force" as trumpets and are "softer and weaker"]; [Card cards/high_brass.md#cornet]; numbers [Estimate: placed between the horn (2) and the trumpet (4) in forte; mf the geometric midpoint; no source gives a ratio] |
-| `trombone_tenor`, `trombone_bass`, `tuba`, `cimbasso` | 1 | 2 | 4 | [Cited S1 p. 33] (cimbasso [Estimate: same as tuba]); mf [Estimate] |
-| One string department, arco (`violin` Vns I or Vns II, `viola`, `cello`, `double_bass`), medium orchestra | 1 | 1.4 | 2 | [Cited S1 p. 33] for Vns I; other sections [Estimate: S1 states the ratio for "the whole of one department", taken to hold for each]; mf [Estimate] |
+| `trombone_tenor`, `trombone_bass`, `tuba`, `cimbasso` | 1 | 2 | 4 | [Cited S1 p. 33] (cimbasso [Estimate: same as tuba]); mf [Estimate: geometric midpoint of the pp-p and f-ff values, as in the derivation above] |
+| One string department, arco (`violin` Vns I or Vns II, `viola`, `cello`, `double_bass`), medium orchestra | 1 | 1.4 | 2 | [Cited S1 p. 33] for Vns I; other sections [Estimate: S1 states the ratio for "the whole of one department", taken to hold for each]; mf [Estimate: geometric midpoint of the pp-p and f-ff values, as in the derivation above] |
 | String department of _n_ players | × _n_ / medium count | same | same | [Estimate: linear in players, matching Rimsky's additive count of winds; medium counts from S1 p. 6] |
 | One solo string player | 0.5 | 0.5 | 0.5 | [Estimate: S1 Ch. IV "Soli in the strings" p. 105 says the solo tone is "comparatively weak" and needs "light, transparent accompaniment"; no number] |
 | Pizzicato or col legno (any string department) | 0.5 | 0.5 | 0.5 | [Estimate: "easily overpowers" in S1 pp. 33-34; no number] |
@@ -759,9 +759,9 @@ source states the rule].
 |---|---|---|---|---|---|
 | RNG-01 | Note outside the playable range | `id`, notes | `check_sounding` is `BelowPlayable` or `AbovePlayable` | error | [Cited S8]; ranges per [model.md](model.md) (the `data.rs` values until its proposed corrections land) |
 | RNG-02 | Note outside the comfortable range | `id`, notes | `check_sounding` is `OutsideComfortable` | warning | [Cited S8]; ranges as for RNG-01 |
-| RNG-03 | Sustained extreme high brass | `id` in brass, notes, `tempo` | notes above the comfortable range held or repeated for more than about 2 bars | warning | [Cited S3 p. 198]; bar count [Estimate] |
+| RNG-03 | Sustained extreme high brass | `id` in brass, notes, `tempo` | notes above the comfortable range held or repeated for more than about 2 bars | warning | [Cited S3 p. 198]; bar count [Estimate: provisional threshold; S3 gives no bar count] |
 | RNG-04 | Extreme-register melody undoubled | `role`=melody, notes | a violin or wood-wind melody above about MIDI 90 without a doubling an octave below, or a melody below about MIDI 42 without one an octave above | hint | [Cited S1 Ch. II pp. 44, 50]; MIDI values [Estimate: octave mapping in 0.1] |
-| SPC-01 | Low-interval limit | notes sounding together | any interval whose lower note is under the 4.1 table value | hint at pp-p in strings; warning at f-ff or in brass | [Cited S1 Ch. IV p. 106]; [Cited S4]; [Cited S5]; table [Estimate] |
+| SPC-01 | Low-interval limit | notes sounding together | any interval whose lower note is under the 4.1 table value | hint at pp-p in strings; warning at f-ff or in brass | [Cited S1 Ch. IV p. 106]; [Cited S4]; [Cited S5]; table [Estimate: the 4.1 limit table, a remembered guideline; see Open question 2] |
 | SPC-02 | Dissonance in the low bass | `id`, notes sounding together | a dissonant interval (second, fourth, tritone, seventh, ninth) between two parts with its lower note under MIDI 50; stricter than SPC-01, whose table admits some of these lower (4.1) | warning when both parts are of one family; hint otherwise | [Cited S4]; family scope [Estimate: from S4's stated reason, timbrally similar horns] |
 | SPC-03 | Bass too far below the harmony | `harmony`, notes | bass more than an octave below the next part up, sustained | hint | [Cited S1 Ch. III p. 67] |
 | SPC-04 | Hole in the middle | `harmony`, notes, `dyn` | adjacent upper parts more than an octave apart in a sustained chord | warning at f-ff, hint at pp-p | [Cited S1 Ch. III pp. 68, 78] |
@@ -778,14 +778,14 @@ source states the rule].
 | DBL-07 | Expressive solo doubled | `role`, `dyn`, notes | a part marked solo and expressive, at p, doubled in unison by another instrument | hint | [Cited S1 Ch. II p. 48] |
 | DBL-08 | Double bass phrase unsupported | `id`, `role`, notes | a `double_bass` melodic phrase with no `cello` or `bassoon` in unison or octave | warning | [Cited S1 Ch. II p. 38] |
 | DBL-09 | Strings and brass in unison expected to blend | `id`, notes | a string section and a brass instrument share a melody in unison with no wood-wind | hint | [Cited S1 Ch. II p. 61] |
-| BAL-01 | Unequal chord members | weights (3.3, 3.4), `dyn`, `harmony` | in a sustained chord, a harmonic part's summed weight under half the strongest non-melody part | warning at f-ff, hint at pp-p | [Cited S1 Ch. III p. 69: "the resonance of different harmonic parts must be equally balanced"]; threshold [Estimate] |
+| BAL-01 | Unequal chord members | weights (3.3, 3.4), `dyn`, `harmony` | in a sustained chord, a harmonic part's summed weight under half the strongest non-melody part | warning at f-ff, hint at pp-p | [Cited S1 Ch. III p. 69: "the resonance of different harmonic parts must be equally balanced"]; threshold [Estimate: provisional threshold; S1 gives no number] |
 | BAL-02 | Single horns against trumpets or trombones | `id`, `part`, `dyn` | forte brass chord, one horn per part, horns not marked a step louder | warning | [Cited S1 Ch. III pp. 84-85] |
 | BAL-03 | Melody not on top of the weight | weights, `role`, notes | melody weight not above the accompaniment weight in its own band and the bands next to it | warning | [Cited S1 Ch. II p. 36; Ch. IV pp. 114-115]; margin [Estimate: require at least 1.5 times] |
 | BAL-04 | Wood-wind under-weighted against brass | weights, `dyn` | forte chord where wood-wind parts weigh less than brass parts | hint: mark the wood-wind a step louder or double them | [Cited S1 Ch. III p. 94] |
 | BAL-05 | Non-sustaining melody against a sustained forte | `id`, `role`, `dyn` | `harp`, `celesta`, piano or pizzicato carries the melody while sustaining groups play f | warning | [Cited S1 Ch. I pp. 29, 33-34] |
 | BAL-06 | Heavy percussion ff | `id`, `dyn` | `bass_drum`, `clash_cymbals`, `tam_tam` and a `snare_drum` roll together at ff over a melody | hint (it overpowers any tutti) | [Cited S1 Ch. IV p. 117] |
 | BAL-07 | A family without its own bass | `id`, `harmony` | a family's sustained chord has no member on the chord's bass note | hint | [Cited S3 p. 197] |
-| BAL-08 | Solo string over heavy accompaniment | `part`, weights | a solo string carries the melody while accompaniment weight exceeds about 2 units | warning | [Cited S1 Ch. IV p. 105]; threshold [Estimate] |
+| BAL-08 | Solo string over heavy accompaniment | `part`, weights | a solo string carries the melody while accompaniment weight exceeds about 2 units | warning | [Cited S1 Ch. IV p. 105]; threshold [Estimate: provisional threshold on the 3.3 weights; S1 gives no number] |
 | BAL-09 | String body too small for the winds | `part` | fewer than 8 first violins with wind in pairs or more | hint | [Cited S1 Ch. I p. 6] |
 | MSK-01 | Accompaniment in the voice's register | `id`, `role`, notes | sustained accompaniment in the same band as a voice or solo melody | warning | [Cited S1 Ch. V p. 121] |
 | MSK-02 | Heavy doublings under a voice | `id`, `role` | under a voice: strings doubled by wood-wind and brass; brass doubled by wood-wind; one harmonic part on 2 clarinets, 2 oboes or 2 horns in unison; timpani or percussion tremolo; long sustained double-bass notes | warning | [Cited S1 Ch. V pp. 120-121] |
@@ -803,14 +803,14 @@ source states the rule].
 | VOI-10 | Uneven string divisi | `part`, `harmony` | some upper string parts divided and others not in a sustained chord; or cellos and basses undivided under fully divided upper strings at equal dynamic | hint | [Cited S1 Ch. III p. 70] |
 | VOI-11 | Divisi in four or more at forte | `part`, `dyn` | one section divided four or more ways at f-ff | warning | [Cited S1 Ch. I p. 7] |
 | VOI-12 | Sustained multi-stop string chords | `id`, notes | three or four simultaneous notes in one string part longer than a short chord, or at p | warning (only the upper two notes can be held) | [Cited S1 Ch. III p. 69] |
-| PLY-01 | Wind breath | `id`, notes, `tempo` | a wind part plays without a rest for longer than a provisional 8 bars of moderate 4/4; one held medium-register note lasts longer than about 10 bars of moderate 4/4 on a saxophone, or longer than about 40 s (a soloist's maximum at piano) on a saxophone or clarinet; the flute's lowest register runs more than a few notes without a breath | warning | rule [Cited S1 Ch. I p. 19, p. 25]; held note [Cited S3 p. 127], [Card cards/saxophones.md#saxophone_alto]; flute low [Card cards/flutes.md#flute]; 8 bars [Estimate] |
+| PLY-01 | Wind breath | `id`, notes, `tempo` | a wind part plays without a rest for longer than a provisional 8 bars of moderate 4/4; one held medium-register note lasts longer than about 10 bars of moderate 4/4 on a saxophone, or longer than about 40 s (a soloist's maximum at piano) on a saxophone or clarinet; the flute's lowest register runs more than a few notes without a breath | warning | rule [Cited S1 Ch. I p. 19, p. 25]; held note [Cited S3 p. 127], [Card cards/saxophones.md#saxophone_alto]; flute low [Card cards/flutes.md#flute]; 8 bars [Estimate: provisional; no opened source gives a phrase length without a rest] |
 | PLY-02 | Brass endurance | `id`, notes | long loud or high passages with no rest; repeated notes outside the middle register | warning | [Cited S3 p. 198]; [Card cards/high_brass.md#trumpet_bb] |
 | PLY-03 | Bow length | `id`, notes, `dyn`, `tempo` | one slurred pp group longer than about 4 bars of moderate time (about half that for many-note slurs); long forte slurs | hint | [Card cards/strings.md#violin] |
 | PLY-04 | Mute change time | `part`, `tempo` | mute on with less than about two bars of moderate time free; off with less than slightly under that | warning | [Card cards/strings.md#violin] |
 | PLY-05 | Pizzicato and arco switch | `id`, articulation, `tempo` | a switch from pizz to arco with less than about half a second free | warning | [Card cards/strings.md#violin] |
 | PLY-06 | Pizzicato speed | `id`, articulation, notes | pizzicato faster than the same passage could be bowed; double-bass pizzicato much slower than violin | hint | [Cited S1 Ch. I "Pizzicato", p. 27] |
 | PLY-07 | Harp pedal setting | `pedals`, notes | a note outside the current setting with no pedal change; two spellings of one letter at once; a double sharp or flat | error | [Cited S1 Ch. I p. 28]; [Cited S2 pp. 463-464]; [Card cards/plucked.md#harp] |
-| PLY-08 | Harp pedal changes | `pedals`, notes, `tempo` | more than one change per foot (left D C B, right E F G A) per beat at moderate tempo, or a change on a string that must sound | warning | [Card cards/plucked.md#harp] (the per-beat limit is the card's [Estimate]) |
+| PLY-08 | Harp pedal changes | `pedals`, notes, `tempo` | more than one change per foot (left D C B, right E F G A) per beat at moderate tempo, or a change on a string that must sound | warning | [Card cards/plucked.md#harp] (the per-beat limit is the card's [Estimate: synthesis of the card's pedal rows; no source states it as a rule]) |
 | PLY-09 | Harp chord shape | `id`, notes | more than four notes for one hand, or hands too far apart | error for more than 8 notes, warning otherwise | [Cited S1 Ch. I "Harp", p. 28] |
 | PLY-10 | Harp fast figures low | `id`, notes, `tempo` | rapid figures in the low and middle register | hint | [Cited S1 Ch. I p. 28] |
 | PLY-11 | Timpani retuning | `tuning`, notes, `tempo`, `meter` | a pitch not on a tuned drum; a retune of a whole tone with less than 2-3 bars of 4/4 moderato rest, proportionally more for larger changes; more distinct pitches in a passage than drums | error when no drum and no time; warning when time is short | [Cited S2 p. 46]; [Cited S1 Ch. I "Kettle-drums", p. 30] |
@@ -880,7 +880,7 @@ source states the rule].
    cited handbook examples (Rimsky-Korsakov's Vol. II scores) with the weights, or measure the
    loudness of real library samples at matched dynamics. Sample libraries may normalise their
    recordings, so a library's own balance may differ from the hall balance the handbooks describe
-   [Estimate].
+   [Estimate: general sample-library practice; no opened source states it].
 5. **Where parts, roles and dynamics live.** Vns I / Vns II, Horn 1-4, solo or section, players,
    divisi, mute, role and notated dynamic have no place in Sonara's model. Options: the `extra` map
    on tracks, a versioned `.sonara` schema change (CTR-01), or only in-memory metadata derived by
@@ -946,3 +946,4 @@ TEX-06) are unchanged; no rule was added, removed or renumbered.
 - **Added for the rule engine.** MIDI spans for the flute's weak bottom, the clarinet throat and the
   horn's bottom fifth (3.4), the harp's octaves 1 to 4 against its card (5.7), and a pointer from
   RNG-01/RNG-02 to [model.md](model.md) and its proposed `data.rs` corrections.
+- Gave every bare Estimate tag its reason (10 tags), and put the comma-form tag of the 3.3 derivation into the colon form.

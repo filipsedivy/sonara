@@ -86,7 +86,7 @@ Modern teaching sources agree on the frame and fill in the slots Widor leaves op
 - Within the woodwind family the doubling instruments sit next to their family. Rimsky-Korsakov's
   formation table lists piccolo, flutes, bass flute, oboes, English horn, small clarinet,
   clarinets, bass clarinet, bassoons, double bassoon, in that order [Cited S1] (a formation list,
-  read here as staff order [Estimate]).
+  read here as staff order [Estimate: S1 gives a formation list, not a staff order]).
 - **Rule used by the templates of section 3** [Estimate: design choice that reconciles the
   formation list above with keeping one player's tracks together]: an auxiliary instrument
   with its own player takes the place of the formation list (piccolo above the flutes, English
@@ -206,7 +206,7 @@ Berlioz is the only source opened that places every group, including the chorus 
 - The same treatise describes "the finest concert orchestra, for a room scarcely larger than
   that of the Conservatoire", with, among others, 21 first violins, 20 seconds, 18 violas,
   8 + 7 cellos, 10 double basses and 4 harps [Cited S4] (the list's layout in the OCR text is
-  scrambled, so these counts need a check against a page scan [Estimate]).
+  scrambled, so these counts need a check against a page scan [Estimate: the OCR text of S4 is scrambled; no page scan was opened]).
 
 ### 2.3 Harp, keyboards and choir today
 
@@ -341,11 +341,11 @@ and dominant was standard up to and including Beethoven [Cited S1].
 | 4 | Clarinet 1, Clarinet 2 | `clarinet_a` | 1 + 1 | opt. | in A in Haydn 104 [Cited S18]; absent in Mozart 41 [Cited S17] |
 | 5 | Bassoon 1, Bassoon 2 | `bassoon` | 1 + 1 | req. | [Cited S17, S18] |
 | 6 | Horn 1, Horn 2 | `horn_f` | 1 + 1 | req. | natural horns in the period: **gap**, `horn_f` stands in [Estimate: no natural-horn id] |
-| 7 | Trumpet 1, Trumpet 2 | `trumpet_c` | 1 + 1 | opt. | natural trumpets: **gap**, `trumpet_c` stands in [Estimate]; in C in Mozart 41 [Cited S17] |
-| 8 | Timpani | `timpani` | 1 | opt. | usually with the trumpets [Estimate]; one player on two drums [Card cards/tuned_percussion.md#timpani] |
+| 7 | Trumpet 1, Trumpet 2 | `trumpet_c` | 1 + 1 | opt. | natural trumpets: **gap**, `trumpet_c` stands in [Estimate: no natural-trumpet id]; in C in Mozart 41 [Cited S17] |
+| 8 | Timpani | `timpani` | 1 | opt. | usually with the trumpets [Estimate: generalised from the timpani card's note that older masters used them with the trumpets]; one player on two drums [Card cards/tuned_percussion.md#timpani] |
 | 9 | Violins I | `violin` | 8 | req. | [Estimate: RK "small" counts reused for the era] |
-| 10 | Violins II | `violin` | 6 | req. | [Estimate] |
-| 11 | Violas | `viola` | 4 | req. | [Estimate] |
+| 10 | Violins II | `violin` | 6 | req. | [Estimate: RK "small" counts reused for the era] |
+| 11 | Violas | `viola` | 4 | req. | [Estimate: RK "small" counts reused for the era] |
 | 12 | Cellos | `cello` | 3 | req. | share the "Bassi" line with the basses [Cited S5] |
 | 13 | Basses | `double_bass` | 2 | req. | double the cello line an octave lower [Cited S5] |
 
@@ -367,7 +367,7 @@ piccolo, contrabassoon and trombones [Cited S6].
 | 1 | Piccolo | `piccolo` | 1 | opt. | finale only [Cited S19, S20]; an extra, or Fl. 2 doubling [Estimate: S19-S20 do not say]; as a doubling the track moves below Flute 2 with 0 players (section 1.1) |
 | 2 | Flute 1, Flute 2 | `flute` | 1 + 1 | req. | [Cited S19] |
 | 3 | Oboe 1, Oboe 2 | `oboe` | 1 + 1 | req. | [Cited S19] |
-| 4 | Clarinet 1, Clarinet 2 | `clarinet_bb` | 1 + 1 | req. | B♭ and C in No. 5; A, B♭ and C in No. 9 [Cited S19, S20]; no C-clarinet id: **gap** [Estimate] |
+| 4 | Clarinet 1, Clarinet 2 | `clarinet_bb` | 1 + 1 | req. | B♭ and C in No. 5; A, B♭ and C in No. 9 [Cited S19, S20]; no C-clarinet id: **gap** [Estimate: `clarinet_bb` stands in as the nearest id] |
 | 5 | Bassoon 1, Bassoon 2 | `bassoon` | 1 + 1 | req. | [Cited S19] |
 | 6 | Contrabassoon | `contrabassoon` | 1 | opt. | finale [Cited S19, S20]; Bsn. 3 doubles in later practice [Card cards/double_reeds.md#contrabassoon] |
 | 7 | Horn 1, Horn 2 | `horn_f` | 1 + 1 | req. | [Cited S19] |
@@ -377,7 +377,7 @@ piccolo, contrabassoon and trombones [Cited S6].
 | 11 | Tenor trombone | `trombone_tenor` | 1 | opt. | [Cited S19] |
 | 12 | Bass trombone | `trombone_bass` | 1 | opt. | [Cited S19] |
 | 13 | Timpani | `timpani` | 1 | req. | [Cited S19] |
-| 14 | Triangle; Cymbals; Bass drum | `triangle`, `clash_cymbals`, `bass_drum` | 1 each | opt. | No. 9 finale [Cited S20]; players are an [Estimate] |
+| 14 | Triangle; Cymbals; Bass drum | `triangle`, `clash_cymbals`, `bass_drum` | 1 each | opt. | No. 9 finale [Cited S20]; players are an [Estimate: S20 names the instruments, not the number of players] |
 | 15 | Strings | `violin` ×2, `viola`, `cello`, `double_bass` | 12-10-8-6-4 | req. | [Estimate: RK "medium" counts reused for the era]; independent bass parts become frequent from Beethoven on [Cited S5] |
 
 For the vocal forces of No. 9 see 3.9. Beethoven assigned two players to each wind part at
@@ -408,7 +408,7 @@ horns, 2 trumpets, 3 trombones, 1 tuba [Cited S1].
 | 11 | Trombone 3 | `trombone_bass` | 1 | req. | [Card cards/low_brass.md#trombone_bass] |
 | 12 | Tuba | `tuba` | 1 | opt. | Tchaikovsky 6 [Cited S22] |
 | 13 | Timpani | `timpani` | 1 | req. | three drums became regular [Card cards/tuned_percussion.md#timpani] |
-| 14 | Bass drum; Cymbals; Tam-tam | `bass_drum`, `clash_cymbals`, `tam_tam` | 1-2 | opt. | Tchaikovsky 6 [Cited S22]; player count [Estimate] |
+| 14 | Bass drum; Cymbals; Tam-tam | `bass_drum`, `clash_cymbals`, `tam_tam` | 1-2 | opt. | Tchaikovsky 6 [Cited S22]; player count [Estimate: S22 names the instruments, not the number of players] |
 | 15 | Harp | `harp` | 1 | opt. | most scores have one harp part [Cited S1] |
 | 16 | Violins I | `violin` | 16 | req. | RK "full" [Cited S1] |
 | 17 | Violins II | `violin` | 14 | req. | [Cited S1] |
@@ -441,7 +441,7 @@ and bass tubas and a contrabass trombone [Cited S1]; _Die Walküre_ strings 16-1
 | 14 | Horn 1-8 | `horn_f` | 8 | req. | [Cited S23, S24]; RK "6 or 8 Horns" [Cited S1] |
 | 15 | Tenor Wagner tuba 1, 2 | `wagner_tuba_tenor` | 0 | opt. | _Ring_ [Cited S1]; played by horn players 5-8, who switch [Card cards/horns.md#wagner_tuba_tenor] |
 | 16 | Bass Wagner tuba 1, 2 | `wagner_tuba_bass` | 0 | opt. | as above [Card cards/horns.md#wagner_tuba_tenor] |
-| 17 | Trumpet 1-4 | `trumpet_bb` | 4 | req. | 5 in _Heldenleben_ (3 in B♭ + 2 in E♭) [Cited S24]; 6 in Mahler 6 [Cited S23]; no E♭-trumpet id: **gap** [Estimate] |
+| 17 | Trumpet 1-4 | `trumpet_bb` | 4 | req. | 5 in _Heldenleben_ (3 in B♭ + 2 in E♭) [Cited S24]; 6 in Mahler 6 [Cited S23]; no E♭-trumpet id: **gap** [Estimate: `trumpet_bb` stands in as the nearest id] |
 | 18 | Trumpet 5, 6 | `trumpet_bb` | 1 + 1 | opt. | Mahler 6 finale [Cited S23] |
 | 19 | Bass trumpet | **gap** | 1 | opt. | _Ring_ third part [Cited S1]; no id; played by trombonists [Card cards/high_brass.md#trumpet_bb] |
 | 20 | Trombone 1, 2 | `trombone_tenor` | 1 + 1 | req. | [Cited S23, S24] |
@@ -453,7 +453,7 @@ and bass tubas and a contrabass trombone [Cited S1]; _Die Walküre_ strings 16-1
 | 26 | Timpani 1 | `timpani` | 1 | req. | [Cited S23, S24] |
 | 27 | Timpani 2 | `timpani` | 1 | opt. | Mahler 6: six drums, two players [Cited S23] |
 | 28 | Percussion 1-4 | `bass_drum`, `snare_drum`, `clash_cymbals`, `suspended_cymbal`, `tam_tam`, `triangle`, `glockenspiel`, `xylophone`, `tubular_bells` | 3-4 | req. | instruments from [Cited S23, S24]; one track per instrument (9 tracks), each named after its player "Perc. 1-4" (section 1.3) [Estimate: player split]; `tubular_bells` for Mahler's deep bells [Estimate: approximation; the bells' pitches were not checked against the tubular-bell range in [model.md](model.md)] |
-| 29 | Rute | `bass_drum` | 0 | opt. | Mahler 6 [Cited S23]; the cards model the Rute as a beater, the proposed articulation `rute` of `bass_drum`, not as an instrument [Card cards/untuned_percussion.md#bass_drum]; the Rute track shares the bass drum's id and patch [Estimate] |
+| 29 | Rute | `bass_drum` | 0 | opt. | Mahler 6 [Cited S23]; the cards model the Rute as a beater, the proposed articulation `rute` of `bass_drum`, not as an instrument [Card cards/untuned_percussion.md#bass_drum]; the Rute track shares the bass drum's id and patch [Estimate: design choice following the card's beater model] |
 | 30 | Cowbells; Hammer | **gap** | 0 | opt. | Mahler 6 [Cited S23]; no ids |
 | 31 | Harp 1, Harp 2 | `harp` | 1 + 1 | req. | both works [Cited S23, S24] |
 | 32 | Harp 3, Harp 4 | `harp` | 1 + 1 | opt. | Mahler's score calls for four at one point [Cited S23]; RK: full orchestras should have three or four [Cited S1]; "2-4 in large scores" [Card cards/plucked.md#harp] |
@@ -480,18 +480,18 @@ cimbasso is a film favourite, usually played by a tubist as a doubling
 
 | # | Part | Id | Players | Req. | Player / doubling, notes |
 |---|---|---|---|---|---|
-| 1 | Flute 1, Flute 2 | `flute` | 1 + 1 | req. | [Estimate] |
-| 2 | Flute 3 | `flute` | 1 | opt. | [Estimate] |
+| 1 | Flute 1, Flute 2 | `flute` | 1 + 1 | req. | [Estimate: film session practice; no opened source gives a film orchestra's roster] |
+| 2 | Flute 3 | `flute` | 1 | opt. | [Estimate: film session practice; no opened source gives a film orchestra's roster] |
 | 3 | Piccolo (Fl. 2 or 3) | `piccolo` | 0 | opt. | doubling as in RK [Cited S1] |
 | 4 | Alto flute (Fl. 2 or 3) | `alto_flute` | 0 | opt. | played by a flutist [Card cards/flutes.md#alto_flute] |
-| 5 | Oboe 1, Oboe 2 | `oboe` | 1 + 1 | req. | [Estimate] |
-| 6 | English horn | `english_horn` | 1 | opt. | [Estimate] |
-| 7 | Clarinet 1, Clarinet 2 | `clarinet_bb` | 1 + 1 | req. | [Estimate] |
-| 8 | Bass clarinet | `bass_clarinet` | 1 | opt. | [Estimate] |
-| 9 | Bassoon 1, Bassoon 2 | `bassoon` | 1 + 1 | req. | [Estimate] |
-| 10 | Contrabassoon | `contrabassoon` | 1 | opt. | [Estimate] |
+| 5 | Oboe 1, Oboe 2 | `oboe` | 1 + 1 | req. | [Estimate: film session practice; no opened source gives a film orchestra's roster] |
+| 6 | English horn | `english_horn` | 1 | opt. | [Estimate: film session practice; no opened source gives a film orchestra's roster] |
+| 7 | Clarinet 1, Clarinet 2 | `clarinet_bb` | 1 + 1 | req. | [Estimate: film session practice; no opened source gives a film orchestra's roster] |
+| 8 | Bass clarinet | `bass_clarinet` | 1 | opt. | [Estimate: film session practice; no opened source gives a film orchestra's roster] |
+| 9 | Bassoon 1, Bassoon 2 | `bassoon` | 1 + 1 | req. | [Estimate: film session practice; no opened source gives a film orchestra's roster] |
+| 10 | Contrabassoon | `contrabassoon` | 1 | opt. | [Estimate: film session practice; no opened source gives a film orchestra's roster] |
 | 11 | Horn 1-6 | `horn_f` | 6 | req. | 6-8 in big scores [Card cards/horns.md#horn_f] (an Estimate there) |
-| 12 | Horn 7, 8 | `horn_f` | 1 + 1 | opt. | [Estimate] |
+| 12 | Horn 7, 8 | `horn_f` | 1 + 1 | opt. | [Estimate: film session practice; no opened source gives a film orchestra's roster] |
 | 13 | Trumpet 1-3 | `trumpet_bb` | 3 | req. | 3-4 [Card cards/high_brass.md#trumpet_bb] (an Estimate there) |
 | 14 | Trombone 1, 2 | `trombone_tenor` | 1 + 1 | req. | 2-3 tenors [Card cards/low_brass.md#trombone_tenor] (an Estimate there) |
 | 15 | Bass trombone 1 | `trombone_bass` | 1 | req. | 1-2 [Card cards/low_brass.md#trombone_bass] |
@@ -499,13 +499,13 @@ cimbasso is a film favourite, usually played by a tubist as a doubling
 | 17 | Tuba | `tuba` | 1 | req. | [Card cards/low_brass.md#tuba] |
 | 18 | Cimbasso | `cimbasso` | 0-1 | opt. | usually a tubist's doubling [Card cards/low_brass.md#cimbasso] |
 | 19 | Timpani | `timpani` | 1 | req. | one timpanist, four or five drums [Card cards/tuned_percussion.md#timpani] (an Estimate there) |
-| 20 | Percussion 1-3 | `bass_drum`, `snare_drum`, `clash_cymbals`, `suspended_cymbal`, `tam_tam` | 3 | req. | [Estimate] |
-| 21 | Mallets | `glockenspiel`, `xylophone`, `tubular_bells`, `crotales` | 0 | opt. | played by the percussionists [Estimate]; crotales covered by the glockenspiel or vibraphone player [Card cards/tuned_percussion.md#crotales] (an Estimate there) |
+| 20 | Percussion 1-3 | `bass_drum`, `snare_drum`, `clash_cymbals`, `suspended_cymbal`, `tam_tam` | 3 | req. | [Estimate: film session practice; no opened source gives a film orchestra's roster] |
+| 21 | Mallets | `glockenspiel`, `xylophone`, `tubular_bells`, `crotales` | 0 | opt. | played by the percussionists [Estimate: general orchestral practice; no opened source states it]; crotales covered by the glockenspiel or vibraphone player [Card cards/tuned_percussion.md#crotales] (an Estimate there) |
 | 22 | Harp | `harp` | 1 | req. | film 1-2 [Card cards/plucked.md#harp] |
 | 23 | Celesta (Pno.) | `celesta` | 0 | opt. | one player, a keyboardist [Card cards/historical_keys_organs.md#celesta]; that the template's pianist doubles it is an Estimate, as in the card |
-| 24 | Piano | `piano_concert_grand` | 1 | opt. | [Estimate] |
-| 25 | Synth layer | **gap** (no orchestral id); `sonara.synth.poly` | 0 | opt. | [Estimate: hybrid scoring practice]; placed with the keyboards [Estimate] |
-| 26 | Choir | `choir_soprano`, `choir_alto`, `choir_tenor`, `choir_bass` (see 3.9) | | opt. | [Estimate] |
+| 24 | Piano | `piano_concert_grand` | 1 | opt. | [Estimate: film session practice; no opened source gives a film orchestra's roster] |
+| 25 | Synth layer | **gap** (no orchestral id); `sonara.synth.poly` | 0 | opt. | [Estimate: hybrid scoring practice]; placed with the keyboards [Estimate: design choice following the keyboard block of 1.1] |
+| 26 | Choir | `choir_soprano`, `choir_alto`, `choir_tenor`, `choir_bass` (see 3.9) | | opt. | [Estimate: film session practice; no opened source gives a film orchestra's roster] |
 | 27 | Violins I, II, Violas, Cellos, Basses | `violin` ×2, `viola`, `cello`, `double_bass` | 16-14-12-10-8 | req. | Spitfire [Cited S26]; alternative 16-14-10-10-7 [Cited S29] |
 
 ### 3.6 Chamber orchestra
@@ -516,20 +516,20 @@ A chamber orchestra has about 15 to 30 members [Cited S14], or at most around fi
 
 | # | Part | Id | Players | Req. | Notes |
 |---|---|---|---|---|---|
-| 1 | Flute 1, Flute 2 | `flute` | 1 + 1 | req. | [Estimate] |
-| 2 | Oboe 1, Oboe 2 | `oboe` | 1 + 1 | req. | [Estimate] |
-| 3 | Clarinet 1, Clarinet 2 | `clarinet_bb` | 1 + 1 | opt. | [Estimate] |
-| 4 | Bassoon 1, Bassoon 2 | `bassoon` | 1 + 1 | req. | [Estimate] |
-| 5 | Horn 1, Horn 2 | `horn_f` | 1 + 1 | req. | [Estimate] |
-| 6 | Trumpet 1, Trumpet 2 | `trumpet_c` | 1 + 1 | opt. | [Estimate] |
-| 7 | Timpani | `timpani` | 1 | opt. | [Estimate] |
+| 1 | Flute 1, Flute 2 | `flute` | 1 + 1 | req. | [Estimate: modelled on the Classical template of 3.1] |
+| 2 | Oboe 1, Oboe 2 | `oboe` | 1 + 1 | req. | [Estimate: modelled on the Classical template of 3.1] |
+| 3 | Clarinet 1, Clarinet 2 | `clarinet_bb` | 1 + 1 | opt. | [Estimate: modelled on the Classical template of 3.1] |
+| 4 | Bassoon 1, Bassoon 2 | `bassoon` | 1 + 1 | req. | [Estimate: modelled on the Classical template of 3.1] |
+| 5 | Horn 1, Horn 2 | `horn_f` | 1 + 1 | req. | [Estimate: modelled on the Classical template of 3.1] |
+| 6 | Trumpet 1, Trumpet 2 | `trumpet_c` | 1 + 1 | opt. | [Estimate: modelled on the Classical template of 3.1] |
+| 7 | Timpani | `timpani` | 1 | opt. | [Estimate: modelled on the Classical template of 3.1] |
 | 8 | Harpsichord (continuo) | `harpsichord` | 1 | opt. | for Baroque repertoire; one per continuo group [Card cards/historical_keys_organs.md#harpsichord] (the count is an Estimate there) |
 | 9 | Strings | `violin` ×2, `viola`, `cello`, `double_bass` | 6-5-4-4-2 | req. | the 21-player string-orchestra example [Cited S16] |
 
 Players: 29 required, 35 with every option [Estimate: sum of the rows]; the required roster
 fits the 15 to 30 of S14, the full one only the wider bound of S6. Six first violins is below
 Rimsky-Korsakov's floor of eight [Cited S1], so a balance check against the winds belongs in
-[doubling-and-balance.md](doubling-and-balance.md) [Estimate]. Tracks: 13 required, 19 with
+[doubling-and-balance.md](doubling-and-balance.md) [Estimate: design judgement]. Tracks: 13 required, 19 with
 every option [Estimate: row count].
 
 ### 3.7 String orchestra
@@ -569,14 +569,14 @@ trombone [Cited S13]. Logic's Studio Horns uses the same roster on its section c
 | 8 | Trumpet doublings | `flugelhorn`, `cornet` | 0 | opt. | [Cited S13] |
 | 9 | Trombone 1 (lead) - Trombone 3 | `trombone_tenor` | 3 | req. | [Cited S13] |
 | 10 | Bass Trombone (Trombone 4) | `trombone_bass` | 1 | req. | [Cited S13] |
-| 11 | Guitar | **gap** | 1 | req. | no jazz or electric guitar id; `guitar_classical` is a different instrument [Estimate] |
-| 12 | Piano | `piano_concert_grand` | 1 | req. | [Cited S13]; which piano id is a choice [Estimate] |
-| 13 | Bass | `double_bass` | 1 | req. | [Cited S13]; no electric-bass id: **gap** for later styles [Estimate] |
+| 11 | Guitar | **gap** | 1 | req. | no jazz or electric guitar id; `guitar_classical` is a different instrument [Estimate: general instrument knowledge; no opened source compares them] |
+| 12 | Piano | `piano_concert_grand` | 1 | req. | [Cited S13]; which piano id is a choice [Estimate: design judgement; S13 names no piano type, and model.md has several piano ids] |
+| 13 | Bass | `double_bass` | 1 | req. | [Cited S13]; no electric-bass id: **gap** for later styles [Estimate: general jazz practice; no opened source states it] |
 | 14 | Drums | **gap**; `sonara.drums` | 1 | req. | no drum-kit id; the built-in Drum Kit plugin is the only fallback today [Cited S31] |
 | 15 | Vibraphone | `vibraphone` | 1 | opt. | [Cited S13] |
 
 Score order: saxes, trumpets, trombones, rhythm [Cited S12]; the rhythm order guitar, piano,
-bass, drums is an [Estimate].
+bass, drums is an [Estimate: common big-band engraving; S12 is cited here for the section order only].
 
 ### 3.9 Choir and orchestra (Brahms, _Ein deutsches Requiem_)
 
@@ -623,7 +623,7 @@ chamber music; S14 describes each ensemble as one player per instrument].
 | String quartet | Violin 1 (`violin`), Violin 2 (`violin`), Viola (`viola`), Cello (`cello`) | [Cited S14] |
 | Wind quintet | Flute (`flute`), Oboe (`oboe`), Clarinet (`clarinet_bb`), Horn (`horn_f`), Bassoon (`bassoon`) | members [Cited S14]; horn printed between clarinet and bassoon [Estimate: common edition layout, unverified] |
 | Brass quintet | Trumpet 1 (`trumpet_bb` or `trumpet_c`), Trumpet 2, Horn (`horn_f`), Trombone (`trombone_tenor`), Tuba (`tuba`) | members [Cited S14]; one trombone and one tuba [Card cards/low_brass.md#trombone_tenor] [Card cards/low_brass.md#tuba]; staff order high to low, with the horn below the trumpets unlike the orchestral order of 1.1 [Estimate: common edition layout, unverified] |
-| Piano trio | Violin (`violin`), Cello (`cello`), Piano (`piano_concert_grand`) | [Cited S15]; piano at the bottom [Estimate] |
+| Piano trio | Violin (`violin`), Cello (`cello`), Piano (`piano_concert_grand`) | [Cited S15]; piano at the bottom [Estimate: common edition layout, unverified] |
 
 Related standard formations, recorded for later templates: string quintet adds a viola, cello
 or rarely a double bass to the quartet; a piano quintet is usually a string quartet plus piano
@@ -644,7 +644,7 @@ Sonara format].
 - Not in the `.sonara` file. A template is a recipe; the project keeps only the tracks it
   produced [Estimate: avoids a CTR-01 schema change].
 - A validator rejects unknown instrument ids, doubling of a player's two instruments at the same
-  moment, and parts whose id has no built-in fallback [Estimate].
+  moment, and parts whose id has no built-in fallback [Estimate: design proposal].
 - Every part must resolve to a built-in plugin and preset, because ADR 0010 bundles no library
   and `sonara.sampler` is registered only when a configured library holds at least one patch
   [Cited S31: ADR 0010; `crates/sonara-app/src/samples.rs`]. The template does not repeat that
@@ -777,17 +777,17 @@ Who can run it today:
   `docs/ai-composer.md`].
 - The deterministic planner in `sonara_agent::orchestration`, a library API that runs plans of
   existing tools with dry-run validation and a confirmation gate [Cited S31]; "apply template X"
-  would be a new plan kind, not a new tool [Estimate].
+  would be a new plan kind, not a new tool [Estimate: design judgement from the planner's role in S31].
 - The GUI New Project dialog lists `TEMPLATES` from `sonara-app` [Cited S31], so a new entry
   there appears in the GUI without a tool-schema change; the agent still cannot choose it,
   because its enum is a separate literal [Cited S31]. That asymmetry needs an owner decision
-  [Estimate].
+  [Estimate: judgement under CTR-01].
 
 Limits of the no-schema route:
 
 - Project v1 tracks have no field for an instrument id, a part or an ensemble [Cited S31:
   `docs/project-format.md`, track fields]. The part identity survives only in the track name
-  ("Flute 1") and in the template file [Estimate].
+  ("Flute 1") and in the template file [Estimate: inference from the track fields in S31].
 - Unknown keys on track objects are preserved round-trip in an `extra` map [Cited S31:
   `docs/project-format.md`], but `create_track` has no parameter for them [Cited S31:
   `golden/contracts/tools.json`], so an `extra.part` key is not reachable by the agent
@@ -826,9 +826,9 @@ Against the templates of section 3:
 | Harp, keyboards | none | harp in 3.3 (optional), 3.4, 3.5 and 3.9; celesta in 3.4 and 3.5; piano in 3.5; harpsichord in 3.6; organ in 3.9 | the rows of section 3, with their own tags; harps [Cited S1, S23, S24, S25] |
 | Choir | one pad | four sections, optional soloists | [Cited S1, S25] |
 | Score order | Strings, Brass, Choir, Percussion | strings at the top instead of the bottom; no woodwind block | [Cited S3, S9] |
-| Seating | everything centred | violins left, low strings right or antiphonal; depth by section | [Cited S7, S8]; values [Estimate] |
+| Seating | everything centred | violins left, low strings right or antiphonal; depth by section | [Cited S7, S8]; values [Estimate: the pan values of 2.5, read off the layouts in 2.1 and 2.3] |
 | Grouping | all tracks to master, no folders | family folders and optional family buses | [Estimate: design proposal] |
-| Reverb | "Cathedral", documented as a 7 s reverb for Ascension; the preset's decay is 7.0 s | a concert hall or scoring stage is shorter than a cathedral; `sonara.reverb` already has "Concert Hall" at 2.8 s, used in 4.2 | [Cited S31: `docs/audio-engine.md`, `crates/sonara-core/src/plugins/builtin.rs`]; comparison [Estimate] |
+| Reverb | "Cathedral", documented as a 7 s reverb for Ascension; the preset's decay is 7.0 s | a concert hall or scoring stage is shorter than a cathedral; `sonara.reverb` already has "Concert Hall" at 2.8 s, used in 4.2 | [Cited S31: `docs/audio-engine.md`, `crates/sonara-core/src/plugins/builtin.rs`]; comparison [Estimate: general acoustics knowledge; no opened source gives hall decay times] |
 | Names | "Strings", "Brass" | part names as in 1.3 | [Cited S1, S2] |
 | Instrument knowledge | none: synth presets, no orchestration ids | each part maps to an id with ranges and articulations | [Cited S31: `templates.rs`, `data.rs`] |
 
@@ -854,12 +854,12 @@ Constraints that decide what to do with it:
   ensembles must be added beside `orchestral`, never swapped in.
 - Ascension, built from this template, is a render-load baseline in `docs/audio-engine.md`
   (PERF-10) [Cited S31].
-- Recommendation [Estimate, following from the constraints above]: keep `orchestral`
+- Recommendation [Estimate: follows from the constraints above]: keep `orchestral`
   byte-identical as the "cinematic sketch"
   starting point, and add the ensembles of section 3 as data, applied by the planner or the AI
   Composer through existing tools (4.3); widen the `create_project` enum only by a versioned
   CTR-01 decision.
-- What the current template does well [Estimate]: it starts quickly with no library installed,
+- What the current template does well [Estimate: design judgement]: it starts quickly with no library installed,
   renders cheaply, and its family split (strings, brass, choir, percussion) matches how
   GarageBand-style users think; the new templates should keep that by offering a "sketch"
   string-size preset with one track per family.
@@ -950,3 +950,4 @@ the repository. Changes:
 10. **Citation re-check.** The big-band seating claims of 2.1 (leads in the middle of their
     sections, solo parts nearest the rhythm section) were re-read in S13 and confirmed.
 - Open question 12 closed: the low brass card was corrected and now cites the dating of Symphonies No. 5 and No. 9.
+- Gave every bare Estimate tag its reason (45 tags), and put the comma-form tag of the section 5 recommendation into the colon form.
