@@ -68,6 +68,9 @@ pub const DENIED_TOOLS: [&str; 18] = [
 
 static NEXT_WORKSPACE: AtomicU32 = AtomicU32::new(0);
 
+/// How many names [`Workspace::create`] tries before it gives up on a crowded temporary folder.
+const NAME_ATTEMPTS: u32 = 16;
+
 /// A private folder for one run, removed when it drops: an empty working directory, and a
 /// `SONARA_HOME` whose `run/` holds a copy of one window's discovery file.
 #[derive(Debug)]
@@ -79,10 +82,16 @@ impl Workspace {
     /// Creates the folder (mode `0700`) with a copy of `discovery_file`, which is the
     /// `session-<pid>.json` of the window the run must edit.
     ///
+    /// The root is created, never reused: a folder that already exists at the chosen name (left
+    /// by a crashed run with the same process id, or planted by another user under a shared
+    /// temporary directory) is not entered, and the next name is tried instead. The folders
+    /// inside it are made new inside it.
+    ///
     /// # Errors
     ///
     /// The I/O error of creating the folders or copying the file, and `InvalidInput` when the
-    /// file's name is not that of a discovery file (clients find sessions by it).
+    /// file's name is not that of a discovery file (clients find sessions by it). When every
+    /// name that was tried exists already, [`io::ErrorKind::AlreadyExists`].
     pub fn create(discovery_file: &Path) -> io::Result<Self> {
         let name = discovery_file
             .file_name()
@@ -96,13 +105,29 @@ impl Workspace {
                     format!("{} is not a discovery file", discovery_file.display()),
                 )
             })?;
-        let serial = NEXT_WORKSPACE.fetch_add(1, Ordering::Relaxed);
-        let root =
-            std::env::temp_dir().join(format!("sonara-composer-{}-{serial}", std::process::id()));
+        let base = std::env::temp_dir();
+        let mut taken = None;
+        for _ in 0..NAME_ATTEMPTS {
+            let serial = NEXT_WORKSPACE.fetch_add(1, Ordering::Relaxed);
+            let root = base.join(format!("sonara-composer-{}-{serial}", std::process::id()));
+            match Self::create_at(root, discovery_file, name) {
+                Err(error) if error.kind() == io::ErrorKind::AlreadyExists => taken = Some(error),
+                result => return result,
+            }
+        }
+        Err(taken.unwrap_or_else(|| io::Error::from(io::ErrorKind::AlreadyExists)))
+    }
+
+    /// [`Workspace::create`] at exactly `root`, which must not exist.
+    fn create_at(root: PathBuf, discovery_file: &Path, name: &OsStr) -> io::Result<Self> {
+        // Not recursive: an existing path (a directory, or a symlink to one) is an error, and
+        // the workspace is not built before this succeeds, so its `Drop` can never remove
+        // what this call did not create.
+        private_dir(&root)?;
         let workspace = Self { root };
         // From here on a failure drops `workspace`, which removes what was created.
-        private_dir(&workspace.root)?;
         private_dir(&workspace.cwd())?;
+        private_dir(&workspace.home())?;
         private_dir(&workspace.home().join("run"))?;
         fs::copy(discovery_file, workspace.home().join("run").join(name))?;
         Ok(workspace)
@@ -131,9 +156,10 @@ impl Drop for Workspace {
     }
 }
 
+/// Creates the one directory `path` (mode `0700`), whose parent exists; an error if `path`
+/// exists.
 fn private_dir(path: &Path) -> io::Result<()> {
     let mut builder = DirBuilder::new();
-    builder.recursive(true);
     #[cfg(unix)]
     std::os::unix::fs::DirBuilderExt::mode(&mut builder, 0o700);
     builder.create(path)
@@ -312,6 +338,8 @@ pub fn build_with(
 
 #[cfg(test)]
 mod tests {
+    use std::os::unix::fs::PermissionsExt;
+
     use super::*;
 
     fn discovery(directory: &Path) -> PathBuf {
@@ -354,11 +382,56 @@ mod tests {
 
     #[test]
     fn the_workspace_is_private_to_the_user() {
-        use std::os::unix::fs::PermissionsExt;
         let source = tempfile::tempdir().unwrap();
         let workspace = Workspace::create(&discovery(source.path())).unwrap();
-        for directory in [workspace.cwd(), workspace.home().join("run")] {
+        let root = workspace.cwd().parent().unwrap().to_path_buf();
+        for directory in [root, workspace.cwd(), workspace.home().join("run")] {
             let mode = fs::metadata(&directory).unwrap().permissions().mode();
+            assert_eq!(mode & 0o077, 0, "{}", directory.display());
+        }
+    }
+
+    #[test]
+    fn an_existing_folder_is_never_reused_and_never_removed() {
+        let source = tempfile::tempdir().unwrap();
+        let file = discovery(source.path());
+        let name = file.file_name().unwrap();
+        let scratch = tempfile::tempdir().unwrap();
+        // Another user's folder at the predictable name, with a file of theirs inside.
+        let planted = scratch.path().join("sonara-composer-1-0");
+        fs::create_dir(&planted).unwrap();
+        fs::write(planted.join("theirs"), "keep").unwrap();
+        let error = Workspace::create_at(planted.clone(), &file, name).unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::AlreadyExists, "{error}");
+        assert_eq!(
+            fs::read_to_string(planted.join("theirs")).unwrap(),
+            "keep",
+            "what was there stays, as the failed workspace removes only what it made"
+        );
+        assert!(
+            !planted.join("home").exists() && !planted.join("cwd").exists(),
+            "nothing was made inside it"
+        );
+
+        // A symlink to a directory is no better: it is not followed.
+        let target = scratch.path().join("target");
+        fs::create_dir(&target).unwrap();
+        let link = scratch.path().join("sonara-composer-1-1");
+        std::os::unix::fs::symlink(&target, &link).unwrap();
+        let error = Workspace::create_at(link.clone(), &file, name).unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::AlreadyExists, "{error}");
+        assert_eq!(
+            fs::read_dir(&target).unwrap().count(),
+            0,
+            "nothing went through it"
+        );
+        assert!(link.is_symlink(), "and the link is left alone");
+
+        // A fresh name works, and is private all the way down, the root included.
+        let fresh = scratch.path().join("sonara-composer-1-2");
+        let workspace = Workspace::create_at(fresh.clone(), &file, name).unwrap();
+        for directory in [&fresh, &workspace.cwd(), &workspace.home()] {
+            let mode = fs::metadata(directory).unwrap().permissions().mode();
             assert_eq!(mode & 0o077, 0, "{}", directory.display());
         }
     }
