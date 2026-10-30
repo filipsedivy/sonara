@@ -76,10 +76,15 @@ generic range is substituted.
 ## Provenance
 
 Every range and every articulation list is `Cited { source }` or `Estimate { reason }`. Cited
-means a source that was read states it. Range sources were read on 2026-10-28
-(English Wikipedia articles, used for facts only; each `Cited` record names its URL and what it
-states). Wikipedia is a tertiary source under CC BY-SA; only the numbers are taken. Verify
-against orchestration handbooks before relying on a value for production.
+means a source that was read states it. Each source the dataset cites is written out once, in
+the dataset's source list (`crates/sonara-midi/src/orchestration/data/sources.rs`): its author
+or publisher, its title (with the edition for a book) and where it was read, a URL or, for a
+printed book without one, a page. A `Cited` value gives each source it rests on in full,
+followed by what that source states, so its text always names a URL or a page; the dataset test
+checks this. The range sources of the current records are English Wikipedia articles, read on
+2026-10-28 and used for facts only. Wikipedia is a tertiary source under CC BY-SA; only the
+numbers are taken. Verify against orchestration handbooks before relying on a value for
+production.
 Estimates: cello and double bass upper limits, horn in F, glockenspiel and xylophone ranges, and
 **all** articulation lists (general orchestration practice).
 

@@ -1,5 +1,6 @@
 //! Brass records.
 
+use super::sources::cite;
 use super::{ARTICULATION_ESTIMATE, cited, estimate, pitched};
 use crate::orchestration::articulation::Articulation::{
     self, ConSordino, FlutterTongue, Legato, Marcato, Staccato, Sustain, Tenuto, Trill,
@@ -49,7 +50,7 @@ pub(super) const TRUMPET_BB: Instrument = Instrument::new(
             cited(
                 52,
                 82,
-                "https://en.wikipedia.org/wiki/Trumpet: standard written range F#3-C6, sounds a whole step lower",
+                cite!(wikipedia_trumpet: "standard written range F#3-C6, sounds a whole step lower"),
             ),
             None,
         ),
@@ -69,12 +70,12 @@ pub(super) const TROMBONE_TENOR: Instrument = Instrument::new(
             cited(
                 40,
                 77,
-                "https://en.wikipedia.org/wiki/Trombone: lowest E2 (no pedal notes), practical top F5",
+                cite!(wikipedia_trombone: "lowest E2 (no pedal notes), practical top F5"),
             ),
             Some(cited(
                 40,
                 74,
-                "https://en.wikipedia.org/wiki/Trombone: more conservative top D5",
+                cite!(wikipedia_trombone: "more conservative top D5"),
             )),
         ),
         clefs: &[Clef::Bass, Clef::Tenor, Clef::Alto],

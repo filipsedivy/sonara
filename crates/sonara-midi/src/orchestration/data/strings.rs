@@ -1,5 +1,6 @@
 //! Bowed string records.
 
+use super::sources::cite;
 use super::{ARTICULATION_ESTIMATE, cited, estimate, pitched};
 use crate::orchestration::articulation::Articulation::{
     self, ColLegno, ConSordino, Harmonics, Legato, Marcato, Pizzicato, Spiccato, Staccato,
@@ -26,7 +27,8 @@ const BOWED: &[Articulation] = &[
     ConSordino,
 ];
 
-const WIKI_VIOLIN: &str = "https://en.wikipedia.org/wiki/Violin: lowest G3; E7 the limit for orchestral parts; up to C8 by stopping";
+const WIKI_VIOLIN: &str =
+    cite!(wikipedia_violin: "lowest G3; E7 the limit for orchestral parts; up to C8 by stopping");
 
 pub(super) const VIOLIN: Instrument = Instrument::new(
     InstrumentType::Violin,
@@ -78,7 +80,7 @@ pub(super) const DOUBLE_BASS: Instrument = Instrument::new(
             Some(cited(
                 28,
                 55,
-                "https://en.wikipedia.org/wiki/Double_bass: orchestral parts rarely exceed E1-G3 (sounding)",
+                cite!(wikipedia_double_bass: "orchestral parts rarely exceed E1-G3 (sounding)"),
             )),
         ),
         clefs: &[Clef::Bass, Clef::Tenor, Clef::Treble],

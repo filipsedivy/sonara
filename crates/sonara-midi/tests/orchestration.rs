@@ -91,6 +91,54 @@ fn profile() -> EnsembleProfile {
     }
 }
 
+/// Every provenance of a record: the articulation list, the playable and comfortable ranges and
+/// each era of the ensemble profile.
+fn provenances(instrument: &Instrument) -> Vec<Provenance> {
+    let mut all = vec![instrument.articulations_provenance()];
+    if let PitchModel::Pitched(pitched) = instrument.pitch() {
+        all.push(pitched.playable.provenance);
+        all.extend(
+            pitched
+                .comfortable
+                .map(|comfortable| comfortable.provenance),
+        );
+    }
+    if let Some(profile) = instrument.ensemble() {
+        all.extend(Era::ALL.map(|era| profile.players(era).provenance));
+    }
+    all
+}
+
+/// Whether a reader can trace `provenance`: a cited source that is not blank and names a URL
+/// (`http://` or `https://`) or a page (`p. 12`, `pp. 12-14`), or an estimate with a reason.
+/// Some sources are printed books without a URL, so a page is enough.
+fn is_traceable(provenance: Provenance) -> bool {
+    match provenance {
+        Provenance::Cited { source } => {
+            !source.trim().is_empty()
+                && (source.contains("https://") || source.contains("http://") || names_page(source))
+        }
+        Provenance::Estimate { reason } => !reason.trim().is_empty(),
+    }
+}
+
+/// Whether `text` holds `p.` or `pp.` as a word, followed by a space and a digit.
+fn names_page(text: &str) -> bool {
+    ["p. ", "pp. "].iter().any(|marker| {
+        text.match_indices(marker).any(|(at, _)| {
+            let starts_word = text[..at]
+                .chars()
+                .next_back()
+                .is_none_or(|before| !before.is_alphanumeric());
+            let digit_follows = text[at + marker.len()..]
+                .chars()
+                .next()
+                .is_some_and(|after| after.is_ascii_digit());
+            starts_word && digit_follows
+        })
+    })
+}
+
 #[test]
 fn dataset_invariants_hold() {
     let mut ids: Vec<&str> = INSTRUMENTS.iter().map(Instrument::id).collect();
@@ -126,14 +174,16 @@ fn dataset_invariants_hold() {
                 Some(*articulation)
             );
         }
+        // A cited source names a URL or a page; an estimate gives its reason.
+        for provenance in provenances(instrument) {
+            assert!(
+                is_traceable(provenance),
+                "{}: {provenance:?}",
+                instrument.id()
+            );
+        }
         match instrument.pitch() {
             PitchModel::Pitched(pitched) => {
-                assert!(
-                    matches!(
-                        pitched.playable.provenance,
-                        Provenance::Cited { source } if source.starts_with("https://")
-                    ) || matches!(pitched.playable.provenance, Provenance::Estimate { reason } if !reason.is_empty())
-                );
                 if let Some(comfortable) = pitched.comfortable {
                     assert!(pitched.playable.range.encloses(comfortable.range));
                 }
@@ -429,6 +479,34 @@ fn blank_names_are_rejected() {
             Err(InstrumentError::EmptyName),
             "{name:?}"
         );
+    }
+}
+
+/// The dataset check traces a cited source only by a URL or a page, and an estimate only by its
+/// reason (TST-03; the cases are written by hand).
+#[test]
+fn a_cited_source_must_name_a_url_or_a_page() {
+    let cited = |source| Provenance::Cited { source };
+    let estimate = |reason| Provenance::Estimate { reason };
+    for traceable in [
+        cited("Wikipedia, Oboe, https://en.wikipedia.org/wiki/Oboe: Bb3 to about G6"),
+        cited("Rhodes Service Manual, http://www.fenderrhodes.com/org/manual/toc.html: 73 keys"),
+        cited("A. Author, A Book, 2nd edition (2002), p. 112: top D7"),
+        cited("A. Author, A Book (2002), pp. 112-114: top D7"),
+        estimate("general orchestration practice"),
+    ] {
+        assert!(is_traceable(traceable), "{traceable:?}");
+    }
+    for untraceable in [
+        cited("A. Author, A Book, 2nd edition (2002): top D7"),
+        cited("A. Author, A Book, p. xii: top D7"),
+        cited("A. Author, A Book, app. 3: top D7"),
+        cited("A. Author, A Book, www.example.com: top D7"),
+        cited(" "),
+        estimate(""),
+        estimate(" \t"),
+    ] {
+        assert!(!is_traceable(untraceable), "{untraceable:?}");
     }
 }
 

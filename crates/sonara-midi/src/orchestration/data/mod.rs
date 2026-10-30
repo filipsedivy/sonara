@@ -2,11 +2,13 @@
 //!
 //! One file per family holds that family's records as named constants; [`INSTRUMENTS`] lists them
 //! in score order. Ranges are sounding MIDI notes (middle C = 60). Each range says whether a
-//! source that was read states it (`Cited`) or not (`Estimate`). Sources were read on 2026-10-28;
-//! Wikipedia is used for facts only (see `docs/orchestration-metadata.md`).
+//! source that was read states it (`Cited`) or not (`Estimate`). A `Cited` value names its
+//! sources in full from the list in `sources`, each followed by what it states; Wikipedia is used
+//! for facts only (see `docs/orchestration-metadata.md`).
 
 mod brass;
 mod percussion;
+mod sources;
 mod strings;
 mod woodwinds;
 

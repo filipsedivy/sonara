@@ -50,9 +50,10 @@ impl Family {
 /// Where a value comes from. Every range and every articulation list carries one.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Provenance {
-    /// Stated by a source that was read; `source` names it (URL and what it states).
+    /// Stated by a source that was read; `source` names each source in full (author or
+    /// publisher, title, and a URL or a page) and what it states.
     Cited {
-        /// The source.
+        /// The sources and what they state.
         source: &'static str,
     },
     /// Not confirmed by a source that was read; `reason` says what the value rests on.
