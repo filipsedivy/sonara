@@ -1,8 +1,9 @@
 //! Orchestral instrument metadata: names and aliases in five languages, categories, pitch ranges,
 //! transposition, families, articulations, ensemble profiles, General MIDI voices, keyboard
 //! mechanics and playability facts (SON-P06, `contracts/orchestration-metadata.md`), the
-//! ensemble templates that assemble the instruments into orchestras and smaller groups, and the
-//! orchestration rules with the tables they read ([`rules`]).
+//! ensemble templates that assemble the instruments into orchestras and smaller groups, the
+//! orchestration rules with the tables they read ([`rules`]), and what to play when no installed
+//! sound plays an instrument or an articulation ([`fallback`]).
 //!
 //! The data is about instruments in general, not about any sample library, audio engine or UI. A
 //! value is either sourced or marked as an estimate, and an articulation counts as supported only
@@ -12,6 +13,7 @@ mod articulation;
 mod data;
 mod ensemble_profile;
 mod ensembles;
+pub mod fallback;
 mod general_midi;
 mod id;
 mod instrument;

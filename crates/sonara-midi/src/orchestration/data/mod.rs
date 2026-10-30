@@ -41,6 +41,7 @@ macro_rules! gm_keys {
 mod brass;
 mod categories;
 mod ensembles;
+pub(super) mod fallback;
 mod keyboards;
 mod percussion;
 mod plucked;

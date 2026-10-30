@@ -6,8 +6,9 @@ articulations they idiomatically play, how they appear in ensembles, their Gener
 for the instruments played from a keyboard how the keyboard makes and stops the sound, and the
 playability facts that rules read, such as how long a mute takes to put on (SON-P06). It also
 holds ensemble templates: the parts of an orchestra or a smaller group in score order, with
-their players, string sizes and stereo places, and a catalogue of orchestration rules with the
-thresholds their checks compare with.
+their players, string sizes and stereo places, a catalogue of orchestration rules with the
+thresholds their checks compare with, and what to play when no installed sound plays an
+instrument or an articulation.
 It is plain Rust data and pure functions. It depends on no audio engine, sample library or UI,
 adds no agent tool and changes no contract (CTR-01).
 
@@ -491,6 +492,42 @@ weight factor of 2), `WEAK_REGISTER` and `STRONG_REGISTER` (factors 0.5 and 1.25
 a number and are estimates; a rule that compares with an estimated threshold is never stronger
 than a warning. Durations are `Span`s and convert at `MODERATO_BPM`, as the playability facts do.
 
+## Fallbacks
+
+`orchestration::fallback` holds the musical data of two steps the application takes when no
+installed sound plays a part as written: the nearest articulation of the same instrument, and,
+when no sound of the instrument is installed, a neighbour of its family. It names no sample
+library, preset or plugin; the steps that do (an exact preset, a built-in synthesizer sound) live
+with the application.
+
+- `NEIGHBOURS` lists, for every type in score order, the instruments that can play its part, best
+  first; `neighbours(instrument_type)` returns them. A `Neighbour` says how it plays the part
+  (`Manner`: as written, a dynamic step softer, with one articulation such as a suspended
+  cymbal's roll for a tam-tam, or, for an unpitched part on a pitched instrument, on its highest
+  or lowest note), the kind of passage it suits (`Scope`, such as accents or chords; a passage of
+  another kind is not played without asking) and whether the user confirms it first. A neighbour
+  plays only notes inside its playable range and never transposes octaves; the caller checks the
+  range. A neighbour of another family (a piano for the harp, the celesta and the metallic
+  mallets for one another) or one that loses the part's pitch (the bass drum for timpani) always
+  asks first, and so does a choir section singing a soloist's part. The snare drum, whip,
+  prepared piano and choir sections have none.
+- `SUBSTITUTIONS` gives, for each of the fifteen original articulations, the stand-ins in order
+  of preference and the `Emulation` that imitates it by rewriting the notes when none plays:
+  notes overlapped for legato, shortened to a quarter for staccato and spiccato, a dynamic step
+  louder for marcato or softer for a mute, repeated 32nd notes for tremolo and roll, and the main
+  and upper auxiliary note alternating at 12 to 16 notes per second for a trill.
+  `substitution(articulation)` returns the row and `substitutes(articulation)` its stand-ins. A
+  stand-in (`StandIn`) is another articulation, the same articulation from the other ensemble
+  size, or another instrument with its ordinary sound (the harp for a pizzicato line), which the
+  user confirms first; it may rewrite the notes, change the vibrato or suit only some passages.
+  Every other articulation has no row: one that refines another falls back to its parent first.
+  A stand-in the instrument does not play is skipped by the caller.
+
+Most values are musical judgements and say so; a few follow a handbook that names the substitute
+and cite it: Rimsky-Korsakov's upright piano for a missing celesta and his chorus parts for the
+mezzo-soprano and the baritone, Forsyth's piano for the harp, and the tubular bells' origin as a
+substitute for church bells.
+
 ## Validation
 
 A record is an `InstrumentSpec` checked by `Instrument::try_new(instrument_type, spec)`. Records
@@ -583,6 +620,18 @@ weights of every instrument, the register factors and the low-interval limits wi
 from the sources, checks that every sustaining instrument has a weight, that registers lie inside
 the playable range and that the bands cover MIDI, and rejects a fixture breaking each check.
 
+A fallback row has a `check` that rejects a neighbour that is the instrument itself or listed
+twice, one of another family or one that loses the part's pitch without asking first, a pitched
+neighbour of an unpitched part that names no note, a manner that names a note for a pitched part
+or an articulation that is a passage state or that the neighbour does not play, two pitched
+instruments that share no note, a substitute that is the articulation itself, a mute or a vibrato
+or listed twice, an emulation with a zero or inverted number, and a blank provenance. A
+compile-time check runs it on every shipped row and places each row at its type's or its
+articulation's place, so invalid data does not compile. `crates/sonara-midi/tests/fallback.rs`
+compares every type's neighbours and every original articulation's substitutes and emulation
+with tables written out independently of the data, and checks the invariants above and which
+neighbours cross a family.
+
 ## Coverage
 
 All 85 types have a record, listed in score order by `INSTRUMENTS` and `instruments()`. The
@@ -591,4 +640,5 @@ records live in one file per family under `crates/sonara-midi/src/orchestration/
 form of the English name, with a flat spelled `♭` ("Clarinet in B♭"); an alternate in parentheses
 ("Timpani (kettledrums)") is not part of it. Range extensions and gaps, alternative tunings and
 techniques outside the vocabulary are not modelled. The thirteen ensemble templates live in
-`data/ensembles.rs`; divisi tracks are not part of a template.
+`data/ensembles.rs`; divisi tracks are not part of a template. The fallback tables live in
+`data/fallback.rs`.
