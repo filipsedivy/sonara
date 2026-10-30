@@ -102,9 +102,14 @@ fn reads_regions_with_their_inherited_opcodes() {
 
 /// Loads `text` as a patch beside the fixture's `Samples` folder.
 fn load_patch(dir: &tempfile::TempDir, text: &str) -> SampleBank {
+    load_sfz_text(dir, text).expect("loads")
+}
+
+/// Writes `text` as a patch beside the fixture's `Samples` folder and loads it.
+fn load_sfz_text(dir: &tempfile::TempDir, text: &str) -> Result<SampleBank, MediaError> {
     let path = dir.path().join("patch.sfz");
     fs::write(&path, text).expect("write");
-    load_sfz(&path).expect("loads")
+    load_sfz(&path)
 }
 
 #[test]
@@ -458,4 +463,101 @@ fn an_include_cycle_is_malformed() {
         matches!(&result, Err(MediaError::Malformed { message, .. }) if message.contains("too deep")),
         "{result:?}"
     );
+}
+
+#[test]
+fn defines_expand_in_include_paths() {
+    // Sonatina Grand Piano's layout (TST-06): the fragment folder and each dynamic layer are
+    // defines, and the layer define is redefined between includes. Taken literally, the path
+    // `$DIR/$DYN.txt` named no file and the whole patch failed to load.
+    let dir = library();
+    let data = dir.path().join("Data");
+    fs::create_dir(&data).expect("mkdir");
+    fs::write(
+        data.join("p.txt"),
+        "<region> sample=Samples/soft1.wav hivel=63\n",
+    )
+    .expect("write");
+    fs::write(
+        data.join("f.txt"),
+        "<region> sample=Samples/loud1.wav lovel=64\n",
+    )
+    .expect("write");
+    let bank = load_patch(
+        &dir,
+        "#define $DIR Data\n\
+         #define $DYN p\n\
+         <group> lokey=c3 hikey=c5 #include \"$DIR/$DYN.txt\"\n\
+         #define $DYN f\n\
+         <group> lokey=c3 hikey=c5 #include $DIR/$DYN.txt\n",
+    );
+    assert_eq!(bank.regions.len(), 2, "both layers are read");
+    assert!((first_value(&bank, 0) - 3_000.0 / 32_768.0).abs() < 1e-6);
+    assert_eq!((bank.regions[0].vel_lo, bank.regions[0].vel_hi), (0, 63));
+    assert!(
+        (first_value(&bank, 1) - 20_000.0 / 32_768.0).abs() < 1e-6,
+        "the redefined $DYN names the second layer"
+    );
+    assert_eq!((bank.regions[1].vel_lo, bank.regions[1].vel_hi), (64, 127));
+}
+
+#[test]
+fn an_undefined_name_in_an_include_path_stays_as_written() {
+    // TST-03: a name that was never defined is not dropped from the path, so the include names
+    // a file that does not exist and the load fails with the path it tried.
+    let dir = library();
+    let result = load_sfz_text(&dir, "#include \"$NOPE/x.txt\"\n");
+    assert!(
+        matches!(&result, Err(MediaError::Io { operation: "read", path, .. })
+            if path == &dir.path().join("$NOPE/x.txt")),
+        "{result:?}"
+    );
+}
+
+#[test]
+fn nested_includes_resolve_against_the_main_file() {
+    // The MTG saxophones' layout (TST-06): the main patch includes `Data/a.txt`, which names its
+    // sibling as `Data/b.txt`, relative to the main file. Resolved against the including file,
+    // the path became `Data/Data/b.txt`, which does not exist, and the patch failed to load. The
+    // decoy at that path proves the include is not read from there.
+    let dir = library();
+    let data = dir.path().join("Data");
+    fs::create_dir_all(data.join("Data")).expect("mkdir");
+    fs::write(
+        data.join("a.txt"),
+        "<group> lokey=c3 hikey=c5\n#include \"Data/b.txt\"\n",
+    )
+    .expect("write");
+    fs::write(data.join("b.txt"), "<region> sample=Samples/soft1.wav\n").expect("write");
+    fs::write(
+        data.join("Data/b.txt"),
+        "<region> sample=Samples/loud1.wav\n",
+    )
+    .expect("write");
+    let bank = load_patch(&dir, "#include \"Data/a.txt\"\n");
+    assert_eq!(bank.regions.len(), 1);
+    assert!(
+        (first_value(&bank, 0) - 3_000.0 / 32_768.0).abs() < 1e-6,
+        "Data/b.txt beside the main file is read, not the decoy"
+    );
+    assert_eq!((bank.regions[0].key_lo, bank.regions[0].key_hi), (48, 72));
+}
+
+#[test]
+fn includes_of_a_patch_in_a_subfolder_resolve_against_that_folder() {
+    // The main file's folder is the root of every include, wherever the patch sits.
+    let dir = library();
+    let patches = dir.path().join("Patches");
+    fs::create_dir_all(patches.join("Data")).expect("mkdir");
+    fs::write(patches.join("Data/a.txt"), "#include \"Data/b.txt\"\n").expect("write");
+    fs::write(
+        patches.join("Data/b.txt"),
+        "<region> sample=../Samples/tail.wav\n",
+    )
+    .expect("write");
+    let path = patches.join("main.sfz");
+    fs::write(&path, "#include \"Data/a.txt\"\n").expect("write");
+    let bank = load_sfz(&path).expect("loads");
+    assert_eq!(bank.regions.len(), 1);
+    assert!((first_value(&bank, 0) - 1_000.0 / 32_768.0).abs() < 1e-6);
 }

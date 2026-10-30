@@ -19,7 +19,10 @@
 //! `<group> #include "vel.txt" lovel=1 hivel=26 #include "region.txt"` reads both files in
 //! place. An `#include` takes one path, quoted (spaces allowed) or a single word, and the line
 //! goes on after it. A `#define` takes the rest of its line, and its value is the first word
-//! after the name.
+//! after the name. The `$defines` known so far are substituted in an include path too
+//! (Sonatina's `#include "$DIR/$DYN.txt"`), and every include, however deeply nested, resolves
+//! against the main patch file's directory, not the including file's, as the SFZ format and
+//! sfizz read it: a fragment in `Data/` names its siblings `Data/…` (the MTG saxophones).
 //!
 //! **Header scopes.** A region inherits the opcodes of the open `<control>`, `<global>`,
 //! `<master>` and `<group>` headers. `<global>`, `<master>` and `<group>` each start their own
@@ -65,8 +68,8 @@ type Opcodes = HashMap<String, String>;
 /// - [`MediaError::Unsupported`] and [`MediaError::Decode`] for a sample that cannot be decoded
 ///   or has more than two channels.
 pub fn load_sfz(path: &Path) -> Result<SampleBank, MediaError> {
-    let text = read_preprocessed(path, &mut HashMap::new(), 0)?;
     let dir = path.parent().unwrap_or_else(|| Path::new("."));
+    let text = read_preprocessed(path, dir, &mut HashMap::new(), 0)?;
     let parsed = parse(&text);
     let mut ignored = parsed.ignored;
     let mut loader = Loader::default();
@@ -112,8 +115,10 @@ fn tail_seconds(bank: &SampleBank) -> f64 {
 /// The text of the patch file `path` without comments, with each `#include` replaced by the
 /// file it names and the `$defines` known so far substituted. The directives are read wherever
 /// a token starts, so the line goes on after an `#include` (see the module documentation).
+/// Every include path, at any depth, is joined to `root`, the main patch file's directory.
 fn read_preprocessed(
     path: &Path,
+    root: &Path,
     defines: &mut HashMap<String, String>,
     depth: usize,
 ) -> Result<String, MediaError> {
@@ -121,7 +126,6 @@ fn read_preprocessed(
         return Err(MediaError::malformed(path, "#include nesting is too deep"));
     }
     let raw = fs::read_to_string(path).map_err(|e| MediaError::io("read", path, e))?;
-    let dir = path.parent().unwrap_or_else(|| Path::new("."));
     let mut out = String::new();
     for line in strip_block_comments(&raw).lines() {
         let mut rest = line.split("//").next().unwrap_or("");
@@ -130,8 +134,8 @@ fn read_preprocessed(
             push_expanded(&mut out, text, defines);
             match directive {
                 Some(Directive::Include { file, after }) => {
-                    let file = dir.join(file.replace('\\', "/"));
-                    out.push_str(&read_preprocessed(&file, defines, depth + 1)?);
+                    let file = root.join(expand_defines(file, defines).replace('\\', "/"));
+                    out.push_str(&read_preprocessed(&file, root, defines, depth + 1)?);
                     rest = after;
                 }
                 Some(Directive::Define(definition)) => {
@@ -207,10 +211,18 @@ fn include_file(rest: &str) -> (&str, &str) {
 /// Appends `text` with its `$defines` substituted, on a line of its own, so that its tokens stay
 /// apart from an included file's.
 fn push_expanded(out: &mut String, text: &str, defines: &HashMap<String, String>) {
-    let mut text = text.trim().to_owned();
+    let text = text.trim();
     if text.is_empty() {
         return;
     }
+    out.push_str(&expand_defines(text, defines));
+    out.push('\n');
+}
+
+/// `text` with every `$define` in `defines` replaced by its value; a name that is not defined
+/// stays as written.
+fn expand_defines(text: &str, defines: &HashMap<String, String>) -> String {
+    let mut text = text.to_owned();
     // Longest names first, so `$KEY2` is not eaten by `$KEY`.
     let mut names: Vec<_> = defines.iter().collect();
     names.sort_by_key(|(name, _)| std::cmp::Reverse(name.len()));
@@ -219,8 +231,7 @@ fn push_expanded(out: &mut String, text: &str, defines: &HashMap<String, String>
             text = text.replace(name.as_str(), value);
         }
     }
-    out.push_str(&text);
-    out.push('\n');
+    text
 }
 
 fn strip_block_comments(text: &str) -> String {
