@@ -755,8 +755,14 @@ fn drums() -> PluginDescriptor {
 pub const SAMPLER_ID: &str = "sonara.sampler";
 
 /// The descriptor of `sonara.sampler`, Sonara's own SFZ sample player (ADR 0010), for the
-/// installed instruments `patches` (the absolute paths of their `.sfz` files). `None` when there
-/// are none: a sampler without an instrument has nothing to offer.
+/// installed instruments `presets`, in the order given; the first is the default. `None` when
+/// there are none: a sampler without an instrument has nothing to offer.
+///
+/// The application passes the IDs of the playable presets of its instrument catalog,
+/// `<library id>/<patch path below the library, without .sfz>`, which hold no absolute path and
+/// so name the same instrument on every machine. Projects made before preset IDs store the
+/// patch's path instead; the application maps such a path to its preset when it reads the
+/// value.
 ///
 /// It is deliberately not in [`builtin_registry`]: that catalog reproduces the prototype and
 /// is pinned by `golden/plugins/catalog.json` (GLD-01). The application registers this
@@ -764,9 +770,9 @@ pub const SAMPLER_ID: &str = "sonara.sampler";
 /// parameter `instrument`, so the existing tools (`list_plugins`, `set_instrument`) choose it
 /// and the project stores it with the other parameters (CTR-01: no new tool, no schema change).
 #[must_use]
-pub fn sampler_descriptor(patches: &[String]) -> Option<PluginDescriptor> {
-    let first = patches.first()?;
-    let choices: Vec<&str> = patches.iter().map(String::as_str).collect();
+pub fn sampler_descriptor(presets: &[String]) -> Option<PluginDescriptor> {
+    let first = presets.first()?;
+    let choices: Vec<&str> = presets.iter().map(String::as_str).collect();
     Some(PluginDescriptor {
         tags: strings(&[
             "sampler",
@@ -785,8 +791,10 @@ pub fn sampler_descriptor(patches: &[String]) -> Option<PluginDescriptor> {
                 fp("volume", "Volume", 0.0, -36.0, 12.0, "dB"),
                 fp("pan", "Pan", 0.0, -1.0, 1.0, ""),
                 fp("release_scale", "Release", 1.0, 0.1, 4.0, "x").log(),
-                ep("instrument", "Instrument", first, &choices)
-                    .desc("The SFZ patch to play: the path of a .sfz file in a sample library"),
+                ep("instrument", "Instrument", first, &choices).desc(
+                    "The SFZ instrument to play: the ID of a preset in an installed sample \
+                     library, <library id>/<patch path without .sfz>",
+                ),
             ],
             concat!(
                 "Sample player for SFZ instruments (velocity layers, round robin, keyswitches, ",
@@ -837,7 +845,7 @@ pub fn builtin_registry() -> PluginRegistry {
 mod tests {
     use std::collections::HashSet;
 
-    use super::{builtin_descriptors, builtin_registry};
+    use super::{builtin_descriptors, builtin_registry, sampler_descriptor};
     use crate::model::device::ParamValue;
     use crate::plugins::PluginKind;
 
@@ -860,6 +868,35 @@ mod tests {
                 assert!(same(&coerced, &spec.default), "{}/{}", d.id, spec.id);
             }
         }
+    }
+
+    #[test]
+    fn the_sampler_offers_the_given_presets_and_plays_the_first_by_default() {
+        assert!(sampler_descriptor(&[]).is_none(), "nothing to play");
+        let presets = [
+            "vsco2ce/Tuba-KS".to_owned(),
+            "vcsl/Idiophones/Triangles".to_owned(),
+        ];
+        let sampler = sampler_descriptor(&presets).expect("presets");
+        sampler.validate().expect("a valid descriptor");
+        assert_eq!(sampler.kind, PluginKind::Instrument);
+        let instrument = sampler.param("instrument").expect("the parameter");
+        assert_eq!(instrument.choices, presets);
+        assert!(same(
+            &instrument.default,
+            &ParamValue::Str("vsco2ce/Tuba-KS".into())
+        ));
+        assert!(!instrument.automatable);
+        assert!(
+            instrument
+                .coerce(&serde_json::json!("/Libraries/VSCO/Tuba-KS.sfz"))
+                .is_err(),
+            "a path is not a choice; the application maps it before coercion"
+        );
+        assert!(
+            !builtin_registry().contains(&sampler.id),
+            "never a golden built-in"
+        );
     }
 
     #[test]

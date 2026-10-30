@@ -61,7 +61,7 @@ use sonara_dsp::processor::{
     SetupRequest,
 };
 use sonara_dsp::processors::{create, param_slots, reusable};
-use sonara_media::{FullAudio, MediaProvider};
+use sonara_media::{FullAudio, InstrumentSource, MediaProvider};
 
 pub use layout::GraphLayout;
 pub(crate) use layout::Plan;
@@ -985,15 +985,18 @@ impl Builder<'_> {
             ));
             return Ok(None);
         };
-        let params = if device.plugin_id == SAMPLER_ID {
-            self.sampler_params(descriptor, device)?
+        let (params, state, ir_source) = if device.plugin_id == SAMPLER_ID {
+            let (params, source) = self.sampler_params(descriptor, device)?;
+            (params, self.sampler_state(device, source.as_ref()), None)
         } else {
-            param_slots(descriptor, &device.params).map_err(|source| EngineError::Params {
-                device: device.id.clone(),
-                source,
-            })?
+            let params =
+                param_slots(descriptor, &device.params).map_err(|source| EngineError::Params {
+                    device: device.id.clone(),
+                    source,
+                })?;
+            let (state, ir_source) = self.device_state(device)?;
+            (params, state, ir_source)
         };
-        let (state, ir_source) = self.device_state(device)?;
         let state = DeviceState {
             playable_notes,
             ..state
@@ -1056,77 +1059,85 @@ impl Builder<'_> {
         }))
     }
 
-    /// The parameters of a sampler. Its `instrument` names a patch of the libraries installed
-    /// on this machine; a project that names one that is not installed here (it was made
-    /// elsewhere, or the library moved) still renders, with a warning and silence from that
-    /// device, instead of failing on the choice.
+    /// The parameters of a sampler, and the instrument it plays.
+    ///
+    /// Its `instrument` is the ID of a preset installed on this machine, or the patch path that
+    /// a project from before preset IDs stored; [`MediaProvider::resolve_instrument`] turns
+    /// either into the preset, and the preset's ID stands in for the stored value, so an old
+    /// path plays as the preset it names. The project itself is not rewritten. A parameter that
+    /// was never set plays the descriptor's default. A value that names nothing offered here
+    /// (the project was made elsewhere, or the library moved) still renders, with a warning and
+    /// silence from that device, instead of failing on the choice (ADR 0010).
     fn sampler_params(
         &mut self,
         descriptor: &PluginDescriptor,
         device: &Device,
-    ) -> Result<ParamSlots, EngineError> {
+    ) -> Result<(ParamSlots, Option<InstrumentSource>), EngineError> {
         let mut params = device.params.clone();
-        let installed = descriptor
+        let spec = descriptor
             .params
             .iter()
-            .find(|spec| spec.id == "instrument")
-            .map(|spec| &spec.choices);
-        let stale = params
+            .find(|spec| spec.id == "instrument");
+        // Only a source among the choices can be coerced by `param_slots`; a stored value that
+        // is not a choice would fail the whole build.
+        let offered =
+            |source: &InstrumentSource| spec.is_some_and(|spec| spec.choices.contains(&source.id));
+        let stored = params
             .get("instrument")
-            .and_then(text)
-            .filter(|name| installed.is_some_and(|choices| !choices.iter().any(|c| c == name)));
-        if let Some(name) = stale {
-            self.warnings.push(format!(
-                "instrument {} of {} is not installed; it plays silence",
-                str_repr(name),
-                str_repr(&device.name)
-            ));
-            params.shift_remove("instrument");
-        }
-        param_slots(descriptor, &params).map_err(|source| EngineError::Params {
+            .map(|value| text(value).map(str::to_owned));
+        let source = match stored {
+            // A value that is not text fails `param_slots` below, as any invalid value does.
+            Some(None) => None,
+            Some(Some(name)) => {
+                let source = self
+                    .media
+                    .resolve_instrument(&name)
+                    .filter(|source| offered(source));
+                if let Some(source) = &source {
+                    params.insert("instrument".to_owned(), ParamValue::Str(source.id.clone()));
+                } else {
+                    self.warnings.push(format!(
+                        "instrument {} of {} is not installed; it plays silence",
+                        str_repr(&name),
+                        str_repr(&device.name)
+                    ));
+                    params.shift_remove("instrument");
+                }
+                source
+            }
+            None => spec
+                .and_then(|spec| text(&spec.default))
+                .and_then(|name| self.media.resolve_instrument(name))
+                .filter(|source| offered(source)),
+        };
+        let slots = param_slots(descriptor, &params).map_err(|source| EngineError::Params {
             device: device.id.clone(),
             source,
-        })
+        })?;
+        Ok((slots, source))
     }
 
-    /// The installed patch `device` plays: its `instrument` parameter, or the descriptor's
-    /// default when the parameter was never set; `None` when the choice is not installed.
-    fn sampler_instrument(&self, device: &Device) -> Option<String> {
-        let spec = self
-            .registry
-            .find(SAMPLER_ID)?
-            .params
-            .iter()
-            .find(|spec| spec.id == "instrument")?;
-        let name = match device.params.get("instrument") {
-            Some(value) => text(value)?.to_owned(),
-            None => text(&spec.default)?.to_owned(),
-        };
-        spec.choices.contains(&name).then_some(name)
-    }
-
-    /// The state of a sampler: the instrument of the SFZ patch its `instrument` parameter
-    /// names. A patch that cannot be read is a warning, and the sampler plays silence, as a
-    /// missing impulse response does not stop a render (ADR 0010). The opcodes the sampler does
-    /// not play and the regions the loader left out (a missing sample) are warnings too.
-    fn sampler_state(&mut self, device: &Device) -> DeviceState {
-        let Some(path) = self.sampler_instrument(device) else {
+    /// The state of a sampler: the instrument of the preset `source` that
+    /// [`Self::sampler_params`] resolved, loaded from its SFZ patch; no instrument without one.
+    /// A patch that cannot be read is a warning, and the sampler plays silence, as a missing
+    /// impulse response does not stop a render (ADR 0010). The opcodes the sampler does not
+    /// play and the regions the loader left out (a missing sample) are warnings too.
+    fn sampler_state(&mut self, device: &Device, source: Option<&InstrumentSource>) -> DeviceState {
+        let Some(source) = source else {
             return DeviceState::default();
         };
-        let path = path.as_str();
-        match self.media.load_sample_bank(std::path::Path::new(path)) {
+        let name = str_repr(&source.id);
+        match self.media.load_sample_bank(&source.patch) {
             Ok(bank) => {
                 if !bank.ignored_opcodes.is_empty() {
                     self.warnings.push(format!(
-                        "instrument {} uses SFZ features the sampler does not play: {}",
-                        str_repr(path),
+                        "instrument {name} uses SFZ features the sampler does not play: {}",
                         bank.ignored_opcodes.join(", ")
                     ));
                 }
                 if !bank.load_notes.is_empty() {
                     self.warnings.push(format!(
-                        "instrument {} plays without the regions it cannot load: {}",
-                        str_repr(path),
+                        "instrument {name} plays without the regions it cannot load: {}",
                         bank.load_notes.join("; ")
                     ));
                 }
@@ -1137,8 +1148,7 @@ impl Builder<'_> {
             }
             Err(error) => {
                 self.warnings.push(format!(
-                    "instrument {} of {} cannot be loaded: {error}",
-                    str_repr(path),
+                    "instrument {name} of {} cannot be loaded: {error}",
                     str_repr(&device.name)
                 ));
                 DeviceState::default()
@@ -1148,14 +1158,11 @@ impl Builder<'_> {
 
     /// The non-parameter state of `device` (`_device_state`): its impulse response, loaded at
     /// the project rate, when the device names one, with the loaded audio it came from; every
-    /// note playable.
+    /// note playable. A sampler's state is [`Self::sampler_state`].
     fn device_state(
         &mut self,
         device: &Device,
     ) -> Result<(DeviceState, Option<Arc<FullAudio>>), EngineError> {
-        if device.plugin_id == SAMPLER_ID {
-            return Ok((self.sampler_state(device), None));
-        }
         let Some(ir_id) = ir_asset_id(device) else {
             return Ok((DeviceState::default(), None));
         };

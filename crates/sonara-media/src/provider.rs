@@ -1,6 +1,8 @@
 //! Opens readers for project assets (`media.MediaProvider`): the direct reader where the asset
 //! is an uncompressed file at the project rate, the decode cache otherwise, and silence for
-//! media that is missing or cannot be read.
+//! media that is missing or cannot be read. It also loads the sampler's instruments: an
+//! application-supplied [`InstrumentResolver`] turns the stored value of a sampler's
+//! `instrument` parameter into the patch file to load.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -21,6 +23,21 @@ pub type SharedReader = Arc<Mutex<MediaReader>>;
 /// Maps an asset to its file on disk.
 pub type Resolver = Box<dyn Fn(&MediaAsset) -> PathBuf + Send + Sync>;
 
+/// What a sampler's `instrument` value plays: the installed preset it names and its patch file.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InstrumentSource {
+    /// The preset's ID, as the sampler's `instrument` parameter offers it among its choices.
+    pub id: String,
+    /// The SFZ patch file of the preset.
+    pub patch: PathBuf,
+}
+
+/// Maps the stored value of a sampler's `instrument` parameter to what it plays: the value is a
+/// preset ID, or the patch path an older project stored. `None` when nothing installed on this
+/// machine matches. The application builds it from its instrument catalog; the engine knows
+/// nothing of libraries (DES-06).
+pub type InstrumentResolver = Box<dyn Fn(&str) -> Option<InstrumentSource> + Send + Sync>;
+
 /// A whole (short) asset in memory, such as an impulse response (`load_full`).
 #[derive(Debug, Clone, PartialEq)]
 pub struct FullAudio {
@@ -37,6 +54,7 @@ type Key = (String, u32);
 /// Opens and caches readers for assets (`media.MediaProvider`).
 pub struct MediaProvider {
     resolve: Resolver,
+    instruments: Option<InstrumentResolver>,
     cache_dir: Option<PathBuf>,
     readers: Mutex<HashMap<Key, SharedReader>>,
     full: Mutex<HashMap<Key, Arc<FullAudio>>>,
@@ -47,6 +65,7 @@ impl std::fmt::Debug for MediaProvider {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MediaProvider")
             .field("cache_dir", &self.cache_dir)
+            .field("resolves_instruments", &self.instruments.is_some())
             .finish_non_exhaustive()
     }
 }
@@ -92,10 +111,38 @@ impl MediaProvider {
     ) -> Self {
         Self {
             resolve: Box::new(resolve),
+            instruments: None,
             cache_dir,
             readers: Mutex::new(HashMap::new()),
             full: Mutex::new(HashMap::new()),
             banks: Mutex::new(HashMap::new()),
+        }
+    }
+
+    /// The same provider, resolving sampler instruments with `resolve` ([`InstrumentResolver`]).
+    #[must_use]
+    pub fn with_instruments(
+        mut self,
+        resolve: impl Fn(&str) -> Option<InstrumentSource> + Send + Sync + 'static,
+    ) -> Self {
+        self.instruments = Some(Box::new(resolve));
+        self
+    }
+
+    /// What the stored `instrument` value of a sampler plays, through the resolver of
+    /// [`MediaProvider::with_instruments`]; `None` when it names nothing installed.
+    ///
+    /// Without a resolver the value is the patch path itself, as before preset IDs: its ID is
+    /// the value and its patch is the value read as a path. Whether the source is offered at all
+    /// is the caller's check against the plugin's choices.
+    #[must_use]
+    pub fn resolve_instrument(&self, value: &str) -> Option<InstrumentSource> {
+        match &self.instruments {
+            Some(resolve) => resolve(value),
+            None => Some(InstrumentSource {
+                id: value.to_owned(),
+                patch: PathBuf::from(value),
+            }),
         }
     }
 
@@ -254,7 +301,9 @@ impl MediaProvider {
     }
 
     /// The sampler instrument of the SFZ patch `path`, loaded once and then shared: a live
-    /// graph rebuild must not read the library again (`sonara.sampler`, ADR 0010).
+    /// graph rebuild must not read the library again (`sonara.sampler`, ADR 0010). The cache is
+    /// keyed by the patch file, so a preset ID and the old path that resolves to it share one
+    /// load.
     ///
     /// # Errors
     ///
@@ -290,12 +339,55 @@ impl MediaProvider {
 
 #[cfg(test)]
 mod tests {
-    use super::{MediaProvider, frames_at_rate};
+    use std::path::PathBuf;
+
+    use super::{InstrumentSource, MediaProvider, frames_at_rate};
 
     #[test]
     fn providers_can_be_shared_between_threads() {
         fn shareable<T: Send + Sync>() {}
         shareable::<MediaProvider>();
+    }
+
+    fn provider() -> MediaProvider {
+        MediaProvider::new(|_| PathBuf::from("/nonexistent"), None)
+    }
+
+    #[test]
+    fn without_a_resolver_an_instrument_value_is_its_patch_path() {
+        assert_eq!(
+            provider().resolve_instrument("/library/Violin.sfz"),
+            Some(InstrumentSource {
+                id: "/library/Violin.sfz".to_owned(),
+                patch: PathBuf::from("/library/Violin.sfz"),
+            })
+        );
+    }
+
+    #[test]
+    fn a_resolver_maps_ids_and_old_paths_and_refuses_the_rest() {
+        let media = provider().with_instruments(|value| {
+            let violin = || InstrumentSource {
+                id: "lib/Violin".to_owned(),
+                patch: PathBuf::from("/root/lib/Violin.sfz"),
+            };
+            match value {
+                "lib/Violin" | "/old/lib/Violin.sfz" => Some(violin()),
+                _ => None,
+            }
+        });
+        let expected = Some(InstrumentSource {
+            id: "lib/Violin".to_owned(),
+            patch: PathBuf::from("/root/lib/Violin.sfz"),
+        });
+        assert_eq!(media.resolve_instrument("lib/Violin"), expected);
+        assert_eq!(media.resolve_instrument("/old/lib/Violin.sfz"), expected);
+        assert_eq!(media.resolve_instrument("lib/Cello"), None);
+        assert_eq!(
+            media.resolve_instrument("/root/lib/Cello.sfz"),
+            None,
+            "a resolver does not fall back to reading the value as a path"
+        );
     }
 
     #[test]

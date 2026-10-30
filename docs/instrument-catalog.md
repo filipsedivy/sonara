@@ -9,7 +9,7 @@ and adds no agent tool (CTR-01). Sonara ships no samples and no library.
 
 | Field | Meaning |
 |---|---|
-| `id` | `<library id>/<patch path below the library, without .sfz>`, for example `vsco2ce/Strings/Violin Solo`. It holds no absolute path, so it survives moving the library or opening the project on another machine. |
+| `id` | `<library id>/<patch path below the library, without .sfz>`, for example `vsco2ce/Strings/Violin Solo`. It holds no absolute path, so it survives moving the library or opening the project on another machine. The sampler's `instrument` parameter offers the IDs of the available presets, and projects store them ([sample-libraries.md](sample-libraries.md)). |
 | `display_name` | The manifest's name, else the file name. |
 | `family` | `strings`, `woodwinds`, `brass`, `percussion`, `keyboards`, `plucked`, `choir` or `other`, with its source: **declared** (manifest), **inferred** (words in the path, such as `Violin`, `Horn`, `Timpani`) or **unknown**. An inferred family is a guess; treat it as one. The family is the orchestration metadata's ([orchestration-metadata.md](orchestration-metadata.md)), so a preset and an instrument type share one family type; a manifest must spell the slug exactly, in lower case. |
 | `articulations` | Only what a manifest declares. Empty means **not verified**, never "none". Keyswitch labels in a patch are not read. |
@@ -93,6 +93,7 @@ of one library both take its ID, so the second is skipped as a duplicate.
 
 ## Not done
 
-No agent tool, CLI command or GUI uses the catalog yet, so the sampler's `instrument` choices are
-still the raw patch paths. A General MIDI or SF2 source would add bank and program. Sound quality
-of any library has not been judged.
+No agent tool, CLI command or GUI lists the catalog itself yet. The sampler's `instrument` choices
+are its available presets' IDs; the device editor shows them as IDs, not yet as names grouped by
+library. A General MIDI or SF2 source would add bank and program. Sound quality of any library
+has not been judged.

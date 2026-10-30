@@ -66,6 +66,7 @@ use sonara_project::store::asset_path;
 use crate::error::{AppError, AppResult, IoContext as _};
 use crate::events::ErrorNotice;
 use crate::ids::IdSource;
+use crate::instruments::InstalledInstruments;
 use crate::jobs::{Job, JobManager};
 use crate::paths::{expand_user, resolve};
 use crate::projects::{MediaProbe, ProbedAudio};
@@ -246,6 +247,7 @@ pub struct MediaService {
     jobs: JobManager,
     ids: IdSource,
     ffmpeg: FfmpegLocator,
+    instruments: Arc<InstalledInstruments>,
     binding: Mutex<Option<Binding>>,
     events: Mutex<Receiver<SessionEvent>>,
 }
@@ -273,6 +275,7 @@ impl MediaService {
             jobs,
             ids,
             ffmpeg: Arc::new(system_ffmpeg),
+            instruments: Arc::default(),
             binding: Mutex::new(None),
             events: Mutex::new(events),
         }
@@ -282,6 +285,14 @@ impl MediaService {
     #[must_use]
     pub fn with_ffmpeg(mut self, locator: FfmpegLocator) -> Self {
         self.ffmpeg = locator;
+        self
+    }
+
+    /// The same service, whose providers play the sampler instruments of `instruments`
+    /// (without it, no sampler instrument resolves).
+    #[must_use]
+    pub fn with_instruments(mut self, instruments: Arc<InstalledInstruments>) -> Self {
+        self.instruments = instruments;
         self
     }
 
@@ -296,8 +307,10 @@ impl MediaService {
 
     /// The reader factory bound to the open project's workspace (`media_provider`): assets
     /// resolve against the workspace, and the decode cache is its `cache/decoded`. Without a
-    /// project, asset paths are taken as they are and there is no cache. The provider is rebuilt
-    /// when the workspace changed since the last call; the old one's readers are closed.
+    /// project, asset paths are taken as they are and there is no cache. A sampler's
+    /// `instrument` resolves through the service's installed instruments
+    /// ([`InstalledInstruments::resolve`]). The provider is rebuilt when the workspace changed
+    /// since the last call; the old one's readers are closed.
     pub fn provider(&self) -> Arc<MediaProvider> {
         self.handle_events();
         let workspace = self.workspace();
@@ -310,7 +323,7 @@ impl MediaService {
         if let Some(old) = binding.take() {
             old.provider.close();
         }
-        let provider = Arc::new(bind(workspace.clone()));
+        let provider = Arc::new(bind(workspace.clone(), &self.instruments));
         *binding = Some(Binding {
             workspace,
             provider: Arc::clone(&provider),
@@ -790,11 +803,13 @@ impl MediaService {
     }
 }
 
-/// The reader factory of `workspace` (`None`: asset paths as they are, no cache).
-fn bind(workspace: Option<PathBuf>) -> MediaProvider {
+/// The reader factory of `workspace` (`None`: asset paths as they are, no cache), playing the
+/// sampler instruments of `instruments`.
+fn bind(workspace: Option<PathBuf>, instruments: &Arc<InstalledInstruments>) -> MediaProvider {
     let cache = workspace
         .as_ref()
         .map(|dir| dir.join("cache").join("decoded"));
+    let instruments = Arc::clone(instruments);
     MediaProvider::new(
         move |asset| match &workspace {
             Some(dir) => asset_path(asset, dir),
@@ -802,6 +817,7 @@ fn bind(workspace: Option<PathBuf>) -> MediaProvider {
         },
         cache,
     )
+    .with_instruments(move |value| instruments.resolve(value))
 }
 
 /// A track command with its IDs drawn as the prototype draws them: the track's, then its

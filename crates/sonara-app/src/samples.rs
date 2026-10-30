@@ -2,9 +2,11 @@
 //! `sample_libraries` lists, and the SFZ instruments found in them.
 //!
 //! Sonara ships no sample library. Libraries are installed by the user, so the sampler is
-//! offered only when a configured directory holds at least one `.sfz` patch
-//! ([`sampler_descriptor`]). The scan reads directory entries only; patches are loaded when a
-//! track plays them, off the real-time thread.
+//! offered only when a configured directory holds at least one playable `.sfz` patch
+//! ([`sampler_descriptor`]). Its `instrument` choices are the IDs of the instrument catalog's
+//! playable presets ([`crate::instruments::InstalledInstruments`]), not file paths. The scan
+//! reads directory entries only; patches are loaded when a track plays them, off the real-time
+//! thread.
 //!
 //! **Include fragments are not patches.** Libraries such as Sonatina keep the pieces their
 //! patches `#include` in folders named `includes` (190 `.sfz` files in Sonatina). A fragment
@@ -97,12 +99,12 @@ fn walk(dir: &Path, depth: usize, found: &mut Vec<String>) {
 }
 
 /// The plugin registry of the application: the prototype's built-ins, plus `sonara.sampler`
-/// when the configured libraries hold instruments.
+/// when there are installed instruments, whose `instrument` choices are `presets`, the IDs of
+/// [`crate::instruments::InstalledInstruments::ids`].
 #[must_use]
-pub fn registry_for(settings: &Settings) -> PluginRegistry {
+pub fn registry_for(presets: &[String]) -> PluginRegistry {
     let mut registry = builtin_registry();
-    let patches = scan_patches(&library_roots(settings));
-    if let Some(descriptor) = sampler_descriptor(&patches) {
+    if let Some(descriptor) = sampler_descriptor(presets) {
         register(&mut registry, descriptor);
     }
     registry
@@ -124,7 +126,13 @@ mod tests {
     use sonara_core::plugins::PluginKind;
 
     use super::{LIBRARIES_KEY, registry_for, scan_patches};
+    use crate::instruments::InstalledInstruments;
     use crate::settings::Settings;
+
+    /// The registry of the libraries `settings` configure.
+    fn registry_of(settings: &Settings) -> sonara_core::plugins::PluginRegistry {
+        registry_for(&InstalledInstruments::from_settings(settings).ids())
+    }
 
     fn touch(path: &std::path::Path) {
         fs::create_dir_all(path.parent().expect("a parent")).expect("mkdir");
@@ -208,14 +216,14 @@ mod tests {
             LIBRARIES_KEY.to_owned(),
             json!([dir.path().to_str().expect("UTF-8")]),
         );
-        let registry = registry_for(&settings);
+        let registry = registry_of(&settings);
         assert!(registry.find("sonara.sampler").is_none());
         assert_eq!(registry.all(None).len(), 12, "the golden catalog only");
     }
 
     #[test]
     fn the_sampler_is_registered_only_when_a_library_holds_instruments() {
-        let none = registry_for(&Settings::default());
+        let none = registry_of(&Settings::default());
         assert!(
             none.find("sonara.sampler").is_none(),
             "no library: the golden catalog"
@@ -223,22 +231,28 @@ mod tests {
         assert_eq!(none.all(None).len(), 12);
 
         let dir = tempfile::tempdir().expect("a tempdir");
-        touch(&dir.path().join("Violin.sfz"));
-        // A fragment is not offered as an instrument.
-        touch(&dir.path().join("includes/violin-sustain.sfz"));
+        let root = dir.path().join("My Strings");
+        touch(&root.join("Violin.sfz"));
+        touch(&root.join("Solo/Cello.sfz"));
+        // A fragment is not offered as an instrument, and neither is an empty patch file.
+        touch(&root.join("includes/violin-sustain.sfz"));
+        fs::write(root.join("Empty.sfz"), "").expect("write");
         let mut settings = Settings::default();
         settings.extra.insert(
             LIBRARIES_KEY.to_owned(),
-            json!([dir.path().to_str().expect("UTF-8"), 7]),
+            json!([root.to_str().expect("UTF-8"), 7]),
         );
-        let registry = registry_for(&settings);
+        let registry = registry_of(&settings);
         let sampler = registry.find("sonara.sampler").expect("registered");
         assert_eq!(sampler.kind, PluginKind::Instrument);
         let instrument = sampler
             .param("instrument")
             .expect("the instrument parameter");
-        assert_eq!(instrument.choices.len(), 1);
-        assert!(instrument.choices[0].ends_with("Violin.sfz"));
+        assert_eq!(
+            instrument.choices,
+            ["my-strings/Solo/Cello", "my-strings/Violin"],
+            "the preset IDs, sorted, never a path"
+        );
         assert_eq!(registry.all(None).len(), 13);
     }
 }

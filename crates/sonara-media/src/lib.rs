@@ -70,6 +70,9 @@ pub use names::{
     MAX_IMPORT_BYTES, check_import_size, import_path, import_warnings, path_stem, path_suffix,
     recording_path, safe_stem, transcode_paths, transcode_warning,
 };
-pub use provider::{FullAudio, MediaProvider, Resolver, SharedReader, frames_at_rate};
+pub use provider::{
+    FullAudio, InstrumentResolver, InstrumentSource, MediaProvider, Resolver, SharedReader,
+    frames_at_rate,
+};
 pub use reader::{CachedReader, DirectReader, MediaReader, SilentReader};
 pub use resample::{ResampleStream, ResampleStream64, SoxrStream};

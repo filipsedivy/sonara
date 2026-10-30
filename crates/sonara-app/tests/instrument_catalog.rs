@@ -8,10 +8,12 @@ use std::path::{Path, PathBuf};
 
 use serde_json::json;
 use sonara_app::instruments::{
-    Availability, CatalogError, FamilyClaim, InstrumentCatalog, InstrumentFamily, LibraryId,
-    LibraryIssue, MANIFEST_FILE, MediaPatchLoader, PatchLoadError, PatchLoader,
+    Availability, CatalogError, FamilyClaim, InstalledInstruments, InstrumentCatalog,
+    InstrumentFamily, LibraryId, LibraryIssue, MANIFEST_FILE, MediaPatchLoader, PatchLoadError,
+    PatchLoader,
 };
 use sonara_app::settings::Settings;
+use sonara_media::InstrumentSource;
 
 fn patch(path: &Path) {
     fs::create_dir_all(path.parent().expect("a parent")).expect("mkdir");
@@ -758,4 +760,134 @@ fn two_detected_copies_of_one_library_keep_the_first() {
         catalog.issues(),
         [LibraryIssue::DuplicateLibrary { id, path }] if id.as_str() == "vsco2ce" && *path == b
     ));
+}
+
+/// Two libraries: `Lib One` with a manifest that lists a missing patch, and `VSCO-2-CE`, a
+/// detected checkout with an empty patch file.
+fn two_libraries(dir: &Path) -> (PathBuf, PathBuf) {
+    let one = dir.join("Lib One");
+    library(&one, &["Strings/Violin.sfz", "Brass/Horn.sfz"]);
+    manifest(
+        &one,
+        &json!({"version": 1, "instruments": [{"path": "Strings/Gone.sfz"}]}),
+    );
+    let vsco = dir.join("VSCO-2-CE");
+    library(&vsco, &VSCO_DETECT);
+    fs::write(vsco.join("Empty.sfz"), "").expect("write");
+    (one, vsco)
+}
+
+#[test]
+fn installed_instruments_are_the_playable_presets_by_id() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let (one, vsco) = two_libraries(dir.path());
+    let catalog = InstrumentCatalog::discover(&[one, vsco]);
+    assert_eq!(catalog.presets().len(), 7, "the catalog lists all of them");
+    let installed = InstalledInstruments::from_catalog(&catalog);
+    assert_eq!(
+        installed.ids(),
+        [
+            "lib-one/Brass/Horn",
+            "lib-one/Strings/Violin",
+            "vsco2ce/GM-StylePerc",
+            "vsco2ce/Tuba-KS",
+            "vsco2ce/ViolinEns-KS",
+        ],
+        "a missing or an invalid preset is not offered"
+    );
+    assert!(!installed.is_empty());
+    assert!(InstalledInstruments::default().is_empty());
+    assert_eq!(
+        InstalledInstruments::from_settings(&Settings::default()),
+        InstalledInstruments::default()
+    );
+}
+
+#[test]
+fn an_old_patch_path_resolves_to_its_preset() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let (one, vsco) = two_libraries(dir.path());
+    let installed = InstalledInstruments::from_catalog(&InstrumentCatalog::discover(&[
+        one.clone(),
+        vsco.clone(),
+    ]));
+    let text = |path: PathBuf| path.to_str().expect("UTF-8").to_owned();
+    let violin = Some(InstrumentSource {
+        id: "lib-one/Strings/Violin".to_owned(),
+        patch: one.join("Strings/Violin.sfz"),
+    });
+    // By its ID, and by the absolute path a project from before preset IDs stored: the scan's
+    // path, the library directory joined with the patch.
+    assert_eq!(installed.resolve("lib-one/Strings/Violin"), violin);
+    assert_eq!(
+        installed.resolve(&text(one.join("Strings/Violin.sfz"))),
+        violin
+    );
+    // The patch part ignores case, as discovery does; the library directory is as configured.
+    assert_eq!(
+        installed.resolve(&text(one.join("strings/VIOLIN.SFZ"))),
+        violin
+    );
+    assert_eq!(
+        installed.preset_id(&text(vsco.join("Tuba-KS.sfz"))),
+        Some("vsco2ce/Tuba-KS"),
+        "a detected library maps its old paths to the profile ID"
+    );
+    for nothing in [
+        "lib-one/Strings/Gone".to_owned(),
+        text(one.join("Strings/Gone.sfz")),
+        "vsco2ce/Empty".to_owned(),
+        text(vsco.join("Empty.sfz")),
+        text(dir.path().join("Elsewhere/Strings/Violin.sfz")),
+        "/Lib One/Strings/Violin.sfz".to_owned(),
+        "lib-one/strings/violin".to_owned(),
+        "Strings/Violin.sfz".to_owned(),
+        String::new(),
+    ] {
+        assert_eq!(installed.resolve(&nothing), None, "{nothing:?}");
+    }
+}
+
+#[test]
+fn only_a_sampler_path_is_rewritten_to_its_preset_id() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let (one, _) = two_libraries(dir.path());
+    let installed = InstalledInstruments::from_catalog(&InstrumentCatalog::discover(
+        std::slice::from_ref(&one),
+    ));
+    let horn = one
+        .join("Brass/Horn.sfz")
+        .to_str()
+        .expect("UTF-8")
+        .to_owned();
+    let values = |instrument: &str| {
+        let mut map = serde_json::Map::new();
+        map.insert("volume".to_owned(), json!(-3.0));
+        map.insert("instrument".to_owned(), json!(instrument));
+        map
+    };
+    let normalized = |plugin: &str, instrument: &str| {
+        let mut map = values(instrument);
+        installed.normalize_params(plugin, &mut map);
+        map
+    };
+    assert_eq!(
+        normalized("sonara.sampler", &horn),
+        values("lib-one/Brass/Horn")
+    );
+    assert_eq!(
+        normalized("sonara.sampler", "lib-one/Brass/Horn"),
+        values("lib-one/Brass/Horn")
+    );
+    // Not installed: left for the descriptor to reject with its choices.
+    assert_eq!(
+        normalized("sonara.sampler", "/elsewhere/Horn.sfz"),
+        values("/elsewhere/Horn.sfz")
+    );
+    assert_eq!(normalized("sonara.synth.poly", &horn), values(&horn));
+    let mut number = serde_json::Map::new();
+    number.insert("instrument".to_owned(), json!(1));
+    let expected = number.clone();
+    installed.normalize_params("sonara.sampler", &mut number);
+    assert_eq!(number, expected, "an index is the descriptor's business");
 }

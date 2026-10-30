@@ -196,7 +196,9 @@ Not part of the prototype and not covered by the golden data (ADR 0010). It runs
 voices with linear interpolation and linear attack/release ramps; the render thread allocates
 nothing (checked with `assert_no_alloc` in `crates/sonara-dsp/tests/sampler.rs`). An SFZ patch is
 parsed and its samples decoded on the builder thread (`sonara-media::sfz`), cached in the
-`MediaProvider`, and handed to the processor through `DeviceState::sample_bank`. A graph rebuild
+`MediaProvider`, and handed to the processor through `DeviceState::sample_bank`. The device's
+`instrument` value, a preset ID or the patch path an older project stored, is turned into the
+patch file by the resolver the application gives the `MediaProvider`. A graph rebuild
 recreates sampler devices, so sounding notes restart. There are no measured load or memory
 numbers for it yet (HW-01: they are measured locally).
 

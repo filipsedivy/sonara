@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use serde_json::{Value, json};
 use sonara_core::plugins::{builtin_registry, sampler_descriptor};
 use sonara_engine::{OfflineRenderer, RenderRequest, RenderedAudio, Tail};
-use sonara_media::MediaProvider;
+use sonara_media::{InstrumentSource, MediaProvider};
 use sonara_project::serializer::{loads, project_from_value};
 use sonara_testkit::Golden;
 
@@ -52,11 +52,26 @@ fn patch_dir() -> (tempfile::TempDir, PathBuf) {
     (dir, sfz)
 }
 
+/// A provider of no project media.
+fn no_media() -> MediaProvider {
+    MediaProvider::new(|_| PathBuf::from("/nonexistent/sonara-media"), None)
+}
+
 /// The base project with the kick track's drum kit replaced by the sampler, which offers the
-/// installed `patch` and plays `instrument` (`None`: the default, the first installed one).
+/// `installed` choices and plays `instrument` (`None`: the default, the first installed one).
+/// Without an instrument resolver, as here, a choice is a patch path.
 fn render(
     installed: &[String],
     instrument: Option<&str>,
+) -> Result<RenderedAudio, sonara_engine::EngineError> {
+    render_with(installed, instrument, &no_media())
+}
+
+/// [`render`] with the instruments that `media` resolves.
+fn render_with(
+    installed: &[String],
+    instrument: Option<&str>,
+    media: &MediaProvider,
 ) -> Result<RenderedAudio, sonara_engine::EngineError> {
     let golden = Golden::open().expect("golden data is available (set SONARA_GOLDEN)");
     let bytes = golden
@@ -77,8 +92,7 @@ fn render(
     if let Some(descriptor) = sampler_descriptor(installed) {
         registry.register(descriptor).expect("registers once");
     }
-    let media = MediaProvider::new(|_| PathBuf::from("/nonexistent/sonara-media"), None);
-    OfflineRenderer::new(&registry, &media).render(
+    OfflineRenderer::new(&registry, media).render(
         &project,
         &RenderRequest {
             end_beat: Some(2.0),
@@ -252,4 +266,90 @@ fn what_the_sampler_does_not_play_is_one_warning() {
         )]
     );
     assert!(peak(&audio) > 0.01, "the legato region plays as attack");
+}
+
+/// A provider whose resolver knows one preset, `lib/tone`, by its ID and by `old_path`, the
+/// path a project from before preset IDs stored, and plays it from `patch`.
+fn resolving(patch: &Path, old_path: &str) -> MediaProvider {
+    let patch = patch.to_owned();
+    let old_path = old_path.to_owned();
+    no_media().with_instruments(move |value| {
+        (value == "lib/tone" || value == old_path).then(|| InstrumentSource {
+            id: "lib/tone".to_owned(),
+            patch: patch.clone(),
+        })
+    })
+}
+
+#[test]
+fn a_preset_id_plays_the_patch_its_resolver_names() {
+    let (_dir, sfz) = patch_dir();
+    // The oracle: the same patch named by its path, as before preset IDs.
+    let by_path = render(&[path(&sfz)], None).expect("renders");
+    let media = resolving(&sfz, "/elsewhere/tone.sfz");
+    let installed = ["lib/tone".to_owned()];
+    for instrument in [Some("lib/tone"), None] {
+        let audio = render_with(&installed, instrument, &media).expect("renders");
+        assert!(
+            audio.stats.warnings.is_empty(),
+            "{:?}",
+            audio.stats.warnings
+        );
+        assert_eq!(audio.data, by_path.data, "{instrument:?}");
+    }
+    assert!(peak(&by_path) > 0.01, "the patch is audible");
+}
+
+#[test]
+fn an_old_patch_path_plays_as_its_preset() {
+    // A project from before preset IDs stores the patch's path. It is no longer a choice, but
+    // the resolver maps it to the preset, so the project opens and plays without a warning.
+    let (_dir, sfz) = patch_dir();
+    let old_path = "/Users/someone/Libraries/Lib/tone.sfz";
+    let media = resolving(&sfz, old_path);
+    let installed = ["lib/tone".to_owned()];
+    let by_id = render_with(&installed, Some("lib/tone"), &media).expect("renders");
+    let by_old_path = render_with(&installed, Some(old_path), &media).expect("renders");
+    assert!(
+        by_old_path.stats.warnings.is_empty(),
+        "{:?}",
+        by_old_path.stats.warnings
+    );
+    assert_eq!(by_old_path.data, by_id.data);
+    assert!(peak(&by_old_path) > 0.01, "the patch is audible");
+}
+
+#[test]
+fn a_preset_that_is_not_installed_warns_and_plays_silence() {
+    let (_dir, sfz) = patch_dir();
+    let media = resolving(&sfz, "/elsewhere/tone.sfz");
+    let installed = ["lib/tone".to_owned()];
+    // The kick track without any instrument: the oracle for a silent sampler.
+    let bypassed = render(&[], None).expect("renders");
+    for unknown in ["lib/cello", "/elsewhere/cello.sfz", &path(&sfz)] {
+        let audio = render_with(&installed, Some(unknown), &media).expect("renders");
+        assert_eq!(
+            audio.stats.warnings,
+            [format!(
+                "instrument {} of 'Sonara Sampler' is not installed; it plays silence",
+                sonara_core::pyfmt::str_repr(unknown)
+            )],
+            "a resolver never falls back to reading the value as a path"
+        );
+        assert_eq!(audio.data, bypassed.data, "{unknown}");
+    }
+}
+
+#[test]
+fn a_resolved_preset_that_is_not_offered_is_not_installed() {
+    // The resolver and the choices come from one snapshot in the application; if they ever
+    // disagree, the sampler plays silence with a warning instead of failing the build.
+    let (_dir, sfz) = patch_dir();
+    let media = resolving(&sfz, "/elsewhere/tone.sfz");
+    let audio = render_with(&["lib/other".to_owned()], Some("lib/tone"), &media).expect("renders");
+    assert_eq!(
+        audio.stats.warnings,
+        ["instrument 'lib/tone' of 'Sonara Sampler' is not installed; it plays silence"]
+    );
+    assert_eq!(audio.data, render(&[], None).expect("renders").data);
 }

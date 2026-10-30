@@ -27,6 +27,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Instant;
 
 use sonara_core::error::{DomainError, ErrorCode};
+use sonara_core::model::JsonMap;
 use sonara_core::model::track::TrackKind;
 use sonara_core::plugins::PluginRegistry;
 use sonara_core::session::ProjectSession;
@@ -36,6 +37,7 @@ use sonara_project::store::ProjectStore;
 use crate::clock::{LocalZone, WallClock, system_clock};
 use crate::error::{AppError, AppResult};
 use crate::ids::IdSource;
+use crate::instruments::InstalledInstruments;
 use crate::jobs::{DEFAULT_MAX_PENDING, DEFAULT_WORKERS, JobManager};
 use crate::media::{FfmpegLocator, MediaService, SoundFileProbe, system_ffmpeg};
 use crate::midi::{MidiDevices, SystemMidiDevices};
@@ -138,6 +140,8 @@ impl fmt::Debug for AppOptions {
 pub struct AppContext {
     options: AppOptions,
     plugins: Arc<PluginRegistry>,
+    /// The instruments the sampler offers and plays, read once at startup.
+    instruments: Arc<InstalledInstruments>,
     session: SharedSession,
     store: ProjectStore,
     settings: Arc<Mutex<Settings>>,
@@ -190,7 +194,10 @@ impl AppContext {
         };
         let ids = options.ids.clone().unwrap_or_default();
         let wall_clock = options.wall_clock.clone().unwrap_or_else(system_clock);
-        let plugins = Arc::new(registry_for(&settings));
+        // One snapshot of the sample libraries gives the sampler's choices and the resolver of
+        // the media provider, so they always agree.
+        let instruments = Arc::new(InstalledInstruments::from_settings(&settings));
+        let plugins = Arc::new(registry_for(&instruments.ids()));
         // Python's limits behave as 0 when negative.
         let undo_limit = usize::try_from(settings.undo_limit).unwrap_or(0);
         let undo_clock: sonara_core::session::Clock = if let Some(clock) = &options.undo_clock {
@@ -233,7 +240,9 @@ impl AppContext {
             None => Arc::new(system_ffmpeg),
         };
         let media = Arc::new(
-            MediaService::new(session.clone(), jobs.clone(), ids.clone()).with_ffmpeg(ffmpeg),
+            MediaService::new(session.clone(), jobs.clone(), ids.clone())
+                .with_ffmpeg(ffmpeg)
+                .with_instruments(Arc::clone(&instruments)),
         );
         let render = RenderService::new(
             session.clone(),
@@ -253,6 +262,7 @@ impl AppContext {
         Ok(Self {
             options,
             plugins,
+            instruments,
             session,
             store,
             settings,
@@ -277,6 +287,34 @@ impl AppContext {
     #[must_use]
     pub fn plugins(&self) -> &Arc<PluginRegistry> {
         &self.plugins
+    }
+
+    /// The instruments of the configured sample libraries that the sampler offers and plays,
+    /// as they were when the context was created.
+    #[must_use]
+    pub fn instruments(&self) -> &Arc<InstalledInstruments> {
+        &self.instruments
+    }
+
+    /// Rewrites a patch path given as the `instrument` of a sampler to its preset ID
+    /// ([`InstalledInstruments::normalize_params`]) when `device_id` is a sampler of the open
+    /// project. Without a project or such a device nothing changes; the edit that follows
+    /// reports that.
+    pub fn normalize_device_params(&self, device_id: &str, values: &mut JsonMap) {
+        if !values.contains_key("instrument") {
+            return;
+        }
+        let plugin_id = {
+            let session = self.session.lock();
+            let Ok(project) = session.require_project() else {
+                return;
+            };
+            let Ok((_, device)) = project.device(device_id) else {
+                return;
+            };
+            device.plugin_id.clone()
+        };
+        self.instruments.normalize_params(&plugin_id, values);
     }
 
     /// The one project session.

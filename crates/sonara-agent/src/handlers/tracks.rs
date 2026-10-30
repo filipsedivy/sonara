@@ -182,11 +182,16 @@ pub(super) fn set_instrument(ctx: &AgentContext, args: SetInstrument) -> ToolRes
         params,
     } = args;
     let device_id = ctx.app().ids().new_id(ids::DEVICE);
+    let mut params = param_values(&params);
+    // A sampler instrument given by its patch path, as before preset IDs, stores its ID.
+    ctx.app()
+        .instruments()
+        .normalize_params(&plugin_id, &mut params);
     let command = SetInstrumentCommand {
         track_id,
         plugin_id,
         preset,
-        params: param_values(&params),
+        params,
         device_id,
     };
     Ok(ctx.commit(&command, dry_run)?)

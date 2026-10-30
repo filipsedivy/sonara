@@ -89,6 +89,8 @@ pub(super) fn set_effect_parameter(ctx: &AgentContext, args: SetEffectParameter)
         };
         values.insert(param, param_value(&value));
     }
+    // A sampler instrument given by its patch path, as before preset IDs, stores its ID.
+    ctx.app().normalize_device_params(&device_id, &mut values);
     if !values.is_empty() {
         commands.push(Box::new(SetDeviceParams {
             device_id: device_id.clone(),

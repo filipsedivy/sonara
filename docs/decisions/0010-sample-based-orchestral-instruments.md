@@ -1,6 +1,6 @@
 # ADR 0010: Sample-based orchestral instruments
 
-- **Status:** Accepted (2026-10-27)
+- **Status:** Accepted (2026-10-27); decision 4 amended (2026-10-30)
 - **Research:** [orchestral-audio-engine-research.md](../orchestral-audio-engine-research.md)
 
 ## Context
@@ -34,6 +34,19 @@ samples. The constraints that decide the design are rules, not taste:
    `instrument` (the choices are the installed patches' absolute paths), so `list_plugins` and
    `set_instrument` select it and the project stores it with the other parameters: no new tool,
    no schema change.
+
+   **Amendment (2026-10-30, owner decision).** The choices of `instrument` are preset IDs, not
+   paths: `<library id>/<patch path below the library, without .sfz>`, the IDs of the instrument
+   catalog's playable presets. A project therefore names the same instrument on every machine,
+   wherever the library is installed, and the application resolves the ID to its patch file when
+   it builds the audio graph. A project saved before the change stores the patch's absolute
+   path. Such a path still plays when it lies below a configured library: it is read as the
+   preset of that patch, and the project is not rewritten when it opens. `set_instrument` and a
+   parameter edit that pass such a path store the preset ID. Any other value is not installed
+   and plays silence (decision 5). The project schema and the tools do not change; only how the
+   value is read does. So that library IDs are final before projects store them, Sonara also
+   recognizes VSCO 2 CE and VCSL by a few of their files and gives a copy without a manifest the
+   IDs `vsco2ce` and `vcsl`, which do not change when its folder is renamed.
 5. **Failure is soft.** A patch that is missing or unreadable, or an `instrument` that is not
    installed on this machine, renders as silence with a warning; it does not fail the render.
 6. **Not built, and why:**

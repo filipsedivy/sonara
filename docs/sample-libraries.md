@@ -20,20 +20,41 @@ ships no samples (ADR 0010).
 3. Restart Sonara. The directories are scanned for `.sfz` files at startup (eight levels deep,
    hidden folders, symbolic links and folders named `includes` skipped, at most 5,000 patches).
    An `includes` folder holds the fragments that a library's patches include (Sonatina has 190
-   of them), which cannot be played on their own, so they are not offered as instruments.
+   of them), which cannot be played on their own, so they are not offered as instruments. Nor
+   is a patch file that is empty, unreadable or listed by the library's manifest but missing.
 
-To replace or add a library, edit the list and restart. Projects store the patch's absolute path;
-on a machine without it the track plays silence and the render warns
+To replace or add a library, edit the list and restart.
+
+## Preset IDs
+
+The sampler's instruments are named by **preset ID**, `<library id>/<patch path below the
+library, without .sfz>`, for example `vsco2ce/ViolinEns-KS`. A project stores the ID, not a file
+path, so it plays on any machine where the library is installed, wherever it lies. On a machine
+without the instrument the track plays silence and the render warns
 `instrument … is not installed`.
+
+The library ID is the `id` in the library's manifest
+([instrument-catalog.md](instrument-catalog.md)). Without one, Sonara recognizes **VSCO 2 CE**
+and **VCSL** by a few of their files and uses `vsco2ce` and `vcsl`. Any other library without a
+manifest takes its folder name, lower-cased with other characters turned into `-`; renaming that
+folder changes its IDs, so give the library a manifest with an `id` before you use it in
+projects.
+
+A project saved before preset IDs stores the patch's absolute path. It still plays when that
+path lies below a configured library: Sonara reads it as the preset of that patch and leaves the
+project unchanged until you choose the instrument again, which stores the ID. A tool call or
+script that passes such a path to `set_instrument` or as the `instrument` parameter stores the
+preset ID too.
 
 ## Try an instrument
 
-- **Agent or CLI:** `list_plugins` with `plugin_id: "sonara.sampler"` shows the installed patches
-  as the choices of `instrument`. Then `create_track` (`kind: instrument`,
+- **Agent or CLI:** `list_plugins` with `plugin_id: "sonara.sampler"` shows the installed presets'
+  IDs as the choices of `instrument`. Then `create_track` (`kind: instrument`,
   `instrument: "sonara.sampler"`) and `set_instrument` with
-  `params: {"instrument": "<path of the .sfz>"}`, add a MIDI clip, and `render`.
+  `params: {"instrument": "<preset id>"}`, add a MIDI clip, and `render`.
 - **GUI:** the project view builds its plugin catalog from the same registry, so Sonara Sampler
-  should appear among the instruments and its `instrument` choice in the device editor. **This
+  should appear among the instruments and its `instrument` choice, listing preset IDs, in the
+  device editor. **This
   was not exercised in the GUI** (no GUI session was run); if it does not show up, use the agent
   route above.
 

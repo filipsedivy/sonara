@@ -793,7 +793,12 @@ fn command(app: &AppContext, edit: Edit) -> Result<Box<dyn Command>, DomainError
         Edit::SetDeviceEnabled { device_id, enabled } => {
             Box::new(SetDeviceEnabled { device_id, enabled })
         }
-        Edit::SetDeviceParams { device_id, values } => {
+        Edit::SetDeviceParams {
+            device_id,
+            mut values,
+        } => {
+            // A sampler instrument given by its patch path stores its preset ID.
+            app.normalize_device_params(&device_id, &mut values);
             Box::new(SetDeviceParams { device_id, values })
         }
         Edit::ResetDevice { device_id } => {

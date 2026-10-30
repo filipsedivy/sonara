@@ -4,8 +4,14 @@
 //! The catalog is a read model of the application layer. It reads directory entries, optional
 //! library manifests and, on request, a patch through a [`PatchLoader`]; it never starts an audio
 //! engine, so it is testable without one, and an unusable library is reported as data, never as a
-//! panic. The audio engine plays a preset by its patch path (ADR 0010); nothing here changes the
-//! plugin registry, the agent tools or the `.sonara` format (CTR-01).
+//! panic. Nothing here changes the agent tools or the `.sonara` format (CTR-01).
+//!
+//! **Preset IDs play.** The sampler's `instrument` parameter offers the IDs of the playable
+//! presets, and a project stores the chosen ID, which holds no absolute path.
+//! [`InstalledInstruments`] is built from the catalog once when the application starts; it gives
+//! the choices, resolves a stored ID to its patch file for the audio engine, and maps the patch
+//! path that a project from before preset IDs stored to the preset of that patch (ADR 0010,
+//! decision 4 as amended).
 //!
 //! **Discovery** ([`InstrumentCatalog::discover`]) takes the library directories of the
 //! `sample_libraries` setting ([`crate::samples`]) and merges three sources:
@@ -30,6 +36,7 @@
 
 mod discovery;
 mod family;
+mod installed;
 mod manifest;
 mod model;
 mod profiles;
@@ -37,6 +44,7 @@ mod verify;
 
 pub use discovery::InstrumentCatalog;
 pub use family::{FamilyClaim, InstrumentFamily};
+pub use installed::InstalledInstruments;
 pub use manifest::{MANIFEST_FILE, MANIFEST_VERSION};
 pub use model::{
     Availability, CatalogError, InstrumentId, InstrumentPreset, InvalidLibraryId, Library,
