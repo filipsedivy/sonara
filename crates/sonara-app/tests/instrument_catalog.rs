@@ -139,6 +139,92 @@ fn a_manifest_declares_metadata_and_reports_missing_patches() {
 }
 
 #[test]
+fn a_version_2_manifest_rejects_a_bad_entry_alone() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path().join("lib");
+    patch(&root.join("Strings/Violin.sfz"));
+    patch(&root.join("Brass/Horn.sfz"));
+    patch(&root.join("Organ.sfz"));
+    manifest(
+        &root,
+        &json!({
+            "version": 2, "id": "lib", "name": "Lib", "license": "CC0 1.0",
+            "instruments": [
+                {"path": "Strings/Violin.sfz", "name": "Violin Section", "family": "strings",
+                 "instrument": "violin", "ensemble": {"kind": "section"},
+                 "articulations": [
+                     {"id": "sustain", "via": "keyswitch", "key": 36, "default": true},
+                     {"id": "pizzicato", "via": "keyswitch", "key": 37}]},
+                {"path": "Brass/Horn.sfz", "name": "Horn", "instrument": "horn_f",
+                 "articulations": [{"id": "sustain", "via": "keyswitch", "key": 128}]},
+                {"path": "Organ.sfz", "family": "keyboards", "license": "CC BY 4.0",
+                 "dynamics": {"via": "fixed", "velocity": 100}},
+                {"set": "horns", "instrument": "horn_f",
+                 "articulations": [{"id": "sustain", "via": "patch", "path": "Brass/Horn.sfz"}]}
+            ]
+        }),
+    );
+
+    let catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
+
+    // The horn's entry is rejected and reported; the horn is still found by the scan, and the
+    // other entries are used. A multi-patch set is not listed as a preset of its own.
+    assert_eq!(
+        preset_ids(&catalog),
+        ["lib/Brass/Horn", "lib/Organ", "lib/Strings/Violin"]
+    );
+    assert!(matches!(
+        catalog.issues(),
+        [LibraryIssue::ManifestEntryRejected { path, entry, reason }]
+            if path == &root.join(MANIFEST_FILE)
+                && entry == "Brass/Horn.sfz"
+                && reason == "articulation \"sustain\": key 128 is not between 0 and 127"
+    ));
+    let preset = |id: &str| {
+        catalog
+            .presets()
+            .iter()
+            .find(|p| p.id.as_str() == id)
+            .unwrap_or_else(|| panic!("{id}"))
+    };
+    let violin = preset("lib/Strings/Violin");
+    assert_eq!(violin.display_name, "Violin Section");
+    assert_eq!(
+        violin.family,
+        FamilyClaim::Declared(InstrumentFamily::Strings)
+    );
+    assert_eq!(violin.articulations, ["sustain", "pizzicato"]);
+    assert_eq!(violin.license.as_deref(), Some("CC0 1.0"));
+    let horn = preset("lib/Brass/Horn");
+    assert_eq!(horn.display_name, "Horn");
+    assert_eq!(horn.family, FamilyClaim::Inferred(InstrumentFamily::Brass));
+    assert_eq!(horn.articulations, Vec::<String>::new());
+    // An entry's own licence is that recording's.
+    assert_eq!(preset("lib/Organ").license.as_deref(), Some("CC BY 4.0"));
+    assert!(catalog.libraries()[0].has_manifest);
+}
+
+#[test]
+fn a_manifest_of_a_newer_version_is_invalid_and_the_library_is_scanned() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path().join("lib");
+    patch(&root.join("Cello.sfz"));
+    manifest(
+        &root,
+        &json!({"version": 3, "id": "lib-3", "instruments": []}),
+    );
+    let catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
+    assert_eq!(preset_ids(&catalog), ["lib/Cello"]);
+    assert!(!catalog.libraries()[0].has_manifest);
+    assert!(matches!(
+        catalog.issues(),
+        [LibraryIssue::ManifestInvalid { path, reason }]
+            if path == &root.join(MANIFEST_FILE)
+                && reason == "manifest version 3 is not supported (this build reads versions 1 to 2)"
+    ));
+}
+
+#[test]
 fn bad_roots_and_manifests_are_reported_and_do_not_stop_the_rest() {
     let dir = tempfile::tempdir().expect("tempdir");
     let good = dir.path().join("good");
@@ -726,6 +812,25 @@ fn a_declared_id_wins_over_a_profile_and_a_manifest_without_one_does_not() {
         Some("CC0 1.0"),
         "the manifest's own claims stay"
     );
+}
+
+#[test]
+fn a_manifest_that_declares_a_shipped_id_is_that_library() {
+    // The library's own manifest names it VSCO 2 CE, so the shipped profile applies below it:
+    // the name the manifest leaves out is the profile's.
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path().join("My Copy");
+    library(&root, &["Tuba-KS.sfz"]);
+    manifest(&root, &json!({"version": 2, "id": "vsco2ce"}));
+    let catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
+    let library = &catalog.libraries()[0];
+    assert_eq!(library.id.as_str(), "vsco2ce");
+    assert_eq!(library.name, "VSCO 2 Community Edition");
+    assert_eq!(preset_ids(&catalog), ["vsco2ce/Tuba-KS"]);
+    // `null` clears the profile's name, so the library is shown by its ID.
+    manifest(&root, &json!({"version": 2, "id": "vsco2ce", "name": null}));
+    let catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
+    assert_eq!(catalog.libraries()[0].name, "vsco2ce");
 }
 
 #[test]

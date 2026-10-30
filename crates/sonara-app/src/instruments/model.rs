@@ -138,7 +138,8 @@ impl Availability {
 pub struct InstrumentPreset {
     /// The stable ID.
     pub id: InstrumentId,
-    /// The name to show: the manifest's, else the patch's file name.
+    /// The name to show: the manifest's, else that of the shipped profile that applies to the
+    /// library, else the patch's file name.
     pub display_name: String,
     /// The family and where that claim comes from.
     pub family: FamilyClaim,
@@ -147,10 +148,12 @@ pub struct InstrumentPreset {
     /// The patch file on this machine. SFZ presets have no bank or program: the patch is the
     /// preset.
     pub patch_path: PathBuf,
-    /// Articulations a manifest declares for the patch. **Empty means not verified**, not "none":
-    /// an articulation that is not listed is never presented as supported.
+    /// Articulations the library's manifest declares for the patch: the names of a version 1
+    /// manifest, the articulation IDs of a version 2 one. **Empty means not verified**, not
+    /// "none": an articulation that is not listed is never presented as supported.
     pub articulations: Vec<String>,
-    /// The licence note of the preset's library; `None` means **unknown**.
+    /// The licence the library's manifest declares for this recording, else for the library;
+    /// `None` means **unknown**.
     pub license: Option<String>,
     /// Whether the preset can be played now.
     pub availability: Availability,
@@ -161,8 +164,8 @@ pub struct InstrumentPreset {
 pub struct Library {
     /// The library's ID.
     pub id: LibraryId,
-    /// The name to show: the manifest's, else that of the shipped profile that gave the ID,
-    /// else the ID.
+    /// The name to show: the manifest's, else that of the shipped profile that applies to the
+    /// library, else the ID.
     pub name: String,
     /// The library directory.
     pub root: PathBuf,
@@ -194,11 +197,12 @@ pub enum LibraryIssue {
         /// Why.
         reason: String,
     },
-    /// A manifest entry was ignored.
+    /// A manifest entry was ignored; the rest of the manifest is used.
     ManifestEntryRejected {
         /// The manifest file.
         path: PathBuf,
-        /// The entry's `path` as written.
+        /// The entry's `path` as written, `@<set>` for a multi-patch set, or `#<n>`, its
+        /// position in the list counted from 1, when it names neither.
         entry: String,
         /// Why.
         reason: String,

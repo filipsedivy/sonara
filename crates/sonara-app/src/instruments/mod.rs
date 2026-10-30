@@ -17,12 +17,17 @@
 //! **Discovery** ([`InstrumentCatalog::discover`]) takes the library directories of the
 //! `sample_libraries` setting ([`crate::samples`]) and merges three sources:
 //!
-//! - a **manifest** (`sonara-library.json`, see [`MANIFEST_FILE`]) that a library may carry: it
-//!   declares the library's name and licence and, per patch, the display name, family and
-//!   articulations. Declared metadata is trusted and marked as such;
-//! - the **identity** of a library profile Sonara ships (VSCO 2 CE, VCSL): a library whose
-//!   manifest declares no `id` and that holds every file the profile names to detect it takes
-//!   the profile's `id` and name, so its preset IDs do not change when its folder is renamed;
+//! - a **manifest** (`sonara-library.json`, see [`MANIFEST_FILE`]) that a library may carry, of
+//!   version 1 or 2: it declares the library's name and licence and, per patch, the display
+//!   name, family and articulations; version 2 adds the instrument a patch plays, solo or
+//!   section, how each articulation is reached ([`ArticulationEntry`]), what drives dynamics,
+//!   the legato kind, a verdict and more. Declared metadata is trusted and marked as such. Each
+//!   entry is validated on its own: a bad one is reported in the issues and the rest is kept;
+//! - a **library profile** Sonara ships (VSCO 2 CE, VCSL), in the shape of a version 2
+//!   manifest: a library whose manifest declares no `id` and that holds every file the profile
+//!   names to detect it takes the profile's `id` and name, so its preset IDs do not change when
+//!   its folder is renamed. The profile's claims lie below the manifest's, which overrides them
+//!   field by field, and are never shown as declared;
 //! - a **scan** for `.sfz` files, which finds every patch whether or not the manifest knows it.
 //!   A patch the manifest does not list gets a name from its file name and a family *inferred*
 //!   from the words of its path ([`InstrumentFamily`]), marked as inferred. Articulations are
@@ -46,7 +51,11 @@ mod verify;
 pub use discovery::InstrumentCatalog;
 pub use family::{FamilyClaim, InstrumentFamily};
 pub use installed::{InstalledInstruments, LibraryChoices, PresetChoice};
-pub use manifest::{MANIFEST_FILE, MANIFEST_VERSION};
+pub use manifest::{
+    ArticulationEntry, ArticulationList, ArticulationName, ArticulationVia, CheckMethod,
+    DynamicsMode, EnsembleClaim, EnsembleKind, KeymapEntry, LegatoMode, LibrarySource,
+    MANIFEST_FILE, MANIFEST_VERSION, ProfileCheck, Verdict, VerdictState,
+};
 pub use model::{
     Availability, CatalogError, InstrumentId, InstrumentPreset, InvalidLibraryId, Library,
     LibraryId, LibraryIssue,
