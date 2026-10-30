@@ -12,6 +12,7 @@ use super::manifest::{self, Manifest};
 use super::model::{
     Availability, CatalogError, InstrumentId, InstrumentPreset, Library, LibraryId, LibraryIssue,
 };
+use super::profiles::{self, Detected};
 use super::verify::PatchLoader;
 use crate::samples::{MAX_PATCHES, library_roots, scan_patches};
 use crate::settings::Settings;
@@ -147,9 +148,26 @@ impl InstrumentCatalog {
                 None
             }
         };
-        let id = manifest
-            .as_ref()
-            .and_then(|m| m.id.clone())
+        // The ID: the manifest's, else a shipped profile's whose detect files are all here,
+        // else the folder's slug. A profile ID survives renaming the folder.
+        let declared = manifest.as_ref().and_then(|m| m.id.clone());
+        let profile = if declared.is_some() {
+            None
+        } else {
+            match profiles::detect(root, profiles::shipped()) {
+                Detected::None => None,
+                Detected::One(profile) => Some(profile),
+                Detected::Ambiguous(ids) => {
+                    self.issues.push(LibraryIssue::ProfileAmbiguous {
+                        path: root.to_owned(),
+                        profiles: ids,
+                    });
+                    None
+                }
+            }
+        };
+        let id = declared
+            .or_else(|| profile.map(|profile| profile.id.clone()))
             .unwrap_or_else(|| {
                 LibraryId::from_directory_name(
                     &root
@@ -168,6 +186,7 @@ impl InstrumentCatalog {
         let name = manifest
             .as_ref()
             .and_then(|m| m.name.clone())
+            .or_else(|| profile.map(|profile| profile.name.clone()))
             .unwrap_or_else(|| id.to_string());
         self.libraries.push(Library {
             id: id.clone(),
@@ -247,7 +266,7 @@ impl InstrumentCatalog {
 }
 
 /// `path` below `root` as a `/`-separated string; `None` when it is not below it or not UTF-8.
-fn relative_to(root: &Path, path: &Path) -> Option<String> {
+pub(super) fn relative_to(root: &Path, path: &Path) -> Option<String> {
     let parts: Option<Vec<&str>> = path
         .strip_prefix(root)
         .ok()?

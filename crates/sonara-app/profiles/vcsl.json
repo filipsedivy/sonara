@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "id": "vcsl",
+  "name": "Versilian Community Sample Library",
+  "source": { "url": "https://github.com/sgossner/VCSL", "revision": "tag v1.2.2-RC" },
+  "detect": [
+    "Aerophones/Reed Aerophones/Tenor Saxophone - Keyswitch.sfz",
+    "Idiophones/Struck Idiophones/Triangles.sfz",
+    "Membranophones/Struck Membranophones/Timpani 1 - Keyswitch.sfz"
+  ]
+}

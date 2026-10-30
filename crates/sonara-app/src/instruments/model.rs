@@ -9,7 +9,9 @@ use serde::Serialize;
 use super::family::FamilyClaim;
 
 /// The identifier of a sample library: a lower-case slug, `[a-z0-9][a-z0-9_-]*`, at most 64
-/// characters. It is the library's `id` in its manifest, or a slug of its directory name.
+/// characters. It is the library's `id` in its manifest; else the `id` of the library profile
+/// Sonara ships for it, when the library holds that profile's detect files; else a slug of its
+/// directory name.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize)]
 #[serde(transparent)]
 pub struct LibraryId(String);
@@ -159,7 +161,8 @@ pub struct InstrumentPreset {
 pub struct Library {
     /// The library's ID.
     pub id: LibraryId,
-    /// The name to show: the manifest's, else the directory's.
+    /// The name to show: the manifest's, else that of the shipped profile that gave the ID,
+    /// else the ID.
     pub name: String,
     /// The library directory.
     pub root: PathBuf,
@@ -199,6 +202,14 @@ pub enum LibraryIssue {
         entry: String,
         /// Why.
         reason: String,
+    },
+    /// More than one of Sonara's library profiles matches a library without a declared ID, so
+    /// none applies and the library's ID is the slug of its directory name.
+    ProfileAmbiguous {
+        /// The library directory.
+        path: PathBuf,
+        /// The IDs of the matching profiles.
+        profiles: Vec<LibraryId>,
     },
     /// Two libraries have the same ID; the second one is skipped.
     DuplicateLibrary {

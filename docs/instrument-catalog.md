@@ -29,8 +29,8 @@ still found and gets an inferred family and no articulations. A manifest entry w
 becomes `missing`; one that names a file in an `includes` folder is listed like any other entry.
 
 Nothing fails the discovery. Missing or non-directory roots, an unreadable or invalid manifest,
-a rejected manifest entry, a duplicate library ID and a truncated scan are returned in
-`issues()`; the rest of the catalog is still built. Symbolic links are never followed, and a
+a rejected manifest entry, a library that two of Sonara's profiles match, a duplicate library ID
+and a truncated scan are returned in `issues()`; the rest of the catalog is still built. Symbolic links are never followed, and a
 manifest path that leaves the library (`..`, absolute, through a link) is rejected or marked
 `invalid`.
 
@@ -58,9 +58,26 @@ Optional, in the library's root directory, at most 1 MiB:
 }
 ```
 
-Only `version` (1) is required. `id` is a slug (`a-z`, `0-9`, `-`, `_`, at most 64); without it the
-directory name is slugged. `path` uses `/` and is relative to the library. Write only what you
-verified: the catalog trusts a manifest.
+Only `version` (1) is required. `id` is a slug (`a-z`, `0-9`, `-`, `_`, at most 64); without it
+the library takes the ID of a library Sonara recognizes (below), or else its directory name,
+slugged. `path` uses `/` and is relative to the library. Write only what you verified: the
+catalog trusts a manifest.
+
+## Libraries Sonara recognizes
+
+Sonara carries the identity of two free libraries, so that their preset IDs are the same on every
+machine and survive renaming the folder, with or without a manifest:
+
+| Library | ID | Recognized by these files below its root |
+|---|---|---|
+| VSCO 2 Community Edition (branch `SFZ`) | `vsco2ce` | `ViolinEns-KS.sfz`, `Tuba-KS.sfz`, `GM-StylePerc.sfz` |
+| Versilian Community Sample Library (tag `v1.2.2-RC`) | `vcsl` | `Aerophones/Reed Aerophones/Tenor Saxophone - Keyswitch.sfz`, `Idiophones/Struck Idiophones/Triangles.sfz`, `Membranophones/Struck Membranophones/Timpani 1 - Keyswitch.sfz` |
+
+A library whose manifest declares no `id`, or that has no manifest, and that holds all of one
+row's files as regular files takes that row's ID and name. A manifest `id` always wins. This
+gives the identity only: the licence and articulations still come only from a manifest. A folder
+that holds the files of both libraries takes neither ID and is reported in `issues()`; two copies
+of one library both take its ID, so the second is skipped as a duplicate.
 
 ## Licence and installation notes
 

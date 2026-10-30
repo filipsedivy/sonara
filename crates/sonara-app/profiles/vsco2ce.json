@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "id": "vsco2ce",
+  "name": "VSCO 2 Community Edition",
+  "source": { "url": "https://github.com/sgossner/VSCO-2-CE", "revision": "branch SFZ" },
+  "detect": ["ViolinEns-KS.sfz", "Tuba-KS.sfz", "GM-StylePerc.sfz"]
+}

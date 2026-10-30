@@ -153,7 +153,9 @@ fn validate_entry(entry: &RawEntry) -> Result<Option<InstrumentFamily>, String> 
         .transpose()
 }
 
-fn validate_relative_path(path: &str) -> Result<(), String> {
+/// Checks a patch path below a library root: relative, `/`-separated, without empty, `.` or `..`
+/// parts, naming an `.sfz` file. The reason, in words for the user, when it is not.
+pub(super) fn validate_relative_path(path: &str) -> Result<(), String> {
     if path.contains('\\') || path.contains('\0') {
         return Err("the path must use '/' separators".to_owned());
     }

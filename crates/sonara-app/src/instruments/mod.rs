@@ -8,11 +8,14 @@
 //! plugin registry, the agent tools or the `.sonara` format (CTR-01).
 //!
 //! **Discovery** ([`InstrumentCatalog::discover`]) takes the library directories of the
-//! `sample_libraries` setting ([`crate::samples`]) and merges two sources:
+//! `sample_libraries` setting ([`crate::samples`]) and merges three sources:
 //!
 //! - a **manifest** (`sonara-library.json`, see [`MANIFEST_FILE`]) that a library may carry: it
 //!   declares the library's name and licence and, per patch, the display name, family and
 //!   articulations. Declared metadata is trusted and marked as such;
+//! - the **identity** of a library profile Sonara ships (VSCO 2 CE, VCSL): a library whose
+//!   manifest declares no `id` and that holds every file the profile names to detect it takes
+//!   the profile's `id` and name, so its preset IDs do not change when its folder is renamed;
 //! - a **scan** for `.sfz` files, which finds every patch whether or not the manifest knows it.
 //!   A patch the manifest does not list gets a name from its file name and a family *inferred*
 //!   from the words of its path ([`InstrumentFamily`]), marked as inferred. Articulations are
@@ -29,6 +32,7 @@ mod discovery;
 mod family;
 mod manifest;
 mod model;
+mod profiles;
 mod verify;
 
 pub use discovery::InstrumentCatalog;

@@ -8,8 +8,8 @@ use std::path::{Path, PathBuf};
 
 use serde_json::json;
 use sonara_app::instruments::{
-    Availability, CatalogError, FamilyClaim, InstrumentCatalog, InstrumentFamily, LibraryIssue,
-    MANIFEST_FILE, MediaPatchLoader, PatchLoadError, PatchLoader,
+    Availability, CatalogError, FamilyClaim, InstrumentCatalog, InstrumentFamily, LibraryId,
+    LibraryIssue, MANIFEST_FILE, MediaPatchLoader, PatchLoadError, PatchLoader,
 };
 use sonara_app::settings::Settings;
 
@@ -601,4 +601,161 @@ fn the_media_loader_survives_hostile_patches() {
             "{id}: {verdict:?}"
         );
     }
+}
+
+/// The files that identify a VSCO 2 CE checkout (branch `SFZ`), as Sonara's profile lists them.
+const VSCO_DETECT: [&str; 3] = ["ViolinEns-KS.sfz", "Tuba-KS.sfz", "GM-StylePerc.sfz"];
+/// The files that identify a VCSL checkout (tag `v1.2.2-RC`).
+const VCSL_DETECT: [&str; 3] = [
+    "Aerophones/Reed Aerophones/Tenor Saxophone - Keyswitch.sfz",
+    "Idiophones/Struck Idiophones/Triangles.sfz",
+    "Membranophones/Struck Membranophones/Timpani 1 - Keyswitch.sfz",
+];
+
+/// A library at `root` holding `files`.
+fn library(root: &Path, files: &[&str]) {
+    for file in files {
+        patch(&root.join(file));
+    }
+}
+
+#[test]
+fn renaming_a_library_without_manifest_changes_its_ids() {
+    // Pins the behaviour for a library Sonara has no profile of: its ID is its folder's slug.
+    let dir = tempfile::tempdir().expect("tempdir");
+    let before = dir.path().join("My Strings");
+    library(&before, &["Violin.sfz"]);
+    assert_eq!(
+        preset_ids(&InstrumentCatalog::discover(std::slice::from_ref(&before))),
+        ["my-strings/Violin"]
+    );
+    let after = dir.path().join("Strings 2");
+    fs::rename(&before, &after).expect("rename");
+    assert_eq!(
+        preset_ids(&InstrumentCatalog::discover(&[after])),
+        ["strings-2/Violin"]
+    );
+}
+
+#[test]
+fn a_detected_library_keeps_its_profile_id() {
+    // A VSCO 2 CE checkout without a manifest takes the shipped profile's ID and name, so its
+    // preset IDs survive renaming the folder; without the profile it would be `vsco-2-ce`.
+    let dir = tempfile::tempdir().expect("tempdir");
+    let before = dir.path().join("VSCO-2-CE");
+    library(&before, &VSCO_DETECT);
+    library(&before, &["FHornSus.sfz"]);
+    let catalog = InstrumentCatalog::discover(std::slice::from_ref(&before));
+    let ids = [
+        "vsco2ce/FHornSus",
+        "vsco2ce/GM-StylePerc",
+        "vsco2ce/Tuba-KS",
+        "vsco2ce/ViolinEns-KS",
+    ];
+    assert_eq!(preset_ids(&catalog), ids);
+    let library = &catalog.libraries()[0];
+    assert_eq!(library.id.as_str(), "vsco2ce");
+    assert_eq!(library.name, "VSCO 2 Community Edition");
+    assert!(!library.has_manifest);
+    assert!(catalog.issues().is_empty(), "{:?}", catalog.issues());
+    // The profile gives the identity only: the presets claim no licence or articulations.
+    let horn = &catalog.presets()[0];
+    assert_eq!(horn.license, None);
+    assert_eq!(horn.articulations, Vec::<String>::new());
+    assert!(!matches!(horn.family, FamilyClaim::Declared(_)));
+
+    let after = dir.path().join("Samples/vsco");
+    fs::create_dir_all(after.parent().expect("a parent")).expect("mkdir");
+    fs::rename(&before, &after).expect("rename");
+    assert_eq!(preset_ids(&InstrumentCatalog::discover(&[after])), ids);
+}
+
+#[test]
+fn a_detected_vcsl_checkout_is_vcsl() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path().join("VCSL-1.2.2-RC");
+    library(&root, &VCSL_DETECT);
+    let catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
+    assert_eq!(catalog.libraries()[0].id.as_str(), "vcsl");
+    assert_eq!(
+        catalog.libraries()[0].name,
+        "Versilian Community Sample Library"
+    );
+    assert!(preset_ids(&catalog).contains(&"vcsl/Idiophones/Struck Idiophones/Triangles"));
+}
+
+#[test]
+fn a_profile_needs_every_detect_file() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path().join("VSCO-2-CE");
+    library(&root, &VSCO_DETECT[..2]);
+    let catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
+    assert_eq!(catalog.libraries()[0].id.as_str(), "vsco-2-ce");
+    assert_eq!(catalog.libraries()[0].name, "vsco-2-ce");
+}
+
+#[test]
+fn a_declared_id_wins_over_a_profile_and_a_manifest_without_one_does_not() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let declared = dir.path().join("declared");
+    library(&declared, &VSCO_DETECT);
+    manifest(
+        &declared,
+        &json!({"version": 1, "id": "my-vsco", "name": "Mine"}),
+    );
+    let undeclared = dir.path().join("undeclared");
+    library(&undeclared, &VCSL_DETECT);
+    manifest(&undeclared, &json!({"version": 1, "license": "CC0 1.0"}));
+    let catalog = InstrumentCatalog::discover(&[declared, undeclared]);
+    let libraries: Vec<(&str, &str)> = catalog
+        .libraries()
+        .iter()
+        .map(|l| (l.id.as_str(), l.name.as_str()))
+        .collect();
+    assert_eq!(
+        libraries,
+        [
+            ("my-vsco", "Mine"),
+            ("vcsl", "Versilian Community Sample Library")
+        ]
+    );
+    assert_eq!(
+        catalog.libraries()[1].license.as_deref(),
+        Some("CC0 1.0"),
+        "the manifest's own claims stay"
+    );
+}
+
+#[test]
+fn a_folder_that_two_profiles_match_keeps_its_folder_id() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path().join("Both Libraries");
+    library(&root, &VSCO_DETECT);
+    library(&root, &VCSL_DETECT);
+    let catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
+    assert_eq!(catalog.libraries()[0].id.as_str(), "both-libraries");
+    let profiles: Vec<&str> = match catalog.issues() {
+        [LibraryIssue::ProfileAmbiguous { path, profiles }] if *path == root => {
+            profiles.iter().map(LibraryId::as_str).collect()
+        }
+        other => panic!("{other:?}"),
+    };
+    assert_eq!(profiles, ["vsco2ce", "vcsl"]);
+}
+
+#[test]
+fn two_detected_copies_of_one_library_keep_the_first() {
+    // Both checkouts take the profile's ID, so the second is a duplicate, as two libraries
+    // whose manifests declare one ID are.
+    let dir = tempfile::tempdir().expect("tempdir");
+    let (a, b) = (dir.path().join("VSCO-2-CE"), dir.path().join("vsco copy"));
+    library(&a, &VSCO_DETECT);
+    library(&b, &VSCO_DETECT);
+    let catalog = InstrumentCatalog::discover(&[a.clone(), b.clone()]);
+    assert_eq!(catalog.libraries().len(), 1);
+    assert_eq!(catalog.libraries()[0].root, a);
+    assert!(matches!(
+        catalog.issues(),
+        [LibraryIssue::DuplicateLibrary { id, path }] if id.as_str() == "vsco2ce" && *path == b
+    ));
 }
