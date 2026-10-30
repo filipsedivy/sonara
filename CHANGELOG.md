@@ -24,7 +24,11 @@ break the API. The project format is versioned independently, see
   rule of the system prompt on both providers, not a hard block. No live Codex turn has been
   recorded yet. No tool, schema, project format or CLI contract changes. See
   [docs/ai-chat.md](docs/ai-chat.md) and
-  [ADR 0011](docs/decisions/0011-ai-chat-provider-bridge.md).
+  [ADR 0011](docs/decisions/0011-ai-chat-provider-bridge.md). The window keeps Enter that commits
+  an input-method composition from sending a message, announces the outcome of each task to
+  screen readers, and quitting Sonara now ends a running agent before the process exits. A Codex
+  chat run still receives the global instructions of the user's Codex configuration
+  (`AGENTS.md`); its user skills are left out.
 
 ### Changed
 

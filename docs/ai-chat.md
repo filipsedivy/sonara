@@ -167,8 +167,8 @@ Detection runs again when a task starts, so every Claude Code task pays the `--h
 
 The header shows the word "Beta" (not only a colour) on a button; its explanation shows on hover,
 on keyboard focus and on a click, and Escape dismisses it. The badge belongs to the whole
-feature. The Codex adapter also sets `beta: true` in its provider status, but the provider picker
-does not show that flag: it shows the provider's name, version and availability.
+feature. The Codex adapter also sets `beta: true` in its provider status, and the provider picker
+shows a "Beta" tag (text) next to the name of such a provider, with its version and availability.
 
 ## The tool boundary
 
