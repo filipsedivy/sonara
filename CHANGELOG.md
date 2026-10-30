@@ -8,6 +8,8 @@ break the API. The project format is versioned independently, see
 
 ## [Unreleased]
 
+## [0.1.13] — 2026-10-30
+
 ### Added
 
 - **AI Chat (Beta, menu AI → AI Chat (Beta)…):** a chat window in which you talk to an agent that
