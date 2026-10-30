@@ -546,8 +546,9 @@ per place a rule finds: the rule, its level for the case, the parts and notes co
 it starts and ends, and the numbers in words. `check_rule` runs one rule. A note's dynamic is
 read from its velocity (`velocity_band`: 1–54 soft, 55–84 medium, 85–127 loud, an estimate), a
 muted note carries its mute as its articulation and a plucked note `pizzicato`; whether an
-instrument double-tongues comes from its articulations, so the clarinets, horns and trumpets do
-and the oboes, bassoons and trombones do not. A span the sources give in moderate time converts
+instrument double-tongues comes from its articulations, so the flutes, the B♭, A and bass
+clarinets, the horns and the trumpets do, and the oboes, bassoons, saxophones and trombones do
+not. A span the sources give in moderate time converts
 at the moderate tempo, and the time a piece leaves is measured at its own tempo. The other rules
 need a part's role, the harmony or a notated dynamic; the voicing helpers apply those while
 they write. Two derivations work out what a player sets: `harp_pedals` a pedal setting per

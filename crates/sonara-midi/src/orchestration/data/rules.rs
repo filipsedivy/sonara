@@ -1049,8 +1049,8 @@ const PLY_14: Rule = rule(
                 only possible on the flute among the wood-wind; Ch. I, brass remarks, p. 25: \
                 double tonguing among the brass";
             "which instruments multi-tongue comes from their articulations, which follow later \
-                sources: the flutes, the clarinets, the horns and the trumpets do; the speed and \
-                the count are estimates"
+                sources: the flutes, the B♭, A and bass clarinets, the horns and the trumpets do; \
+                the speed and the count are estimates"
         ),
     },
 );
