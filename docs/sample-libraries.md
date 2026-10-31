@@ -172,6 +172,9 @@ is left; a sample file that is there but cannot be decoded still fails it.
 
 A header may be glued to the opcode before or after it, as the SFZ format site's examples write
 it (`<region>key=36 sample=kick.wav`): an opcode's value ends where a header starts, as in sfizz.
+A `#define` value is the rest of its line, spaces included, so a define can name a folder with a
+space in it or stand for several opcodes (`#define $LAYER lovel=64 hivel=127`); ARIA and sfizz
+keep only its first word.
 
 A WAV sample can carry its own loop (a `smpl` chunk, which sample editors write). As in the SFZ
 format and sfizz, a region over such a sample loops between the file's points while it sounds,

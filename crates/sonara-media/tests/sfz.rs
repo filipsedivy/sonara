@@ -1495,8 +1495,8 @@ fn a_define_after_a_header_on_the_same_line_is_read() {
 
 #[test]
 fn a_define_takes_the_rest_of_its_line() {
-    // `hivel=2` belongs to the define, as the reference player sfizz reads a define's value to
-    // the end of its line; it never reaches the open `<group>`.
+    // `hivel=2` is part of the define's value, which runs to the end of its line; it never
+    // reaches the open `<group>`.
     let dir = library();
     let bank = load_patch(
         &dir,
@@ -1505,6 +1505,55 @@ fn a_define_takes_the_rest_of_its_line() {
     );
     let region = &bank.regions[0];
     assert_eq!((region.vel_lo, region.vel_hi), (1, 127));
+}
+
+#[test]
+fn a_define_keeps_every_word_of_its_value() {
+    // A define's value used to be its first word, so a folder with a space in its name lost
+    // the rest of the name (`Samples/My`), and a define could not stand for several opcodes.
+    // Spaces around the value and a comment after it are not part of it.
+    let dir = library();
+    let folder = dir.path().join("Samples/My Piano");
+    fs::create_dir(&folder).expect("mkdir");
+    wav(&folder.join("c4.wav"), 44_100, 441, 9_000);
+    fs::write(
+        folder.join("part.sfz"),
+        "<region> sample=$DIR/c4.wav key=62\n",
+    )
+    .expect("write");
+    let bank = load_patch(
+        &dir,
+        "#define $DIR   Samples/My Piano   // the folder\n\
+         #define $LAYER lovel=64 hivel=100\n\
+         <group> $LAYER\n\
+         <region> sample=$DIR/c4.wav key=60\n\
+         #include \"$DIR/part.sfz\"\n",
+    );
+    assert_eq!(bank.regions.len(), 2, "both regions find the folder");
+    for (region, key) in bank.regions.iter().zip([60, 62]) {
+        assert!((f64::from(bank.samples[region.sample].data[0]) - 9_000.0 / 32_768.0).abs() < 1e-6);
+        assert_eq!(region.key_lo, key);
+        assert_eq!(
+            (region.vel_lo, region.vel_hi),
+            (64, 100),
+            "$LAYER gives both opcodes"
+        );
+    }
+}
+
+#[test]
+fn defines_expand_the_same_way_on_every_load() {
+    // `$AB` names `$CD`, and both names are three characters long. They were sorted by length
+    // only, so the map's order decided whether `$CD` was substituted after `$AB` (key 60) or
+    // before it (the key `$CD`, which names no key). Names of one length now go in name order.
+    // Each load builds a new map with a new order.
+    let dir = library();
+    let text = "#define $CD 60\n#define $AB $CD\n<region> sample=Samples/soft1.wav key=$AB\n";
+    for _ in 0..32 {
+        let bank = load_patch(&dir, text);
+        let region = &bank.regions[0];
+        assert_eq!((region.key_lo, region.key_hi), (60, 60));
+    }
 }
 
 #[test]

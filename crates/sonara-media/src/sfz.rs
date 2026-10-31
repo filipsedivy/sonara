@@ -61,11 +61,17 @@
 //! start of a line, as the reference player sfizz reads them: Salamander's
 //! `<group> #include "vel.txt" lovel=1 hivel=26 #include "region.txt"` reads both files in
 //! place. An `#include` takes one path, quoted (spaces allowed) or a single word, and the line
-//! goes on after it. A `#define` takes the rest of its line, and its value is the first word
-//! after the name. The `$defines` known so far are substituted in an include path too
-//! (Sonatina's `#include "$DIR/$DYN.txt"`), and every include, however deeply nested, resolves
-//! against the main patch file's directory, not the including file's, as the SFZ format and
-//! sfizz read it: a fragment in `Data/` names its siblings `Data/…` (the MTG saxophones).
+//! goes on after it. A `#define` takes the rest of its line, and its value is all of it after
+//! the name, trimmed, spaces included, so a define may name a folder with a space in it or stand
+//! for several opcodes (`#define $LAYER lovel=64 hivel=127`). The format leaves this open: by
+//! the reference player sfizz's own account Cakewalk's players read a value this way, while
+//! ARIA and sfizz keep its first word and read the rest as opcodes. The `$defines` known so far
+//! are substituted in an include path too (Sonatina's `#include "$DIR/$DYN.txt"`), and every
+//! include, however deeply nested, resolves against the main patch file's directory, not the
+//! including file's, as the SFZ format and sfizz read it: a fragment in `Data/` names its
+//! siblings `Data/…` (the MTG saxophones). The names are substituted one after another, the
+//! longest first and names of the same length in name order, so `$KEY2` is not read as `$KEY`
+//! followed by `2`, and a value that names another define expands the same way on every load.
 //!
 //! **Header scopes.** A region inherits the opcodes of the open `<control>`, `<global>`,
 //! `<master>` and `<group>` headers. `<global>`, `<master>` and `<group>` each start their own
@@ -502,9 +508,11 @@ fn read_preprocessed(
                     rest = after;
                 }
                 Some(Directive::Define(definition)) => {
-                    let mut words = definition.split_whitespace();
-                    if let (Some(name), Some(value)) = (words.next(), words.next()) {
-                        defines.insert(name.to_owned(), value.to_owned());
+                    if let Some((name, value)) = definition.trim().split_once(char::is_whitespace) {
+                        let value = value.trim();
+                        if !value.is_empty() {
+                            defines.insert(name.to_owned(), value.to_owned());
+                        }
                     }
                     break;
                 }
@@ -583,12 +591,13 @@ fn push_expanded(out: &mut String, text: &str, defines: &HashMap<String, String>
 }
 
 /// `text` with every `$define` in `defines` replaced by its value; a name that is not defined
-/// stays as written.
+/// stays as written. The names are replaced one after another, the longest first, so `$KEY2` is
+/// not eaten by `$KEY`, and names of the same length in name order, so that the result does not
+/// depend on the map's order when a value names another define.
 fn expand_defines(text: &str, defines: &HashMap<String, String>) -> String {
     let mut text = text.to_owned();
-    // Longest names first, so `$KEY2` is not eaten by `$KEY`.
     let mut names: Vec<_> = defines.iter().collect();
-    names.sort_by_key(|(name, _)| std::cmp::Reverse(name.len()));
+    names.sort_by(|(a, _), (b, _)| b.len().cmp(&a.len()).then_with(|| a.cmp(b)));
     for (name, value) in names {
         if text.contains(name.as_str()) {
             text = text.replace(name.as_str(), value);
