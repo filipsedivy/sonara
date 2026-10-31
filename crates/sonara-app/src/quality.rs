@@ -8,9 +8,13 @@
 //! - [`check_project`] reads a project and never changes it.
 //! - [`audio_findings`] gives the analyzer's issues ([`sonara_dsp::analysis::AnalysisReport`])
 //!   the same shape, with an explanation each.
+//! - [`orchestration::check_orchestration`] checks the tracks that play a part against the
+//!   orchestration rules, with the rule's id as the code.
 //!
 //! It is a library API: no agent tool, CLI command or schema field is added (CTR-01), and no UI
 //! is involved.
+
+pub mod orchestration;
 
 use serde_json::{Value, json};
 use sonara_core::midi::MidiNote;
