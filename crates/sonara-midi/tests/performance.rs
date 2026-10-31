@@ -420,7 +420,7 @@ proptest! {
     /// Whatever order the line lists its notes in, the performance holds the same notes in the
     /// project's note order (TST-09), humanized alike: the deviations are drawn in note order.
     /// The line's sound lists no articulation, so no stroke is merged and every note comes back
-    /// with its id, pitch, channel and articulation.
+    /// with its id, pitch and channel, carrying the articulation it asks for.
     #[test]
     fn perform_ignores_the_order_of_the_input(
         (notes, shuffled) in notes_strategy().prop_flat_map(|notes| {
@@ -434,16 +434,20 @@ proptest! {
             .expect("valid caps");
         prop_assert_eq!(&in_order, &reordered);
         prop_assert_eq!(in_order.notes.len(), notes.len());
-        // Every note comes back with the fields humanization and the dynamics leave alone.
+        // Every note comes back with the fields humanization and the dynamics leave alone, and
+        // with the articulation it asks for written onto it.
         for note in &notes {
-            let kept = in_order.notes.iter().any(|performed| {
-                performed == &MidiNote {
-                    start: performed.start,
-                    length: performed.length,
-                    velocity: performed.velocity,
-                    ..note.clone()
-                }
-            });
+            let kept = in_order.notes.iter().zip(&in_order.articulations).any(
+                |(performed, articulation)| {
+                    performed == &MidiNote {
+                        start: performed.start,
+                        length: performed.length,
+                        velocity: performed.velocity,
+                        articulation: articulation.asked.map(|asked| asked.id().to_owned()),
+                        ..note.clone()
+                    }
+                },
+            );
             prop_assert!(kept, "{} is missing", note.id);
         }
         let ordered = in_order.notes.windows(2).all(|pair| {

@@ -15,6 +15,12 @@
 //! index of the passage's articulation ([`articulation_choice`]), placed ahead of the passage's
 //! first note-on because the engine reads a device parameter once per block.
 //!
+//! A performance ([`perform`]) also writes onto each note the articulation it asks for, in the
+//! note's own `articulation` field, which a sound that switches per note plays over the
+//! passage's. [`articulate()`] reads the notes and leaves that field as it was written.
+//!
+//! [`perform`]: super::perform
+//!
 //! The rules read times in seconds at the piece's tempo, so they hold at any tempo. Their
 //! thresholds are starting values chosen to separate the long and the short patches of sample
 //! libraries, to be confirmed by listening. Everything is a pure function of the line and the
@@ -224,7 +230,9 @@ pub struct Passage {
 pub struct Articulated {
     /// The notes to write, in the project's note order (start, then pitch, then id): the line's
     /// notes with every field kept, except that the strokes of a tremolo or a roll the sound
-    /// plays are merged into their first stroke, which lasts until the last stroke ends.
+    /// plays are merged into their first stroke, which lasts until the last stroke ends. Their
+    /// `articulation` fields stay as written; a performance writes into them what each note asks
+    /// for ([`Performed::notes`](super::Performed::notes)).
     pub notes: Vec<MidiNote>,
     /// The articulation of each note, in the order of [`Articulated::notes`].
     pub articulations: Vec<NoteArticulation>,
@@ -243,6 +251,26 @@ impl Articulated {
 /// The points of an `articulation` lane: each passage's switch, in order.
 pub(super) fn lane(passages: &[Passage]) -> Vec<AutomationPoint> {
     passages.iter().map(|passage| passage.switch).collect()
+}
+
+/// Writes onto each note of `notes` the articulation it asks for ([`NoteArticulation::asked`]),
+/// where `articulations` holds the articulation of each note in the same order: a note whose own
+/// field names one keeps the field as it is, a note the rules give one carries that one's id, and
+/// a note that asks for the ordinary sound carries none.
+///
+/// What the note asks for is written, not what the part's sound plays for it
+/// ([`NoteArticulation::plays`]): the field stays with the note when its clip is copied or the
+/// part's sound changes, so it records the request and leaves the stand-in to the sound that
+/// plays it.
+pub(super) fn write_asked(notes: &mut [MidiNote], articulations: &[NoteArticulation]) {
+    for (note, articulation) in notes.iter_mut().zip(articulations) {
+        if let Source::Inferred(_) = articulation.source {
+            // A vocabulary id is lower-case `snake_case` (checked at compile time) and passes the
+            // project model's check of a note's articulation (`MidiNote::with_articulation`, held
+            // by tests), so the field is set directly, with no fallible call (QG-03).
+            note.articulation = articulation.asked.map(|asked| asked.id().to_owned());
+        }
+    }
 }
 
 /// The articulation of `line` within `score`; see the module documentation.

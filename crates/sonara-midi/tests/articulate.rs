@@ -13,7 +13,7 @@ use sonara_midi::orchestration::fallback::Emulation;
 use sonara_midi::orchestration::{Articulation, instrument};
 use sonara_midi::performance::{
     Articulated, DynamicsRequest, HumanizeRequest, NoteArticulation, PartId, PartLine,
-    PerformanceError, Role, Rule, ScoreContext, Seed, SoundCaps, Source, articulate,
+    PerformanceError, Performed, Role, Rule, ScoreContext, Seed, SoundCaps, Source, articulate,
     articulation_choice, perform,
 };
 
@@ -726,17 +726,19 @@ fn perform_carries_the_articulation_of_its_line() {
     );
     let performed = perform(&line, &score(), Seed::new(3)).expect("a valid line");
     let articulated = articulate(&line, &score()).expect("a valid line");
-    // The performance keeps the articulated notes; only their velocities follow the dynamics.
-    let unvoiced = |notes: &[MidiNote]| -> Vec<MidiNote> {
-        notes
-            .iter()
-            .map(|note| MidiNote {
-                velocity: 1,
-                ..note.clone()
-            })
-            .collect()
-    };
+    // The performance keeps the articulated notes: their velocities follow the dynamics, and each
+    // carries the articulation it asks for, where the articulated notes keep the field unwritten.
     assert_eq!(unvoiced(&performed.notes), unvoiced(&articulated.notes));
+    assert!(articulated.notes.iter().all(|n| n.articulation.is_none()));
+    assert_eq!(
+        fields(&performed),
+        [
+            ("n_1", Some("legato")),
+            ("n_2", Some("legato")),
+            ("n_3", Some("spiccato")),
+            ("n_4", Some("spiccato")),
+        ]
+    );
     assert_eq!(performed.articulations, articulated.articulations);
     assert_eq!(performed.passages, articulated.passages);
     assert_eq!(performed.articulation_lane(), articulated.lane());
@@ -748,6 +750,276 @@ fn perform_carries_the_articulation_of_its_line() {
             .collect::<Vec<_>>(),
         [Some(Legato), Some(Spiccato)]
     );
+}
+
+/// The notes with every velocity at 1 and no articulation: what the dynamics and the written
+/// articulations leave of them.
+fn unvoiced(notes: &[MidiNote]) -> Vec<MidiNote> {
+    notes
+        .iter()
+        .map(|note| MidiNote {
+            velocity: 1,
+            articulation: None,
+            ..note.clone()
+        })
+        .collect()
+}
+
+/// The id and the `articulation` field of each note of a performance, in note order.
+fn fields(performed: &Performed) -> Vec<(&str, Option<&str>)> {
+    performed
+        .notes
+        .iter()
+        .map(|note| (note.id.as_str(), note.articulation.as_deref()))
+        .collect()
+}
+
+/// A line without humanization, performed at 60 BPM.
+fn performed(line: &PartLine) -> Performed {
+    perform(line, &score(), Seed::default()).expect("a valid line")
+}
+
+#[test]
+fn perform_writes_the_articulation_the_notes_imply_onto_each_note() {
+    // At 60 BPM, by the rule table: a legato pair, a very short note, a separated note, a long
+    // note that ends its phrase, and after a rest a short note.
+    let notes = || {
+        vec![
+            note("n_1", 60, 0.0, 1.05),
+            note("n_2", 62, 1.0, 1.0),
+            note("n_3", 64, 3.0, 0.1),
+            note("n_4", 65, 4.0, 0.6),
+            note("n_5", 67, 5.0, 2.0),
+            note("n_6", 69, 8.0, 0.2),
+        ]
+    };
+    let violin = [
+        ("n_1", Some("legato")),
+        ("n_2", Some("legato")),
+        ("n_3", Some("spiccato")),
+        ("n_4", Some("portato")),
+        ("n_5", None),
+        ("n_6", Some("staccato")),
+    ];
+    let flute = [
+        ("n_1", Some("legato")),
+        ("n_2", Some("legato")),
+        ("n_3", Some("staccatissimo")),
+        ("n_4", Some("tenuto")),
+        ("n_5", None),
+        ("n_6", Some("staccato")),
+    ];
+    // A sound that lists nothing plays every note with the ordinary sound, and the notes still
+    // carry what they ask for: the field is the request, not the sound's stand-in.
+    for (instrument_id, expected) in [("violin", violin), ("flute", flute)] {
+        let result = performed(&line(instrument_id, notes(), &[]));
+        assert_eq!(fields(&result), expected, "{instrument_id}");
+        assert!(result.articulations.iter().all(|a| a.plays.is_none()));
+        let lane: Vec<(f64, f64)> = result
+            .articulation_lane()
+            .iter()
+            .map(|point| (point.beat, point.value))
+            .collect();
+        assert_eq!(lane, [(0.0, f64::from(articulation_choice(None)))]);
+    }
+
+    // A sound that lists them plays them, by passage: the same fields, and the passages still
+    // switch the sampler's `articulation` lane by choice index. The last short note is too short
+    // for a passage of its own, so it plays in the ordinary passage before it, while its field
+    // still asks for staccato.
+    let result = performed(&line(
+        "violin",
+        notes(),
+        &[Legato, Spiccato, Portato, Staccato],
+    ));
+    assert_eq!(fields(&result), violin);
+    let passages: Vec<Option<Articulation>> =
+        result.passages.iter().map(|p| p.articulation).collect();
+    assert_eq!(
+        passages,
+        [Some(Legato), Some(Spiccato), Some(Portato), None]
+    );
+    let values: Vec<f64> = result.articulation_lane().iter().map(|p| p.value).collect();
+    let choices: Vec<f64> = passages
+        .iter()
+        .map(|&articulation| f64::from(articulation_choice(articulation)))
+        .collect();
+    assert_eq!(values, choices);
+    assert_eq!(values, [3.0, 5.0, 47.0, 1.0]);
+    let last = result.articulations.last().expect("six notes");
+    assert_eq!((last.plays, last.overruled), (Some(Staccato), true));
+
+    // An accent becomes marcato only when the sound has it; otherwise the note keeps the shape
+    // its length gives it.
+    let accented = || {
+        vec![
+            note("n_a", 60, 0.0, 1.0),
+            loud("n_b", 62, 1.0, 0.3, 100),
+            note("n_c", 64, 2.0, 1.0),
+        ]
+    };
+    let with = performed(&line("trumpet_c", accented(), &[Marcato]));
+    let without = performed(&line("trumpet_c", accented(), &[]));
+    assert_eq!(
+        fields(&with),
+        [("n_a", None), ("n_b", Some("marcato")), ("n_c", None)]
+    );
+    assert_eq!(
+        fields(&without),
+        [("n_a", None), ("n_b", Some("staccato")), ("n_c", None)]
+    );
+}
+
+#[test]
+fn perform_keeps_the_articulation_a_note_names() {
+    let notes = vec![
+        // The rules would join this note legato into the next one.
+        written("n_1", 60, 0.0, 1.05, "tenuto"),
+        note("n_2", 62, 1.0, 1.0),
+        // The rules would call this note spiccato, and the sound has no pizzicato.
+        written("n_3", 64, 3.0, 0.1, "pizzicato"),
+        written("n_4", 65, 4.0, 2.0, "con_sordino"),
+    ];
+    let result = performed(&line("violin", notes, &[Legato]));
+    assert_eq!(
+        fields(&result),
+        [
+            ("n_1", Some("tenuto")),
+            ("n_2", Some("legato")),
+            ("n_3", Some("pizzicato")),
+            ("n_4", Some("con_sordino")),
+        ]
+    );
+    let sources: Vec<Source> = result.articulations.iter().map(|a| a.source).collect();
+    assert_eq!(
+        sources,
+        [
+            Source::Written,
+            Source::Inferred(Rule::Joined),
+            Source::Written,
+            Source::Written,
+        ]
+    );
+    // What the sound plays for them stays a report: the field keeps the request. The tenuto's
+    // substitution row stands the legato patch in for it; nothing stands in for the pizzicato or
+    // the mute.
+    let plays: Vec<Option<Articulation>> = result.articulations.iter().map(|a| a.plays).collect();
+    assert_eq!(plays, [Some(Legato), Some(Legato), None, None]);
+}
+
+#[test]
+fn a_note_carries_its_own_articulation_where_its_passage_plays_another() {
+    // A lone short note inside a legato phrase plays in the legato passage, and asks for
+    // staccato itself.
+    let notes = vec![
+        note("n_1", 60, 0.0, 1.05),
+        note("n_2", 62, 1.0, 1.0),
+        note("n_3", 64, 2.5, 0.2),
+        note("n_4", 65, 3.0, 1.05),
+        note("n_5", 67, 4.0, 1.0),
+    ];
+    let result = performed(&line("violin", notes, &[Legato, Staccato]));
+    assert_eq!(
+        fields(&result),
+        [
+            ("n_1", Some("legato")),
+            ("n_2", Some("legato")),
+            ("n_3", Some("staccato")),
+            ("n_4", Some("legato")),
+            ("n_5", Some("legato")),
+        ]
+    );
+    let lane: Vec<(f64, f64)> = result
+        .articulation_lane()
+        .iter()
+        .map(|point| (point.beat, point.value))
+        .collect();
+    assert_eq!(lane, [(0.0, f64::from(articulation_choice(Some(Legato))))]);
+    let overruled: Vec<&str> = result
+        .articulations
+        .iter()
+        .filter(|a| a.overruled)
+        .map(|a| a.note.as_str())
+        .collect();
+    assert_eq!(overruled, ["n_3"]);
+
+    // The lower note of a chord whose top note joins legato asks for portato.
+    let notes = vec![
+        note("n_low", 55, 0.0, 0.6),
+        note("n_top", 67, 0.0, 1.05),
+        note("n_next", 69, 1.0, 2.0),
+    ];
+    let result = performed(&line("violin", notes, &[Legato, Portato]));
+    assert_eq!(
+        fields(&result),
+        [
+            ("n_low", Some("portato")),
+            ("n_top", Some("legato")),
+            ("n_next", Some("legato")),
+        ]
+    );
+    let passages: Vec<Option<Articulation>> =
+        result.passages.iter().map(|p| p.articulation).collect();
+    assert_eq!(passages, [Some(Legato)]);
+}
+
+#[test]
+fn the_notes_of_a_performance_read_as_written_when_performed_again() {
+    let notes = vec![
+        note("n_1", 60, 0.0, 1.05),
+        note("n_2", 62, 1.0, 1.0),
+        note("n_3", 64, 2.5, 0.2),
+        note("n_4", 65, 3.0, 1.05),
+        note("n_5", 67, 4.0, 1.0),
+    ];
+    let listed = [Legato, Staccato];
+    let first = performed(&line("violin", notes, &listed));
+    let passages = |result: &Performed| -> Vec<Option<Articulation>> {
+        result.passages.iter().map(|p| p.articulation).collect()
+    };
+    assert_eq!(passages(&first), [Some(Legato)]);
+    let again = performed(&line("violin", first.notes.clone(), &listed));
+    // Every note now names its articulation, so the same ids come back, and the short note,
+    // no longer implied, keeps a passage of its own.
+    assert_eq!(fields(&again), fields(&first));
+    assert!(
+        again
+            .articulations
+            .iter()
+            .all(|a| a.source == Source::Written)
+    );
+    assert_eq!(
+        passages(&again),
+        [Some(Legato), Some(Staccato), Some(Legato)]
+    );
+    assert!(again.articulations.iter().all(|a| !a.overruled));
+}
+
+#[test]
+fn merged_strokes_carry_their_tremolo_or_roll() {
+    for (instrument_id, stroke, id) in [
+        ("violin", Tremolo, "tremolo"),
+        ("timpani", Roll, "roll"),
+        ("glockenspiel", Tremolo, "tremolo"),
+    ] {
+        let result = performed(&line(instrument_id, strokes(8, 72, 0.0625), &[stroke]));
+        assert_eq!(fields(&result), [("s_0", Some(id))], "{instrument_id}");
+        let held = result.notes.first().expect("one note");
+        assert_eq!((held.start, held.length), (0.0, 0.5), "{instrument_id}");
+    }
+    // Without the tremolo the strokes stay as written, each a very short note.
+    let result = performed(&line("violin", strokes(8, 72, 0.0625), &[Spiccato]));
+    assert_eq!(result.notes.len(), 8);
+    assert!(
+        result
+            .notes
+            .iter()
+            .all(|n| n.articulation.as_deref() == Some("spiccato"))
+    );
+    // A struck note plays its shape by its length, so it carries no articulation.
+    let notes = vec![note("n_a", 60, 0.0, 0.1), note("n_b", 62, 0.5, 2.0)];
+    let result = performed(&line("piano_concert_grand", notes, &[Staccato]));
+    assert_eq!(fields(&result), [("n_a", None), ("n_b", None)]);
 }
 
 /// The articulations a property line's sound may list.
@@ -936,5 +1208,56 @@ proptest! {
         let in_order = run(&line("violin", notes, &listed));
         let reordered = run(&line("violin", shuffled, &listed));
         prop_assert_eq!(in_order, reordered);
+    }
+
+    /// A performance writes onto each note the articulation it asks for: a note that names one
+    /// keeps it, every other note carries the id the notes imply or none, and the project model
+    /// accepts every id written. The passages and their switches stay those of the notes as
+    /// written (TST-07).
+    #[test]
+    fn perform_writes_what_each_note_asks_for_and_keeps_the_passages(
+        notes in notes_strategy("n"),
+        named in vec(proptest::option::weighted(0.3, 0..LISTABLE.len()), 20),
+        bpm in prop_oneof![Just(60.0), Just(90.0), Just(132.0)],
+        instrument_index in 0..INSTRUMENTS.len(),
+        listed in caps_strategy(),
+    ) {
+        let instrument_id = INSTRUMENTS.get(instrument_index).copied().unwrap_or("violin");
+        // `named` holds as many entries as the strategy's most notes.
+        let notes: Vec<MidiNote> = notes
+            .into_iter()
+            .zip(&named)
+            .map(|(note, name)| {
+                let id = name
+                    .and_then(|index| LISTABLE.get(index))
+                    .map(|articulation| articulation.id().to_owned());
+                note.with_articulation(id).expect("a vocabulary id")
+            })
+            .collect();
+        let score = score_at(bpm, 0.0);
+        let line = line(instrument_id, notes.clone(), &listed);
+        let performed = perform(&line, &score, Seed::default()).expect("a valid line");
+        let articulated = articulate(&line, &score).expect("a valid line");
+        prop_assert_eq!(&performed.passages, &articulated.passages);
+        prop_assert_eq!(performed.articulation_lane(), articulated.lane());
+        prop_assert_eq!(&performed.articulations, &articulated.articulations);
+        prop_assert_eq!(unvoiced(&performed.notes), unvoiced(&articulated.notes));
+        prop_assert_eq!(performed.notes.len(), performed.articulations.len());
+        for (note, articulation) in performed.notes.iter().zip(&performed.articulations) {
+            prop_assert_eq!(&note.id, &articulation.note);
+            prop_assert_eq!(
+                note.articulation.as_deref(),
+                articulation.asked.map(Articulation::id)
+            );
+            let given = notes
+                .iter()
+                .find(|given| given.id == note.id)
+                .and_then(|given| given.articulation.as_deref());
+            match articulation.source {
+                Source::Written => prop_assert_eq!(note.articulation.as_deref(), given),
+                Source::Inferred(_) => prop_assert_eq!(given, None),
+            }
+            prop_assert!(note.clone().with_articulation(note.articulation.clone()).is_ok());
+        }
     }
 }

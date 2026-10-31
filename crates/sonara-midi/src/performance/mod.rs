@@ -3,11 +3,12 @@
 //! [`perform`] takes one part's line ([`PartLine`]): its notes at sounding pitch, the instrument
 //! that plays it, the part's role in the texture, what the chosen sound can do ([`SoundCaps`])
 //! and what the request asks of its dynamics ([`DynamicsRequest`]). It returns the notes to write,
-//! the articulation of each note and the passages of the sampler's `articulation` lane that play
-//! them ([`Performed`], [`articulate()`]), the velocity each note is written at with the points
-//! of the sampler's `dynamics` lane that shape its phrases ([`dynamics`]), and how each note was
-//! humanized: moved by the small deviations of its family's players and earlier by the attack of
-//! the sound that plays it ([`humanize`]).
+//! each carrying the articulation it asks for in its own `articulation` field, the articulation of
+//! each note with what the sound plays for it, and the passages of the sampler's `articulation`
+//! lane that play them ([`Performed`], [`articulate()`]), the velocity each note is written at
+//! with the points of the sampler's `dynamics` lane that shape its phrases ([`dynamics`]), and how
+//! each note was humanized: moved by the small deviations of its family's players and earlier by
+//! the attack of the sound that plays it ([`humanize`]).
 //!
 //! The lines come from [`voicing`], whose helpers give the parts of an ensemble their notes for a
 //! melody or a run of chords, family by family, applying the orchestration rules as they write.
@@ -398,7 +399,10 @@ pub struct Performed {
     pub part: PartId,
     /// The notes to write, in the project's note order: by start, then pitch, then id, each
     /// written at the velocity its dynamics give it and at the start, length and velocity its
-    /// humanization moved it to.
+    /// humanization moved it to, and carrying the articulation it asks for
+    /// ([`NoteArticulation::asked`]) in its `articulation` field: a note that named one keeps
+    /// it, every other note carries the id the notes imply, and a note that asks for the ordinary
+    /// sound carries none.
     pub notes: Vec<MidiNote>,
     /// The articulation of each note, in the order of [`Performed::notes`].
     pub articulations: Vec<NoteArticulation>,
@@ -445,11 +449,19 @@ impl Performed {
 ///    the velocity layer its note-on plays.
 /// 4. The switches of the `articulation` lane are placed ahead of the note-ons as played, so an
 ///    advanced note-on still starts with its passage's articulation.
+/// 5. Each note is written with the articulation it asks for in its own `articulation` field
+///    ([`NoteArticulation::asked`]), so a sound that switches per note can play a note whose
+///    passage holds another articulation (a lone short note in a legato phrase, the lower note of
+///    a chord) as it asks. A note that names an articulation keeps it as written; the ordinary
+///    sound is no id. The passages and their switches stay the part's articulation from note to
+///    note, for a sound that holds one articulation per track.
 ///
 /// The notes come back in the project's note order (start, then pitch, then id; the order of
-/// [`sort_notes`](sonara_core::midi::sort_notes)) with their ids, pitches, channels and
-/// articulations kept, and [`Performed::articulations`], the levels of
-/// [`Performed::dynamics`] and [`Performed::humanized`] follow the same order.
+/// [`sort_notes`](sonara_core::midi::sort_notes)) with their ids, pitches and channels kept, and
+/// [`Performed::articulations`], the levels of [`Performed::dynamics`] and
+/// [`Performed::humanized`] follow the same order. Their written articulations make the notes of a
+/// performance read as written when they are performed again, so a lone note that joined its
+/// neighbour's passage then keeps a passage of its own.
 ///
 /// # Errors
 /// - [`PerformanceError::InvalidCaps`] when `line.caps` fails [`SoundCaps::check`]; its source is
@@ -477,8 +489,9 @@ pub fn perform(
     humanize::apply(&timed, &line.caps, &scales, &mut notes, &mut dynamics.notes);
     let passages = articulate::switches(&drafts, &timed.onsets, score);
     let humanize::Timed { notes: timings, .. } = timed;
-    let (notes, articulations, levels, timings) =
+    let (mut notes, articulations, levels, timings) =
         humanize::in_note_order(notes, articulations, dynamics.notes, timings);
+    articulate::write_asked(&mut notes, &articulations);
     dynamics.notes = levels;
     Ok(Performed {
         part: line.part.clone(),
