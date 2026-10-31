@@ -84,6 +84,7 @@
 
 mod caps;
 mod chain;
+mod compile;
 mod coverage;
 mod discovery;
 mod facts;

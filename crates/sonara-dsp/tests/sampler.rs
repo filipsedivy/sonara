@@ -13,8 +13,9 @@ use assert_no_alloc::{AllocDisabler, assert_no_alloc};
 use sonara_core::model::device::{ParamValue, Params};
 use sonara_core::plugins::{SamplerChoices, sampler_descriptor};
 use sonara_dsp::bank::{
-    CcCrossfade, CcDepth, CcRange, Controllers, Crossfade, CrossfadeCurve, Keyswitches, LoopMode,
-    OffMode, Region, Sample, SampleBank, Trigger,
+    ArticulationTarget, CcCrossfade, CcDepth, CcRange, Controllers, Crossfade, CrossfadeCurve,
+    DynamicsDrive, Keyswitches, LegatoSpec, LoopMode, OffMode, Region, Sample, SampleBank,
+    SamplerMapping, SamplerSetup, Selector, Trigger,
 };
 use sonara_dsp::processor::{
     BlockContext, DeviceState, EventKind, InstrumentEvent, ProcessSpec, Processor,
@@ -58,8 +59,14 @@ fn sampler(bank: SampleBank) -> Box<dyn Processor> {
     sampler_with(bank, &Params::new())
 }
 
-/// A prepared sampler playing `bank` with `params` over the defaults.
+/// A prepared sampler playing `bank` with `params` over the defaults, with the mapping of a
+/// preset about which nothing is claimed.
 fn sampler_with(bank: SampleBank, params: &Params) -> Box<dyn Processor> {
+    sampler_set_up(SamplerSetup::new(Arc::new(bank)), params)
+}
+
+/// A prepared sampler playing the instrument `setup` with `params` over the defaults.
+fn sampler_set_up(setup: SamplerSetup, params: &Params) -> Box<dyn Processor> {
     let mut processor = create("sonara.sampler").expect("the sampler exists");
     processor.prepare(ProcessSpec {
         sample_rate: RATE,
@@ -67,7 +74,7 @@ fn sampler_with(bank: SampleBank, params: &Params) -> Box<dyn Processor> {
         channels: 2,
     });
     processor.set_state(&DeviceState {
-        sample_bank: Some(Arc::new(bank)),
+        sampler: Some(Arc::new(setup)),
         ..DeviceState::default()
     });
     let slots = param_slots(&descriptor(), params).expect("valid parameters");
@@ -2153,4 +2160,145 @@ fn the_amplitude_opcode_scales_the_region() {
         close(level(&out), 0.5 * amplitude / 100.0 * gain(100));
         assert_eq!(voices(&*processor), voices_started, "{amplitude} %");
     }
+}
+
+/// The target that makes keyswitch `key` active.
+fn switch(key: u8) -> ArticulationTarget {
+    ArticulationTarget {
+        selector: Some(Selector::Keyswitch(key)),
+        legato: false,
+    }
+}
+
+#[test]
+fn a_mapping_looks_up_each_choice_without_allocating() {
+    let mapping = SamplerMapping::new(
+        vec![None, Some(switch(24)), None, Some(switch(25))],
+        DynamicsDrive::Velocity,
+        None,
+        0,
+    );
+    // The render thread reads the targets (RT-02).
+    let looked_up = assert_no_alloc(|| {
+        [
+            mapping.target(SamplerMapping::AUTO),
+            mapping.target(SamplerMapping::ORDINARIO),
+            mapping.default_target(),
+            mapping.target(2),
+            mapping.target(3),
+            mapping.target(4),
+            mapping.target(u16::MAX),
+        ]
+    });
+    assert_eq!(
+        looked_up,
+        [
+            None,
+            Some(switch(24)),
+            Some(switch(24)),
+            None,
+            Some(switch(25)),
+            None,
+            None
+        ],
+        "auto, ordinario, the default, a choice without a target, a target, beyond the table"
+    );
+}
+
+#[test]
+fn auto_never_has_a_target() {
+    let mapping = SamplerMapping::new(vec![Some(switch(24))], DynamicsDrive::Velocity, None, 0);
+    assert_eq!(mapping.target(SamplerMapping::AUTO), None);
+    assert_eq!(mapping, SamplerMapping::default());
+}
+
+#[test]
+fn mappings_that_select_the_same_compare_equal() {
+    // Trailing choices without a target do not make two mappings differ (TYP-10), so a preset
+    // that maps nothing compiles to the default mapping however many choices there are.
+    let mapping = |targets| SamplerMapping::new(targets, DynamicsDrive::Velocity, None, 0);
+    assert_eq!(
+        mapping(vec![None, Some(switch(24))]),
+        mapping(vec![None, Some(switch(24)), None, None])
+    );
+    assert_eq!(mapping(vec![None; 79]), SamplerMapping::default());
+    assert_ne!(
+        mapping(vec![None, Some(switch(24))]),
+        SamplerMapping::default()
+    );
+    assert_ne!(
+        SamplerMapping::new(Vec::new(), DynamicsDrive::Fixed(100), None, 0),
+        SamplerMapping::default()
+    );
+    assert_ne!(
+        SamplerMapping::new(Vec::new(), DynamicsDrive::Velocity, None, -12),
+        SamplerMapping::default()
+    );
+    assert_eq!(
+        SamplerSetup::new(Arc::new(SampleBank::default())).mapping,
+        Arc::new(SamplerMapping::default()),
+        "a bank alone plays with the mapping of a preset about which nothing is claimed"
+    );
+}
+
+/// Plays a phrase on `processor`: the default articulation, a switch to the second, a note in
+/// it, then all notes off and a note in the default again.
+fn phrase(processor: &mut dyn Processor) -> Vec<[f64; 2]> {
+    let blocks: [&[InstrumentEvent]; 6] = [
+        &[event(EventKind::NoteOn, 60, 100)],
+        &[event(EventKind::NoteOff, 60, 0)],
+        &[event(EventKind::NoteOn, 25, 127)],
+        &[event(EventKind::NoteOn, 62, 64)],
+        &[event(EventKind::AllNotesOff, 0, 0)],
+        &[event(EventKind::NoteOn, 64, 127)],
+    ];
+    blocks
+        .iter()
+        .flat_map(|events| run(processor, events))
+        .collect()
+}
+
+#[test]
+fn articulation_auto_plays_the_patch_as_it_is_whatever_the_targets() {
+    // `auto`, the default, has no target: the patch's own default switch and the keyswitch
+    // notes decide, so the articulation targets and the legato of a preset change nothing. The
+    // oracle is the same patch with the mapping of a preset about which nothing is claimed.
+    // The key offset and a dynamics drive other than velocity apply to every choice, so they
+    // stay at the defaults here.
+    let oracle = phrase(&mut *sampler(switched_bank(Some(24))));
+    let mapping = SamplerMapping::new(
+        vec![
+            None,
+            Some(switch(25)),
+            Some(switch(24)),
+            Some(ArticulationTarget {
+                selector: Some(Selector::Velocity { lo: 1, hi: 40 }),
+                legato: false,
+            }),
+            Some(ArticulationTarget {
+                selector: Some(Selector::Controller {
+                    number: 32,
+                    value: 3,
+                }),
+                legato: true,
+            }),
+        ],
+        DynamicsDrive::Velocity,
+        Some(LegatoSpec {
+            crossfade_ms: 90,
+            start_offset_ms: 60,
+            gap_ms: 0,
+        }),
+        0,
+    );
+    let setup = SamplerSetup {
+        bank: Arc::new(switched_bank(Some(24))),
+        mapping: Arc::new(mapping),
+    };
+    let mapped = phrase(&mut *sampler_set_up(setup, &Params::new()));
+    assert!(
+        oracle.iter().any(|frame| frame[0] != 0.0),
+        "the phrase sounds"
+    );
+    assert_eq!(mapped, oracle);
 }

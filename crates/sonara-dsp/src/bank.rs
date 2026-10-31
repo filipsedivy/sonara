@@ -5,7 +5,16 @@
 //! regions that map notes, velocities and sequence positions onto them. It is the engine-neutral
 //! result of reading an SFZ patch (`sonara-media` does the reading, off the real-time thread)
 //! and the input of the sampler processor. A bank is immutable once built and shared through
-//! an [`Arc`](std::sync::Arc), so the render thread never frees or grows it (RT-02, RT-09).
+//! an [`Arc`], so the render thread never frees or grows it (RT-02, RT-09).
+//!
+//! A sampler device receives its bank inside a [`SamplerSetup`], beside the [`SamplerMapping`]
+//! of the preset it plays: what each choice of its `articulation` parameter selects in the
+//! patch, what its `dynamics` parameter drives, how the preset plays legato and how far incoming
+//! notes are moved. The application compiles the mapping from what the library's manifest or
+//! Sonara's profile says about the preset, off the real-time thread; the render thread only
+//! looks a choice up ([`SamplerMapping::target`]).
+
+use std::sync::Arc;
 
 use crate::filters::db_to_amp;
 
@@ -591,4 +600,160 @@ pub struct SampleBank {
     /// not play (SFZ `*sine`). Each note counts the regions it left out. Empty when every region
     /// was loaded.
     pub load_notes: Vec<String>,
+}
+
+/// How a choice of the sampler's `articulation` parameter is reached in the patch, as the
+/// library's manifest or Sonara's profile maps the articulation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Selector {
+    /// The keyswitch with this key, 0 to 127, is the active switch for new notes.
+    Keyswitch(u8),
+    /// Notes play in the velocity zone `lo` to `hi`, with 1 ≤ `lo` ≤ `hi` ≤ 127.
+    Velocity {
+        /// The lowest velocity of the zone.
+        lo: u8,
+        /// The highest velocity of the zone.
+        hi: u8,
+    },
+    /// The controller `number` is set to `value`, both 0 to 127.
+    Controller {
+        /// The controller number.
+        number: u8,
+        /// The value that selects the articulation.
+        value: u8,
+    },
+}
+
+/// What one choice of the sampler's `articulation` parameter plays in a preset.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ArticulationTarget {
+    /// How the articulation is reached in the patch; `None` when the patch as it is plays it,
+    /// with nothing to select (a patch that is the articulation).
+    pub selector: Option<Selector>,
+    /// Whether successive notes are joined by the sampler's overlap legato
+    /// ([`SamplerMapping::legato`]).
+    pub legato: bool,
+}
+
+/// What the sampler's `dynamics` parameter drives in a preset.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum DynamicsDrive {
+    /// The note velocity picks the layer and the gain (the default).
+    #[default]
+    Velocity,
+    /// The controller with this number, 0 to 127, crossfades the layers.
+    Controller(u8),
+    /// Every note plays at this velocity, 1 to 127, whatever its own.
+    Fixed(u8),
+}
+
+/// How the sampler's overlap legato joins two successive notes of a preset whose library says
+/// it plays legato that way: the old note fades out while the new one fades in, past the
+/// attack of its sample.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LegatoSpec {
+    /// The crossfade between the two notes, in milliseconds.
+    pub crossfade_ms: u16,
+    /// Where the new note's sample starts, in milliseconds into it.
+    pub start_offset_ms: u16,
+    /// The longest silence between two notes that still joins them, in milliseconds.
+    pub gap_ms: u16,
+}
+
+/// How the sampler plays one preset beyond its patch, compiled by the application off the
+/// real-time thread from what the library's manifest or Sonara's profile says about the
+/// preset, and read on the render thread without allocating (RT-02).
+///
+/// - **Articulation targets**, one per choice of the sampler's `articulation` parameter, in the
+///   order of its choices: [`Self::AUTO`], [`Self::ORDINARIO`], then the articulation
+///   vocabulary. A choice the preset does not map holds the target of the nearest articulation
+///   it plays, chosen when the mapping was compiled, so the render thread never searches.
+///   `auto` never has a target: the patch's own default and the keyswitch notes of clips decide.
+/// - **Dynamics**, **legato** and the **key offset** the preset is played with.
+///
+/// The default is the mapping of a preset about which nothing is claimed: no target for any
+/// choice, velocity dynamics, no overlap legato and no key offset, so the patch plays as it is.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct SamplerMapping {
+    /// The target of each choice, by index; shorter than the choices when the last ones have
+    /// none, and empty when no choice has one, so that equal mappings compare equal.
+    targets: Box<[Option<ArticulationTarget>]>,
+    /// What the `dynamics` parameter drives.
+    pub dynamics: DynamicsDrive,
+    /// The overlap legato of a preset that plays legato by overlapping its notes; `None` for a
+    /// preset that does not, or whose own regions play legato.
+    pub legato: Option<LegatoSpec>,
+    /// Semitones added to incoming notes, for a patch keyed away from the pitch it sounds.
+    pub key_offset: i8,
+}
+
+impl SamplerMapping {
+    /// The choice `auto` of the `articulation` parameter, its first: no target.
+    pub const AUTO: u16 = 0;
+    /// The choice `ordinario` of the `articulation` parameter, its second: the preset's
+    /// ordinary sound, its default articulation.
+    pub const ORDINARIO: u16 = 1;
+
+    /// Setup: a mapping with the target of each choice of the `articulation` parameter, by
+    /// index, and the dynamics, legato and key offset of the preset. A target given for
+    /// [`Self::AUTO`] is dropped, because `auto` has none.
+    #[must_use]
+    pub fn new(
+        mut targets: Vec<Option<ArticulationTarget>>,
+        dynamics: DynamicsDrive,
+        legato: Option<LegatoSpec>,
+        key_offset: i8,
+    ) -> Self {
+        if let Some(auto) = targets.get_mut(usize::from(Self::AUTO)) {
+            *auto = None;
+        }
+        let used = targets
+            .iter()
+            .rposition(Option::is_some)
+            .map_or(0, |last| last.saturating_add(1));
+        targets.truncate(used);
+        Self {
+            targets: targets.into_boxed_slice(),
+            dynamics,
+            legato,
+            key_offset,
+        }
+    }
+
+    /// Real-time: the target of the `articulation` choice with index `choice`; `None` for
+    /// `auto`, for a choice the preset has no target for, and for an index beyond the choices.
+    #[must_use]
+    pub fn target(&self, choice: u16) -> Option<ArticulationTarget> {
+        self.targets.get(usize::from(choice)).copied().flatten()
+    }
+
+    /// Real-time: the target of [`Self::ORDINARIO`], the preset's ordinary sound.
+    #[must_use]
+    pub fn default_target(&self) -> Option<ArticulationTarget> {
+        self.target(Self::ORDINARIO)
+    }
+}
+
+/// A sampler's instrument as the render graph hands it to the processor through
+/// [`DeviceState::sampler`](crate::processor::DeviceState::sampler): the loaded patch and the
+/// mapping of the preset it plays. Built off the real-time thread, shared read-only, and
+/// dropped with the processor off it (RT-09).
+#[derive(Debug, Clone, PartialEq)]
+pub struct SamplerSetup {
+    /// The decoded samples and regions of the patch.
+    pub bank: Arc<SampleBank>,
+    /// How the preset is played beyond its patch.
+    pub mapping: Arc<SamplerMapping>,
+}
+
+impl SamplerSetup {
+    /// Setup: `bank` played as it is, with the mapping of a preset about which nothing is
+    /// claimed ([`SamplerMapping::default`]).
+    #[must_use]
+    pub fn new(bank: Arc<SampleBank>) -> Self {
+        Self {
+            bank,
+            mapping: Arc::default(),
+        }
+    }
 }

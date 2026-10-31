@@ -2,14 +2,16 @@
 //! is an uncompressed file at the project rate, the decode cache otherwise, and silence for
 //! media that is missing or cannot be read. It also loads the sampler's instruments: an
 //! application-supplied [`InstrumentResolver`] turns the stored value of a sampler's
-//! `instrument` parameter into the patch file to load.
+//! `instrument` parameter into the patch file to load and the mapping the application compiled
+//! for the preset, and [`MediaProvider::load_instrument`] hands both to the sampler as one
+//! [`SamplerSetup`].
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 use sonara_core::model::media::MediaAsset;
-use sonara_dsp::bank::SampleBank;
+use sonara_dsp::bank::{SampleBank, SamplerMapping, SamplerSetup};
 
 use crate::cache::{CacheInfo, decode_to_cache};
 use crate::error::MediaError;
@@ -23,13 +25,18 @@ pub type SharedReader = Arc<Mutex<MediaReader>>;
 /// Maps an asset to its file on disk.
 pub type Resolver = Box<dyn Fn(&MediaAsset) -> PathBuf + Send + Sync>;
 
-/// What a sampler's `instrument` value plays: the installed preset it names and its patch file.
+/// What a sampler's `instrument` value plays: the installed preset it names, its patch file and
+/// how the preset is played beyond the patch.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InstrumentSource {
     /// The preset's ID, as the sampler's `instrument` parameter offers it among its choices.
     pub id: String,
     /// The SFZ patch file of the preset.
     pub patch: PathBuf,
+    /// The articulation targets, dynamics, legato and key offset of the preset, compiled by the
+    /// application from what is claimed about it; the default for a preset about which nothing
+    /// is claimed.
+    pub mapping: Arc<SamplerMapping>,
 }
 
 /// Maps the stored value of a sampler's `instrument` parameter to what it plays: the value is a
@@ -59,6 +66,8 @@ pub struct MediaProvider {
     readers: Mutex<HashMap<Key, SharedReader>>,
     full: Mutex<HashMap<Key, Arc<FullAudio>>>,
     banks: Mutex<HashMap<PathBuf, Arc<SampleBank>>>,
+    /// The instruments handed out, by preset ID.
+    setups: Mutex<HashMap<String, Arc<SamplerSetup>>>,
 }
 
 impl std::fmt::Debug for MediaProvider {
@@ -116,6 +125,7 @@ impl MediaProvider {
             readers: Mutex::new(HashMap::new()),
             full: Mutex::new(HashMap::new()),
             banks: Mutex::new(HashMap::new()),
+            setups: Mutex::new(HashMap::new()),
         }
     }
 
@@ -133,8 +143,9 @@ impl MediaProvider {
     /// [`MediaProvider::with_instruments`]; `None` when it names nothing installed.
     ///
     /// Without a resolver the value is the patch path itself, as before preset IDs: its ID is
-    /// the value and its patch is the value read as a path. Whether the source is offered at all
-    /// is the caller's check against the plugin's choices.
+    /// the value, its patch is the value read as a path, and nothing is claimed about it
+    /// ([`SamplerMapping::default`]). Whether the source is offered at all is the caller's check
+    /// against the plugin's choices.
     #[must_use]
     pub fn resolve_instrument(&self, value: &str) -> Option<InstrumentSource> {
         match &self.instruments {
@@ -142,6 +153,7 @@ impl MediaProvider {
             None => Some(InstrumentSource {
                 id: value.to_owned(),
                 patch: PathBuf::from(value),
+                mapping: Arc::default(),
             }),
         }
     }
@@ -317,6 +329,37 @@ impl MediaProvider {
         Ok(bank)
     }
 
+    /// The instrument a sampler plays for `source`: its patch, loaded once and shared
+    /// ([`Self::load_sample_bank`]), with the mapping of its preset. Setup: it reads and decodes
+    /// files, so it runs off the real-time thread.
+    ///
+    /// The same setup is handed out again while the preset's patch and mapping stay the same,
+    /// so a live graph rebuild can tell an unchanged instrument by its pointer; a changed
+    /// mapping gives a new setup that shares the loaded patch.
+    ///
+    /// # Errors
+    ///
+    /// The errors of [`load_sfz`] for the patch.
+    pub fn load_instrument(
+        &self,
+        source: &InstrumentSource,
+    ) -> Result<Arc<SamplerSetup>, MediaError> {
+        let bank = self.load_sample_bank(&source.patch)?;
+        let mut setups = lock(&self.setups);
+        if let Some(setup) = setups.get(&source.id)
+            && Arc::ptr_eq(&setup.bank, &bank)
+            && setup.mapping == source.mapping
+        {
+            return Ok(Arc::clone(setup));
+        }
+        let setup = Arc::new(SamplerSetup {
+            bank,
+            mapping: Arc::clone(&source.mapping),
+        });
+        setups.insert(source.id.clone(), Arc::clone(&setup));
+        Ok(setup)
+    }
+
     /// Whether `asset` plays as silence at `sample_rate` because its media is missing or
     /// unreadable.
     pub fn is_missing(&self, asset: &MediaAsset, sample_rate: u32) -> bool {
@@ -328,6 +371,7 @@ impl MediaProvider {
         lock(&self.readers).clear();
         lock(&self.full).clear();
         lock(&self.banks).clear();
+        lock(&self.setups).clear();
     }
 
     /// Drops the readers and loaded copies of one asset, for example after relinking it.
@@ -340,8 +384,12 @@ impl MediaProvider {
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
+    use std::sync::Arc;
+
+    use sonara_dsp::bank::{ArticulationTarget, DynamicsDrive, SamplerMapping, Selector};
 
     use super::{InstrumentSource, MediaProvider, frames_at_rate};
+    use crate::error::MediaError;
 
     #[test]
     fn providers_can_be_shared_between_threads() {
@@ -360,6 +408,7 @@ mod tests {
             Some(InstrumentSource {
                 id: "/library/Violin.sfz".to_owned(),
                 patch: PathBuf::from("/library/Violin.sfz"),
+                mapping: Arc::default(),
             })
         );
     }
@@ -370,6 +419,7 @@ mod tests {
             let violin = || InstrumentSource {
                 id: "lib/Violin".to_owned(),
                 patch: PathBuf::from("/root/lib/Violin.sfz"),
+                mapping: Arc::default(),
             };
             match value {
                 "lib/Violin" | "/old/lib/Violin.sfz" => Some(violin()),
@@ -379,6 +429,7 @@ mod tests {
         let expected = Some(InstrumentSource {
             id: "lib/Violin".to_owned(),
             patch: PathBuf::from("/root/lib/Violin.sfz"),
+            mapping: Arc::default(),
         });
         assert_eq!(media.resolve_instrument("lib/Violin"), expected);
         assert_eq!(media.resolve_instrument("/old/lib/Violin.sfz"), expected);
@@ -388,6 +439,100 @@ mod tests {
             None,
             "a resolver does not fall back to reading the value as a path"
         );
+    }
+
+    /// A library with one patch, `tone.sfz`, of one silent region, which needs no sample file.
+    fn library() -> (tempfile::TempDir, PathBuf) {
+        let dir = tempfile::tempdir().expect("a tempdir");
+        let patch = dir.path().join("tone.sfz");
+        std::fs::write(&patch, "<region> sample=*silence key=60\n").expect("write the patch");
+        (dir, patch)
+    }
+
+    /// A mapping whose `ordinario` selects keyswitch `key`.
+    fn keyswitched(key: u8) -> Arc<SamplerMapping> {
+        let target = ArticulationTarget {
+            selector: Some(Selector::Keyswitch(key)),
+            legato: false,
+        };
+        Arc::new(SamplerMapping::new(
+            vec![None, Some(target)],
+            DynamicsDrive::Velocity,
+            None,
+            0,
+        ))
+    }
+
+    #[test]
+    fn an_instrument_is_its_patch_with_the_mapping_of_its_preset() {
+        let (_dir, patch) = library();
+        let media = provider();
+        let source = InstrumentSource {
+            id: "lib/tone".to_owned(),
+            patch: patch.clone(),
+            mapping: keyswitched(36),
+        };
+        let setup = media.load_instrument(&source).expect("the patch loads");
+        let bank = media.load_sample_bank(&patch).expect("cached");
+        assert!(Arc::ptr_eq(&setup.bank, &bank), "the patch is loaded once");
+        assert_eq!(setup.mapping, source.mapping);
+        assert_eq!(
+            setup.mapping.default_target(),
+            keyswitched(36).default_target()
+        );
+    }
+
+    #[test]
+    fn an_unchanged_instrument_is_handed_out_again() {
+        let (_dir, patch) = library();
+        let media = provider();
+        let source = InstrumentSource {
+            id: "lib/tone".to_owned(),
+            patch,
+            mapping: keyswitched(36),
+        };
+        let first = media.load_instrument(&source).expect("loads");
+        // An equal mapping compiled again is the same instrument.
+        let again = InstrumentSource {
+            mapping: keyswitched(36),
+            ..source.clone()
+        };
+        let second = media.load_instrument(&again).expect("loads");
+        assert!(Arc::ptr_eq(&first, &second));
+        // A changed mapping is a new instrument on the same loaded patch.
+        let changed = InstrumentSource {
+            mapping: keyswitched(37),
+            ..source.clone()
+        };
+        let third = media.load_instrument(&changed).expect("loads");
+        assert!(!Arc::ptr_eq(&first, &third));
+        assert!(Arc::ptr_eq(&first.bank, &third.bank));
+        assert_eq!(third.mapping, keyswitched(37));
+        // After closing, nothing is shared with what was handed out before.
+        media.close();
+        let reopened = media.load_instrument(&changed).expect("loads");
+        assert!(!Arc::ptr_eq(&third, &reopened));
+        assert_eq!(
+            *reopened, *third,
+            "the same patch and mapping, loaded again"
+        );
+    }
+
+    #[test]
+    fn an_instrument_whose_patch_cannot_be_read_is_an_error() {
+        let dir = tempfile::tempdir().expect("a tempdir");
+        let source = InstrumentSource {
+            id: "lib/gone".to_owned(),
+            patch: dir.path().join("gone.sfz"),
+            mapping: keyswitched(36),
+        };
+        assert!(matches!(
+            provider().load_instrument(&source),
+            Err(MediaError::Io {
+                operation: "read",
+                ..
+            })
+        ));
     }
 
     #[test]

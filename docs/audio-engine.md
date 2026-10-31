@@ -212,11 +212,18 @@ the last value of every controller per MIDI channel for the patch's controller g
 crossfades and level changes, which reach sounding voices with a linear ramp across each block; the
 render thread allocates nothing (checked with `assert_no_alloc` in `crates/sonara-dsp/tests/sampler.rs`). An SFZ patch is
 parsed and its samples decoded on the builder thread (`sonara-media::sfz`), cached in the
-`MediaProvider`, and handed to the processor through `DeviceState::sample_bank`. The device's
-`instrument` value, a preset ID or the patch path an older project stored, is turned into the
-patch file by the resolver the application gives the `MediaProvider`. Its `instrument_type`,
-`articulation` and `dynamics` values reach the processor as further parameter slots, which it does
-not read yet; a stored `instrument_type` or `articulation` that is not one of the choices plays as
+`MediaProvider`, and handed to the processor through `DeviceState::sampler`, a `SamplerSetup` that
+holds the loaded patch beside the preset's mapping (`sonara-dsp::bank::SamplerMapping`). The
+device's `instrument` value, a preset ID or the patch path an older project stored, is turned into
+the patch file and that mapping by the resolver the application gives the `MediaProvider`. The
+application compiles the mapping once per preset, off the real-time thread, from what the
+library's manifest or Sonara's profile claims: a target for every `articulation` choice (a key
+switch, a velocity zone or a controller value; for a choice the preset does not map, the nearest
+articulation it plays), what `dynamics` drives, the legato and the key offset. A preset about which
+nothing is claimed gets an empty mapping and plays its patch as it is. The same preset with the
+same mapping gets the same setup again on a graph rebuild. Its `instrument_type`, `articulation`
+and `dynamics` values reach the processor as further parameter slots, which it does not read
+yet; a stored `instrument_type` or `articulation` that is not one of the choices plays as
 `auto`, with a warning, instead of failing the graph build. A graph rebuild recreates sampler
 devices, so sounding notes restart. There are no measured load or memory
 numbers for it yet (HW-01: they are measured locally).

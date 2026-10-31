@@ -13,6 +13,7 @@
 use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use assert_no_alloc::{AllocDisabler, assert_no_alloc};
 use serde_json::{Value, json};
@@ -315,6 +316,7 @@ fn resolving(patch: &Path, old_path: &str) -> MediaProvider {
         (value == "lib/tone" || value == old_path).then(|| InstrumentSource {
             id: "lib/tone".to_owned(),
             patch: patch.clone(),
+            mapping: Arc::default(),
         })
     })
 }
@@ -390,6 +392,40 @@ fn a_resolved_preset_that_is_not_offered_is_not_installed() {
         ["instrument 'lib/tone' of 'Sonara Sampler' is not installed; it plays silence"]
     );
     assert_eq!(audio.data, render(&[], None).expect("renders").data);
+}
+
+#[test]
+fn a_preset_without_claims_plays_every_articulation_choice_as_the_patch_is() {
+    // A preset about which nothing is claimed resolves with the default mapping: no
+    // articulation target, velocity dynamics, no legato and no key offset. Every articulation
+    // choice then plays the patch as it is. The oracles: the render with `auto`, and the patch
+    // named by its path without a resolver, as before preset IDs.
+    let (_dir, sfz) = patch_dir();
+    let media = resolving(&sfz, "/elsewhere/tone.sfz");
+    let installed = ["lib/tone".to_owned()];
+    let as_is = render(&[path(&sfz)], None).expect("renders");
+    let auto = render_params(
+        &installed,
+        &json!({"instrument": "lib/tone", "articulation": "auto"}),
+        &media,
+    )
+    .expect("renders");
+    assert_eq!(auto.data, as_is.data);
+    assert!(peak(&auto) > 0.01, "the patch is audible");
+    for articulation in ["ordinario", "sustain", "staccato"] {
+        let audio = render_params(
+            &installed,
+            &json!({"instrument": "lib/tone", "articulation": articulation, "dynamics": 1.0}),
+            &media,
+        )
+        .expect("renders");
+        assert!(
+            audio.stats.warnings.is_empty(),
+            "{:?}",
+            audio.stats.warnings
+        );
+        assert_eq!(audio.data, auto.data, "{articulation}");
+    }
 }
 
 #[test]

@@ -92,7 +92,7 @@ use std::sync::Arc;
 
 use super::DEFAULT_SPEC;
 use super::params::float;
-use crate::bank::{Controllers, LoopMode, OffMode, Region, SampleBank, Trigger};
+use crate::bank::{Controllers, LoopMode, OffMode, Region, SampleBank, SamplerSetup, Trigger};
 use crate::filters::db_to_amp;
 use crate::processor::{
     BlockContext, DeviceState, EventKind, InstrumentEvent, ParamSlots, ProcessSpec, Processor,
@@ -221,7 +221,8 @@ pub(crate) struct Sampler {
     spec: ProcessSpec,
     params: ParamSlots,
     settings: Option<Settings>,
-    bank: Option<Arc<SampleBank>>,
+    /// The instrument: the loaded patch and the mapping of its preset.
+    setup: Option<Arc<SamplerSetup>>,
     voices: [Voice; MAX_VOICES],
     /// The velocity each key was pressed with, for release-trigger regions.
     key_velocity: [u8; 128],
@@ -248,7 +249,7 @@ impl Sampler {
             spec: DEFAULT_SPEC,
             params: ParamSlots::EMPTY,
             settings: None,
-            bank: None,
+            setup: None,
             voices: [Voice::IDLE; MAX_VOICES],
             key_velocity: [0; 128],
             key_down: [false; 128],
@@ -280,16 +281,21 @@ impl Sampler {
         self.pedal = false;
     }
 
+    /// A handle on the loaded patch, for the methods that start voices while they read it.
+    /// Cloning the [`Arc`] only counts a reference, and the setup this processor holds keeps the
+    /// bank alive, so dropping the handle never frees it (RT-02).
+    fn shared_bank(&self) -> Option<Arc<SampleBank>> {
+        self.setup.as_ref().map(|setup| Arc::clone(&setup.bank))
+    }
+
     /// The switch that is active before any keyswitch: the patch's `sw_default`.
     fn default_switch(&self) -> Option<u8> {
-        self.bank.as_ref().and_then(|bank| bank.keyswitches.default)
+        bank_of(self.setup.as_ref()).and_then(|bank| bank.keyswitches.default)
     }
 
     /// Where the controllers of every channel start: as the patch sets them.
     fn initial_controllers(&self) -> Controllers {
-        self.bank
-            .as_ref()
-            .map_or(Controllers::INITIAL, |bank| bank.controllers)
+        bank_of(self.setup.as_ref()).map_or(Controllers::INITIAL, |bank| bank.controllers)
     }
 
     /// The controller values of `channel`; the initial ones for a channel above 15, which is
@@ -320,9 +326,7 @@ impl Sampler {
             EventKind::ChannelPressure => {}
             EventKind::KeySwitch => {
                 // Only a keyswitch key of the patch selects an articulation, as with a press.
-                if self
-                    .bank
-                    .as_ref()
+                if bank_of(self.setup.as_ref())
                     .is_some_and(|bank| bank.keyswitches.contains(event.pitch))
                 {
                     self.last_switch = Some(event.pitch);
@@ -369,7 +373,8 @@ impl Sampler {
                     for voice in &mut self.voices {
                         if voice.active && voice.held_by_pedal {
                             voice.held_by_pedal = false;
-                            let release = release_time(self.bank.as_deref(), voice.region, scale);
+                            let release =
+                                release_time(bank_of(self.setup.as_ref()), voice.region, scale);
                             start_release(voice, rate, release);
                         }
                     }
@@ -387,7 +392,7 @@ impl Sampler {
     /// random range holds the number drawn for this event. The number is drawn only once a
     /// region qualifies, so a patch without controller triggers keeps its random sequence.
     fn start_controller_regions(&mut self, channel: u8, number: u8, value: u8) {
-        let Some(bank) = self.bank.clone() else {
+        let Some(bank) = self.shared_bank() else {
             return;
         };
         let controllers = self.controllers_of(channel);
@@ -409,7 +414,7 @@ impl Sampler {
     }
 
     fn note_on(&mut self, event: &InstrumentEvent) {
-        let Some(bank) = self.bank.clone() else {
+        let Some(bank) = self.shared_bank() else {
             return;
         };
         let key = event.pitch;
@@ -469,7 +474,7 @@ impl Sampler {
         let rate = self.spec.sample_rate;
         let pedal = self.pedal;
         let scale = self.settings.map_or(1.0, |s| s.release_scale);
-        let bank = self.bank.clone();
+        let bank = self.shared_bank();
         for voice in &mut self.voices {
             if !voice.active
                 || voice.releasing
@@ -523,7 +528,7 @@ impl Sampler {
     /// release.
     fn start_pedal_releases(&mut self, channel: u8) {
         let pending = std::mem::replace(&mut self.released_under_pedal, [None; 128]);
-        let Some(bank) = self.bank.clone() else {
+        let Some(bank) = self.shared_bank() else {
             return;
         };
         for (key, release) in (0..=127_u8).zip(pending) {
@@ -649,7 +654,7 @@ impl Sampler {
     }
 
     fn render(&mut self, out: &mut [[f64; 2]], settings: Settings) {
-        let Some(bank) = self.bank.as_deref() else {
+        let Some(bank) = bank_of(self.setup.as_ref()) else {
             return;
         };
         let bend = (self.bend / 12.0).exp2();
@@ -717,6 +722,12 @@ impl Sampler {
             }
         }
     }
+}
+
+/// The loaded patch of `setup`, borrowed through the field alone, so the caller can change the
+/// voices meanwhile.
+fn bank_of(setup: Option<&Arc<SamplerSetup>>) -> Option<&SampleBank> {
+    setup.map(|setup| &*setup.bank)
 }
 
 /// The release time of region `region` in seconds, scaled.
@@ -833,7 +844,7 @@ impl Processor for Sampler {
     }
 
     fn set_state(&mut self, state: &DeviceState) {
-        self.bank.clone_from(&state.sample_bank);
+        self.setup.clone_from(&state.sampler);
         self.rest();
     }
 
@@ -869,7 +880,7 @@ impl Processor for Sampler {
     }
 
     fn tail_seconds(&self) -> f64 {
-        self.bank.as_ref().map_or(0.0, |bank| bank.tail_seconds)
+        bank_of(self.setup.as_ref()).map_or(0.0, |bank| bank.tail_seconds)
     }
 
     fn report(&self) -> Report {
@@ -886,7 +897,7 @@ impl Sampler {
     /// controllers of its channel give its region now, reached linearly on the last of the
     /// block's `frames`.
     fn aim_controller_gains(&mut self, frames: usize) {
-        let Some(bank) = self.bank.as_deref() else {
+        let Some(bank) = bank_of(self.setup.as_ref()) else {
             return;
         };
         let frames = frames_f64(frames.max(1));

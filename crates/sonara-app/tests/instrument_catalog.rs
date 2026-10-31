@@ -5,6 +5,7 @@
 use std::cell::RefCell;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use serde_json::json;
 use sonara_app::instruments::{
@@ -1481,6 +1482,7 @@ fn an_old_patch_path_resolves_to_its_preset() {
     let violin = Some(InstrumentSource {
         id: "lib-one/Strings/Violin".to_owned(),
         patch: one.join("Strings/Violin.sfz"),
+        mapping: Arc::default(),
     });
     // By its ID, and by the absolute path a project from before preset IDs stored: the scan's
     // path, the library directory joined with the patch.

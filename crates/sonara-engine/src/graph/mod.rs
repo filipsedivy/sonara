@@ -851,10 +851,9 @@ impl Builder<'_> {
                 // Only a sampler gets the keyswitch and controllers in its chase; every other
                 // instrument keeps the plain chase and its golden output (GLD-01).
                 if device.plugin_id == SAMPLER_ID {
-                    let switch_keys = state
-                        .sample_bank
-                        .as_ref()
-                        .map_or(NoteSet::EMPTY, |bank| bank.keyswitches.keys().collect());
+                    let switch_keys = state.sampler.as_ref().map_or(NoteSet::EMPTY, |setup| {
+                        setup.bank.keyswitches.keys().collect()
+                    });
                     track_schedule.chase_sampler(switch_keys);
                 }
                 instrument = Some(slot);
@@ -1022,7 +1021,7 @@ impl Builder<'_> {
             processor.set_state(&DeviceState {
                 impulse_response: None,
                 playable_notes: NoteSet::EMPTY,
-                sample_bank: None,
+                sampler: None,
             });
             processor.prepare(self.spec);
             processor.set_params(&params);
@@ -1157,17 +1156,20 @@ impl Builder<'_> {
     }
 
     /// The state of a sampler: the instrument of the preset `source` that
-    /// [`Self::sampler_params`] resolved, loaded from its SFZ patch; no instrument without one.
-    /// A patch that cannot be read is a warning, and the sampler plays silence, as a missing
-    /// impulse response does not stop a render (ADR 0010). The opcodes the sampler does not
-    /// play and the regions the loader left out (a missing sample) are warnings too.
+    /// [`Self::sampler_params`] resolved, loaded from its SFZ patch together with the mapping
+    /// the application compiled for the preset ([`MediaProvider::load_instrument`]); no
+    /// instrument without one. A patch that cannot be read is a warning, and the sampler plays
+    /// silence, as a missing impulse response does not stop a render (ADR 0010). The opcodes
+    /// the sampler does not play and the regions the loader left out (a missing sample) are
+    /// warnings too.
     fn sampler_state(&mut self, device: &Device, source: Option<&InstrumentSource>) -> DeviceState {
         let Some(source) = source else {
             return DeviceState::default();
         };
         let name = str_repr(&source.id);
-        match self.media.load_sample_bank(&source.patch) {
-            Ok(bank) => {
+        match self.media.load_instrument(source) {
+            Ok(setup) => {
+                let bank = &setup.bank;
                 if !bank.ignored_opcodes.is_empty() {
                     self.warnings.push(format!(
                         "instrument {name} uses SFZ features the sampler does not play: {}",
@@ -1181,7 +1183,7 @@ impl Builder<'_> {
                     ));
                 }
                 DeviceState {
-                    sample_bank: Some(bank),
+                    sampler: Some(setup),
                     ..DeviceState::default()
                 }
             }

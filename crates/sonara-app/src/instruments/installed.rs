@@ -1,16 +1,20 @@
 //! The instruments the sampler can play on this machine, by preset ID: the choices of the
 //! sampler's `instrument` parameter, the same choices grouped by library with the names the
-//! device editor shows, and the resolver that turns a stored value into a patch.
+//! device editor shows, and the resolver that turns a stored value into a patch and the
+//! compiled mapping of its preset.
 
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use serde::Serialize;
 use serde_json::Value;
 use sonara_core::model::JsonMap;
 use sonara_core::plugins::SAMPLER_ID;
+use sonara_dsp::bank::SamplerMapping;
 use sonara_media::InstrumentSource;
 
+use super::compile::sampler_mapping;
 use super::discovery::{InstrumentCatalog, relative_to};
 use super::model::{InstrumentPreset, Library, LibraryId, PresetKind};
 use crate::settings::Settings;
@@ -29,8 +33,8 @@ use crate::settings::Settings;
 /// the edit path all read it, so the choices and the resolver always agree.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct InstalledInstruments {
-    /// The patch file of every playable preset, by ID.
-    patches: BTreeMap<String, PathBuf>,
+    /// The patch file and the compiled sampler mapping of every playable preset, by ID.
+    patches: BTreeMap<String, Playable>,
     /// Per library directory, the preset IDs by lower-cased patch path below it.
     libraries: Vec<LibraryPaths>,
     /// The same presets grouped by library, with their names.
@@ -60,6 +64,14 @@ pub struct PresetChoice {
     /// patch path below the library in parentheses, `Violin (Solo/Violin)`, so that the two do
     /// not read alike.
     pub label: String,
+}
+
+/// What a playable preset plays: its patch file, and its sampler mapping compiled from what is
+/// claimed about it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Playable {
+    patch: PathBuf,
+    mapping: Arc<SamplerMapping>,
 }
 
 /// The patch paths of one library's playable presets.
@@ -102,7 +114,13 @@ impl InstalledInstruments {
                 paths.by_path.insert(relative.to_lowercase(), id.clone());
             }
             playable.insert(id.clone(), preset);
-            patches.insert(id, preset.patch_path.clone());
+            patches.insert(
+                id,
+                Playable {
+                    patch: preset.patch_path.clone(),
+                    mapping: Arc::new(sampler_mapping(preset)),
+                },
+            );
         }
         let choices = library_choices(catalog.libraries(), playable.into_values());
         Self {
@@ -157,14 +175,18 @@ impl InstalledInstruments {
         })
     }
 
-    /// What a stored `instrument` value plays: its preset ([`Self::preset_id`]) and that
-    /// preset's patch file. This is the media provider's instrument resolver.
+    /// What a stored `instrument` value plays: its preset ([`Self::preset_id`]), that preset's
+    /// patch file, and the sampler mapping compiled from what the library's manifest or
+    /// Sonara's profile claims about the preset (the articulation targets, dynamics, legato and
+    /// key offset; nothing for a preset about which nothing is claimed). This is the media
+    /// provider's instrument resolver.
     #[must_use]
     pub fn resolve(&self, value: &str) -> Option<InstrumentSource> {
-        let (id, patch) = self.patches.get_key_value(self.preset_id(value)?)?;
+        let (id, playable) = self.patches.get_key_value(self.preset_id(value)?)?;
         Some(InstrumentSource {
             id: id.clone(),
-            patch: patch.clone(),
+            patch: playable.patch.clone(),
+            mapping: Arc::clone(&playable.mapping),
         })
     }
 

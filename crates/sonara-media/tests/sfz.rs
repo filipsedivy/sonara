@@ -10,7 +10,7 @@ use sonara_core::model::device::Params;
 use sonara_core::plugins::{SamplerChoices, sampler_descriptor};
 use sonara_dsp::bank::{
     CcCrossfade, CcDepth, CcRange, Controllers, Crossfade, CrossfadeCurve, Keyswitches, LoopMode,
-    OffMode, SampleBank, Trigger,
+    OffMode, SampleBank, SamplerSetup, Trigger,
 };
 use sonara_dsp::processor::{BlockContext, DeviceState, EventKind, InstrumentEvent, ProcessSpec};
 use sonara_dsp::processors::{create, param_slots};
@@ -553,7 +553,7 @@ fn salamander_pedal_noises_do_not_sound_on_a_note() {
         channels: 2,
     });
     sampler.set_state(&DeviceState {
-        sample_bank: Some(Arc::new(bank)),
+        sampler: Some(Arc::new(SamplerSetup::new(Arc::new(bank)))),
         ..DeviceState::default()
     });
     let descriptor = sampler_descriptor(&SamplerChoices {
@@ -1078,7 +1078,7 @@ fn play_events(bank: SampleBank, blocks: &[Vec<InstrumentEvent>]) -> (Vec<[f64; 
         channels: 2,
     });
     sampler.set_state(&DeviceState {
-        sample_bank: Some(Arc::new(bank)),
+        sampler: Some(Arc::new(SamplerSetup::new(Arc::new(bank)))),
         ..DeviceState::default()
     });
     let descriptor = sampler_descriptor(&SamplerChoices {
