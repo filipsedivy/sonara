@@ -1,11 +1,13 @@
 //! The MCP view of an in-process agent service (CTR-01):
-//! what `tools/list` and `tools/call` carry, checked against `golden/contracts/mcp-tools-list.json`.
+//! what `tools/list` and `tools/call` carry, checked against `golden/contracts/mcp-tools-list.json`
+//! plus exactly the recorded additions of API 1.1 (`contract::versions`).
 //! The stdio round trip with the built binary is `apps/sonara/tests/commands/mcp_stdio.rs`.
 
 use std::sync::Arc;
 
 use serde_json::{Value, json};
 use sonara_agent::context::PolicyEnvironment;
+use sonara_agent::contract::versions::{missing_additions, recorded_tools};
 use sonara_agent::mcp::{ToolBackend, call_result, dumps, listed_tool};
 use sonara_agent::service::{AgentOptions, AgentService, AuditTarget};
 use sonara_app::context::{AppContext, AppOptions};
@@ -45,11 +47,14 @@ fn the_listing_of_the_service_equals_the_golden_listing() {
     let recorded = golden["tools"].as_array().unwrap();
     let dir = tempfile::tempdir().unwrap();
     let service = service(&dir);
-    let listed: Vec<Value> = ToolBackend::tools(&service)
+    let published: Vec<Value> = ToolBackend::tools(&service)
         .unwrap()
         .iter()
         .map(listed_tool)
         .collect();
+    assert_eq!(missing_additions(&published), []);
+    // The recording is API 1.0: compare the listing without the recorded additions of 1.1.
+    let listed = recorded_tools(&published);
     for tool in &listed {
         let expected = recorded.iter().find(|t| t["name"] == tool["name"]).unwrap();
         assert_eq!(tool, expected);

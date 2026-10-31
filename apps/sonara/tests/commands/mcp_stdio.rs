@@ -11,6 +11,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, ChildStdout, Stdio};
 
 use serde_json::{Value, json};
+use sonara_agent::contract::versions::{missing_additions, recorded_tools};
 use sonara_agent::handlers::builtin;
 use sonara_agent::mcp::{INSTRUCTIONS, dumps};
 use sonara_testkit::Golden;
@@ -160,24 +161,32 @@ fn mcp_stdio_end_to_end() {
     assert_eq!(init["instructions"], INSTRUCTIONS);
     assert!(INSTRUCTIONS.contains("render_preview"));
 
-    // The listing: every tool, each exactly as the prototype listed it, in the same order.
+    // The listing: every registered tool. Without the recorded additions of API 1.1
+    // (`contract::versions`, CTR-01), each is exactly as the prototype listed it, in the same
+    // order; the recording is API 1.0 (GLD-01).
     let listing = server.request(2, "tools/list", json!({}));
-    let listed = listing["result"]["tools"].as_array().unwrap();
+    let published = listing["result"]["tools"].as_array().unwrap();
     assert!(listing["result"].get("ttlMs").is_none());
     let registered: Vec<&str> = builtin().specs().iter().map(|spec| spec.name).collect();
-    let names: Vec<&str> = listed.iter().map(|t| t["name"].as_str().unwrap()).collect();
+    let names: Vec<&str> = published
+        .iter()
+        .map(|t| t["name"].as_str().unwrap())
+        .collect();
     assert_eq!(names, registered);
+    assert_eq!(missing_additions(published), []);
+    let listed = recorded_tools(published);
     let recorded = golden["tools"].as_array().unwrap();
-    for tool in listed {
+    for tool in &listed {
         let expected = recorded.iter().find(|t| t["name"] == tool["name"]).unwrap();
         assert_eq!(tool, expected, "{}", tool["name"]);
         assert_eq!(tool["inputSchema"]["type"], "object");
     }
+    let listed_names: Vec<&str> = listed.iter().map(|t| t["name"].as_str().unwrap()).collect();
     let all: Vec<&str> = recorded
         .iter()
         .map(|t| t["name"].as_str().unwrap())
         .collect();
-    assert_eq!(names, all, "every recorded tool is listed");
+    assert_eq!(listed_names, all, "every recorded tool is listed");
 
     let create = server.call(3, "create_project", json!({"name": "MCP Song", "bpm": 128}));
     assert_eq!(create["ok"], true);

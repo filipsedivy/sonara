@@ -5,9 +5,6 @@
 use super::inputs;
 use super::model::Model;
 
-/// The agent API version reported by `get_capabilities` and in the tool contract.
-pub const API_VERSION: &str = "1.0";
-
 /// How much a tool may change (ADR 0005, `docs/agent-api.md`, "Safety").
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Safety {

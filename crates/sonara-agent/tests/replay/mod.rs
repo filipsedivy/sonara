@@ -13,7 +13,8 @@
 //! - A step whose tool has a handler in the service's registry is live: its arguments (with
 //!   `<ROOT>` put back) go through [`AgentService::call`]; the envelope is normalized as the
 //!   recorder normalizes it (`<ROOT>` for the sandbox, `<VOLATILE>` for wall-clock keys) and
-//!   compared with the recorded result.
+//!   compared with the recorded result. The recording speaks API 1.0: a `get_capabilities`
+//!   answer is compared as its 1.0 view (`contract::versions::recorded_view`).
 //! - Any other step is fast-forwarded: its recorded effects on the session are applied from the
 //!   command log (`commands.json`): each committed command as a [`Recorded`] command that
 //!   produces the recorded snapshot with the recorded label, change set and merge key, and each
@@ -48,6 +49,7 @@ use std::time::{Duration, UNIX_EPOCH};
 use regex::Regex;
 use serde_json::{Value, json};
 use sonara_agent::context::PolicyEnvironment;
+use sonara_agent::contract::versions::recorded_view;
 use sonara_agent::service::{AgentOptions, AgentService, AuditTarget};
 use sonara_agent::state::{StateOptions, project_state};
 use sonara_app::clock::LocalZone;
@@ -1037,6 +1039,11 @@ impl Replay {
             result = self.service.call(tool, Some(&args));
         }
         let mut actual = normalize(&result, &self.root, &self.volatile);
+        if tool == "get_capabilities" {
+            // The recording speaks API 1.0; compare the 1.0 view of this build's answer, which
+            // differs from it by exactly the recorded additions of `contract::versions` (CTR-01).
+            actual = recorded_view(&actual);
+        }
         let expected = step.result.as_ref().expect("a tool step has a result");
         // A saved project that equals the snapshot only within LIBM cannot hash alike (off macOS
         // only: there `check_project` is strict).

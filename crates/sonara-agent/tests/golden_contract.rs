@@ -1,10 +1,14 @@
 //! Golden tool contract (CTR-01): the generated tool
 //! contract and MCP tool listing equal `golden/contracts/tools.json` and
-//! `golden/contracts/mcp-tools-list.json` as JSON values. The recorder sorted the keys, so key
-//! order is irrelevant; array order (tools, `required`, `enum`, `anyOf`) is compared.
+//! `golden/contracts/mcp-tools-list.json` as JSON values, plus exactly the additions of API 1.1
+//! (`contract::versions`). The recording stays API 1.0 (GLD-01): the tests take the recorded
+//! additions out of what the build publishes, compare the rest with the recording, and check that
+//! every recorded addition is published. The recorder sorted the keys, so key order is
+//! irrelevant; array order (tools, `required`, `enum`, `anyOf`) is compared.
 
 use serde_json::{Value, json};
-use sonara_agent::contract::tool_contract;
+use sonara_agent::contract::versions::{missing_additions, recorded_view};
+use sonara_agent::contract::{API_VERSION, RECORDED_API_VERSION, tool_contract};
 use sonara_agent::mcp;
 use sonara_testkit::Golden;
 
@@ -44,16 +48,22 @@ fn assert_same(expected: &Value, actual: &Value) {
 }
 
 #[test]
-fn tool_contract_equals_the_golden_contract() {
+fn tool_contract_equals_the_golden_contract_plus_the_recorded_additions() {
     let golden: Value = Golden::open()
         .and_then(|golden| golden.json("contracts/tools.json"))
         .unwrap();
+    assert_eq!(golden["api_version"], RECORDED_API_VERSION);
     assert_eq!(golden["tools"].as_array().map(Vec::len), Some(57));
-    assert_same(&golden, &tool_contract());
+    let contract = tool_contract();
+    // The one place that pins the number itself; everything else follows the constant.
+    assert_eq!(API_VERSION, "1.1");
+    assert_eq!(contract["api_version"], API_VERSION);
+    assert_same(&golden, &recorded_view(&contract));
+    assert_eq!(missing_additions(contract["tools"].as_array().unwrap()), []);
 }
 
 #[test]
-fn mcp_listing_equals_the_golden_listing() {
+fn mcp_listing_equals_the_golden_listing_plus_the_recorded_additions() {
     let mut golden: Value = Golden::open()
         .and_then(|golden| golden.json("contracts/mcp-tools-list.json"))
         .unwrap();
@@ -69,5 +79,6 @@ fn mcp_listing_equals_the_golden_listing() {
         "capabilities": mcp::capabilities(),
         "tools": mcp::tools(),
     });
-    assert_same(&golden, &listing);
+    assert_same(&golden, &recorded_view(&listing));
+    assert_eq!(missing_additions(&mcp::tools()), []);
 }

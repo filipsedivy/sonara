@@ -22,7 +22,8 @@ use serde_json::{Map, Value, json};
 use super::model::{
     Constant, Field, FieldDefault, Kind, LengthBounds, Model, Number, NumberBounds, StrRules,
 };
-use super::tools::{API_VERSION, TOOLS, ToolSpec};
+use super::tools::{TOOLS, ToolSpec};
+use super::versions::API_VERSION;
 
 impl Model {
     /// The model's JSON Schema as the prototype publishes it for a tool (`schema_of`):
@@ -54,8 +55,10 @@ impl ToolSpec {
     }
 }
 
-/// The tool contract (`golden/contracts/tools.json`): `{api_version, tools}` with every tool in
-/// registration order.
+/// The tool contract: `{api_version, tools}` with every tool in registration order. It is
+/// `golden/contracts/tools.json` plus the additions of [`versions::ADDITIONS`].
+///
+/// [`versions::ADDITIONS`]: super::versions::ADDITIONS
 #[must_use]
 pub fn tool_contract() -> Value {
     json!({

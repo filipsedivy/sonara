@@ -21,6 +21,7 @@ use std::time::{Duration, Instant, UNIX_EPOCH};
 
 use serde_json::{Value, json};
 use sonara_agent::context::PolicyEnvironment;
+use sonara_agent::contract::versions::recorded_view;
 use sonara_agent::service::{AgentOptions, AgentService, AuditTarget};
 use sonara_app::clock::LocalZone;
 use sonara_app::context::{AppContext, AppOptions};
@@ -186,6 +187,11 @@ impl Scenario {
             (Some("render"), _) => {
                 self.render(step);
                 return;
+            }
+            // The recording speaks API 1.0: a `get_capabilities` answer is compared as its 1.0
+            // view, which differs from it by exactly the recorded additions (CTR-01).
+            (Some("tool"), Some("get_capabilities")) => {
+                recorded_view(&self.service.call("get_capabilities", Some(args)))
             }
             (Some("tool"), Some(tool)) => self.service.call(tool, Some(args)),
             (Some("service"), Some("status")) => self.app.transport().status(),

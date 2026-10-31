@@ -13,7 +13,8 @@
 //! The layout is the Python generator's: the introduction (with the API version, the IPC
 //! protocol version and the error codes filled in), an index, and one section per tool in name
 //! order with its title, safety class, description and a table of the parameters of its input
-//! schema (`Model::input_schema`, the schema of the tool contract). Values are written as the
+//! schema (`Model::input_schema`, the schema of the tool contract). The introduction also lists
+//! what the API version adds to the recorded 1.0 (`contract::versions::ADDITIONS`). Values are written as the
 //! Python generator wrote them: defaults, `enum` and `const` values as `json.dumps` does, and
 //! constraint values as `str()` does.
 
@@ -22,7 +23,8 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use serde_json::{Map, Value};
-use sonara_agent::contract::{API_VERSION, TOOLS, ToolSpec};
+use sonara_agent::contract::versions::{ADDITIONS, Addition};
+use sonara_agent::contract::{API_VERSION, RECORDED_API_VERSION, TOOLS, ToolSpec};
 use sonara_agent::ipc::PROTOCOL_VERSION;
 use sonara_app::pyjson;
 use sonara_core::error::ErrorCode;
@@ -45,7 +47,7 @@ const CONSTRAINTS: [(&str, &str); 9] = [
     ("pattern", "pattern"),
 ];
 
-/// The text before the tool reference. `@API_VERSION@`, `@PROTOCOL_VERSION@` and
+/// The text before the tool reference. `@API_VERSION@`, `@PROTOCOL_VERSION@`, `@ADDITIONS@` and
 /// `@ERROR_CODES@` are filled in by [`intro`].
 const INTRO: &str = r#"# Agent API (CLI, IPC, MCP)
 
@@ -119,6 +121,16 @@ Options: `--connect auto|always|never`, `--allow PATH` (repeatable), `--base-dir
   token-like values redacted.
 - **No code execution:** the agent can only call tools. Nothing it sends is executed as code, and
   nothing reaches the real-time audio thread.
+
+## Versions
+
+The API version changes only by a deliberate, versioned decision. Version 1.0 is the first
+published contract. A later 1.x version only adds: new tools, and new optional arguments or
+optional fields of nested objects such as a note. Every tool, argument, default, description,
+result and error code of 1.0 keeps its meaning, so a client written for 1.0 works unchanged.
+`get_capabilities` and the IPC `hello` and `info` replies report the version.
+
+@ADDITIONS@
 
 ## Error codes
 
@@ -200,7 +212,8 @@ fn render() -> String {
     text
 }
 
-/// [`INTRO`] with the versions and the error codes, in the prototype's order.
+/// [`INTRO`] with the versions, the additions of the API version and the error codes, in the
+/// prototype's order.
 fn intro() -> String {
     let codes = ErrorCode::ALL
         .iter()
@@ -210,7 +223,60 @@ fn intro() -> String {
     INTRO
         .replace("@API_VERSION@", API_VERSION)
         .replace("@PROTOCOL_VERSION@", &PROTOCOL_VERSION.to_string())
+        .replace("@ADDITIONS@", &additions(ADDITIONS))
         .replace("@ERROR_CODES@", &codes)
+}
+
+/// What [`API_VERSION`] adds to [`RECORDED_API_VERSION`]: a sentence and one item per addition,
+/// or a sentence that it adds nothing.
+fn additions(additions: &[Addition]) -> String {
+    if additions.is_empty() {
+        return format!("{API_VERSION} adds no tool or argument to {RECORDED_API_VERSION}.");
+    }
+    let mut lines = vec![
+        format!("{API_VERSION} adds to {RECORDED_API_VERSION}:"),
+        String::new(),
+    ];
+    lines.extend(
+        additions
+            .iter()
+            .map(|addition| format!("- {}", addition_text(*addition))),
+    );
+    lines.join("\n")
+}
+
+/// One addition as the list of [`additions`] names it, with links to the tools it concerns: a
+/// tool, an optional argument of a tool's input, or an optional field of a nested model (such as
+/// `NoteInput`) with the tools that take it.
+fn addition_text(addition: Addition) -> String {
+    let link = |tool: &ToolSpec| format!("[`{0}`](#{0})", tool.name);
+    match addition {
+        Addition::Tool(name) => format!("the tool [`{name}`](#{name})"),
+        Addition::Field { model, field } => {
+            let own: Vec<String> = TOOLS
+                .iter()
+                .filter(|tool| tool.input.name == model)
+                .map(link)
+                .collect();
+            if !own.is_empty() {
+                return format!("the optional argument `{field}` of {}", own.join(", "));
+            }
+            let nested: Vec<String> = TOOLS
+                .iter()
+                .filter(|tool| {
+                    tool.input
+                        .input_schema()
+                        .pointer(&format!("/$defs/{model}"))
+                        .is_some()
+                })
+                .map(link)
+                .collect();
+            format!(
+                "the optional field `{field}` of `{model}`, in {}",
+                nested.join(", ")
+            )
+        }
+    }
 }
 
 /// One tool's section: the heading, the title and safety class, the description and, when the
@@ -332,7 +398,9 @@ fn py_str(value: &Value) -> String {
 mod tests {
     use std::fs;
 
-    use super::{OUTPUT, output_path, render};
+    use sonara_agent::contract::versions::Addition;
+
+    use super::{OUTPUT, additions, output_path, render};
 
     /// The committed file is what the registry renders: CI's freshness check of P2.
     #[test]
@@ -342,5 +410,35 @@ mod tests {
             committed == render(),
             "{OUTPUT} is out of date: run `cargo run -p sonara-agent --example gen_agent_docs`"
         );
+    }
+
+    /// The additions are listed with links to the tools they concern.
+    #[test]
+    fn additions_name_the_tools_they_concern() {
+        assert!(additions(&[]).ends_with(" adds no tool or argument to 1.0."));
+        let listed = additions(&[
+            Addition::Tool("write_controllers"),
+            Addition::Field {
+                model: "CreateTrack",
+                field: "part",
+            },
+            Addition::Field {
+                model: "NoteInput",
+                field: "articulation",
+            },
+        ]);
+        let lines: Vec<&str> = listed.lines().collect();
+        assert_eq!(
+            lines[1..],
+            [
+                "",
+                "- the tool [`write_controllers`](#write_controllers)",
+                "- the optional argument `part` of [`create_track`](#create_track)",
+                "- the optional field `articulation` of `NoteInput`, in \
+                 [`create_midi_clip`](#create_midi_clip), [`add_midi_notes`](#add_midi_notes), \
+                 [`edit_midi_notes`](#edit_midi_notes)",
+            ]
+        );
+        assert!(lines[0].ends_with(" adds to 1.0:"));
     }
 }

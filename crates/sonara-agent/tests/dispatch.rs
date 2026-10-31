@@ -11,6 +11,7 @@ use std::sync::Arc;
 
 use serde_json::{Value, json};
 use sonara_agent::context::{AgentContext, PolicyEnvironment};
+use sonara_agent::contract::API_VERSION;
 use sonara_agent::contract::args::{CreateProject, DeleteTrack, Empty};
 use sonara_agent::permissions::{Access, sequential_tokens};
 use sonara_agent::registry::{RegistryError, ToolError, ToolRegistry, ToolResult};
@@ -205,7 +206,7 @@ fn unknown_and_unattached_tools_are_not_found() {
     }
     assert_eq!(
         service.info(),
-        json!({"api_version": "1.0", "project": null, "tools": attached.len()})
+        json!({"api_version": API_VERSION, "project": null, "tools": attached.len()})
     );
     let names: Vec<Value> = service.tools().iter().map(|t| t["name"].clone()).collect();
     assert_eq!(names, attached);

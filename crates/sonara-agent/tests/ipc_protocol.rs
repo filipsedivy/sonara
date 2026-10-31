@@ -2,16 +2,17 @@
 //! `scripts/golden/agent_ipc_fixtures.py`; CTR-01):
 //!
 //! - `server`: every conversation is replayed against the Rust server, and its replies must equal
-//!   the prototype's byte for byte (Python's `json.dumps` layout included). Values that differ
-//!   by nature are masked on both sides: the `pong` time, the number of tools, and the tool lists
-//!   (the prototype's are filtered to the tools that have Rust handlers so far). Deliberate
-//!   divergences are compared with their documented Rust result.
+//!   the prototype's byte for byte (Python's `json.dumps` layout included). The `pong` time
+//!   differs by nature and is masked on both sides. The recording speaks API 1.0, this build
+//!   1.1 (CTR-01): a reply that carries the API version or the tools (`hello`, `info`,
+//!   `tools/list`, an unknown tool's `available` list) is compared as its 1.0 view, which takes
+//!   out exactly the recorded additions (`contract::versions`). Deliberate divergences are
+//!   compared with their documented Rust result.
 //! - `client`: the Rust client runs every scenario against the same scripted server, and must
 //!   send the prototype client's request lines byte for byte and reach its outcomes: the result,
 //!   or the error's code, message and details.
 #![cfg(unix)]
 
-use std::collections::BTreeSet;
 use std::fs;
 use std::io::{self, BufRead, BufReader, Write};
 use std::net::Shutdown;
@@ -23,6 +24,8 @@ use std::time::Duration;
 
 use serde_json::{Value, json};
 use sonara_agent::context::PolicyEnvironment;
+use sonara_agent::contract::TOOLS;
+use sonara_agent::contract::versions::{is_added_tool, recorded_view};
 use sonara_agent::ipc::{
     ClientContext, ClientOptions, DEFAULT_TIMEOUT, Discovery, IpcClient, IpcServer, MAX_MESSAGE,
     ServerOptions, Transport,
@@ -147,35 +150,36 @@ fn hex(text: &str) -> Vec<u8> {
         .collect()
 }
 
-/// The masks of values that differ by nature; `None` when none applies.
-fn masked(line: &str, tools: &BTreeSet<String>) -> Option<Value> {
+/// The parsed reply when it carries a value that differs by nature (the `pong` time, masked
+/// here) or by API version (the version, the tool count, the tool lists); `None` for a reply
+/// that compares byte for byte.
+fn comparable(line: &str) -> Option<Value> {
     let mut value: Value = serde_json::from_str(line).ok()?;
-    let mut changed = false;
-    let keep = |items: &mut Vec<Value>, name: fn(&Value) -> Option<&str>| {
-        items.retain(|item| name(item).is_some_and(|name| tools.contains(name)));
-    };
-    if let Some(Value::Array(available)) = value.pointer_mut("/result/error/details/available") {
-        keep(available, Value::as_str);
-        changed = true;
-    }
+    let mut changed = value.pointer("/result/error/details/available").is_some();
     if let Some(result) = value.get_mut("result").and_then(Value::as_object_mut) {
         if result.get("pong").is_some_and(Value::is_number) {
             result.insert("pong".to_owned(), json!(0.0));
             changed = true;
         }
-        match result.get_mut("tools") {
-            Some(count @ Value::Number(_)) => {
-                *count = json!("<count>");
-                changed = true;
-            }
-            Some(Value::Array(items)) => {
-                keep(items, |tool| tool["name"].as_str());
-                changed = true;
-            }
-            _ => {}
-        }
+        changed |= result.contains_key("api_version") || result.contains_key("tools");
     }
     changed.then_some(value)
+}
+
+/// What API 1.0 answers in place of `reply`, a parsed reply of this build: the 1.0 view of a
+/// `hello`, `info` or `tools/list` result, and an unknown tool's `available` list without the
+/// added tools. Anything else stays, so the view equals the recording only when the reply
+/// differs from it by exactly the recorded additions.
+fn recorded(mut reply: Value) -> Value {
+    if let Some(Value::Array(available)) = reply.pointer_mut("/result/error/details/available") {
+        available.retain(|name| !name.as_str().is_some_and(is_added_tool));
+    }
+    if let Some(result) = reply.get_mut("result")
+        && (result.get("api_version").is_some() || result.get("tools").is_some())
+    {
+        *result = recorded_view(result);
+    }
+    reply
 }
 
 struct Running {
@@ -236,11 +240,8 @@ fn server_answers_like_the_prototype() {
     assert_eq!(fixture["protocol"], 1);
     assert_eq!(fixture["max_message"], MAX_MESSAGE);
     let Running { agent, server, .. } = &server();
-    let tools: BTreeSet<String> = agent
-        .tools()
-        .iter()
-        .map(|tool| text(&tool["name"]).to_owned())
-        .collect();
+    // Every tool of the contract has a handler, so the tool lists and counts compare whole.
+    assert_eq!(agent.tools().len(), TOOLS.len());
     let mut checked = 0;
     for conversation in fixture["server"].as_array().expect("conversations") {
         let name = text(&conversation["name"]);
@@ -255,28 +256,18 @@ fn server_answers_like_the_prototype() {
             .collect();
         assert_eq!(receive.len(), wanted.len(), "{name}: {receive:#?}");
         for (i, (actual, wanted)) in receive.iter().zip(&wanted).enumerate() {
-            match masked(wanted, &tools) {
+            match comparable(wanted) {
                 None => assert_eq!(actual, wanted, "{name}, line {i}"),
-                Some(wanted_masked) => {
-                    let actual_masked = masked(actual, &tools).expect("the same fields");
-                    if wanted_masked["result"]["tools"].is_array() {
+                Some(wanted) => {
+                    let actual = recorded(comparable(actual).expect("the same fields"));
+                    if wanted["result"]["tools"].is_array() {
                         // The tool contract writes each schema's keywords in another order
                         // than pydantic (`type` first rather than sorted); its golden test
                         // compares canonical JSON. Here the values must be equal.
-                        assert_eq!(actual_masked, wanted_masked, "{name}, line {i}");
+                        assert_eq!(actual, wanted, "{name}, line {i}");
                     } else {
                         // Compared as text, so that the key order counts too.
-                        assert_eq!(
-                            actual_masked.to_string(),
-                            wanted_masked.to_string(),
-                            "{name}, line {i}"
-                        );
-                    }
-                    if let Some(count) = serde_json::from_str::<Value>(actual)
-                        .ok()
-                        .and_then(|reply| reply["result"]["tools"].as_u64())
-                    {
-                        assert_eq!(count, u64::try_from(tools.len()).expect("fits"), "{name}");
+                        assert_eq!(actual.to_string(), wanted.to_string(), "{name}, line {i}");
                     }
                 }
             }

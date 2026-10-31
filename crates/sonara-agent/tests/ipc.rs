@@ -18,6 +18,7 @@ use std::thread;
 
 use serde_json::{Value, json};
 use sonara_agent::context::PolicyEnvironment;
+use sonara_agent::contract::API_VERSION;
 use sonara_agent::ipc::{
     ClientContext, ClientError, ClientOptions, IpcClient, IpcServer, ServerOptions, Transport,
     find_sessions,
@@ -374,7 +375,7 @@ fn parse_errors_and_unknown_methods() {
     let welcome = raw.reply().expect("a reply");
     assert_eq!(
         welcome["result"],
-        json!({"server": "sonara", "protocol": 1, "api_version": "1.0", "project": null,
+        json!({"server": "sonara", "protocol": 1, "api_version": API_VERSION, "project": null,
                "tools": fixture.agent(fixture.options()).tools().len()})
     );
     raw.send(&json!({"jsonrpc": "2.0", "id": 2, "method": "nope", "params": {}}));
