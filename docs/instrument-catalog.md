@@ -301,6 +301,45 @@ say:
 A manifest in the library's folder lies over its profile field by field (above), so you can
 rename a preset, correct a claim or clear one with `null`.
 
+## What plays a part
+
+`instruments::choose_sound` answers what plays a part, from the catalog's presets: the part names
+an instrument type, solo or section (or either), its articulations, each with its passage's mute
+and vibrato, and the range of its notes. It never fails and never runs on the audio thread. It
+tries, in order:
+
+1. **A preset of the instrument** in the size asked for. A preset counts only when it is
+   **playable**: available, and, where its patch has been checked, with a region that can play,
+   no sample file missing and a verdict other than `not`. A patch nobody has checked yet still
+   counts. A percussion patch plays an instrument on the keys its key map gives it.
+2. **The nearest articulation** of that preset for one it lacks: the articulation it refines
+   (`trill` for `trill_half`), then its stand-ins from the orchestration metadata, then the
+   ordinary sound with the notes rewritten to imitate it (a staccato as notes cut to a quarter, a
+   trill written out), then the ordinary sound. The note's own articulation is kept longest: a
+   missing vibrato gives way first, then a missing mute, which plays open and a dynamic step
+   softer.
+3. **The other size:** a section for a solo, or a solo for a section, when none of the size asked
+   for is installed. A preference keeps the articulations instead: the other size then wins when
+   it plays more of them as asked.
+4. **A neighbour** of the instrument, such as the tuba for a cimbasso, when the instrument has no
+   preset. One whose playable range holds the part comes first. One that does not, or that
+   changes the family, loses the pitches or changes the part's role (a choir for a solo voice), is
+   offered with a question, and the answer "no" goes on down the list. Nothing is moved by an
+   octave without asking.
+5. **General MIDI** is skipped: Sonara has no General MIDI player.
+6. **A built-in sound:** a Poly Synth preset (`Strings` for the strings, `Brass`, `Choir Pad`,
+   `Glass Bells` for bells and so on) or Drum Kit keys of the `Cinematic Toms` kit for
+   percussion. A whip played as a clap and a prepared piano played as a pluck ask first.
+7. **Silence,** when the user declines the last sound.
+
+Among several presets, the one that keeps the size wins, then the one that plays the most
+requested articulations as asked, then the better verdict (`as_is`, `partly`, not judged; a set
+is judged by its patches), then the one whose sampled keys hold the part, then the library's own
+claim before a profile's before a guess, then a fixed order of preference among the presets of
+VSCO 2 CE and VCSL. Every substitution comes back as a sentence for the user, for example
+"Spiccato is not available for Violin; playing staccato." or "No Cimbasso is installed; Tuba
+(vsco2ce/Tuba-KS) plays the part."
+
 ## Licence and installation notes
 
 - Install a library by adding its directory to `sample_libraries` and restarting
@@ -315,7 +354,7 @@ rename a preset, correct a claim or clear one with `null`.
 
 ## Not done
 
-No agent tool, CLI command or GUI lists the catalog itself yet. The sampler's `instrument` choices
+No agent tool, CLI command or GUI lists the catalog itself or asks it what plays a part yet. The sampler's `instrument` choices
 are its available presets' IDs; the device editor shows them as the presets' names grouped by
 library (`InstalledInstruments::by_library`), and a preset whose name another preset of the same
 library shares also shows its patch path below the library. The catalog lists no set as a

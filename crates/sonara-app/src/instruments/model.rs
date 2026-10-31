@@ -343,6 +343,31 @@ impl InstrumentPreset {
         }
         Some(verdict)
     }
+
+    /// Whether the preset can play a part, by everything known about it: the catalog finds it
+    /// [`Availability::Available`]; where the structural check ran ([`Self::facts`], or each
+    /// member's for a set), it found a region that can play and no sample file missing; and its
+    /// [`effective verdict`](Self::effective_verdict) is not [`VerdictState::Not`].
+    ///
+    /// Facts that are not known yet do not count against it: a preset discovery lists and no
+    /// check has read is playable, and a check that runs later can only take that back.
+    #[must_use]
+    pub fn is_playable(&self) -> bool {
+        let sound = |facts: Option<&PatchFacts>| {
+            facts.is_none_or(|facts| facts.playable_regions > 0 && facts.missing_samples.is_empty())
+        };
+        let checked = match &self.kind {
+            PresetKind::Patch => sound(self.facts.as_ref()),
+            PresetKind::Set { members } => {
+                members.iter().all(|member| sound(member.facts.as_ref()))
+            }
+        };
+        self.availability.is_available()
+            && checked
+            && self
+                .effective_verdict()
+                .is_none_or(|verdict| verdict.state != VerdictState::Not)
+    }
 }
 
 /// Whether two patch paths below a library name the same file, ignoring case, as discovery

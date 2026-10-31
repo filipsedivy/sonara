@@ -8,14 +8,15 @@ use std::path::{Path, PathBuf};
 
 use serde_json::json;
 use sonara_app::instruments::{
-    Availability, CatalogError, ClaimSource, EnsembleClaim, EnsembleKind, FamilyClaim,
-    InstalledInstruments, InstrumentCatalog, InstrumentClaim, InstrumentFamily, InstrumentPreset,
-    KeyZone, LibraryId, LibraryIssue, MANIFEST_FILE, MediaPatchLoader, PatchFacts, PatchLoadError,
-    PatchLoader, PresetKind, VelocityRange, Verdict, VerdictState,
+    Availability, Builtin, CatalogError, ChainPreferences, ClaimSource, EnsembleClaim,
+    EnsembleKind, FamilyClaim, InstalledInstruments, InstrumentCatalog, InstrumentClaim,
+    InstrumentFamily, InstrumentPreset, KeyZone, LibraryId, LibraryIssue, MANIFEST_FILE,
+    MediaPatchLoader, PatchFacts, PatchLoadError, PatchLoader, PresetKind, Reach, SoundPlan,
+    SoundRequest, SoundSource, Step, VelocityRange, Verdict, VerdictState, choose_sound,
 };
 use sonara_app::settings::Settings;
 use sonara_media::InstrumentSource;
-use sonara_midi::orchestration::InstrumentType;
+use sonara_midi::orchestration::{Articulation, InstrumentType, Mute, Request, Vibrato};
 
 fn patch(path: &Path) {
     fs::create_dir_all(path.parent().expect("a parent")).expect("mkdir");
@@ -1463,4 +1464,124 @@ fn only_a_sampler_path_is_rewritten_to_its_preset_id() {
     let expected = number.clone();
     installed.normalize_params("sonara.sampler", &mut number);
     assert_eq!(number, expected, "an index is the descriptor's business");
+}
+
+/// A loader whose structural check finds one sample missing in every patch.
+struct SampleMissing;
+
+impl PatchLoader for SampleMissing {
+    fn load(&self, _patch: &Path) -> Result<(), PatchLoadError> {
+        Ok(())
+    }
+
+    fn inspect(&self, _patch: &Path) -> Option<PatchFacts> {
+        Some(PatchFacts {
+            regions: 2,
+            playable_regions: 1,
+            sampled: Vec::new(),
+            switch_keys: Vec::new(),
+            default_switch: None,
+            ignored_opcodes: Vec::new(),
+            missing_samples: vec![PathBuf::from("/lib/a.wav")],
+            unreadable_samples: Vec::new(),
+            notes: vec!["sample /lib/a.wav is missing (1 region left out)".to_owned()],
+            decoded_bytes: 64,
+            loadable: true,
+        })
+    }
+}
+
+/// The degradation chain over a discovered VSCO 2 CE checkout that holds a few patches (TST-02):
+/// the profile's claims choose the preset, a missing patch is never chosen, a neighbour stands
+/// in for an instrument the checkout lacks, a key map plays a drum, and a patch whose check
+/// finds a sample missing gives way to a built-in sound.
+#[test]
+fn the_chain_chooses_from_a_discovered_library() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path().join("VSCO-2-CE");
+    library(&root, &VSCO_DETECT);
+    library(&root, &["FHornSus.sfz", "FHornStac.sfz"]);
+    let catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
+    let choose = |catalog: &InstrumentCatalog, request| {
+        choose_sound(catalog.presets(), &request, ChainPreferences::default())
+    };
+    let part = |instrument, articulations: &[Articulation]| SoundRequest {
+        articulations: articulations
+            .iter()
+            .map(|articulation| {
+                Request::new(Some(*articulation), Mute::Open, Vibrato::Ordinary).expect("primary")
+            })
+            .collect(),
+        ..SoundRequest::new(instrument)
+    };
+    let source = |plan: &SoundPlan| match &plan.source {
+        SoundSource::Sampler { preset } => preset.as_str().to_owned(),
+        other => format!("{other:?}"),
+    };
+    let messages = |plan: &SoundPlan| -> Vec<String> {
+        plan.notices
+            .iter()
+            .map(|notice| notice.message.clone())
+            .collect()
+    };
+
+    let violins = SoundRequest {
+        ensemble: Some(EnsembleKind::Section),
+        ..part(
+            InstrumentType::Violin,
+            &[Articulation::Sustain, Articulation::Pizzicato],
+        )
+    };
+    let plan = choose(&catalog, violins.clone());
+    assert_eq!(
+        (plan.step, source(&plan), messages(&plan)),
+        (Step::Exact, "vsco2ce/ViolinEns-KS".to_owned(), Vec::new())
+    );
+
+    // The horn set lacks its muted patch, so it is missing; of the two patches here, the
+    // sustain comes first and plays the staccato shortened.
+    let horns = part(
+        InstrumentType::HornF,
+        &[Articulation::Sustain, Articulation::Staccato],
+    );
+    let plan = choose(&catalog, horns.clone());
+    assert_eq!(source(&plan), "vsco2ce/FHornSus");
+    assert_eq!(
+        messages(&plan),
+        [
+            "Staccato is not available for Horn in F; playing sustain, each note shortened to a \
+          quarter of its length."
+        ]
+    );
+
+    let plan = choose(&catalog, part(InstrumentType::Cimbasso, &[]));
+    assert_eq!(plan.step, Step::FamilyNeighbour);
+    assert_eq!(
+        messages(&plan),
+        ["No Cimbasso is installed; Tuba (vsco2ce/Tuba-KS) plays the part."]
+    );
+
+    let plan = choose(&catalog, part(InstrumentType::SnareDrum, &[]));
+    assert_eq!(source(&plan), "vsco2ce/GM-StylePerc");
+    assert_eq!(plan.articulations[0].reach, Reach::Keys(vec![38]));
+
+    // With its muted patch installed, the set plays both articulations as asked.
+    library(&root, &["FHornMute.sfz"]);
+    let catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
+    let plan = choose(&catalog, horns);
+    assert_eq!(
+        (plan.step, source(&plan), messages(&plan)),
+        (Step::Exact, "vsco2ce/@horn".to_owned(), Vec::new())
+    );
+
+    // A check that finds a sample missing rules the violin section out.
+    let mut catalog = catalog;
+    let section = preset(&catalog, "vsco2ce/ViolinEns-KS").id.clone();
+    catalog.verify(&section, &SampleMissing).expect("a preset");
+    let plan = choose(&catalog, violins);
+    assert_eq!(plan.step, Step::Builtin);
+    assert_eq!(
+        plan.source,
+        SoundSource::Builtin(Builtin::Synth { preset: "Strings" })
+    );
 }

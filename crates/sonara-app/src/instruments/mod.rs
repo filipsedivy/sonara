@@ -57,7 +57,14 @@
 //! overrides, and which lower the claimed verdict where the two disagree
 //! ([`InstrumentPreset::effective_verdict`]). SFZ has no bank or program numbers, so a preset has
 //! none; a future SF2 source would add them.
+//!
+//! **What plays a part** ([`choose_sound`]): a part asks for an instrument type, solo or section,
+//! its articulations and the range of its notes, and the degradation chain answers from the
+//! catalog with the best playable preset ([`InstrumentPreset::is_playable`]), else the nearest
+//! articulations, the other size, a neighbour of the family, a built-in sound or silence, and
+//! says in plain words what it substituted ([`SoundPlan`]).
 
+mod chain;
 mod discovery;
 mod facts;
 mod family;
@@ -67,6 +74,10 @@ mod model;
 mod profiles;
 mod verify;
 
+pub use chain::{
+    ArticulationChoice, Builtin, ChainPreferences, Confirmation, Notice, Reach, SoundPlan,
+    SoundRequest, SoundSource, Step, Substitute, choose_sound, nearest_articulation,
+};
 pub use discovery::InstrumentCatalog;
 pub use facts::{KeyZone, PatchFacts, VelocityRange};
 pub use family::{FamilyClaim, InstrumentFamily};
