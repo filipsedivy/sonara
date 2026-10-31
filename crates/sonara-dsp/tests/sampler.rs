@@ -4373,6 +4373,63 @@ fn a_start_offset_past_the_loop_or_the_end_stays_in_the_sample() {
     }
 }
 
+/// [`line`] as patch 0 of a set whose patch 1 has the keyswitches 24 (its default) and 25:
+/// keys 24 and 25 are keyswitch keys of the device, of another patch than the line's.
+fn line_beside_a_keyswitch_patch() -> SampleBank {
+    SampleBank {
+        keyswitches: switches(&[(24, 25)], None),
+        member_keyswitches: vec![Keyswitches::NONE, switches(&[(24, 25)], Some(24))],
+        ..line()
+    }
+}
+
+#[test]
+fn a_keyswitch_of_another_patch_of_a_set_leaves_a_legato_line_alone() {
+    // The line plays legato in patch 0; a press of 25, a keyswitch of patch 1, while 60 is held
+    // selects patch 1's switch and plays no part in the legato, as a keyswitch of the line's own
+    // patch does: 60 sounds on, and 62 still joins it. The oracle is the same line without the
+    // keyswitch, bit for bit (TST-06: the keyswitch used to leave 60, which faded out with
+    // nothing in its place, and 62 then started a new phrase).
+    let spec = Some(overlap(20, 0, 0));
+    let mut plain = legato_sampler(line_beside_a_keyswitch_patch(), spec, "legato");
+    let mut switched = legato_sampler(line_beside_a_keyswitch_patch(), spec, "legato");
+    let on = |key| event(EventKind::NoteOn, key, 127);
+    let pressed = run(&mut *plain, &[on(60)]);
+    assert_eq!(run(&mut *switched, &[on(60)]), pressed);
+    let held = run(&mut *plain, &[]);
+    close(level(&held), 0.5);
+    assert_eq!(run(&mut *switched, &[on(25)]), held);
+    let joined = run(&mut *plain, &[on(62)]);
+    assert_eq!(run(&mut *switched, &[on(62)]), joined);
+    assert_eq!(voices(&*switched), voices(&*plain));
+}
+
+#[test]
+fn a_held_keyswitch_of_another_patch_of_a_set_does_not_make_a_note_legato() {
+    // [`first_and_legato`] as patch 0 of a set whose patch 1 has the keyswitches 26 and 27:
+    // 27 held down while 60 is pressed is a keyswitch of the device, so 60 still starts the
+    // phrase with its `first` region, as with a held keyswitch of its own patch (TST-06: it
+    // used to count as another key down, and 60 played its `legato` region).
+    let set = SampleBank {
+        keyswitches: switches(&[(24, 27)], None),
+        member_keyswitches: vec![
+            switches(&[(24, 25)], Some(24)),
+            switches(&[(26, 27)], Some(26)),
+        ],
+        ..first_and_legato()
+    };
+    let mut processor = sampler(set);
+    let out = run(
+        &mut *processor,
+        &[
+            event(EventKind::NoteOn, 27, 127),
+            event(EventKind::NoteOn, 60, 127),
+        ],
+    );
+    close(level(&out), 0.5);
+    assert_eq!(processor.report().entries(), [("voices", 1.0)]);
+}
+
 #[test]
 fn legato_same_pitch_retriggers() {
     // A press of the legato note's own key plays its attack beside it, as without the legato:

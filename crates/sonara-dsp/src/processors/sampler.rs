@@ -118,8 +118,8 @@
 //!   reference player sfizz read them ([`Trigger::starts_on_press`]). Sonatina's legato patches
 //!   pair them with a timed exclusive-group fade, so a phrase starts with the attack sample and
 //!   each joined note overlaps the one before it. Unlike sfizz, which counts every key down, a
-//!   held keyswitch key does not count, so an articulation chosen with a held switch still
-//!   starts its phrase with a `first` note. A key released under the sustain pedal is not down,
+//!   held keyswitch key (of any patch of a set) does not count, so an articulation chosen with
+//!   a held switch still starts its phrase with a `first` note. A key released under the sustain pedal is not down,
 //!   and a key pressed again while it is still down counts itself, so the second press is
 //!   joined as in sfizz. All notes off releases every key, so the next press is a `first` note.
 //! - **Overlap legato.** A preset whose library says it plays legato by overlapping its notes
@@ -147,7 +147,7 @@
 //!   its release, and neither an exclusive group nor the sustain pedal changes its fade; a fade
 //!   that an earlier transition started is shortened to 10 ms, so a run faster than the
 //!   crossfade keeps at most two notes sounding beyond those short tails. Keyswitch keys play
-//!   no part in it. It is an emulation from sustained samples, not recorded transitions.
+//!   no part in it, those of every patch of a set included. It is an emulation from sustained samples, not recorded transitions.
 //! - **Velocity.** A region's gain follows the note's velocity as its `amp_veltrack` says: the
 //!   curve `(velocity / 127)²` at the default 100 %, constant at 0 %, inverted below 0. Its
 //!   velocity crossfade (`xfin_*vel`, `xfout_*vel`, `xf_velcurve`) scales it too, so dynamic
@@ -1016,7 +1016,9 @@ impl Sampler {
         // The patch the note plays, of a multi-patch set: its own articulation's, else the
         // parameter's.
         let member = self.member_with(own.unwrap_or(self.forced));
-        let keyswitches = bank.keyswitches_of(member);
+        // The keyswitch keys of the device: of the patch, or of every patch of a set, since a
+        // press of one selects its switch there and is no note of a phrase in any patch.
+        let keyswitches = &bank.keyswitches;
         // Counted before this key is marked down, so a press of a key that is still down
         // counts that key (sfizz counts both presses too).
         let another_key_down = self.another_key_down(keyswitches);
@@ -1168,9 +1170,9 @@ impl Sampler {
         }
     }
 
-    /// Whether a key other than a key of `keyswitches` (those of the patch a press plays) is
-    /// down: what selects between the `first` and `legato` regions of a press. A key the
-    /// sustain pedal holds after its release is not down.
+    /// Whether a key other than a key of `keyswitches` (the device's: those of the patch, or of
+    /// every patch of a set) is down: what selects between the `first` and `legato` regions of
+    /// a press. A key the sustain pedal holds after its release is not down.
     fn another_key_down(&self, keyswitches: &Keyswitches) -> bool {
         (0..=127_u8)
             .zip(&self.key_down)

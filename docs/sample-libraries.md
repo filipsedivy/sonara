@@ -115,8 +115,8 @@ A `trigger=first` region plays only when its key is pressed while no other key i
 `trigger=legato` region only while another key is down, as the SFZ format and sfizz define them.
 Sonatina's legato patches are written this way: the first note of a phrase plays its attack, and
 each note played while the previous key is still held plays the legato group, which overlaps the
-old note for the patch's `off_time`. Held keyswitch keys do not count as notes (sfizz counts
-them), keys the sustain pedal holds after their release are not down, and all notes off (a seek or
+old note for the patch's `off_time`. Held keyswitch keys, those of every patch of a multi-patch
+set included, do not count as notes (sfizz counts them), keys the sustain pedal holds after their release are not down, and all notes off (a seek or
 a loop wrap) starts the next note as a new phrase. A patch without such regions can still play
 legato through an overlap legato that its library claims (below, "How `legato` plays").
 
@@ -316,7 +316,8 @@ ordinary sound and joins its notes:
   keeps only its last note; every other choice plays polyphonic.
 - A note on the same key as the one before plays its attack again, as does the first note of a
   phrase and the first note after a seek or a loop wrap. A note left by a crossfade plays no
-  release samples.
+  release samples. A keyswitch note, of any patch of a set, is no note of the line: the line
+  sounds on through it.
 
 This is an emulation from the sustained samples, not recorded transitions, and how good it
 sounds depends on the library and the times. Neither shipped profile claims an overlap legato
