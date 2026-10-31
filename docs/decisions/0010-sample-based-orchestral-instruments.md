@@ -1,6 +1,7 @@
 # ADR 0010: Sample-based orchestral instruments
 
-- **Status:** Accepted (2026-10-27); decision 4 amended (2026-10-30)
+- **Status:** Accepted (2026-10-27); decision 4 amended (2026-10-30); the live rebuild
+  consequence amended (2026-10-31)
 - **Research:** [orchestral-audio-engine-research.md](../orchestral-audio-engine-research.md)
 
 ## Context
@@ -61,8 +62,12 @@ samples. The constraints that decide the design are rules, not taste:
 
 ## Consequences
 
-- A live graph rebuild recreates sampler devices, so sounding notes restart on an edit during
-  playback (the loaded bank is cached; no file is read again).
+- A live graph rebuild keeps a sampler device whose instrument is unchanged (the same preset
+  with the same mapping), so its sounding notes ring on through an edit during playback; a new
+  parameter value, such as an `articulation`, reaches it as a parameter change. Another preset,
+  or a changed mapping of the same preset, recreates the device, and its sounding notes stop
+  (the loaded bank is cached; no file is read again). *Amended 2026-10-31: until then, every
+  rebuild recreated sampler devices.*
 - Supported SFZ: velocity and key ranges, `seq_*` round robin, `lorand`/`hirand`, keyswitches,
   `trigger=release`, `group`/`off_by`, `loop_mode`, `ampeg_attack`/`release`, `tune`, `volume`,
   `offset`/`end`, `#include`/`#define`/`default_path`. CC-driven layers and crossfades, filters,

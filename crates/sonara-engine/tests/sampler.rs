@@ -14,11 +14,20 @@
 //! names, from a stored choice or an automation lane. The oracle is the same clip in `auto` with
 //! keyswitch notes that select the same switches; a seek and every pass of a loop must play as
 //! straight play does, with the clip's own keyswitches winning after the parameter's.
+//!
+//! **Live rebuilds** (an edit during playback) keep a sampler whose instrument is unchanged, so
+//! its sounding notes ring on: the oracle is the graph that was never rebuilt, bit for bit, and
+//! a new `articulation` reaches the kept sampler exactly as a lane that steps there does.
+//! Another preset, or the same preset with a changed mapping, builds the sampler again, and its
+//! notes stop. The render thread's swap and adoption run inside `assert_no_alloc`, and the
+//! replaced graph is dropped outside it, as the player drops it off the render thread (RT-02,
+//! RT-09).
 
 use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use assert_no_alloc::{AllocDisabler, assert_no_alloc};
 use serde_json::{Value, json};
@@ -26,10 +35,11 @@ use sonara_core::model::project::Project;
 use sonara_core::plugins::{PluginRegistry, SamplerChoices, builtin_registry, sampler_descriptor};
 use sonara_dsp::bank::{ArticulationTarget, DynamicsDrive, SamplerMapping, Selector};
 use sonara_engine::{
-    DEFAULT_BLOCK, GraphOptions, OfflineRenderer, RenderGraph, RenderRequest, RenderedAudio, Tail,
+    Applied, DEFAULT_BLOCK, GraphBuilder, GraphOptions, OfflineRenderer, RenderGraph,
+    RenderRequest, RenderedAudio, Tail, Update, apply,
 };
 use sonara_media::{InstrumentSource, MediaProvider};
-use sonara_project::serializer::{loads, project_from_value};
+use sonara_project::serializer::{loads, project_from_value, project_to_value};
 use sonara_testkit::Golden;
 
 #[global_allocator]
@@ -750,15 +760,9 @@ fn a_render_from_a_later_beat_is_the_slice_of_the_full_render() {
 /// is -12.
 fn articulations(patch: &Path) -> MediaProvider {
     let patch = patch.to_owned();
-    let switch = |key| {
-        Some(ArticulationTarget {
-            selector: Some(Selector::Keyswitch(key)),
-            legato: false,
-        })
-    };
     let mapping = |key_offset| {
         Arc::new(SamplerMapping::new(
-            vec![None, switch(24), switch(25), switch(26)],
+            vec![None, Some(switch(24)), Some(switch(25)), Some(switch(26))],
             DynamicsDrive::Velocity,
             None,
             key_offset,
@@ -778,6 +782,14 @@ fn articulations(patch: &Path) -> MediaProvider {
                 mapping: Arc::clone(mapping),
             })
     })
+}
+
+/// The target of an articulation that the keyswitch `key` selects.
+fn switch(key: u8) -> ArticulationTarget {
+    ArticulationTarget {
+        selector: Some(Selector::Keyswitch(key)),
+        legato: false,
+    }
 }
 
 /// An automation lane of the sampler's `articulation`, holding the choice index of each point
@@ -918,4 +930,279 @@ fn a_key_offset_moves_the_clip_and_its_keyswitch_notes_also_after_a_seek() {
         &media,
         &[0, AFTER_SWITCH, AFTER_CHANGE],
     );
+}
+
+/// The presets of [`articulations`], resolved as the application resolves them: every lookup
+/// compiles the preset's mapping again, into a new [`Arc`] of an equal mapping. Once `revised`
+/// is set, `lib/articulations` resolves with the mapping of a revised profile, which claims
+/// `sustain` on D1 (26) and `staccato` on C#1 (25).
+fn revisable(patch: &Path, revised: Arc<AtomicBool>) -> MediaProvider {
+    let patch = patch.to_owned();
+    no_media().with_instruments(move |value| {
+        let key_offset = match value {
+            "lib/articulations" => 0,
+            "lib/keyed-low" => -12,
+            _ => return None,
+        };
+        // Relaxed: the tests set the flag between two graph builds on their own thread.
+        let (sustain, staccato) = if value == "lib/articulations" && revised.load(Ordering::Relaxed)
+        {
+            (26, 25)
+        } else {
+            (25, 26)
+        };
+        Some(InstrumentSource {
+            id: value.to_owned(),
+            patch: patch.clone(),
+            mapping: Arc::new(SamplerMapping::new(
+                vec![
+                    None,
+                    Some(switch(24)),
+                    Some(switch(sustain)),
+                    Some(switch(staccato)),
+                ],
+                DynamicsDrive::Velocity,
+                None,
+                key_offset,
+            )),
+        })
+    })
+}
+
+/// The built-in plugins and the sampler, which offers both presets of [`revisable`].
+fn both_presets() -> PluginRegistry {
+    let mut registry = builtin_registry();
+    let installed = ["lib/articulations".to_owned(), "lib/keyed-low".to_owned()];
+    let descriptor = sampler_descriptor(&choices(&installed)).expect("two instruments");
+    registry.register(descriptor).expect("registers once");
+    registry
+}
+
+/// The sampler track of [`sampler_project`] with `params`: C4 from beat 0.0625, two beats long,
+/// so it sounds through [`REBUILD_AT`], and D4 at [`LATER_NOTE`], half a beat long.
+fn held_note(params: &Value, automation: &[Value]) -> Project {
+    let notes = [
+        note("n_000000000001", 60, 0.0625, 2.0),
+        note("n_000000000005", 62, 3.5, 0.5),
+    ];
+    sampler_project(params, &notes, &[], automation).0
+}
+
+/// `project` with its sampler track renamed: an edit that changes nothing the graph plays.
+fn renamed(project: &Project) -> Project {
+    let mut data = project_to_value(project);
+    data["tracks"][0]["name"] = json!("Horn");
+    let data = data.as_object().expect("a project is an object");
+    project_from_value(data).expect("the renamed project loads")
+}
+
+/// The block start of the rebuilds, while the first note of [`held_note`] sounds (beat 0.853).
+const REBUILD_AT: i64 = 40 * BLOCK;
+/// The start of the second note of [`held_note`] (beat 3.5), long after the first one is
+/// silent.
+const LATER_NOTE: usize = 84_000;
+
+/// A fresh live graph of `project`, which the builder thread of a player built.
+fn fresh(
+    builder: &mut GraphBuilder,
+    project: &Project,
+    registry: &PluginRegistry,
+    media: &MediaProvider,
+) -> Box<RenderGraph> {
+    let graph = builder
+        .fresh(project, registry, media)
+        .expect("the graph builds");
+    assert!(graph.warnings().is_empty(), "{:?}", graph.warnings());
+    graph
+}
+
+/// Swaps `next` in for `current` as the render thread does, inside `assert_no_alloc`, and
+/// returns the graph it replaced.
+fn swap_in(
+    current: &mut Option<Box<RenderGraph>>,
+    next: Box<RenderGraph>,
+) -> Option<Box<RenderGraph>> {
+    let mut update = Update::Graph(Some(next));
+    let applied = assert_no_alloc(|| apply(current, &mut update));
+    assert_eq!(applied, Applied::Swapped);
+    match update {
+        Update::Graph(old) => old,
+        Update::Setup(_) => panic!("a graph update stays one"),
+    }
+}
+
+/// Plays `project` live from frame 0 to [`END`], never rebuilt.
+fn played_through(
+    project: &Project,
+    registry: &PluginRegistry,
+    media: &MediaProvider,
+) -> Vec<[f64; 2]> {
+    let mut graph = fresh(
+        &mut GraphBuilder::new(DEFAULT_BLOCK),
+        project,
+        registry,
+        media,
+    );
+    play(&mut graph, 0, END)
+}
+
+/// Plays `project` live from frame 0, switches at [`REBUILD_AT`] to a rebuild of `edited`
+/// that adopts the playing graph, and plays on to [`END`]. `edit` runs just before the rebuild
+/// is built, for an edit outside the project (a library whose mapping is compiled again).
+/// Returns the output and the voices the sampler sounds after the first block of the rebuilt
+/// graph.
+fn rebuilt(
+    project: &Project,
+    edited: &Project,
+    registry: &PluginRegistry,
+    media: &MediaProvider,
+    edit: impl FnOnce(),
+) -> (Vec<[f64; 2]>, f64) {
+    let mut builder = GraphBuilder::new(DEFAULT_BLOCK);
+    let mut current = None;
+    let first = fresh(&mut builder, project, registry, media);
+    assert!(swap_in(&mut current, first).is_none());
+    let graph = current.as_mut().expect("a graph plays");
+    let mut out = play(graph, 0, REBUILD_AT);
+    edit();
+    let next = builder
+        .rebuild(edited, registry, media)
+        .expect("the graph builds");
+    assert!(next.warnings().is_empty(), "{:?}", next.warnings());
+    let old = swap_in(&mut current, next).expect("the playing graph comes back");
+    // Off the render thread, as the player drops a replaced graph (RT-09).
+    drop(old);
+    let graph = current.as_mut().expect("a graph plays");
+    out.extend(play(graph, REBUILD_AT, REBUILD_AT + BLOCK));
+    let voices = voices(graph);
+    out.extend(play(graph, REBUILD_AT + BLOCK, END));
+    (out, voices)
+}
+
+/// The voices the samplers of `graph` sound after its last block, from their reports.
+fn voices(graph: &RenderGraph) -> f64 {
+    graph
+        .reports()
+        .filter_map(|(_, report)| {
+            report
+                .entries()
+                .iter()
+                .find(|(name, _)| *name == "voices")
+                .map(|&(_, voices)| voices)
+        })
+        .sum()
+}
+
+/// The index of `frame` in an output played from frame 0.
+fn at(frame: i64) -> usize {
+    usize::try_from(frame).expect("a frame of the render")
+}
+
+#[test]
+fn an_unchanged_sampler_keeps_its_voices_across_a_rebuild() {
+    // An edit that leaves the sampler's instrument alone (a renamed track) keeps the sampler,
+    // so the held note rings on: the render equals the graph that was never rebuilt, bit for
+    // bit. The resolver compiles a new, equal mapping for every build, and the provider still
+    // hands out the same instrument.
+    let (_dir, patch) = keyswitch_patch();
+    let media = revisable(&patch, Arc::default());
+    let registry = both_presets();
+    let project = held_note(
+        &json!({"instrument": "lib/articulations", "articulation": "sustain"}),
+        &[],
+    );
+    let renamed = renamed(&project);
+    let heard = played_through(&project, &registry, &media);
+    let (played, voices) = rebuilt(&project, &renamed, &registry, &media, || {});
+    assert!(
+        played == heard,
+        "the held note rings on through the rebuild"
+    );
+    assert_eq!(voices, 1.0, "the held note's voice is kept");
+    let block = at(REBUILD_AT)..at(REBUILD_AT + BLOCK);
+    assert!(
+        loudest(&heard[block]) > 0.1,
+        "the held note sounds at the rebuild, so the comparison discriminates"
+    );
+}
+
+#[test]
+fn an_articulation_edit_reaches_the_kept_sampler_as_a_lane_step_does() {
+    // The articulation goes from `sustain` (C#1) to `staccato` (D1) at the rebuild: by an edit
+    // and a rebuild, or by a hold lane whose step lies between the clocks of the blocks before
+    // and at REBUILD_AT (beat 0.84). The held note rings on as `sustain`; the later note plays
+    // `staccato`.
+    let (_dir, patch) = keyswitch_patch();
+    let media = revisable(&patch, Arc::default());
+    let registry = both_presets();
+    let sustain = json!({"instrument": "lib/articulations", "articulation": "sustain"});
+    let project = held_note(&sustain, &[]);
+    let edited = held_note(
+        &json!({"instrument": "lib/articulations", "articulation": "staccato"}),
+        &[],
+    );
+    let stepped = held_note(&sustain, &[articulation_lane(&[(0.0, 2.0), (0.84, 3.0)])]);
+    let (played, voices) = rebuilt(&project, &edited, &registry, &media, || {});
+    assert!(
+        played == played_through(&stepped, &registry, &media),
+        "the edit plays as the lane's step"
+    );
+    assert_eq!(voices, 1.0, "the held note's voice is kept");
+    let unedited = played_through(&project, &registry, &media);
+    assert!(
+        played[..LATER_NOTE] == unedited[..LATER_NOTE],
+        "the held note rings on as it was"
+    );
+    assert!(
+        played[LATER_NOTE..] != unedited[LATER_NOTE..],
+        "the later note plays the new articulation"
+    );
+    assert!(
+        loudest(&played[LATER_NOTE..]) > 0.1,
+        "the later note sounds"
+    );
+}
+
+#[test]
+fn another_preset_or_a_changed_mapping_rebuilds_the_sampler() {
+    // A rebuilt sampler starts without voices and a rebuild does not chase, so the held note
+    // stops at the rebuild; the later note plays the new instrument exactly as a graph that
+    // played it from the start does.
+    let (_dir, patch) = keyswitch_patch();
+    let registry = both_presets();
+    let project = held_note(
+        &json!({"instrument": "lib/articulations", "articulation": "sustain"}),
+        &[],
+    );
+    let another = held_note(
+        &json!({"instrument": "lib/keyed-low", "articulation": "sustain"}),
+        &[],
+    );
+    let revised = Arc::new(AtomicBool::new(false));
+    let media = revisable(&patch, Arc::clone(&revised));
+    // The edited project, and whether the library's profile is revised at the rebuild.
+    let cases = [
+        ("another preset", &another, false),
+        ("a changed mapping of the same preset", &project, true),
+    ];
+    for (case, edited, revise) in cases {
+        revised.store(false, Ordering::Relaxed);
+        let (played, voices) = rebuilt(&project, edited, &registry, &media, || {
+            revised.store(revise, Ordering::Relaxed);
+        });
+        assert_eq!(voices, 0.0, "{case}: the held note's voice is gone");
+        assert!(
+            loudest(&played[at(REBUILD_AT)..LATER_NOTE]) == 0.0,
+            "{case}: the held note stops at the rebuild"
+        );
+        let heard = played_through(edited, &registry, &media);
+        assert!(
+            loudest(&heard[LATER_NOTE..]) > 0.1,
+            "{case}: the later note sounds"
+        );
+        assert!(
+            played[LATER_NOTE..] == heard[LATER_NOTE..],
+            "{case}: the later note plays the new instrument"
+        );
+    }
 }

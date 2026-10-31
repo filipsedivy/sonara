@@ -7,9 +7,10 @@
 //! layout of the last graph it built. The plan pairs, in the prototype's way
 //! (`RenderGraph.__init__(…, previous)` in `audio/engine/graph.py`):
 //!
-//! - **processors** by device ID, when the plugin ID, the device state and the setup-relevant
-//!   parameters are unchanged (the reuse decision is made while building, see
-//!   `Builder::slot`);
+//! - **processors** by device ID, when the plugin ID, the device state (a convolver's impulse
+//!   response, a sampler's instrument, the playable notes) and the setup-relevant parameters
+//!   are unchanged (the reuse decision is made while building, see `Builder::slot`), so a
+//!   sampler kept this way lets its sounding notes ring on;
 //! - **nodes** by track ID: the volume, pan and mute smoothers, pending live events and the
 //!   notes to release;
 //! - **sends** by send ID within the same track: the send-level smoothers;
@@ -19,6 +20,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use sonara_dsp::bank::SamplerSetup;
 use sonara_dsp::processor::{NoteSet, ParamSlots, ProcessSpec};
 use sonara_media::FullAudio;
 
@@ -84,6 +86,9 @@ pub(crate) struct DeviceLayout {
     /// The loaded impulse response it was given (identity by pointer; the media provider
     /// caches loads by asset and rate).
     pub(crate) ir_source: Option<Arc<FullAudio>>,
+    /// The instrument a sampler was given (identity by pointer; the media provider hands out
+    /// the same setup again while the preset's patch and mapping stay the same).
+    pub(crate) sampler: Option<Arc<SamplerSetup>>,
     pub(crate) playable_notes: NoteSet,
     pub(crate) instance: InstanceId,
     /// Where its processor comes from in the previous graph, when it is reused.

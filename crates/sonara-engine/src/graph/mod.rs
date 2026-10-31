@@ -758,8 +758,17 @@ impl<'a> LiveBuilder<'a> {
     }
 
     /// The old processor a new slot takes over: the same device and plugin, the same device
-    /// state (impulse response and playable notes), and parameters it can take through
-    /// `set_params` ([`reusable`]).
+    /// state (impulse response, sampler instrument and playable notes), and parameters it can
+    /// take through `set_params` ([`reusable`]).
+    ///
+    /// A sampler is kept while it plays the same instrument: the setup the media provider
+    /// hands out again for an unchanged preset, patch and mapping, compared by pointer like an
+    /// impulse response. Its sounding notes then ring on through the rebuild, and a new
+    /// `articulation` or `dynamics` reaches it through `set_params` at the adoption. Another
+    /// preset, or the same preset with a changed mapping, is a new setup, so the sampler is
+    /// built again (from the cached patch, without reading files) and its notes stop. The
+    /// adoption only moves the kept sampler, with the setup it holds, so nothing of the
+    /// instrument is freed on the render thread (RT-09).
     fn reuse(
         &mut self,
         device: &Device,
@@ -773,12 +782,14 @@ impl<'a> LiveBuilder<'a> {
             (None, None) => true,
             _ => false,
         };
-        // A sampler is rebuilt with every graph: its instrument is device state, which `reuse`
-        // does not compare, so a reused one could keep playing a replaced patch. The loaded
-        // bank is cached, so a rebuild costs no file reads; sounding notes restart (ADR 0010).
+        let same_instrument = match (old.sampler.as_ref(), state.sampler.as_ref()) {
+            (Some(a), Some(b)) => Arc::ptr_eq(a, b),
+            (None, None) => true,
+            _ => false,
+        };
         let fits = old.plugin_id == device.plugin_id
-            && device.plugin_id != SAMPLER_ID
             && same_source
+            && same_instrument
             && old.playable_notes == state.playable_notes
             && reusable(&device.plugin_id, &old.params, params)
             && self.claimed.insert(old.address);
@@ -977,10 +988,10 @@ impl Builder<'_> {
     /// warning when its plugin is not available.
     ///
     /// A live build that reuses the previous graph's processor builds a cheap stand-in instead
-    /// (deferred, without an impulse response or playable notes, so the reverb synthesizes
-    /// nothing and the drum kit no sound), which gives the new parameters' latency for the
-    /// delay compensation. [`RenderGraph::adopt`] swaps the reused processor in and sends the
-    /// stand-in back with the old graph.
+    /// (deferred, without an impulse response, instrument or playable notes, so the reverb
+    /// synthesizes nothing, the drum kit no sound and the sampler holds no patch), which gives
+    /// the new parameters' latency for the delay compensation. [`RenderGraph::adopt`] swaps
+    /// the reused processor in and sends the stand-in back with the old graph.
     fn slot(
         &mut self,
         track: &Track,
@@ -1051,6 +1062,7 @@ impl Builder<'_> {
                 },
                 params,
                 ir_source,
+                sampler: state.sampler.clone(),
                 playable_notes: state.playable_notes,
                 instance,
                 reused: reused.map(|(address, _)| address),

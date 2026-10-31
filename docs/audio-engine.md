@@ -235,9 +235,12 @@ after the all-notes-off, like any keyswitch or such controller event from a clip
 until it is applied again. Every note and keyswitch event is moved by the mapping's key offset
 before the processor reads it, and one moved outside 0 to 127 is dropped; the chase's keyswitch
 notes are the clip notes that the offset moves onto a keyswitch key. `instrument_type` names the
-instrument and `dynamics` is not played yet. A graph rebuild recreates sampler devices, so
-sounding notes restart. There are no measured load or memory numbers for it yet (HW-01: they are
-measured locally).
+instrument and `dynamics` is not played yet. A live graph rebuild keeps a sampler device whose
+instrument is unchanged (the same preset with the same mapping, so the same setup), so its
+sounding notes ring on through an edit during playback, and a new parameter value, such as an
+`articulation`, reaches it as a parameter change. Another preset, or a changed mapping of the
+same preset, builds the device again from the cached patch, and its sounding notes stop. There
+are no measured load or memory numbers for it yet (HW-01: they are measured locally).
 
 ## Measured performance
 
