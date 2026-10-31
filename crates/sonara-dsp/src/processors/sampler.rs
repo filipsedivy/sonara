@@ -11,8 +11,9 @@
 //!   ([`EventKind::KeySwitch`]) of a keyswitch key makes it the active switch too, without
 //!   starting the regions mapped to that key or holding it down. All notes off makes the
 //!   default switch active again: the engine sends it when playback jumps (start, seek, loop
-//!   wrap), followed by a keyswitch event for the last keyswitch note before the new position,
-//!   so the articulation there is the one that playing up to it selects.
+//!   wrap), followed by a keyswitch event for the last note before the new position on each
+//!   keyswitch key, in timeline order, so the articulation there is the one that playing up to
+//!   it selects, in every patch of a set.
 //! - **The `articulation` parameter.** `auto`, its default, forces nothing: the patch's default
 //!   switch and the keyswitches of the clips decide, as above. Any other choice applies its
 //!   target in the preset's mapping ([`SamplerMapping::target`]) to the notes that start after
@@ -29,9 +30,11 @@
 //!   The target is applied when the choice changes, and again on a reset and at all notes off,
 //!   so a seek or a loop wrap keeps it. A keyswitch or an event of the target's controller that
 //!   comes from a clip after it wins until the target is applied again, so the engine's chase,
-//!   which sends the clip's last keyswitch and controller values after its all notes off,
-//!   restores what the clips selected before the new position. Back at `auto`, the clips' last
-//!   keyswitch and controller values apply again.
+//!   which sends the clip's last keyswitches and controller values after its all notes off,
+//!   restores what the clips selected before the new position. A chased keyswitch whose note
+//!   came before an automated change applied the target again (its event's `value` is 1) does
+//!   not win: it only becomes the patch's switch, as it was in straight play. Back at `auto`,
+//!   the clips' last keyswitch and controller values apply again.
 //!
 //!   An automated change inside a block arrives as a choice event
 //!   ([`EventKind::ParamChoice`]) at its own frame, rather than with the parameters at the
@@ -857,9 +860,10 @@ impl Sampler {
             EventKind::ParamChoice => self.change_choice(event),
             EventKind::KeySwitch => {
                 // Only a keyswitch key of the patch (of a set's patches) selects an
-                // articulation, as with a press.
+                // articulation, as with a press. A keyswitch that the articulation's target was
+                // applied after (`value` 1) does not win over it.
                 if let Some(event) = self.moved(event) {
-                    self.select_switch(event.pitch);
+                    self.select_switch(event.pitch, event.value == 0);
                 }
             }
             EventKind::AllNotesOff => {
@@ -1018,7 +1022,7 @@ impl Sampler {
         let another_key_down = self.another_key_down(keyswitches);
         let switch_key = keyswitches.contains(key);
         // A keyswitch key of the patch, or of another patch of a set, selects its switch there.
-        self.select_switch(key);
+        self.select_switch(key, true);
         // A keyswitch key plays no part in the overlap legato.
         let joined = if switch_key {
             None
@@ -1078,10 +1082,11 @@ impl Sampler {
     }
 
     /// Makes `key`, a key that a clip pressed or sent, the active switch of every patch whose
-    /// keyswitch key it is (of a bank of one patch, of the patch): it wins over the switch an
-    /// articulation forces in that patch, until that is applied again. A key that is no
-    /// keyswitch key changes nothing.
-    fn select_switch(&mut self, key: u8) {
+    /// keyswitch key it is (of a bank of one patch, of the patch). When it `wins`, it wins over
+    /// the switch an articulation forces in that patch, until that is applied again; otherwise
+    /// the forced switch stays, and the key is the patch's switch once nothing forces one. A key
+    /// that is no keyswitch key changes nothing.
+    fn select_switch(&mut self, key: u8, wins: bool) {
         let forced_member = self.member_with(self.forced);
         let Some(bank) = bank_of(self.setup.as_ref()) else {
             return;
@@ -1094,7 +1099,7 @@ impl Sampler {
                 *switch = Some(key);
             }
         }
-        if bank.keyswitches_of(forced_member).contains(key) {
+        if wins && bank.keyswitches_of(forced_member).contains(key) {
             self.forced.switch = None;
         }
     }

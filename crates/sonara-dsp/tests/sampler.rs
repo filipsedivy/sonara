@@ -2587,6 +2587,40 @@ fn a_clip_keyswitch_after_the_target_wins_until_the_target_is_applied_again() {
 }
 
 #[test]
+fn a_chased_keyswitch_from_before_the_target_yields_to_it() {
+    // A chase whose keyswitch the target was applied after (its event's value 1): all notes
+    // off applies the target, and the keyswitch sets the patch's switch without winning over
+    // it, so the chased note plays the target, as straight play did. Back at `auto`, the
+    // clip's keyswitch plays (TST-06: a chased keyswitch used to win in any case).
+    let mut processor = mapped(
+        four_articulations(),
+        four_targets(0),
+        &articulation("pizzicato"),
+    );
+    let yielding = InstrumentEvent {
+        value: 1,
+        ..event(EventKind::KeySwitch, 25, 0)
+    };
+    let chased = run(
+        &mut *processor,
+        &[
+            event(EventKind::AllNotesOff, 0, 0),
+            yielding,
+            event(EventKind::NoteOn, 62, 127),
+        ],
+    );
+    close(level(&chased), 0.0625);
+    run(&mut *processor, &[event(EventKind::NoteOff, 62, 0)]);
+    close(note(&mut *processor), 0.0625);
+    set(&mut *processor, &articulation("auto"));
+    close(note(&mut *processor), 0.25);
+    // A keyswitch that wins (value 0) still overrides the target, as before.
+    set(&mut *processor, &articulation("pizzicato"));
+    run(&mut *processor, &[event(EventKind::KeySwitch, 25, 0)]);
+    close(note(&mut *processor), 0.25);
+}
+
+#[test]
 fn a_change_of_another_parameter_does_not_apply_the_target_again() {
     // The engine sets the parameters at every block; only a change of the choice applies its
     // target, so an automated volume leaves the clip's keyswitch alone.

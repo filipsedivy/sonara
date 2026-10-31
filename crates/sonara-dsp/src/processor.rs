@@ -82,8 +82,10 @@ pub enum EventKind {
     AllNotesOff,
     /// The keyswitch key `pitch` selects its articulation without sounding: no region starts
     /// and the key does not count as held. The engine's chase sends it to a sampler for the
-    /// last keyswitch note before the new position; an instrument without keyswitches ignores
-    /// it.
+    /// last note before the new position on each keyswitch key, in timeline order; an
+    /// instrument without keyswitches ignores it. `value` 1 says that the sampler's
+    /// articulation target was applied again after the note, so the target keeps winning over
+    /// it; 0 that the keyswitch wins, as a pressed keyswitch key does.
     KeySwitch,
     /// An automated enum parameter takes a new choice from this frame on: the parameter at
     /// index `number` in descriptor order takes the choice with index `value`, as
@@ -108,7 +110,8 @@ pub struct InstrumentEvent {
     pub velocity: u8,
     /// MIDI channel.
     pub channel: u8,
-    /// Controller value, bend or pressure, or the choice of a [`EventKind::ParamChoice`].
+    /// Controller value, bend or pressure, the choice of a [`EventKind::ParamChoice`], or
+    /// whether a [`EventKind::KeySwitch`] yields to the articulation target (1) or wins (0).
     pub value: i32,
     /// Controller number, or the parameter index of a [`EventKind::ParamChoice`].
     pub number: u8,

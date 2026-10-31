@@ -4,8 +4,9 @@
 //! audible and does not clip); they say nothing about how a real library sounds.
 //!
 //! **The chase** (a seek, a loop wrap, a render that starts later): a sampler gets the clip's
-//! last keyswitch and its last modulation, expression and sustain values before the new
-//! position, so it plays there as playing up to it does. The oracle is the same graph played
+//! last keyswitch on each keyswitch key and its last modulation, expression and sustain values
+//! before the new position, so it plays there as playing up to it does, in every patch of a
+//! set. The oracle is the same graph played
 //! without the jump, bit for bit. The binary installs `AllocDisabler`, and every block of these
 //! checks is processed inside `assert_no_alloc` (RT-02). The Poly Synth and the Drum Kit keep
 //! the plain chase: `tests/golden_render.rs` pins their renders byte for byte (GLD-01).
@@ -17,7 +18,8 @@
 //! **The `articulation` parameter** of a profiled preset selects the keyswitch its mapping
 //! names, from a stored choice or an automation lane. The oracle is the same clip in `auto` with
 //! keyswitch notes that select the same switches; a seek and every pass of a loop must play as
-//! straight play does, with the clip's own keyswitches winning after the parameter's. A lane's
+//! straight play does, with the clip's own keyswitches winning after the parameter's, unless a
+//! lane applied the parameter's target again after them. A lane's
 //! change lands at its own frame inside a block: a note on a point's beat plays the new choice,
 //! as it does after a keyswitch note on that beat, and a linear lane changes at the first frame
 //! of each choice.
@@ -1152,6 +1154,50 @@ fn a_clip_keyswitch_wins_after_the_articulation_also_after_a_seek() {
 }
 
 #[test]
+fn an_articulation_lane_wins_after_an_earlier_clip_keyswitch_also_after_a_seek() {
+    // The clip switches to C#1 at beat 0.75, and a lane changes the articulation from `auto`
+    // to `staccato` (D1) at beat 2: the lane's change applies its target after the clip's
+    // switch, so the last note plays D1, as when the clip itself switches to D1 at beat 2. A
+    // seek past the change must play D1 too: the chase restores the clip's C#1 as the
+    // patch's switch, but the target applied after it keeps winning (TST-06: the chase used
+    // to let the clip's last keyswitch win, so a seek there played C#1).
+    let (_dir, patch) = keyswitch_patch();
+    let media = articulations(&patch);
+    let [first, second, third] = three_notes();
+    let clip_switch = note("n_000000000002", 25, 0.75, 0.125);
+    let lane = articulation_lane(&[(0.0, 0.0), (2.0, 3.0)]);
+    let automated = sampler_project(
+        &json!({"instrument": "lib/articulations"}),
+        &[
+            first.clone(),
+            clip_switch.clone(),
+            second.clone(),
+            third.clone(),
+        ],
+        &[],
+        &[lane],
+    );
+    let oracle = sampler_project(
+        &json!({"instrument": "lib/articulations"}),
+        &[
+            first,
+            clip_switch,
+            second,
+            note("n_000000000004", 26, 2.0, 0.125),
+            third,
+        ],
+        &[],
+        &[],
+    );
+    plays_as_through(
+        &automated,
+        &oracle,
+        &media,
+        &[0, AFTER_SWITCH, AFTER_CHANGE],
+    );
+}
+
+#[test]
 fn a_key_offset_moves_the_clip_and_its_keyswitch_notes_also_after_a_seek() {
     // A preset keyed an octave below the pitch it sounds (key offset -12) plays a clip written
     // an octave above the patch's keys, its keyswitch notes C#2 and D2 included, exactly as
@@ -2194,6 +2240,61 @@ fn a_set_switches_patches_as_a_keyswitch_patch_switches_also_after_a_seek() {
         &media,
         &[0, AFTER_SWITCH, AFTER_CHANGE],
     );
+}
+
+#[test]
+fn every_patch_of_a_set_keeps_its_clip_keyswitch_also_after_a_seek() {
+    // A set of two keyswitch patches: patch 0 is the keyswitch patch (C1 to D1), patch 1 the
+    // same samples on the keys D#1 to F1. `ordinario` plays patch 0 and `sustain` patch 1,
+    // each with the switch its clip notes selected. The clip selects C#1 in patch 0 at beat
+    // 0.75 and E1 in patch 1 just after it; the notes play patch 0 in `auto`, so they play
+    // C#1. A seek after both switches must keep C#1 in patch 0 although E1 came last
+    // (TST-06: the chase used to send the last keyswitch alone, so patch 0 fell back to C1).
+    let (dir, patch) = keyswitch_patch();
+    let other = dir.path().join("other.sfz");
+    let mut sfz = String::from(
+        "<global> sw_lokey=27 sw_hikey=29 sw_default=27 ampeg_release=0.005 \
+         lokey=36 hikey=72 pitch_keycenter=60\n",
+    );
+    for (switch, sample) in [(27, 24), (28, 25), (29, 26)] {
+        writeln!(sfz, "<region> sw_last={switch} sample={sample}.wav").expect("writes");
+    }
+    fs::write(&other, sfz).expect("write the patch");
+    let members = vec![patch.clone(), other];
+    let set = Arc::new(SamplerMapping::new(
+        vec![
+            None,
+            Some(ArticulationTarget::select(None)),
+            Some(ArticulationTarget {
+                member: 1,
+                ..ArticulationTarget::select(None)
+            }),
+        ],
+        DynamicsDrive::Velocity,
+        None,
+        0,
+    ));
+    let media = no_media().with_instruments(move |value| {
+        (value == "lib/@set").then(|| InstrumentSource {
+            id: value.to_owned(),
+            patches: members.clone(),
+            mapping: Arc::clone(&set),
+        })
+    });
+    let [first, second, third] = three_notes();
+    let project = sampler_project(
+        &json!({"instrument": "lib/@set"}),
+        &[
+            first,
+            note("n_000000000002", 25, 0.75, 0.0625),
+            note("n_000000000004", 28, 0.8125, 0.0625),
+            second,
+            third,
+        ],
+        &[],
+        &[],
+    );
+    plays_as_through(&project, &project, &media, &[0, AFTER_SWITCH, AFTER_CHANGE]);
 }
 
 #[test]

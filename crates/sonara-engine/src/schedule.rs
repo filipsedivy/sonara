@@ -24,11 +24,16 @@
 //!   exactly the prototype's stable sort, without the scratch memory a stable sort allocates.
 //! - **A sampler's chase** ([`NoteSchedule::chase_sampler`]) restores more than the notes,
 //!   at offset 0 between the all-notes-off and the chased notes: a keyswitch event
-//!   ([`EventKind::KeySwitch`]) for the last keyswitch note of the patch that started before
-//!   `frame` (a note that the preset's key offset moves onto a keyswitch key), then the last
-//!   event before `frame` of each of the controllers 1 (modulation), 11 (expression) and 64
-//!   (sustain), on its own channel and in timeline order. So a seek or a loop wrap plays the
-//!   articulation, the swell and the pedal that playing up to the new position leaves. A
+//!   ([`EventKind::KeySwitch`]) for the last note that started before `frame` on each
+//!   keyswitch key (a note that the preset's key offset moves onto a keyswitch key of the
+//!   patch, or of a patch of a set), in timeline order, so every patch of a set gets its own
+//!   last keyswitch; then the last event before `frame` of each of the controllers 1
+//!   (modulation), 11 (expression) and 64 (sustain), on its own channel and in timeline order.
+//!   So a seek or a loop wrap plays the articulation, the swell and the pedal that playing up
+//!   to the new position leaves. A keyswitch note that an automated change of the sampler's
+//!   articulation, mute or vibrato overrode, because the change applied the articulation's
+//!   target again after it (at or before `frame`), is sent with `value` 1, so the target keeps
+//!   winning over it, as in straight play. A
 //!   looping clip's events count on every pass they are placed on, so a position early in a
 //!   later pass, before the pass's own event, gets the value the previous pass left. The
 //!   sampler makes its default switch active, and applies its articulation parameter again, at
@@ -61,8 +66,9 @@
 //!
 //! The event buffer is sized at build for the worst case, every event in one block
 //! (`1 + 2 · notes + controls`: a chased note cannot also start in the block), and a sampler's
-//! chase adds a slot for the keyswitch and one for each restored controller that the schedule
-//! has, at most 4, and one for each choice change, so no event is ever dropped.
+//! chase adds a slot for each keyswitch key of its keyswitch notes and one for each restored
+//! controller that the schedule has, at most 3, and one for each choice change, so no event is
+//! ever dropped.
 //!
 //! **Held notes** ([`NoteSchedule::held_at`]): a live graph's rebuild compares the
 //! notes the old and the edited schedule hold at the carried frame, and releases those that
@@ -192,6 +198,9 @@ pub(crate) struct NoteSchedule {
     /// The changes of a sampler's automated enum parameters, sorted by frame; empty for every
     /// other instrument.
     choices: Vec<ChoiceChange>,
+    /// The frames of the changes in `choices` that make the sampler apply its articulation's
+    /// target again, sorted; what its chase compares the clip's keyswitch notes with.
+    applied: Vec<i64>,
     /// The events of the last block: the first `len` slots.
     events: Vec<InstrumentEvent>,
     len: usize,
@@ -202,6 +211,8 @@ pub(crate) struct NoteSchedule {
 struct SamplerChase {
     /// The notes on a keyswitch key of the patch, stably sorted by `on`.
     switches: Vec<Note>,
+    /// The keyswitch keys that `switches` has: the most keyswitch events one chase sends.
+    switch_keys: usize,
     /// The events of the controllers the chase restores, stably sorted by frame.
     controls: Vec<Control>,
     /// The controllers that `controls` has, one bit each ([`chased_bit`]).
@@ -209,21 +220,59 @@ struct SamplerChase {
 }
 
 impl SamplerChase {
-    /// The events the buffer needs room for: one keyswitch and one event per controller.
+    /// The events the buffer needs room for: one keyswitch per keyswitch key and one event per
+    /// controller.
     fn slots(&self) -> usize {
-        usize::from(!self.switches.is_empty())
+        self.switch_keys
             .saturating_add(usize::try_from(self.present.count_ones()).unwrap_or(0))
     }
 
-    /// Writes the keyswitch and the controller values that playing up to `frame` leaves.
-    fn restore(&self, frame: i64, out: &mut EventWriter<'_>) {
+    /// Writes the keyswitches and the controller values that playing up to `frame` leaves.
+    /// `applied` holds the frames, sorted, at which the sampler applies its articulation's
+    /// target again because an automated choice changes it ([`NoteSchedule::send_choices`]).
+    ///
+    /// The keyswitches are the last note before `frame` on each keyswitch key, in timeline
+    /// order: each patch of a multi-patch set keeps the last of its own, so replaying them in
+    /// order leaves every patch where playing up to `frame` left it. A keyswitch note that lies
+    /// before the last such frame (at or before `frame`) is sent with `value` 1: the target
+    /// applied after it wins over it, as in straight play, and the note only sets the patch's
+    /// switch for when the target no longer forces one.
+    fn restore(&self, frame: i64, applied: &[i64], out: &mut EventWriter<'_>) {
         let pressed = self.switches.partition_point(|note| note.on < frame);
-        if let Some(note) = pressed
-            .checked_sub(1)
-            .and_then(|last| self.switches.get(last))
+        let last_applied = applied
+            .get(..applied.partition_point(|&at| at <= frame))
+            .and_then(<[i64]>::last)
+            .copied();
+        // The last note of each keyswitch key, found walking back from `frame` (latest first)
+        // into a fixed array of their indices, then sent in timeline order (RT-02).
+        let mut latest = [0_usize; 128];
+        let mut found = 0_usize;
+        let mut seen = NoteSet::EMPTY;
+        let before = self.switches.get(..pressed).unwrap_or_default();
+        for (index, note) in before.iter().enumerate().rev() {
+            if found >= self.switch_keys {
+                break;
+            }
+            if seen.contains(note.pitch) {
+                continue;
+            }
+            seen.insert(note.pitch);
+            if let Some(slot) = latest.get_mut(found) {
+                *slot = index;
+                found = found.saturating_add(1);
+            }
+        }
+        for note in latest
+            .get(..found)
+            .unwrap_or_default()
+            .iter()
+            .rev()
+            .filter_map(|&index| before.get(index))
         {
+            let under_target = last_applied.is_some_and(|at| note.on < at);
             out.push(InstrumentEvent {
                 kind: EventKind::KeySwitch,
+                value: i32::from(under_target),
                 articulation: None,
                 ..note_on(note, 0)
             });
@@ -337,15 +386,17 @@ impl NoteSchedule {
             controls,
             sampler: None,
             choices: Vec::new(),
+            applied: Vec::new(),
             events: vec![NO_EVENT; capacity],
             len: 0,
         }
     }
 
     /// Makes the chase restore what a sampler whose keyswitch notes are `switch_keys` (the clip
-    /// pitches that select an articulation of its patch) needs besides the notes: its last
-    /// keyswitch and the last values of the controllers 1, 11 and 64 (see the module docs). The
-    /// graph calls it for sampler instruments only.
+    /// pitches that select an articulation of its patch, or of the patches of a set) needs
+    /// besides the notes: the last note on each keyswitch key and the last values of the
+    /// controllers 1, 11 and 64 (see the module docs). The graph calls it for sampler
+    /// instruments only.
     ///
     /// Setup: allocates (the event buffer grows by the slots the chase adds), so it runs off
     /// the real-time thread, when the graph is built, before the first block.
@@ -365,8 +416,11 @@ impl NoteSchedule {
         let present = controls
             .iter()
             .fold(0, |bits, control| bits | chased_bit(control.number));
+        let keys: NoteSet = switches.iter().map(|note| note.pitch).collect();
+        let switch_keys = (0..=127_u8).filter(|&key| keys.contains(key)).count();
         self.sampler = Some(SamplerChase {
             switches,
+            switch_keys,
             controls,
             present,
         });
@@ -375,12 +429,17 @@ impl NoteSchedule {
 
     /// Makes the schedule send `changes`, the changes of a sampler's automated enum parameters
     /// sorted by frame ([`crate::automation::choice_changes`]), as choice events at their
-    /// frames (see the module docs). The graph calls it for sampler instruments only.
+    /// frames (see the module docs). `applied` holds the frames, sorted, of the changes that
+    /// make the sampler apply its articulation's target again
+    /// ([`crate::automation::target_applications`]), so a chase knows which of the clip's
+    /// keyswitch notes came after the target and win over it. The graph calls it for sampler
+    /// instruments only.
     ///
     /// Setup: allocates (the event buffer grows by a slot per change), so it runs off the
     /// real-time thread, when the graph is built, before the first block.
-    pub(crate) fn send_choices(&mut self, changes: Vec<ChoiceChange>) {
+    pub(crate) fn send_choices(&mut self, changes: Vec<ChoiceChange>, applied: Vec<i64>) {
         self.choices = changes;
+        self.applied = applied;
         self.events.resize(self.worst_case(), NO_EVENT);
     }
 
@@ -427,6 +486,7 @@ impl NoteSchedule {
             controls,
             sampler,
             choices,
+            applied,
             events,
             len,
         } = self;
@@ -437,7 +497,7 @@ impl NoteSchedule {
         if chase {
             out.push(NO_EVENT);
             if let Some(sampler) = sampler {
-                sampler.restore(frame, &mut out);
+                sampler.restore(frame, applied, &mut out);
             }
             for note in notes.iter().filter(|n| n.on < frame && n.off > frame) {
                 out.push(note_on(note, 0));
@@ -1069,18 +1129,23 @@ mod tests {
         schedule
     }
 
+    /// The chase replays the last note on each keyswitch key in timeline order, so the last
+    /// switch is sent last and a set's patches each get their own (TST-06: the chase used to
+    /// send the last switch alone, which lost the switch of every other patch of a set).
     #[test]
-    fn a_sampler_chase_restores_the_last_switch_and_controllers() {
+    fn a_sampler_chase_restores_the_last_switches_and_controllers() {
         let mut schedule = sampler_schedule();
-        // The plain worst case (1 + 2 · 4 notes + 8 controls) plus the keyswitch and the three
-        // controllers.
-        assert_eq!(schedule.capacity(), 17 + 4);
-        // At frame 10 (beat 2.5): the last switch C#1 (frame 2), then the last CC 11 (frame
-        // 2), CC 1 (frame 3) and CC 64 (frame 4, channel 1) in timeline order, then C4.
+        // The plain worst case (1 + 2 · 4 notes + 8 controls) plus a keyswitch for each of the
+        // two keyswitch keys and the three controllers.
+        assert_eq!(schedule.capacity(), 17 + 2 + 3);
+        // At frame 10 (beat 2.5): the last C1 (frame 0) and the last C#1 (frame 2), then the
+        // last CC 11 (frame 2), CC 1 (frame 3) and CC 64 (frame 4, channel 1) in timeline
+        // order, then C4.
         assert_eq!(
             details(schedule.events(10, 1, true)),
             [
                 (0, EventKind::AllNotesOff, 0, 0, 0, 0),
+                (0, EventKind::KeySwitch, 24, 0, 0, 0),
                 (0, EventKind::KeySwitch, 25, 0, 0, 0),
                 (0, EventKind::Cc, 0, 11, 90, 0),
                 (0, EventKind::Cc, 0, 1, 20, 0),
@@ -1090,11 +1155,12 @@ mod tests {
         );
         // A block that continues the last one does not chase.
         assert_eq!(details(schedule.events(11, 1, false)), []);
-        // After beat 3 the last switch is C1 again and the last CC 11 is 40.
+        // After beat 3 the last switch is C1 again, after C#1, and the last CC 11 is 40.
         assert_eq!(
             details(schedule.events(14, 1, true)),
             [
                 (0, EventKind::AllNotesOff, 0, 0, 0, 0),
+                (0, EventKind::KeySwitch, 25, 0, 0, 0),
                 (0, EventKind::KeySwitch, 24, 0, 0, 0),
                 (0, EventKind::Cc, 0, 1, 20, 0),
                 (0, EventKind::Cc, 0, 64, 100, 1),
@@ -1119,9 +1185,12 @@ mod tests {
     fn choice_events_sit_between_note_offs_and_note_ons() {
         let mut schedule = sampler_schedule();
         let capacity = schedule.capacity();
-        schedule.send_choices(Vec::new());
+        schedule.send_choices(Vec::new(), Vec::new());
         assert_eq!(schedule.capacity(), capacity);
-        schedule.send_choices([change(8, 3), change(12, 4), change(13, 2)].to_vec());
+        schedule.send_choices(
+            [change(8, 3), change(12, 4), change(13, 2)].to_vec(),
+            Vec::new(),
+        );
         assert_eq!(schedule.capacity(), capacity + 3);
         schedule.chase_sampler(switch_keys());
         assert_eq!(schedule.capacity(), capacity + 3);
@@ -1142,6 +1211,7 @@ mod tests {
             details(schedule.events(8, 1, true)),
             [
                 (0, EventKind::AllNotesOff, 0, 0, 0, 0),
+                (0, EventKind::KeySwitch, 24, 0, 0, 0),
                 (0, EventKind::KeySwitch, 25, 0, 0, 0),
                 (0, EventKind::Cc, 0, 11, 90, 0),
                 (0, EventKind::Cc, 0, 1, 20, 0),
@@ -1404,6 +1474,41 @@ mod tests {
         );
     }
 
+    /// A chased keyswitch that an automated change of the articulation's target came after
+    /// yields to the target (`value` 1); one after the last such change, or with none before
+    /// the position, wins (`value` 0). A change on the position's own frame counts: the block's
+    /// parameters may already have applied it (TST-06: the chase used to let the clip's last
+    /// keyswitch win over a target applied after it, so a seek played another articulation than
+    /// straight play).
+    #[test]
+    fn a_chased_keyswitch_yields_to_a_target_applied_after_it() {
+        let switches = |schedule: &mut NoteSchedule, frame: i64| -> Vec<(u8, i32)> {
+            schedule
+                .events(frame, 1, true)
+                .iter()
+                .filter(|event| event.kind == EventKind::KeySwitch)
+                .map(|event| (event.pitch, event.value))
+                .collect()
+        };
+        // C1 at frame 0, C#1 at frame 2, C1 again at frame 12 ([`sampler_schedule`]); the
+        // target applied again at frames 6 and 14.
+        let mut schedule = sampler_schedule();
+        schedule.send_choices([change(6, 3), change(14, 2)].to_vec(), [6, 14].to_vec());
+        // Before frame 6 nothing was applied after the switches: they win.
+        assert_eq!(switches(&mut schedule, 5), [(24, 0), (25, 0)]);
+        // From frame 6 on the target came after both.
+        assert_eq!(switches(&mut schedule, 6), [(24, 1), (25, 1)]);
+        assert_eq!(switches(&mut schedule, 10), [(24, 1), (25, 1)]);
+        // C1 at frame 12 came after the change at frame 6, C#1 before it.
+        assert_eq!(switches(&mut schedule, 13), [(25, 1), (24, 0)]);
+        // The change at frame 14 came after both again.
+        assert_eq!(switches(&mut schedule, 14), [(25, 1), (24, 1)]);
+        // Without applied frames every chased keyswitch wins, as before.
+        let mut plain = sampler_schedule();
+        plain.send_choices([change(6, 3), change(14, 2)].to_vec(), Vec::new());
+        assert_eq!(switches(&mut plain, 14), [(25, 0), (24, 0)]);
+    }
+
     /// TST-07: a chase never drops an event, choice events included. The oracle counts the
     /// events of each block from the clip's own frames (a beat is 4 frames) and the frames of
     /// the changes, not from the schedule.
@@ -1439,17 +1544,24 @@ mod tests {
             change(16, 3),
         ];
         let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8, |_| None);
-        schedule.send_choices(changes.to_vec());
+        schedule.send_choices(changes.to_vec(), Vec::new());
         schedule.chase_sampler(switch_keys());
         let capacity = schedule.capacity();
-        assert_eq!(capacity, 1 + 2 * 6 + 6 + 4 + 5);
+        // The plain worst case, a keyswitch for each of the two keyswitch keys, the three
+        // chased controllers and the five changes.
+        assert_eq!(capacity, 1 + 2 * 6 + 6 + 2 + 3 + 5);
         let mut largest = 0;
         for frame in 0..24_i64 {
             for n in [1_i64, 3, 1_000] {
                 let end = frame + n;
-                let switch = notes
+                let switches = [24, 25]
                     .iter()
-                    .any(|&(pitch, on, _)| matches!(pitch, 24 | 25) && on < frame);
+                    .filter(|&&key| {
+                        notes
+                            .iter()
+                            .any(|&(pitch, on, _)| pitch == key && on < frame)
+                    })
+                    .count();
                 let chased_controllers = [1, 11, 64]
                     .iter()
                     .filter(|&&number| controls.iter().any(|&(at, c)| c == number && at < frame))
@@ -1470,7 +1582,7 @@ mod tests {
                     .iter()
                     .filter(|change| (frame..end).contains(&change.frame));
                 let expected = 1
-                    + usize::from(switch)
+                    + switches
                     + chased_controllers
                     + held.count()
                     + offs.count()

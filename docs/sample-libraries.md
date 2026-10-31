@@ -183,8 +183,9 @@ whose opcodes it skips
 sound unless a region of the patch also covers that key, and then it does both. When playback
 jumps, the sampler goes back to the patch's default articulation, and the engine selects again
 the one of the last keyswitch note that started before the new position, without sounding that
-key. So a seek, a loop wrap or a render that starts later plays the articulation that playing up
-to that point selects, and a keyswitch note need not be held through the passage it selects.
+key (on a multi-patch set, the last one of each patch). So a seek, a loop wrap or a render that
+starts later plays the articulation that playing up to that point selects, and a keyswitch note
+need not be held through the passage it selects.
 Regions that the patch starts from a controller instead of a key (`on_locc`/`on_hicc`, such as
 Salamander's pedal noises) or that have a key of -1 (`key`, `lokey` or `hikey`) never play on a
 key; the controller starts the former (above).
@@ -248,7 +249,9 @@ A keyswitch note in a clip, or a clip's event of the controller the articulation
 wins after the articulation, until the articulation is applied again: when it changes, when
 playback starts, and when it jumps (a seek or a loop wrap). After a jump the engine then selects
 again what the clip selected before the new position, so the clip's last keyswitch before it
-wins over the articulation. Back at `auto`, the clip's last keyswitch plays again.
+wins over the articulation, unless an automated change of `articulation`, `mute` or `vibrato`
+applied the articulation again after that keyswitch: then the articulation wins, as it did when
+playing up to the new position. Back at `auto`, the clip's last keyswitch plays again.
 
 **How `mute` and `vibrato` play.** They state the mute and the vibrato of a passage, which hold
 until they change. The articulation then plays the recording the preset's library maps for it

@@ -69,7 +69,9 @@ pub(crate) use live::is_clipping_peak;
 pub use live::{LIVE_EVENTS, NodeMeter, StalePlan};
 
 use crate::EngineError;
-use crate::automation::{DeviceLane, Lane, TempoCurve, choice_changes};
+use crate::automation::{
+    ChoiceChange, DeviceLane, Lane, TempoCurve, choice_changes, target_applications,
+};
 use crate::clips::{AudioClipSource, ClipsSignature};
 use crate::schedule::NoteSchedule;
 use crate::timeline::Timeline;
@@ -866,11 +868,10 @@ impl Builder<'_> {
                         .as_ref()
                         .map_or(NoteSet::EMPTY, |setup| setup.switch_notes());
                     track_schedule.chase_sampler(switch_notes);
-                    track_schedule.send_choices(choice_changes(
-                        &slot.lanes,
-                        &self.project.tempo_map,
-                        self.spec.sample_rate,
-                    ));
+                    let changes =
+                        choice_changes(&slot.lanes, &self.project.tempo_map, self.spec.sample_rate);
+                    let applied = self.target_applications(&slot, &state, &changes);
+                    track_schedule.send_choices(changes, applied);
                 }
                 instrument = Some(slot);
             }
@@ -973,6 +974,41 @@ impl Builder<'_> {
             ));
         }
         schedule
+    }
+
+    /// The frames at which the sampler of `slot`, playing the instrument of `state`, applies
+    /// its articulation's target again among its automated `changes`
+    /// ([`target_applications`]); none without an instrument.
+    fn target_applications(
+        &self,
+        slot: &DeviceSlot,
+        state: &DeviceState,
+        changes: &[ChoiceChange],
+    ) -> Vec<i64> {
+        let (Some(setup), Some(descriptor)) =
+            (state.sampler.as_ref(), self.registry.find(SAMPLER_ID))
+        else {
+            return Vec::new();
+        };
+        // A parameter the descriptor lacks has no slot, and no change names it.
+        let position = |id: &str| {
+            descriptor
+                .params
+                .iter()
+                .position(|spec| spec.id == id)
+                .unwrap_or(usize::MAX)
+        };
+        target_applications(
+            &setup.mapping,
+            &slot.params,
+            &slot.lanes,
+            changes,
+            [
+                position("articulation"),
+                position("mute"),
+                position("vibrato"),
+            ],
+        )
     }
 
     /// The sends of `track`, each starting at its level.

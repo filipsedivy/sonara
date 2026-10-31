@@ -155,10 +155,14 @@ audio hardware and no sleeping.
 - **A sampler's chase** also restores what the clips selected before that frame. The sampler
   returns to the patch's default keyswitch, and applies its `articulation` parameter's target
   again, at the all-notes-off; then, before the chased notes, it gets a keyswitch event for the
-  last note on a keyswitch key of its patch (after the preset's key offset) that started before
-  the frame (it selects the articulation without sounding the key), and the last value
+  last note that started before the frame on each keyswitch key of its patch, or of the patches
+  of a set (after the preset's key offset), in timeline order, so each patch gets its own last
+  keyswitch (the event selects the articulation without sounding the key), and the last value
   before the frame of the modulation (CC 1), expression (CC 11) and sustain (CC 64)
-  controllers. So a seek, a loop wrap or a render that starts later plays the articulation, the
+  controllers. A keyswitch note that an automated change of `articulation`, `mute` or
+  `vibrato` came after, applying the articulation's target again, is marked so: it sets the
+  patch's switch but does not win over the target, as in straight play, where the change
+  overrode it. So a seek, a loop wrap or a render that starts later plays the articulation, the
   level and the pedal that playing up to that frame leaves; early in a later pass of a looping
   clip, that is the value the previous pass left. A controller with no event before
   the frame keeps its value. Each controller is restored once, from its last event on whichever
@@ -194,7 +198,7 @@ audio hardware and no sleeping.
 - **MIDI.** Note on/off and controller events are scheduled sample-accurately, with tempo
   ramps honoured, on every pass of a looping clip. On a discontinuity (start, seek, loop),
   sounding notes are chased: all-notes-off, then the notes already sounding are retriggered. A sampler also gets its last
-  keyswitch and its last CC 1, 11 and 64 values (above), so a render that starts later than the
+  keyswitches and its last CC 1, 11 and 64 values (above), so a render that starts later than the
   first keyswitch note plays the same articulation as the full render.
 - **Device automation.** Device parameters are sampled once per 512-frame block, at the
   block's first frame. A sampler's automated `articulation`, `mute` and `vibrato` also change
@@ -260,7 +264,9 @@ forced keyswitch, a velocity zone or a controller value that the regions read in
 clip's), without allocating. It applies the target again on a reset and at every all-notes-off,
 so a seek or a loop wrap keeps it; the keyswitch and controller events that the chase sends
 after the all-notes-off, like any keyswitch or such controller event from a clip, win after it
-until it is applied again. A note's own articulation travels with its note-on: when the graph
+until it is applied again, except a chased keyswitch whose note an automated change of the
+articulation, mute or vibrato came after: that keyswitch sets the patch's switch without
+winning, as in straight play. A note's own articulation travels with its note-on: when the graph
 builds a sampler's schedule, it resolves each note's stored articulation to the index of an
 `articulation` choice (an id it does not offer is a warning, and the note carries none), and
 every other instrument's note-ons carry none. The processor looks that choice's target up at the

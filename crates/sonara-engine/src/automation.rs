@@ -18,7 +18,10 @@
 //!   point's beat starts on (`beat_to_sample`, as the note schedule places notes), and a
 //!   linear or smooth segment at the first frame whose beat gives the next choice. The
 //!   schedule sends each change as a choice event at its frame. Before the first point's
-//!   frame the first value holds, from the last point's frame on the last one, as above.
+//!   frame the first value holds, from the last point's frame on the last one, as above. The
+//!   changes after which the sampler applies its articulation's target again
+//!   ([`target_applications`]) tell the sampler's chase which of the clip's keyswitch notes
+//!   that target overrode.
 //! - **Mixer automation** is evaluated per sample through the prototype's vectorized
 //!   `TempoMap.seconds_to_beats` ([`TempoCurve::frame_beats`]). With several tempo points it
 //!   computes exactly what the scalar `seconds_to_beat` does; with one point it is
@@ -41,6 +44,7 @@ use sonara_core::EPSILON;
 use sonara_core::model::automation::{AutomationLane, CurveKind};
 use sonara_core::plugins::{ParamKind, ParamSpec};
 use sonara_core::time::{TempoMap, python_round};
+use sonara_dsp::bank::{Passage, SamplerMapping};
 use sonara_dsp::processor::{ParamSlot, ParamSlots};
 
 /// An automation lane with at least one point, as the arrays `values_at` works on.
@@ -320,6 +324,65 @@ pub(crate) fn choice_changes(
     changes
 }
 
+/// The frames of `changes` (a sampler's, from [`choice_changes`]) at which the sampler applies
+/// its articulation's target again: every change of the `articulation` choice, and a change of
+/// the `mute` or `vibrato` choice that changes the target the articulation choice has in
+/// `mapping` ([`SamplerMapping::target_under`]), as the sampler decides when a choice changes.
+/// The choices start where the block's parameters have them before any lane's first point:
+/// `params` with each of `lanes` applied there. `slots` are the parameters' indices in
+/// descriptor order, `articulation`, `mute` and `vibrato`; a change of another parameter
+/// applies nothing.
+///
+/// The sampler's chase compares the clip's keyswitch notes with these frames: a keyswitch that
+/// a target applied after it overrode no longer wins after a jump either.
+///
+/// Setup: allocates, so it runs off the real-time thread, when the graph is built.
+#[expect(
+    clippy::disallowed_methods,
+    reason = "setup: runs before the stream starts, off the real-time thread"
+)]
+pub(crate) fn target_applications(
+    mapping: &SamplerMapping,
+    params: &ParamSlots,
+    lanes: &[DeviceLane],
+    changes: &[ChoiceChange],
+    slots: [usize; 3],
+) -> Vec<i64> {
+    let [articulation_slot, mute_slot, vibrato_slot] = slots;
+    let mut initial = *params;
+    for lane in lanes {
+        lane.apply(f64::NEG_INFINITY, &mut initial);
+    }
+    let choice = |slot: usize| match initial.get(slot) {
+        Some(ParamSlot::Choice(choice)) => choice,
+        _ => 0,
+    };
+    let mut articulation = choice(articulation_slot);
+    let mut passage = Passage {
+        mute: choice(mute_slot),
+        vibrato: choice(vibrato_slot),
+    };
+    let mut applied = Vec::new();
+    for change in changes {
+        let slot = usize::from(change.slot);
+        let before = mapping.target_under(articulation, passage);
+        let new_articulation = slot == articulation_slot && change.choice != articulation;
+        if slot == articulation_slot {
+            articulation = change.choice;
+        } else if slot == mute_slot {
+            passage.mute = change.choice;
+        } else if slot == vibrato_slot {
+            passage.vibrato = change.choice;
+        } else {
+            continue;
+        }
+        if new_articulation || mapping.target_under(articulation, passage) != before {
+            applied.push(change.frame);
+        }
+    }
+    applied
+}
+
 /// The enum choice `round(clamp(v, 0, last))` with Python's rounding and clamp (Python's
 /// `min(max(v, 0), last)`: each keeps its first argument unless the second is strictly
 /// better).
@@ -408,7 +471,13 @@ mod tests {
     use sonara_core::time::{TempoMap, TempoPoint};
     use sonara_dsp::processor::{MAX_PARAMS, ParamSlot, ParamSlots};
 
-    use super::{ChoiceChange, DeviceLane, Lane, TempoCurve, choice_changes, frame_beat};
+    use sonara_dsp::bank::{
+        ArticulationTarget, DynamicsDrive, SamplerMapping, Selector, TargetTable,
+    };
+
+    use super::{
+        ChoiceChange, DeviceLane, Lane, TempoCurve, choice_changes, frame_beat, target_applications,
+    };
 
     fn lane(points: &[(f64, f64, CurveKind)]) -> Lane {
         let data = AutomationLaneData {
@@ -732,5 +801,88 @@ mod tests {
             ],
         );
         assert_eq!(choice_changes(&[steady], &tempo, rate), []);
+    }
+
+    /// The sampler applies its articulation's target again at every change of the articulation
+    /// choice, whatever the target, and at a change of the mute or vibrato only when the target
+    /// changes; the choices start as the device stores them, with each lane's first value in
+    /// place of the stored one (TST-10: the oracle is the target table written out below).
+    #[test]
+    fn targets_are_applied_again_where_the_sampler_applies_them() {
+        let descriptor = sampler_descriptor(&SamplerChoices {
+            presets: ["lib/patch".to_owned()].to_vec(),
+            articulations: ["a0".to_owned(), "a1".to_owned()].to_vec(),
+            mutes: ["open".to_owned(), "con_sordino".to_owned()].to_vec(),
+            ..SamplerChoices::default()
+        })
+        .unwrap();
+        let switch = |key| {
+            Some(ArticulationTarget {
+                member: 0,
+                selector: Some(Selector::Keyswitch(key)),
+                legato: false,
+            })
+        };
+        // `a0` (choice 2) plays C#1, and D1 under `con_sordino` (mute 2); `a1` (choice 3)
+        // plays C#1 under every mute.
+        let table =
+            TargetTable::tabulate(4, 3, 1, |choice, passage| match (choice, passage.mute) {
+                (2, 2) => switch(26),
+                (2 | 3, _) => switch(25),
+                _ => None,
+            });
+        let mapping = SamplerMapping::new(table, DynamicsDrive::Velocity, None, 0);
+        let slots = [
+            slot_of(&descriptor, "articulation"),
+            slot_of(&descriptor, "mute"),
+            slot_of(&descriptor, "vibrato"),
+        ];
+        let filler = [ParamSlot::Choice(0); MAX_PARAMS];
+        let mut params = ParamSlots::new(filler.get(..descriptor.params.len()).unwrap()).unwrap();
+        params.set(slots[0], ParamSlot::Choice(2));
+        let at = |frame: i64, param: &str, choice: u16| ChoiceChange {
+            frame,
+            slot: u8::try_from(slot_of(&descriptor, param)).unwrap(),
+            choice,
+        };
+        let changes = [
+            // `open` keeps `a0` on C#1: nothing applied.
+            at(10, "mute", 1),
+            // `con_sordino` moves `a0` to D1.
+            at(20, "mute", 2),
+            // A new articulation choice.
+            at(30, "articulation", 3),
+            // Back to `auto` keeps `a1` on C#1.
+            at(40, "mute", 0),
+            // `a0` plays C#1 as `a1` did, but a new choice applies its target all the same.
+            at(50, "articulation", 2),
+            // Another parameter applies nothing.
+            at(60, "instrument_type", 1),
+        ];
+        assert_eq!(
+            target_applications(&mapping, &params, &[], &changes, slots),
+            [20, 30, 50]
+        );
+        // With an articulation lane that starts on `a1`, the stored `a0` never plays: the
+        // change to `a1` is no new choice, and `con_sordino` then keeps `a1` on C#1.
+        let lane = device_lane(
+            &descriptor,
+            "articulation",
+            &[(1.0, 3.0, CurveKind::Hold), (2.0, 2.0, CurveKind::Hold)],
+        );
+        let lane_changes = [
+            at(5, "articulation", 3),
+            at(20, "mute", 2),
+            at(48_000, "articulation", 2),
+        ];
+        assert_eq!(
+            target_applications(&mapping, &params, &[lane], &lane_changes, slots),
+            [48_000]
+        );
+        // Without a mapping's targets nothing changes a target, but a new choice still counts.
+        assert_eq!(
+            target_applications(&SamplerMapping::default(), &params, &[], &changes, slots),
+            [30, 50]
+        );
     }
 }
