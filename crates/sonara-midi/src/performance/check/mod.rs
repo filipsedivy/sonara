@@ -182,16 +182,14 @@ pub enum Shortfall {
 /// The dynamic band a velocity stands for while a project stores no notated dynamics: 1-54 is pp
 /// and p, 55-84 mp and mf, and 85-127 f and ff.
 ///
-/// The bands are an estimate: six markings from pp to ff spread evenly over the velocities, pp
-/// 1-39, p 40-54, mp 55-69, mf 70-84, f 85-104 and ff 105-127, grouped as the rules compare
-/// loudness ([`DynamicBand`]). A velocity of 0 is no note and reads as the soft band.
+/// The velocity reads as a marking through the performance layer's level table
+/// ([`dynamics::marking`](super::dynamics::marking): pp 1-39, p 40-54, mp 55-69, mf 70-84, f
+/// 85-104 and ff 105-127, an estimate that spreads the markings evenly), the table whose level
+/// velocities a performance writes, and the marking falls in its band ([`DynamicBand`]). A
+/// velocity of 0 is no note and reads as the soft band.
 #[must_use]
 pub const fn velocity_band(velocity: u8) -> DynamicBand {
-    match velocity {
-        0..=54 => DynamicBand::Soft,
-        55..=84 => DynamicBand::Medium,
-        _ => DynamicBand::Loud,
-    }
+    super::dynamics::marking(velocity).band()
 }
 
 /// Runs every rule of [`CHECKED_RULES`] on `lines` within `score`.

@@ -8,8 +8,8 @@ use sonara_core::midi::MidiNote;
 use sonara_core::time::{TempoMap, TimeSignatureMap};
 use sonara_midi::orchestration::{Articulation, PitchRange, ensembles, instrument};
 use sonara_midi::performance::{
-    CapsError, DynamicsKind, LegatoKind, MAX_PART_ID_BYTES, PartId, PartLine, PerformanceError,
-    Performed, Role, ScoreContext, Seed, SoundCaps, perform,
+    CapsError, Dynamic, Dynamics, DynamicsKind, DynamicsRequest, LegatoKind, MAX_PART_ID_BYTES,
+    PartId, PartLine, PerformanceError, Performed, Role, ScoreContext, Seed, SoundCaps, perform,
 };
 
 /// A change made to a sound's capabilities.
@@ -39,6 +39,7 @@ fn line(slug: &str, notes: Vec<MidiNote>) -> PartLine {
         role: Role::Melody,
         notes,
         caps: SoundCaps::default(),
+        dynamics: DynamicsRequest::default(),
     }
 }
 
@@ -320,7 +321,14 @@ fn perform_returns_the_notes_in_project_order_with_their_fields() {
     let order: Vec<&str> = performed.notes.iter().map(|n| n.id.as_str()).collect();
     // By start, then pitch, then id: the chord at beat 1 rises, and its two E4s keep id order.
     assert_eq!(order, ["n_a", "n_b", "n_c", "n_d", "n_e"]);
-    assert_eq!(performed.notes.get(2), Some(&legato));
+    // Every field is kept but the velocity, which the melody's arc at mf writes at f (95).
+    assert_eq!(
+        performed.notes.get(2),
+        Some(&MidiNote {
+            velocity: 95,
+            ..legato
+        })
+    );
     assert_eq!(
         performed.notes.get(3).map(|n| n.articulation.clone()),
         Some(None)
@@ -338,9 +346,18 @@ fn a_tacet_part_performs_to_no_notes() {
             notes: Vec::new(),
             articulations: Vec::new(),
             passages: Vec::new(),
+            dynamics: Dynamics {
+                kind: DynamicsKind::Velocity,
+                marking: Dynamic::MezzoForte,
+                phrases: Vec::new(),
+                notes: Vec::new(),
+                lane: Vec::new(),
+                remarks: Vec::new(),
+            },
         }
     );
     assert_eq!(performed.articulation_lane(), []);
+    assert_eq!(performed.dynamics_lane(), []);
 }
 
 #[test]
@@ -409,8 +426,12 @@ proptest! {
             .expect("valid caps");
         prop_assert_eq!(&in_order, &reordered);
         prop_assert_eq!(in_order.notes.len(), notes.len());
+        // Every note comes back with its fields; only its velocity follows the dynamics.
         for note in &notes {
-            prop_assert!(in_order.notes.contains(note), "{} is missing", note.id);
+            let kept = in_order.notes.iter().any(|performed| {
+                performed == &MidiNote { velocity: performed.velocity, ..note.clone() }
+            });
+            prop_assert!(kept, "{} is missing", note.id);
         }
         let ordered = in_order.notes.windows(2).all(|pair| {
             let (a, b) = (&pair[0], &pair[1]);

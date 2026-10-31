@@ -34,7 +34,7 @@ use crate::orchestration::fallback::{self, Emulation, Scope, StandIn, Substituti
 use crate::orchestration::{Articulation, Family, Instrument};
 
 /// How close two beats must be to count as one.
-const BEAT_EPSILON: f64 = 1e-9;
+pub(super) const BEAT_EPSILON: f64 = 1e-9;
 
 /// The fewest repeated strokes of one pitch that make a tremolo or a roll.
 const TREMOLO_STROKES: usize = 4;
@@ -63,10 +63,10 @@ const FAST_ONSET_S: f64 = 0.2;
 const HELD_DUTY: f64 = 0.85;
 
 /// A note this many velocity steps above the median of its phrase is accented.
-const ACCENT_VELOCITY: f64 = 20.0;
+pub(super) const ACCENT_VELOCITY: f64 = 20.0;
 
 /// A rest of at least this many beats after a note ends its phrase.
-const PHRASE_REST_BEATS: f64 = 1.0;
+pub(super) const PHRASE_REST_BEATS: f64 = 1.0;
 
 /// A lone note's passage shorter than this many beats joins its neighbour.
 const PASSAGE_MIN_BEATS: f64 = 1.0;
@@ -76,7 +76,7 @@ const PASSAGE_MIN_BEATS: f64 = 1.0;
 const BLOCK_FRAMES: u32 = 512;
 
 /// How many blocks ahead of a passage's first note-on its switch is placed.
-const SWITCH_LEAD_BLOCKS: u32 = 2;
+pub(super) const SWITCH_LEAD_BLOCKS: u32 = 2;
 
 /// The choices of the sampler's `articulation` that come before the vocabulary's ids, in the
 /// order `sonara_core::plugins::sampler_descriptor` lists them: `auto`, then `ordinario`.
@@ -273,7 +273,7 @@ pub fn articulate(line: &PartLine, score: &ScoreContext) -> Result<Articulated, 
         });
     }
     entries.sort_by(|a, b| note_order(&a.note, &b.note));
-    let clock = Clock { score };
+    let clock = Clock::new(score);
     let class = Class::of(line.instrument.family());
     let strokes = stroke_articulation(line.instrument, class)
         .filter(|articulation| line.caps.articulations.contains(articulation));
@@ -316,7 +316,7 @@ struct Entry {
 
 /// How an instrument's family shapes its notes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Class {
+pub(super) enum Class {
     /// Bowed strings.
     Bowed,
     /// Woodwinds and brass.
@@ -328,7 +328,7 @@ enum Class {
 }
 
 impl Class {
-    const fn of(family: Family) -> Self {
+    pub(super) const fn of(family: Family) -> Self {
         match family {
             Family::Strings => Self::Bowed,
             Family::Woodwinds | Family::Brass => Self::Blown,
@@ -364,34 +364,39 @@ fn stroke_articulation(instrument: &Instrument, class: Class) -> Option<Articula
 }
 
 /// Converts content beats of the line's clip to seconds at the piece's tempo.
-struct Clock<'a> {
+pub(super) struct Clock<'a> {
     score: &'a ScoreContext,
 }
 
-impl Clock<'_> {
+impl<'a> Clock<'a> {
+    /// The clock of `score`.
+    pub(super) const fn new(score: &'a ScoreContext) -> Self {
+        Self { score }
+    }
+
     /// The time of content beat `beat`, in seconds from the timeline's start.
-    fn seconds(&self, beat: f64) -> f64 {
+    pub(super) fn seconds(&self, beat: f64) -> f64 {
         self.score
             .tempo()
             .beat_to_seconds(self.score.origin() + beat)
     }
 
     /// The seconds from content beat `from` to content beat `to`.
-    fn span(&self, from: f64, to: f64) -> f64 {
+    pub(super) fn span(&self, from: f64, to: f64) -> f64 {
         self.seconds(to) - self.seconds(from)
     }
 }
 
-/// The indices of the entries grouped by onset: entries whose starts lie within
-/// [`BEAT_EPSILON`] of a group's first start belong to it. `entries` are in note order.
-fn onset_groups(entries: &[Entry]) -> Vec<Range<usize>> {
+/// The indices of notes grouped by onset, given their `starts` in note order: notes whose starts
+/// lie within [`BEAT_EPSILON`] of a group's first start belong to it.
+pub(super) fn onset_groups(starts: impl IntoIterator<Item = f64>) -> Vec<Range<usize>> {
     let mut groups: Vec<Range<usize>> = Vec::new();
     let mut first_start = f64::NEG_INFINITY;
-    for (index, entry) in entries.iter().enumerate() {
+    for (index, start) in starts.into_iter().enumerate() {
         match groups.last_mut() {
-            Some(group) if entry.note.start - first_start < BEAT_EPSILON => group.end = index + 1,
+            Some(group) if start - first_start < BEAT_EPSILON => group.end = index + 1,
             _ => {
-                first_start = entry.note.start;
+                first_start = start;
                 groups.push(index..index + 1);
             }
         }
@@ -402,7 +407,7 @@ fn onset_groups(entries: &[Entry]) -> Vec<Range<usize>> {
 /// The entries with every run of tremolo or roll strokes merged into its first stroke, which
 /// then lasts until the last stroke ends ([`Rule::Strokes`]).
 fn merge_strokes(entries: Vec<Entry>, clock: &Clock<'_>) -> Vec<Entry> {
-    let groups = onset_groups(&entries);
+    let groups = onset_groups(entries.iter().map(|entry| entry.note.start));
     // A stroke is the only note at its onset and names no articulation of its own.
     let strokes: Vec<Option<&Entry>> = groups
         .iter()
@@ -482,7 +487,7 @@ struct LineView<'a> {
 
 impl<'a> LineView<'a> {
     fn new(entries: &'a [Entry], clock: &'a Clock<'a>) -> Self {
-        let groups = onset_groups(entries);
+        let groups = onset_groups(entries.iter().map(|entry| entry.note.start));
         let mut group_of = vec![0; entries.len()];
         for (group_index, group) in groups.iter().enumerate() {
             for slot in group_of.get_mut(group.clone()).into_iter().flatten() {
@@ -851,7 +856,7 @@ const SLOWEST_RATE: u32 = {
 };
 
 /// The seconds of one engine block at [`SLOWEST_RATE`].
-fn block_seconds() -> f64 {
+pub(super) fn block_seconds() -> f64 {
     f64::from(BLOCK_FRAMES) / f64::from(SLOWEST_RATE)
 }
 

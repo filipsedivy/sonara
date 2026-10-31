@@ -1,9 +1,11 @@
 //! The performance layer: turns the notes of one orchestral part into a performance of them.
 //!
 //! [`perform`] takes one part's line ([`PartLine`]): its notes at sounding pitch, the instrument
-//! that plays it, the part's role in the texture and what the chosen sound can do
-//! ([`SoundCaps`]). It returns the notes to write, the articulation of each note and the passages
-//! of the sampler's `articulation` lane that play them ([`Performed`], [`articulate()`]).
+//! that plays it, the part's role in the texture, what the chosen sound can do ([`SoundCaps`])
+//! and what the request asks of its dynamics ([`DynamicsRequest`]). It returns the notes to write,
+//! the articulation of each note and the passages of the sampler's `articulation` lane that play
+//! them ([`Performed`], [`articulate()`]), and the velocity each note is written at with the points
+//! of the sampler's `dynamics` lane that shape its phrases ([`dynamics`]).
 //!
 //! The lines come from [`voicing`], whose helpers give the parts of an ensemble their notes for a
 //! melody or a run of chords, family by family, applying the orchestration rules as they write.
@@ -22,10 +24,12 @@
 
 pub mod articulate;
 pub mod check;
+pub mod dynamics;
 mod seed;
 pub mod voicing;
 
 use std::fmt;
+use std::ops::RangeInclusive;
 
 use sonara_core::midi::MidiNote;
 use sonara_core::model::automation::AutomationPoint;
@@ -34,10 +38,11 @@ use thiserror::Error;
 
 use crate::orchestration::{Articulation, Instrument, PitchRange, is_snake_case};
 
-pub use crate::orchestration::rules::Role;
+pub use crate::orchestration::rules::{Dynamic, Role};
 pub use articulate::{
     Articulated, NoteArticulation, Passage, Rule, Source, articulate, articulation_choice,
 };
+pub use dynamics::{Dynamics, DynamicsRequest};
 pub use seed::Seed;
 
 /// The most bytes a [`PartId`] holds.
@@ -56,6 +61,9 @@ pub enum PerformanceError {
     /// The timeline beat of a clip's content beat 0 is not finite or lies before beat 0.
     #[error("the clip origin must be a finite beat >= 0, got {0}")]
     InvalidOrigin(f64),
+    /// The timeline beat where a section starts is not finite or lies before beat 0.
+    #[error("a section must start at a finite beat >= 0, got {0}")]
+    InvalidSection(f64),
     /// The sound's capabilities contradict themselves; the source says how.
     #[error("the sound's capabilities are invalid")]
     InvalidCaps(#[from] CapsError),
@@ -203,6 +211,24 @@ pub enum CapsError {
 }
 
 impl SoundCaps {
+    /// The velocities of the layer that plays `velocity`: from one above the top of the layer
+    /// below it (1 for the softest) to the top of its own. `None` for a velocity of 0, which plays
+    /// nothing, and for one above the loudest layer of caps that fail [`SoundCaps::check`].
+    #[must_use]
+    pub fn layer(&self, velocity: u8) -> Option<RangeInclusive<u8>> {
+        if velocity == 0 {
+            return None;
+        }
+        let mut lowest = 1;
+        for &highest in &self.layers {
+            if velocity <= highest {
+                return Some(lowest..=highest);
+            }
+            lowest = highest.saturating_add(1);
+        }
+        None
+    }
+
     /// Checks that the facts are coherent.
     ///
     /// # Errors
@@ -248,17 +274,21 @@ impl SoundCaps {
     }
 }
 
-/// Where a line sits in the score: the project's tempo and metre, and where its clip starts.
+/// Where a line sits in the score: the project's tempo and metre, where its clip starts, and
+/// where the piece's sections start.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ScoreContext {
     tempo: TempoMap,
     signatures: TimeSignatureMap,
     origin: f64,
+    /// Timeline beats, ascending.
+    sections: Vec<f64>,
 }
 
 impl ScoreContext {
     /// The context of a clip whose content beat 0 lies at timeline beat `origin` (the clip's
-    /// start minus its content offset), in a project with `tempo` and `signatures`.
+    /// start minus its content offset), in a project with `tempo` and `signatures` and no
+    /// sections ([`ScoreContext::with_sections`]).
     ///
     /// # Errors
     /// [`PerformanceError::InvalidOrigin`] when `origin` is not finite or below 0.
@@ -272,6 +302,7 @@ impl ScoreContext {
                 tempo,
                 signatures,
                 origin,
+                sections: Vec::new(),
             })
         } else {
             Err(PerformanceError::InvalidOrigin(origin))
@@ -295,6 +326,34 @@ impl ScoreContext {
     pub fn origin(&self) -> f64 {
         self.origin
     }
+
+    /// The context with sections of the piece starting at the timeline beats `starts`, in any
+    /// order, in place of the sections it had: a phrase never runs across the start of a section.
+    ///
+    /// # Errors
+    /// [`PerformanceError::InvalidSection`] for the first start that is not finite or lies
+    /// before beat 0.
+    pub fn with_sections(
+        mut self,
+        starts: impl IntoIterator<Item = f64>,
+    ) -> Result<Self, PerformanceError> {
+        let mut sections = Vec::new();
+        for start in starts {
+            if !(start.is_finite() && start >= 0.0) {
+                return Err(PerformanceError::InvalidSection(start));
+            }
+            sections.push(start);
+        }
+        sections.sort_by(f64::total_cmp);
+        self.sections = sections;
+        Ok(self)
+    }
+
+    /// The timeline beats where the piece's sections start, ascending.
+    #[must_use]
+    pub fn sections(&self) -> &[f64] {
+        &self.sections
+    }
 }
 
 /// One part's line, ready to perform.
@@ -311,6 +370,8 @@ pub struct PartLine {
     pub notes: Vec<MidiNote>,
     /// What the part's sound can do.
     pub caps: SoundCaps,
+    /// What the request asks of the part's dynamics.
+    pub dynamics: DynamicsRequest,
 }
 
 /// The performance of one part.
@@ -318,13 +379,17 @@ pub struct PartLine {
 pub struct Performed {
     /// The part performed.
     pub part: PartId,
-    /// The notes to write, in the project's note order: by start, then pitch, then id.
+    /// The notes to write, in the project's note order: by start, then pitch, then id, each
+    /// written at the velocity its dynamics give it.
     pub notes: Vec<MidiNote>,
     /// The articulation of each note, in the order of [`Performed::notes`].
     pub articulations: Vec<NoteArticulation>,
     /// The passages of the part's sound, in time order, each with its switch on the sampler's
     /// `articulation` lane.
     pub passages: Vec<Passage>,
+    /// The part's dynamics: its phrases, the level of each note and the points of the sampler's
+    /// `dynamics` lane.
+    pub dynamics: Dynamics,
 }
 
 impl Performed {
@@ -334,16 +399,26 @@ impl Performed {
     pub fn articulation_lane(&self) -> Vec<AutomationPoint> {
         articulate::lane(&self.passages)
     }
+
+    /// The points of the sampler's `dynamics` lane, at timeline beats in time order
+    /// ([`Dynamics::lane`]).
+    #[must_use]
+    pub fn dynamics_lane(&self) -> Vec<AutomationPoint> {
+        self.dynamics.lane.clone()
+    }
 }
 
 /// Performs `line` within `score`. The same line, score and seed give the same result, whatever
 /// other parts are performed (TST-04): a stage that makes a random choice draws it from the part's
-/// own stream of `seed` ([`Seed::stream`]). Articulation, the one stage so far, makes none.
+/// own stream of `seed` ([`Seed::stream`]). Articulation and dynamics, the stages so far, make
+/// none.
 ///
 /// The notes come back in the project's note order (start, then pitch, then id; the order of
-/// [`sort_notes`](sonara_core::midi::sort_notes)), each with every field kept, its articulation
-/// included, with the articulation of each and the passages that play them ([`articulate()`]):
-/// only the strokes of a tremolo or a roll that the sound plays are merged into one held note.
+/// [`sort_notes`](sonara_core::midi::sort_notes)), each with its fields kept but its velocity, with
+/// the articulation of each and the passages that play them ([`articulate()`]): only the strokes of
+/// a tremolo or a roll that the sound plays are merged into one held note. Each note is then
+/// written at the velocity its phrase's dynamics give it, and the dynamics hold the points of the
+/// sampler's `dynamics` lane that shape the phrases ([`dynamics`]).
 ///
 /// # Errors
 /// - [`PerformanceError::InvalidCaps`] when `line.caps` fails [`SoundCaps::check`]; its source is
@@ -353,7 +428,7 @@ impl Performed {
 #[expect(
     unused_variables,
     reason = "the signature fixes what every stage of a performance reads, the part's own random \
-              stream included; articulation makes no random choice"
+              stream included; articulation and dynamics make no random choice"
 )]
 pub fn perform(
     line: &PartLine,
@@ -365,10 +440,12 @@ pub fn perform(
         articulations,
         passages,
     } = articulate(line, score)?;
+    let dynamics::Shaped { notes, dynamics } = dynamics::shape(line, score, notes, &articulations);
     Ok(Performed {
         part: line.part.clone(),
         notes,
         articulations,
         passages,
+        dynamics,
     })
 }

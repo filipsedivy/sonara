@@ -12,8 +12,8 @@ use sonara_core::time::{TempoMap, TempoPoint, TimeSignatureMap};
 use sonara_midi::orchestration::fallback::Emulation;
 use sonara_midi::orchestration::{Articulation, instrument};
 use sonara_midi::performance::{
-    Articulated, NoteArticulation, PartId, PartLine, PerformanceError, Role, Rule, ScoreContext,
-    Seed, SoundCaps, Source, articulate, articulation_choice, perform,
+    Articulated, DynamicsRequest, NoteArticulation, PartId, PartLine, PerformanceError, Role, Rule,
+    ScoreContext, Seed, SoundCaps, Source, articulate, articulation_choice, perform,
 };
 
 use Articulation::{
@@ -61,6 +61,7 @@ fn line(instrument_id: &str, notes: Vec<MidiNote>, listed: &[Articulation]) -> P
             articulations: listed.to_vec(),
             ..SoundCaps::default()
         },
+        dynamics: DynamicsRequest::default(),
     }
 }
 
@@ -723,7 +724,17 @@ fn perform_carries_the_articulation_of_its_line() {
     );
     let performed = perform(&line, &score(), Seed::new(3)).expect("a valid line");
     let articulated = articulate(&line, &score()).expect("a valid line");
-    assert_eq!(performed.notes, articulated.notes);
+    // The performance keeps the articulated notes; only their velocities follow the dynamics.
+    let unvoiced = |notes: &[MidiNote]| -> Vec<MidiNote> {
+        notes
+            .iter()
+            .map(|note| MidiNote {
+                velocity: 1,
+                ..note.clone()
+            })
+            .collect()
+    };
+    assert_eq!(unvoiced(&performed.notes), unvoiced(&articulated.notes));
     assert_eq!(performed.articulations, articulated.articulations);
     assert_eq!(performed.passages, articulated.passages);
     assert_eq!(performed.articulation_lane(), articulated.lane());
