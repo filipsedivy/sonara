@@ -155,9 +155,10 @@ Not supported: key crossfades, velocity curves (`amp_velcurve_N`), filters, per-
 streaming, and controller modulation of anything but the level (for example Sonatina's vibrato on
 CC 21 and filter cutoff on CC 1).
 The loader reports unsupported opcodes in the load warning when a patch is rendered, together with
-the values the sampler does not play (unknown `trigger` values, which play as `attack`, unknown
-`loop_mode` values, which play as `no_loop`, and unknown `off_mode` values, which play as if the
-opcode were absent) and the headers whose opcodes it skips
+the values the sampler does not play (unknown `trigger` values, which play as `attack`, and
+unknown `loop_mode` and `off_mode` values, which play as if the opcode were absent: an unknown
+`loop_mode` plays as `no_loop`, or loops a sample that carries its own loop, below) and the headers
+whose opcodes it skips
 (`<curve>`, `<effect>`, `<midi>`, `<sample>`). A keyswitch key selects an articulation; it makes no
 sound unless a region of the patch also covers that key, and then it does both. Regions that the
 patch starts from a controller instead of a key (`on_locc`/`on_hicc`, such as Salamander's pedal
