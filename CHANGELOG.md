@@ -48,8 +48,30 @@ break the API. The project format is versioned independently, see
   articulation, the catalog's best preset, then the nearest articulation, the other ensemble, a
   neighbouring instrument, a built-in sound or silence, each step with a message for the user.
   Library API only.
-- **Sampler parameters `instrument_type`, `articulation` and `dynamics`:** stored with the device,
-  and `articulation` and `dynamics` can be automated. The sampler does not play them yet.
+- **The sampler plays articulations and dynamics.** New parameters `instrument_type`,
+  `articulation`, `dynamics`, `mute` and `vibrato`. The `articulation` choice and each note's own
+  articulation play what the preset's profile or manifest maps for it, or the nearest
+  articulation the preset has: a keyswitch selected without sounding its key, a velocity zone, a
+  controller value or a patch of a multi-patch set. A note's articulation wins over the track's
+  at that note. `dynamics` scales the velocity, plays a fixed velocity or drives the patch's
+  controller crossfade, as the preset's claim says; `mute` and `vibrato` pick the matching
+  recording. The preset's key offset is applied. `articulation`, `dynamics`, `mute` and
+  `vibrato` can be automated, and a change of `articulation`, `mute` or `vibrato` plays at its
+  exact frame. After a seek or a loop wrap the sampler gets back the articulation and every
+  patch's keyswitch that playback up to that point selects.
+  `auto`, the default, plays a patch as before. See
+  [docs/sample-libraries.md](docs/sample-libraries.md).
+- **Multi-patch sets as sampler instruments:** a set (`<library id>/@<set>`) whose patches are
+  all installed loads into one sampler device, and its articulations pick the patch that plays
+  them. The 3 GiB memory cap applies to the device; a set over it is refused with a warning.
+- **Overlap legato:** a preset whose manifest claims legato by overlap joins a legato note to the
+  note before it with an equal-power crossfade. Neither shipped profile claims it.
+- **Measured patch facts:** checking a patch now also measures the onset of each articulation and
+  the longest sample that does not loop; a profile or manifest can state the onset instead.
+- **AI Chat:** both providers' system prompt now holds an orchestration reference: every
+  instrument id with its ranges, transposition and articulations, the presets of the shipped
+  VSCO 2 CE and VCSL profiles with their switch keys and key maps, and a short guide to writing
+  orchestral parts with the existing tools. See [docs/ai-chat.md](docs/ai-chat.md).
 - **SFZ playback:** `amp_veltrack`; velocity crossfades; `off_mode` `normal` and `time`;
   `trigger=first`, `legato` and `release_key`; controller gates, controller-triggered regions,
   controller crossfades and level changes (`loccN`/`hiccN`, `on_loccN`/`on_hiccN`,
@@ -57,11 +79,20 @@ break the API. The project format is versioned independently, see
   embeds. When playback jumps, the sampler gets back the last keyswitch and the last modulation,
   expression and sustain pedal before the new position. See
   [docs/sample-libraries.md](docs/sample-libraries.md).
-- **Performance layer (`sonara_midi::performance`):** the types and seeded per-part random streams
-  of a performance, voicing helpers by family (string divisi, woodwind pairs, horn and brass
-  chorales, a melody's carrier and its doubling, timpani on tonic and dominant), checks of notes
-  against the playability and texture rules, and harp pedal and timpani tuning derivations.
-  Library API only.
+- **Performance layer (`sonara_midi::performance`):** `perform` turns a part's notes into a
+  performance for the sound that plays it: articulations inferred per note and per passage (as
+  points of the `articulation` lane), written velocities, a dynamics lane and expression or
+  modulation controller events from the dynamic markings, phrases, swells and roll crescendos,
+  and humanized timing and velocity per family with attack compensation, from seeded per-part
+  random streams, so the same input always gives the same result. `orchestrate` spreads a
+  reduction (melody, chords, key) over an ensemble's parts. Voicing helpers by family, checks of
+  notes against the playability and texture rules, and harp pedal and timpani tuning
+  derivations. Library API only.
+- **Orchestration services (`sonara_app`):** the sound capabilities of a preset for the
+  performance layer, an ensemble plan (parts in score order, family folders, each part's sound
+  through the catalog, pan, family buses), orchestration findings among the quality checks for
+  tracks that carry a part, and counts of how far the shipped profiles cover the 85 instrument
+  types (37 exactly, 34 through a neighbouring instrument, 14 not at all). Library API only.
 - **Orchestration requests:** `sonara_agent::orchestration` reads requests in English and Czech
   into clauses (instruments, counts, roles, articulations, dynamics, bars, key) and the questions
   they leave open, with "did you mean" suggestions. Plan steps can use the replies of earlier
@@ -78,6 +109,8 @@ break the API. The project format is versioned independently, see
   [docs/sample-libraries.md](docs/sample-libraries.md).
 - **Device editor:** the sampler's Instrument combo lists the presets by name, grouped by library.
   An instrument that is not installed shows as `Not installed: <name>`.
+- **A graph rebuild keeps an unchanged sampler playing:** a sampler device whose preset and
+  mapping did not change keeps its sounding notes when the render graph is rebuilt.
 - **Family guesses in the instrument catalog** come from the English names and aliases of the
   orchestration metadata, read word by word also in run-together names such as `TubularBells`. A
   word that names two families, such as "bass", is no clue on its own, so a bare `Bass.sfz` now has
@@ -102,6 +135,8 @@ break the API. The project format is versioned independently, see
     load;
   - a `/*` inside a line comment no longer hides the rest of the file, and note names or loop
     ends too large to compute name no key or end at the sample instead of failing.
+- **Controller events of a looping MIDI clip** play on every pass of its loop; before, they were
+  dropped.
 - **`sonara_media::sfz::inspect`** reports a patch's structure from the sample headers, without
   decoding the samples.
 
