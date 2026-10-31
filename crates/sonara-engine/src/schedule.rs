@@ -1501,7 +1501,7 @@ mod tests {
         assert_eq!(switches(&mut schedule, 10), [(24, 1), (25, 1)]);
         // C1 at frame 12 came after the change at frame 6, C#1 before it.
         assert_eq!(switches(&mut schedule, 13), [(25, 1), (24, 0)]);
-        // The change at frame 14 came after both again.
+        // The change at frame 14, the position's own frame, came after both again.
         assert_eq!(switches(&mut schedule, 14), [(25, 1), (24, 1)]);
         // Without applied frames every chased keyswitch wins, as before.
         let mut plain = sampler_schedule();

@@ -1160,7 +1160,9 @@ fn an_articulation_lane_wins_after_an_earlier_clip_keyswitch_also_after_a_seek()
     // switch, so the last note plays D1, as when the clip itself switches to D1 at beat 2. A
     // seek past the change must play D1 too: the chase restores the clip's C#1 as the
     // patch's switch, but the target applied after it keeps winning (TST-06: the chase used
-    // to let the clip's last keyswitch win, so a seek there played C#1).
+    // to let the clip's last keyswitch win, so a seek there played C#1). So must a seek to
+    // the change's own frame (beat 2), whose block's parameters may already hold it, and one
+    // to the start of the block that holds the change, where its event follows the chase.
     let (_dir, patch) = keyswitch_patch();
     let media = articulations(&patch);
     let [first, second, third] = three_notes();
@@ -1193,7 +1195,7 @@ fn an_articulation_lane_wins_after_an_earlier_clip_keyswitch_also_after_a_seek()
         &automated,
         &oracle,
         &media,
-        &[0, AFTER_SWITCH, AFTER_CHANGE],
+        &[0, AFTER_SWITCH, 93 * BLOCK, 2 * BEAT, AFTER_CHANGE],
     );
 }
 
