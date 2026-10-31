@@ -489,7 +489,7 @@
         {"id": "ordinario", "via": "patch", "default": true}
       ],
       "dynamics": {"via": "velocity"},
-      "verdict": {"state": "partly", "lost": ["locc64 and hicc64: the samples meant for the sustain pedal up and those for it down sound together"]}
+      "verdict": {"state": "as_is", "lost": []}
     },
     {
       "path": "Chordophones/Zithers/Harpsichord, English - Keyswitch.sfz",
@@ -619,7 +619,7 @@
         {"id": "ordinario", "via": "patch", "default": true}
       ],
       "dynamics": {"via": "velocity"},
-      "verdict": {"state": "partly", "lost": ["on_locc64 and on_hicc64: the pedal noises never play", "rt_decay: release samples do not get quieter the longer a key was held"]}
+      "verdict": {"state": "partly", "lost": ["rt_decay: release samples do not get quieter the longer a key was held"]}
     },
     {
       "path": "Chordophones/Zithers/Upright Piano, Yamaha.sfz",

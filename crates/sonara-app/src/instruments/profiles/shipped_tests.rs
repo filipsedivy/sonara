@@ -852,8 +852,9 @@ fn the_verdicts_name_what_the_sampler_loses() {
             EntryTarget::Set(_) => None,
         })
         .collect();
-    // The patches that set envelope decay, release decay, sustain-pedal gates or controller
-    // triggers, and the organ, xylophone and timpani whose switch keys lie in their range.
+    // The patches that set envelope decay or release decay, and the organ, xylophone and timpani
+    // whose switch keys lie in their range. The sustain-pedal gates of the Steinway B and the
+    // pedal noises of the Knight upright play.
     assert_eq!(
         partly,
         [
@@ -866,7 +867,6 @@ fn the_verdicts_name_what_the_sampler_loses() {
             "Aerophones/Free Aerophones/Harmonica-Hohner-Super64 - Vib.sfz",
             "Chordophones/Zithers/Grand Piano, Kawai - Legacy.sfz",
             "Chordophones/Zithers/Grand Piano, Kawai.sfz",
-            "Chordophones/Zithers/Grand Piano, Steinway B.sfz",
             "Chordophones/Zithers/Harpsichord, Flemish - 8'.sfz",
             "Chordophones/Zithers/Harpsichord, Flemish - Full.sfz",
             "Chordophones/Zithers/Harpsichord, Flemish - Keyswitch.sfz",
@@ -879,13 +879,9 @@ fn the_verdicts_name_what_the_sampler_loses() {
     );
     let knight = entry(vcsl, "Chordophones/Zithers/Upright Piano, Knight.sfz");
     let lost = &knight.verdict.value().expect("a verdict").lost;
-    assert!(
-        lost.iter().any(|line| line.starts_with("on_locc64")),
-        "{lost:?}"
-    );
-    assert!(
-        lost.iter().any(|line| line.starts_with("rt_decay")),
-        "{lost:?}"
+    assert_eq!(
+        lost.iter().map(String::as_str).collect::<Vec<_>>(),
+        ["rt_decay: release samples do not get quieter the longer a key was held"]
     );
 }
 

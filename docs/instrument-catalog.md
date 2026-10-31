@@ -288,12 +288,11 @@ say:
   and ratchet, for example) and sounds without an articulation ID are left out. VSCO 2 CE's
   `GM-StylePerc` is not a General MIDI kit: keys 42 and 46 are a gong, 47, 48 and 50 cymbal swells.
 - **Dynamics:** the velocity, for every patch.
-- **Verdicts,** checked on 2026-10-30 by reading every patch file, with velocity crossfades and
-  `amp_veltrack` counted as played. A `partly` verdict names what is lost: envelope decay
-  (`ampeg_decay` with `ampeg_sustain`) and `rt_decay`, which the sampler does not play; the
-  sustain-pedal gates (`locc64`, `hicc64`) of VCSL's Steinway B, whose pedal-up and pedal-down
-  samples sound together, and the pedal noises of the Knight upright; and switch keys inside the
-  instrument's playable range: VSCO 2 CE's `CelloEns-KS` (84 to 87) and VCSL's
+- **Verdicts,** checked on 2026-10-30 by reading every patch file, with velocity crossfades,
+  `amp_veltrack`, the sustain-pedal gates (`locc64`, `hicc64`) and controller triggers
+  (`on_locc64`, `on_hicc64`) counted as played. A `partly` verdict names what is lost: envelope
+  decay (`ampeg_decay` with `ampeg_sustain`) and `rt_decay`, which the sampler does not play;
+  and switch keys inside the instrument's playable range: VSCO 2 CE's `CelloEns-KS` (84 to 87) and VCSL's
   `Timpani 1 - Keyswitch` (36 and 37), `Renaissance Organ - Keyswitch` (93 to 96) and
   `Xylophone - Keyswitch` (48 to 51, which the sounding C4 to D#4 reach through the offset). A
   note on such a key changes the articulation and does not sound; use the separate patches for a
