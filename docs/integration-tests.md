@@ -45,7 +45,7 @@ last merge, run `scripts/dev.sh rust` and `scripts/dev.sh frontend`.
 |---|---|
 | SON-P07, SON-P08 | frontend tests only |
 | SON-P12 | `sonara-agent/tests/change_safety.rs` |
-| SON-P13 | `sonara-agent/src/orchestration.rs`, `lib.rs`, docs |
+| SON-P13 | `sonara-agent/src/orchestration/`, `lib.rs`, docs |
 | SON-P14 | `sonara-midi` tests and the `smf` module documentation |
 | SON-P15 | `sonara-media/src/reference.rs` and the export file analysis, docs |
 | SON-P16 | `sonara-agent/tests/render_tools.rs`, `docs/audio-engine.md` |

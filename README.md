@@ -34,7 +34,7 @@ It is written in Rust. The window is built with Tauri and Svelte.
 - Play and record from a MIDI keyboard.
 - Measure loudness and clipping.
 - Export WAV, FLAC, MP3, Ogg and more.
-- Control everything from an agent: 57 tools over MCP, a command line and local IPC.
+- Control everything from an agent: 58 tools over MCP, a command line and local IPC.
 
 ## Install
 
