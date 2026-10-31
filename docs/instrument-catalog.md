@@ -25,7 +25,7 @@ guess from the words of the patch's path. A claim that nobody makes is `null`.
 | `license` | The licence the library's manifest states for this recording (a version 2 entry's own `license`), else for the library. `None` means **unknown**: read the library's own terms. |
 | `license_claim` | The licence of this recording, else of its library, as the manifest declares it or the profile states it, with the source. |
 | `verdict` | How well the preset plays as the manifest or the profile judges it, with the source: `{"value": {"state": "partly", "lost": [...]}, "source": "profile"}`. |
-| `facts` | What the structural check found in the patch (below), once `verify` has run; `null` before, and always for a set, whose members hold their own. |
+| `facts` | What the structural check found in the patch, and what decoding its samples measured (below), once `verify` has run; `null` before, and always for a set, whose members hold their own. |
 | `availability` | `available` (a regular, non-empty, readable file inside the library), `missing` (listed by the manifest or by Sonara's profile of the library, not on disk) or `invalid` with a reason. A set is `available` when every member is, `missing` when a member is missing, else `invalid` when a member is, with the member's path before the reason, and `invalid` when it names no patch. |
 | `patch_path` | The `.sfz` file on this machine. For a set, the patch of its `default` articulation, else of its first one. |
 
@@ -79,6 +79,36 @@ that can play, the keys that sound with their velocity layers (`sampled`), the s
 the default switch, the opcodes the sampler ignores, the missing and unreadable sample files with
 a note for each, the memory the decoded samples would take, and whether the patch is expected to
 load. A loader that does not inspect patches records none.
+
+**Measured in the samples.** A patch that loads also gets `facts.sound`, measured in the samples
+`MediaPatchLoader` decoded (`null` for a patch that does not load, or with a loader that does
+not measure):
+
+- `attacks`: for each region a key press starts with no other key down (an attack or `first`
+  region that a press sounds), its switch key (`null` when it plays under every switch), its
+  velocities and its `attack_ms`: the time from the key press to its onset, in whole
+  milliseconds. The onset is the first frame, counted from the region's `offset`, that comes
+  within 20 dB of the loudest frame the region plays, on either channel, timed at the speed
+  the sampler plays the region at its key centre with its `tune`; the region's `ampeg_attack`
+  is added. The level is relative to each region's peak, so a soft layer recorded quietly is
+  measured like a loud one. A region whose sample stays silent has no entry, nor do `legato`
+  and release regions.
+- `max_hold_ms`: the longest a region a key press starts plays while the key is held, from its
+  `offset` to its end, at the lowest key it plays, rounded up and at least 1 ms: a note held
+  longer falls silent before its note-off. `null` when one of those regions loops while held, so
+  a note sounds as long as it is held.
+
+From these, `InstrumentPreset::articulation_attacks()` gives the attack of each articulation a
+version 2 entry maps: the `attack_ms` the articulation states, as the manifest declares it or
+the profile states it, which overrides the measurement; else the median of the regions that play
+it, from the patch that plays it (its member, in a set): every region for `via: patch`, the
+regions of its switch key and those under every switch for `keyswitch`, the regions whose
+velocities overlap its zone for `velocity`. An articulation that a controller selects has no
+measured attack: a controller can fade or gate regions in ways the regions alone do not show,
+so its entry states one or it stays unknown. `patch_attack_ms()` is the median of every region
+of the patch (for a set, of the patch of its default articulation), and `max_hold_ms()` the
+longest hold, for a set the longest of its members', known only when every member was measured
+and none loops.
 
 **Facts beat claims.** `InstrumentPreset::effective_verdict()` is the claimed `verdict` lowered by
 the facts, each finding added to what is lost: a patch with no region, none that can play, an
@@ -190,7 +220,8 @@ Each articulation is `{id, via, …}`:
   sound (at most one per entry), `mute` and `vibrato` for the state a recording carries (`mute`
   is one of the mute articulation IDs, `con_sordino`, `mute_cup`, `mute_harmon`, `mute_plunger`,
   `mute_bucket`, `stopped`, `palm_mute` or `xylophonic`; `vibrato` is `vibrato_on` or
-  `non_vibrato`), and `attack_ms` (0 to 2000), the onset of its samples.
+  `non_vibrato`), and `attack_ms` (0 to 2000), the time from a key press to the onset of its
+  samples, which overrides the attack `verify` measures (above).
 - An ID appears once per mute and vibrato: `sustain` and `sustain` with `mute: con_sordino` are
   two articulations.
 

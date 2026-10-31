@@ -272,6 +272,7 @@ fn facts(lo: u8, hi: u8) -> PatchFacts {
         notes: Vec::new(),
         decoded_bytes: 1024,
         loadable: true,
+        sound: None,
     }
 }
 

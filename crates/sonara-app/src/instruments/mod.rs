@@ -55,8 +55,11 @@
 //! until [`InstrumentCatalog::verify`] loads it and marks it [`Availability::Invalid`]. The same
 //! check records what the patch holds ([`PatchFacts`]): facts from the file, which no claim
 //! overrides, and which lower the claimed verdict where the two disagree
-//! ([`InstrumentPreset::effective_verdict`]). SFZ has no bank or program numbers, so a preset has
-//! none; a future SF2 source would add them.
+//! ([`InstrumentPreset::effective_verdict`]). From the samples it decodes, the check also
+//! measures how long each region takes to be heard and how long a held note lasts
+//! ([`SoundFacts`]); an articulation whose entry states its `attack_ms` keeps that instead of the
+//! measured attack ([`InstrumentPreset::articulation_attacks`]). SFZ has no bank or program
+//! numbers, so a preset has none; a future SF2 source would add them.
 //!
 //! **What plays a part** ([`choose_sound`]): a part asks for an instrument type, solo or section,
 //! its articulations and the range of its notes, and the degradation chain answers from the
@@ -79,7 +82,7 @@ pub use chain::{
     SoundRequest, SoundSource, Step, Substitute, choose_sound, nearest_articulation,
 };
 pub use discovery::InstrumentCatalog;
-pub use facts::{KeyZone, PatchFacts, VelocityRange};
+pub use facts::{KeyZone, PatchFacts, RegionAttack, SoundFacts, VelocityRange};
 pub use family::{FamilyClaim, InstrumentFamily};
 pub use installed::{InstalledInstruments, LibraryChoices, PresetChoice};
 pub use manifest::{
@@ -88,7 +91,8 @@ pub use manifest::{
     MANIFEST_FILE, MANIFEST_VERSION, ProfileCheck, Verdict, VerdictState,
 };
 pub use model::{
-    Availability, CatalogError, Claim, ClaimSource, InstrumentClaim, InstrumentId,
-    InstrumentPreset, InvalidLibraryId, Library, LibraryId, LibraryIssue, PresetKind, SetMember,
+    Attack, AttackSource, Availability, CatalogError, Claim, ClaimSource, InstrumentClaim,
+    InstrumentId, InstrumentPreset, InvalidLibraryId, Library, LibraryId, LibraryIssue, PresetKind,
+    SetMember,
 };
 pub use verify::{MediaPatchLoader, PatchLoadError, PatchLoader};

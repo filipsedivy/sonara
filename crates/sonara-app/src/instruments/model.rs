@@ -7,11 +7,11 @@ use std::path::PathBuf;
 use serde::Serialize;
 use sonara_midi::orchestration::InstrumentType;
 
-use super::facts::PatchFacts;
+use super::facts::{PatchFacts, SoundFacts};
 use super::family::FamilyClaim;
 use super::manifest::{
-    ArticulationEntry, ArticulationList, DynamicsMode, EnsembleClaim, KeymapEntry, LegatoMode,
-    Verdict, VerdictState, serialize_instrument,
+    ArticulationEntry, ArticulationList, ArticulationVia, DynamicsMode, EnsembleClaim, KeymapEntry,
+    LegatoMode, Verdict, VerdictState, serialize_instrument,
 };
 
 /// The identifier of a sample library: a lower-case slug, `[a-z0-9][a-z0-9_-]*`, at most 64
@@ -372,6 +372,125 @@ impl InstrumentPreset {
     }
 }
 
+/// The time from a key press to the audible onset of an articulation, and where it comes from
+/// ([`InstrumentPreset::articulation_attacks`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Attack {
+    /// The time, in milliseconds.
+    pub ms: u32,
+    /// Who says so.
+    pub source: AttackSource,
+}
+
+/// Where an [`Attack`] comes from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AttackSource {
+    /// The articulation's `attack_ms`, which the library's manifest declares or Sonara's profile
+    /// states (the source of the articulation map). It overrides the measurement.
+    Stated(ClaimSource),
+    /// Measured in the decoded samples when [`super::InstrumentCatalog::verify`] loaded the patch
+    /// ([`PatchFacts::sound`]).
+    Measured,
+}
+
+impl InstrumentPreset {
+    /// The attack of each articulation that the manifest or the profile maps (a version 2
+    /// entry), in the map's order, for those whose attack is known: the `attack_ms` the
+    /// articulation states, which overrides the measurement, else the attack measured in the
+    /// samples of the patch that plays it (its member's, in a set; see
+    /// [`PatchFacts::sound`]), as the median of the regions that play it: every region for
+    /// `via: patch`, those of its switch key and those that play under every switch for a key
+    /// switch, those that overlap its velocities for a velocity zone. An articulation a
+    /// controller selects has no measured attack. Empty before [`super::InstrumentCatalog::verify`]
+    /// decoded the patch, unless articulations state their attack.
+    #[must_use]
+    pub fn articulation_attacks(&self) -> Vec<(&ArticulationEntry, Attack)> {
+        let Some(Claim {
+            value: ArticulationList::Mapped(entries),
+            source,
+        }) = &self.articulation_map
+        else {
+            return Vec::new();
+        };
+        entries
+            .iter()
+            .filter_map(|entry| {
+                let attack = match entry.attack_ms {
+                    Some(ms) => Attack {
+                        ms: u32::from(ms),
+                        source: AttackSource::Stated(*source),
+                    },
+                    None => Attack {
+                        ms: self
+                            .sound_of(entry.member.as_deref())?
+                            .attack_ms(entry.via)?,
+                        source: AttackSource::Measured,
+                    },
+                };
+                Some((entry, attack))
+            })
+            .collect()
+    }
+
+    /// The attack of the preset's patch as a whole, in milliseconds, as
+    /// [`super::InstrumentCatalog::verify`] measured it: the median of every region a key press
+    /// starts, whatever articulation the region plays. For a set, of the patch of
+    /// [`Self::patch_path`], its default articulation's. `None` before the patch was decoded,
+    /// and when no region of it has an onset.
+    #[must_use]
+    pub fn patch_attack_ms(&self) -> Option<u32> {
+        let sound = match &self.kind {
+            PresetKind::Patch => self.facts.as_ref()?.sound.as_ref(),
+            PresetKind::Set { members } => members
+                .iter()
+                .find(|member| member.patch_path == self.patch_path)?
+                .facts
+                .as_ref()?
+                .sound
+                .as_ref(),
+        };
+        sound?.attack_ms(ArticulationVia::Patch)
+    }
+
+    /// The longest a held note of the preset sounds, in milliseconds: a note held longer falls
+    /// silent before its note-off ([`SoundFacts::max_hold_ms`]). For a set, the longest of its
+    /// members', known only when every member was decoded and none loops. `None` before
+    /// [`super::InstrumentCatalog::verify`] decoded the patches, and when one loops while held,
+    /// so a note sounds as long as it is held.
+    #[must_use]
+    pub fn max_hold_ms(&self) -> Option<u32> {
+        match &self.kind {
+            PresetKind::Patch => self.facts.as_ref()?.sound.as_ref()?.max_hold_ms,
+            PresetKind::Set { members } => {
+                members
+                    .iter()
+                    .try_fold(None, |longest: Option<u32>, member| {
+                        let hold = member.facts.as_ref()?.sound.as_ref()?.max_hold_ms?;
+                        Some(Some(longest.map_or(hold, |longest| longest.max(hold))))
+                    })?
+            }
+        }
+    }
+
+    /// The measured facts of the patch that plays an articulation: the preset's own for a patch,
+    /// the member at `member` for a set. `None` when it was not decoded, or when a set's
+    /// articulation names no member of the set.
+    fn sound_of(&self, member: Option<&str>) -> Option<&SoundFacts> {
+        let facts = match &self.kind {
+            PresetKind::Patch => self.facts.as_ref(),
+            PresetKind::Set { members } => {
+                let path = member?;
+                members
+                    .iter()
+                    .find(|candidate| same_path(path, &candidate.path))?
+                    .facts
+                    .as_ref()
+            }
+        };
+        facts?.sound.as_ref()
+    }
+}
+
 /// Whether two patch paths below a library name the same file, ignoring case, as discovery
 /// matches manifest paths to the files on disk.
 pub(crate) fn same_path(a: &str, b: &str) -> bool {
@@ -467,12 +586,13 @@ mod tests {
     use sonara_midi::orchestration::{Articulation, InstrumentType, Mute, Vibrato};
 
     use super::{
-        Availability, Claim, ClaimSource, InstrumentClaim, InstrumentId, InstrumentPreset,
-        LibraryId, PresetKind, SetMember,
+        Attack, AttackSource, Availability, Claim, ClaimSource, InstrumentClaim, InstrumentId,
+        InstrumentPreset, LibraryId, PresetKind, SetMember,
     };
     use crate::instruments::{
         ArticulationEntry, ArticulationList, ArticulationName, ArticulationVia, FamilyClaim,
-        InstrumentFamily, PatchFacts, Verdict, VerdictState,
+        InstrumentFamily, PatchFacts, RegionAttack, SoundFacts, VelocityRange, Verdict,
+        VerdictState,
     };
 
     #[test]
@@ -562,6 +682,7 @@ mod tests {
             notes: Vec::new(),
             decoded_bytes: 1024,
             loadable: true,
+            sound: None,
         }
     }
 
@@ -851,8 +972,186 @@ mod tests {
                 "sampled": [{"lo": 55, "hi": 60, "layers": [{"lo": 1, "hi": 127}]}],
                 "switch_keys": [36, 37], "default_switch": 36,
                 "ignored_opcodes": ["ampeg_dynamic"], "missing_samples": [],
-                "unreadable_samples": [], "notes": [], "decoded_bytes": 1024, "loadable": true
+                "unreadable_samples": [], "notes": [], "decoded_bytes": 1024, "loadable": true,
+                "sound": null
             })
         );
+        let measured = PatchFacts {
+            sound: Some(SoundFacts {
+                attacks: vec![region(Some(36), (1, 63), 40)],
+                max_hold_ms: Some(11_200),
+            }),
+            ..sound_facts()
+        };
+        assert_eq!(
+            serde_json::to_value(&measured).expect("serializes")["sound"],
+            json!({
+                "attacks": [{"switch": 36, "velocities": {"lo": 1, "hi": 63}, "attack_ms": 40}],
+                "max_hold_ms": 11_200
+            })
+        );
+    }
+
+    /// The attack of a region under `switch` at the velocities `lo..=hi`.
+    fn region(switch: Option<u8>, (lo, hi): (u8, u8), attack_ms: u32) -> RegionAttack {
+        RegionAttack {
+            switch,
+            velocities: VelocityRange { lo, hi },
+            attack_ms,
+        }
+    }
+
+    /// Facts whose decoded samples measured `attacks` and the longest hold `max_hold_ms`.
+    fn measured(attacks: Vec<RegionAttack>, max_hold_ms: Option<u32>) -> PatchFacts {
+        PatchFacts {
+            sound: Some(SoundFacts {
+                attacks,
+                max_hold_ms,
+            }),
+            ..sound_facts()
+        }
+    }
+
+    /// Each mapped articulation takes the attack its entry states, with the map's source, over
+    /// the measured one, else the median of the regions that play it; a controller articulation
+    /// has no measured attack, and a preset without a mapped list lists none (TST-10).
+    #[test]
+    fn a_stated_attack_overrides_the_measured_one() {
+        let velocity = |articulation, lo, hi| ArticulationEntry {
+            via: ArticulationVia::Velocity { lo, hi },
+            ..switch(articulation, 0)
+        };
+        let mapped = ArticulationList::Mapped(vec![
+            switch(Articulation::Sustain, 36),
+            ArticulationEntry {
+                attack_ms: Some(7),
+                ..switch(Articulation::Staccato, 37)
+            },
+            velocity(Articulation::Pizzicato, 64, 127),
+            ArticulationEntry {
+                via: ArticulationVia::Cc { cc: 32, value: 10 },
+                ..switch(Articulation::Tremolo, 0)
+            },
+        ]);
+        let facts = measured(
+            vec![
+                region(Some(36), (1, 63), 40),
+                region(Some(36), (64, 127), 20),
+                region(Some(37), (0, 127), 12),
+                region(None, (1, 30), 100),
+            ],
+            Some(11_200),
+        );
+        let violin = preset(None, Some(mapped.clone()), Some(facts.clone()));
+        let attacks: Vec<_> = violin
+            .articulation_attacks()
+            .into_iter()
+            .map(|(entry, attack)| (entry.name.id(), attack.ms, attack.source))
+            .collect();
+        assert_eq!(
+            attacks,
+            [
+                // 40, 20 and the 100 of the region under every switch.
+                ("sustain", 40, AttackSource::Measured),
+                // Measured, it would be the median of 12 and 100.
+                ("staccato", 7, AttackSource::Stated(ClaimSource::Profile)),
+                // The regions at 64-127: 20 and 12.
+                ("pizzicato", 16, AttackSource::Measured),
+            ]
+        );
+        // The whole patch: the median of 12, 20, 40 and 100.
+        assert_eq!(violin.patch_attack_ms(), Some(30));
+        assert_eq!(violin.max_hold_ms(), Some(11_200));
+
+        // Without decoded samples only the stated attack is known.
+        let unchecked = preset(None, Some(mapped), Some(sound_facts()));
+        assert_eq!(
+            unchecked
+                .articulation_attacks()
+                .into_iter()
+                .map(|(entry, attack)| (entry.name.id(), attack))
+                .collect::<Vec<_>>(),
+            [(
+                "staccato",
+                Attack {
+                    ms: 7,
+                    source: AttackSource::Stated(ClaimSource::Profile)
+                }
+            )]
+        );
+        assert_eq!(unchecked.patch_attack_ms(), None);
+        assert_eq!(unchecked.max_hold_ms(), None);
+        // A version 1 list says only which articulations, so none has an attack.
+        let named = ArticulationList::Names(vec!["sustain".to_owned()]);
+        assert_eq!(
+            preset(None, Some(named), Some(facts.clone())).articulation_attacks(),
+            []
+        );
+        assert_eq!(preset(None, None, Some(facts)).articulation_attacks(), []);
+    }
+
+    /// A set holds a note as long as its longest member, known only when every member was
+    /// decoded and none loops; an articulation takes the attack of the member that plays it
+    /// (TST-07).
+    #[test]
+    fn a_set_holds_as_long_as_its_longest_member() {
+        let member = |path: &str, facts| SetMember {
+            path: path.to_owned(),
+            patch_path: PathBuf::from("/libraries/lib").join(path),
+            availability: Availability::Available,
+            facts,
+        };
+        let played_by = |articulation, path: &str| ArticulationEntry {
+            via: ArticulationVia::Patch,
+            member: Some(path.to_owned()),
+            ..switch(articulation, 0)
+        };
+        let mapped = ArticulationList::Mapped(vec![
+            played_by(Articulation::Sustain, "Sus.sfz"),
+            played_by(Articulation::Staccato, "stac.sfz"),
+        ]);
+        let set_of = |members| {
+            let mut set = preset(None, Some(mapped.clone()), None);
+            set.patch_path = PathBuf::from("/libraries/lib/Stac.sfz");
+            set.kind = PresetKind::Set { members };
+            set
+        };
+        let sus = measured(vec![region(None, (0, 127), 60)], Some(3_000));
+        let stac = measured(vec![region(None, (0, 127), 8)], Some(500));
+        let set = set_of(vec![
+            member("Sus.sfz", Some(sus.clone())),
+            member("Stac.sfz", Some(stac.clone())),
+        ]);
+        assert_eq!(set.max_hold_ms(), Some(3_000));
+        assert_eq!(
+            set.articulation_attacks()
+                .into_iter()
+                .map(|(entry, attack)| (entry.name.id(), attack.ms))
+                .collect::<Vec<_>>(),
+            [("sustain", 60), ("staccato", 8)],
+            "each from its member, its path matched ignoring case"
+        );
+        assert_eq!(set.patch_attack_ms(), Some(8), "the patch of patch_path");
+
+        let looping = measured(vec![region(None, (0, 127), 60)], None);
+        assert_eq!(
+            set_of(vec![
+                member("Sus.sfz", Some(looping)),
+                member("Stac.sfz", Some(stac.clone())),
+            ])
+            .max_hold_ms(),
+            None,
+            "a member that loops holds a note as long as it is held"
+        );
+        assert_eq!(
+            set_of(vec![
+                member("Sus.sfz", Some(sus)),
+                member("Stac.sfz", Some(sound_facts())),
+            ])
+            .max_hold_ms(),
+            None,
+            "a member that was not decoded leaves the hold unknown"
+        );
+        assert_eq!(set_of(Vec::new()).max_hold_ms(), None);
     }
 }

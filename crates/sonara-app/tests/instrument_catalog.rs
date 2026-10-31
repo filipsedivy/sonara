@@ -8,11 +8,12 @@ use std::path::{Path, PathBuf};
 
 use serde_json::json;
 use sonara_app::instruments::{
-    Availability, Builtin, CatalogError, ChainPreferences, ClaimSource, EnsembleClaim,
-    EnsembleKind, FamilyClaim, InstalledInstruments, InstrumentCatalog, InstrumentClaim,
-    InstrumentFamily, InstrumentPreset, KeyZone, LibraryId, LibraryIssue, MANIFEST_FILE,
-    MediaPatchLoader, PatchFacts, PatchLoadError, PatchLoader, PresetKind, Reach, SoundPlan,
-    SoundRequest, SoundSource, Step, VelocityRange, Verdict, VerdictState, choose_sound,
+    Attack, AttackSource, Availability, Builtin, CatalogError, ChainPreferences, ClaimSource,
+    EnsembleClaim, EnsembleKind, FamilyClaim, InstalledInstruments, InstrumentCatalog,
+    InstrumentClaim, InstrumentFamily, InstrumentPreset, KeyZone, LibraryId, LibraryIssue,
+    MANIFEST_FILE, MediaPatchLoader, PatchFacts, PatchLoadError, PatchLoader, PresetKind, Reach,
+    RegionAttack, SoundFacts, SoundPlan, SoundRequest, SoundSource, Step, VelocityRange, Verdict,
+    VerdictState, choose_sound,
 };
 use sonara_app::settings::Settings;
 use sonara_media::InstrumentSource;
@@ -436,12 +437,12 @@ struct FakeLoader {
 }
 
 impl PatchLoader for FakeLoader {
-    fn load(&self, patch: &Path) -> Result<(), PatchLoadError> {
+    fn load(&self, patch: &Path) -> Result<Option<SoundFacts>, PatchLoadError> {
         self.asked.borrow_mut().push(patch.to_owned());
         if patch.ends_with(self.reject) {
             Err(PatchLoadError("sample Violin_C4.wav is missing".to_owned()))
         } else {
-            Ok(())
+            Ok(None)
         }
     }
 }
@@ -662,6 +663,28 @@ fn verifying_records_the_patch_facts_and_they_beat_the_claims() {
             // 64 frames, one channel, four bytes a frame, the file counted once.
             decoded_bytes: 256,
             loadable: true,
+            // The ramp of `tone.wav` comes within 20 dB of its peak after 7 frames, 0.16 ms;
+            // its 64 frames last 1.45 ms at key 60, its key centre.
+            sound: Some(SoundFacts {
+                attacks: vec![
+                    RegionAttack {
+                        switch: Some(36),
+                        velocities: VelocityRange { lo: 1, hi: 63 },
+                        attack_ms: 0,
+                    },
+                    RegionAttack {
+                        switch: Some(36),
+                        velocities: VelocityRange { lo: 64, hi: 127 },
+                        attack_ms: 0,
+                    },
+                    RegionAttack {
+                        switch: Some(37),
+                        velocities: VelocityRange { lo: 1, hi: 127 },
+                        attack_ms: 0,
+                    },
+                ],
+                max_hold_ms: Some(2),
+            }),
         })
     );
     assert_eq!(
@@ -714,6 +737,10 @@ fn verifying_records_the_samples_a_patch_leaves_out() {
     );
     let preset = catalog.get(&id).expect("present");
     let facts = preset.facts.as_ref().expect("inspected");
+    assert_eq!(
+        facts.sound, None,
+        "a patch that does not load measures nothing"
+    );
     assert_eq!(facts.missing_samples, [root.join("nope.wav")]);
     assert_eq!((facts.regions, facts.playable_regions), (2, 1));
     assert!(facts.loadable, "the sampler plays the other region");
@@ -729,6 +756,155 @@ fn verifying_records_the_samples_a_patch_leaves_out() {
             lost: vec![note],
         })
     );
+}
+
+/// Writes a mono 16-bit WAV at 44.1 kHz into `root`: `silent` frames of silence, then `loud`
+/// frames at full scale. 441 frames are 10 ms.
+fn step(root: &Path, name: &str, silent: u32, loud: u32) {
+    fs::create_dir_all(root).expect("mkdir");
+    let spec = hound::WavSpec {
+        channels: 1,
+        sample_rate: 44_100,
+        bits_per_sample: 16,
+        sample_format: hound::SampleFormat::Int,
+    };
+    let mut wav = hound::WavWriter::create(root.join(name), spec).expect("wav");
+    for frame in 0..silent + loud {
+        let level = if frame < silent { 0 } else { i16::MAX };
+        wav.write_sample(level).expect("sample");
+    }
+    wav.finalize().expect("finalize");
+}
+
+/// The deep check decodes the samples and measures, on generated samples of known onset and
+/// length, each articulation's attack and the longest a held note lasts; an articulation whose
+/// entry states its `attack_ms` keeps that instead (TST-02, TST-10).
+#[test]
+fn verify_measures_onset_and_longest_unlooped_sample() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path().join("lib");
+    // A sustain that speaks after 30 ms and lasts 2 s, a staccato that speaks after 10 ms and
+    // lasts 0.2 s, and a tremolo that speaks at once.
+    step(&root, "sus.wav", 1_323, 86_877);
+    step(&root, "stac.wav", 441, 8_379);
+    step(&root, "trem.wav", 0, 4_410);
+    fs::write(
+        root.join("Violin.sfz"),
+        "<global> sw_lokey=24 sw_hikey=26 sw_default=24 lokey=55 hikey=60 pitch_keycenter=60\n\
+         <region> sample=sus.wav sw_last=24\n\
+         <region> sample=sus.wav sw_last=24 offset=441 lovel=100\n\
+         <region> sample=stac.wav sw_last=25 ampeg_attack=0.005\n\
+         <region> sample=trem.wav sw_last=26\n",
+    )
+    .expect("write");
+    manifest(
+        &root,
+        &json!({"version": 2, "instruments": [
+            {"path": "Violin.sfz", "instrument": "violin",
+             "articulations": [
+                 {"id": "sustain", "via": "keyswitch", "key": 24, "default": true},
+                 {"id": "staccato", "via": "keyswitch", "key": 25},
+                 {"id": "tremolo", "via": "keyswitch", "key": 26, "attack_ms": 120},
+                 {"id": "pizzicato", "via": "cc", "cc": 32, "value": 10}]}
+        ]}),
+    );
+    let stated = Attack {
+        ms: 120,
+        source: AttackSource::Stated(ClaimSource::Declared),
+    };
+    let mut catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
+    let id = catalog.presets()[0].id.clone();
+    let unchecked = catalog.get(&id).expect("present");
+    assert_eq!(unchecked.max_hold_ms(), None);
+    assert_eq!(unchecked.patch_attack_ms(), None);
+    assert_eq!(
+        unchecked
+            .articulation_attacks()
+            .into_iter()
+            .map(|(entry, attack)| (entry.name.id(), attack))
+            .collect::<Vec<_>>(),
+        [("tremolo", stated)],
+        "before the check only a stated attack is known"
+    );
+
+    assert_eq!(
+        catalog.verify(&id, &MediaPatchLoader).expect("known"),
+        &Availability::Available
+    );
+    let preset = catalog.get(&id).expect("present");
+    let sound = preset
+        .facts
+        .as_ref()
+        .and_then(|facts| facts.sound.as_ref())
+        .expect("measured");
+    let attacks: Vec<_> = sound
+        .attacks
+        .iter()
+        .map(|region| (region.switch, region.attack_ms))
+        .collect();
+    // The offset of 441 frames starts the second sustain region 10 ms into its silence.
+    assert_eq!(
+        attacks,
+        [
+            (Some(24), 30),
+            (Some(24), 20),
+            (Some(25), 15),
+            (Some(26), 0)
+        ]
+    );
+    // Key 55 lies five semitones below the key centre: 88200 frames last 2 s at 44.1 kHz, and
+    // 2 s × 2^(5/12) = 2669.7 ms played that much slower, rounded up.
+    assert_eq!(sound.max_hold_ms, Some(2_670));
+    assert_eq!(preset.max_hold_ms(), Some(2_670));
+
+    let measured = |ms| Attack {
+        ms,
+        source: AttackSource::Measured,
+    };
+    let attacks: Vec<_> = preset
+        .articulation_attacks()
+        .into_iter()
+        .map(|(entry, attack)| (entry.name.id(), attack))
+        .collect();
+    assert_eq!(
+        attacks,
+        [
+            // The median of 30 and 20 ms.
+            ("sustain", measured(25)),
+            ("staccato", measured(15)),
+            ("tremolo", stated),
+        ],
+        "a stated attack overrides the measured one, and a controller articulation has none"
+    );
+    // The whole patch: the median of 0, 15, 20 and 30 ms.
+    assert_eq!(preset.patch_attack_ms(), Some(18));
+}
+
+/// A patch that loops while a key is held has no longest hold: a note sounds as long as it is
+/// held (TST-03).
+#[test]
+fn a_looping_patch_has_no_longest_hold() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path().join("lib");
+    step(&root, "sus.wav", 0, 4_410);
+    fs::write(
+        root.join("Organ.sfz"),
+        "<region> sample=sus.wav key=60\n\
+         <region> sample=sus.wav key=61 loop_mode=loop_continuous loop_start=100 loop_end=4000\n",
+    )
+    .expect("write");
+    let mut catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
+    let id = catalog.presets()[0].id.clone();
+    catalog.verify(&id, &MediaPatchLoader).expect("known");
+    let preset = catalog.get(&id).expect("present");
+    assert!(
+        preset
+            .facts
+            .as_ref()
+            .is_some_and(|facts| facts.sound.is_some())
+    );
+    assert_eq!(preset.max_hold_ms(), None);
+    assert_eq!(preset.patch_attack_ms(), Some(0));
 }
 
 #[test]
@@ -1470,8 +1646,8 @@ fn only_a_sampler_path_is_rewritten_to_its_preset_id() {
 struct SampleMissing;
 
 impl PatchLoader for SampleMissing {
-    fn load(&self, _patch: &Path) -> Result<(), PatchLoadError> {
-        Ok(())
+    fn load(&self, _patch: &Path) -> Result<Option<SoundFacts>, PatchLoadError> {
+        Ok(None)
     }
 
     fn inspect(&self, _patch: &Path) -> Option<PatchFacts> {
@@ -1487,6 +1663,7 @@ impl PatchLoader for SampleMissing {
             notes: vec!["sample /lib/a.wav is missing (1 region left out)".to_owned()],
             decoded_bytes: 64,
             loadable: true,
+            sound: None,
         })
     }
 }

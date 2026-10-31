@@ -118,11 +118,13 @@ impl InstrumentCatalog {
     /// load becomes [`Availability::Invalid`]. It also records what the loader's structural check
     /// finds in the patch ([`PatchLoader::inspect`]) as the preset's
     /// [`facts`](InstrumentPreset::facts), loaded or not, which may lower its
-    /// [`effective verdict`](InstrumentPreset::effective_verdict). For a set, each member is
-    /// loaded and inspected in turn and keeps its own facts ([`SetMember::facts`]); a member
-    /// that does not load makes the set invalid, with the member's path and reason. A preset
-    /// that is not available is neither loaded nor inspected and keeps its state. Returns the
-    /// availability after the check.
+    /// [`effective verdict`](InstrumentPreset::effective_verdict); for a patch that loads, the
+    /// facts add what the loader measured in its decoded samples ([`PatchFacts::sound`]), which
+    /// [`InstrumentPreset::articulation_attacks`] and [`InstrumentPreset::max_hold_ms`] read.
+    /// For a set, each member is loaded and inspected in turn and keeps its own facts
+    /// ([`SetMember::facts`]); a member that does not load makes the set invalid, with the
+    /// member's path and reason. A preset that is not available is neither loaded nor inspected
+    /// and keeps its state. Returns the availability after the check.
     ///
     /// # Errors
     ///
@@ -482,19 +484,21 @@ fn set_availability(members: &[SetMember]) -> Availability {
 
 /// Loads the patch at `path` through `loader`: a patch that does not load makes
 /// `availability` invalid with the loader's reason, and what the loader's structural check
-/// finds becomes `facts`.
+/// finds becomes `facts`, with what loading the patch measured.
 fn check_patch(
     path: &Path,
     availability: &mut Availability,
     facts: &mut Option<PatchFacts>,
     loader: &dyn PatchLoader,
 ) {
-    if let Err(err) = loader.load(path) {
+    let sound = loader.load(path).unwrap_or_else(|err| {
         *availability = Availability::Invalid {
             reason: err.to_string(),
         };
-    }
-    if let Some(found) = loader.inspect(path) {
+        None
+    });
+    if let Some(mut found) = loader.inspect(path) {
+        found.sound = sound;
         *facts = Some(found);
     }
 }
@@ -616,7 +620,10 @@ mod tests {
         EnsembleKind, FamilyClaim, InstrumentClaim, InstrumentFamily, InstrumentPreset, LegatoMode,
         LibraryIssue, MANIFEST_FILE, PresetKind, SetMember, Verdict, VerdictState,
     };
-    use crate::instruments::{InstrumentId, LibraryId, PatchFacts, PatchLoadError, PatchLoader};
+    use crate::instruments::{
+        Attack, AttackSource, InstrumentId, LibraryId, PatchFacts, PatchLoadError, PatchLoader,
+        RegionAttack, SoundFacts, VelocityRange,
+    };
 
     fn patch(path: &Path) {
         fs::create_dir_all(path.parent().expect("a parent")).expect("mkdir");
@@ -1154,19 +1161,42 @@ mod tests {
     }
 
     /// A loader that fails the patches named `failing` and inspects every patch: no switch key,
-    /// and in `Horn Stac.sfz` one sample left out.
+    /// and in `Horn Stac.sfz` one sample left out. A patch that loads measures attacks of 40 ms
+    /// under every switch and 90 and 200 ms under the switches 30 and 31, and an 8 s hold, but
+    /// `Horn Stac.sfz` one attack of 5 ms and a 0.4 s hold.
     struct FakeLoader {
         failing: &'static str,
     }
 
     const LEFT_OUT: &str = "sample /lib/b.wav is missing (1 region left out)";
 
+    /// The attack of a region of every velocity under `switch`.
+    fn region(switch: Option<u8>, attack_ms: u32) -> RegionAttack {
+        RegionAttack {
+            switch,
+            velocities: VelocityRange { lo: 0, hi: 127 },
+            attack_ms,
+        }
+    }
+
     impl PatchLoader for FakeLoader {
-        fn load(&self, patch: &Path) -> Result<(), PatchLoadError> {
+        fn load(&self, patch: &Path) -> Result<Option<SoundFacts>, PatchLoadError> {
             if patch.ends_with(self.failing) {
                 Err(PatchLoadError("it does not parse".to_owned()))
+            } else if patch.ends_with("Horn Stac.sfz") {
+                Ok(Some(SoundFacts {
+                    attacks: vec![region(None, 5)],
+                    max_hold_ms: Some(400),
+                }))
             } else {
-                Ok(())
+                Ok(Some(SoundFacts {
+                    attacks: vec![
+                        region(None, 40),
+                        region(Some(30), 90),
+                        region(Some(31), 200),
+                    ],
+                    max_hold_ms: Some(8_000),
+                }))
             }
         }
 
@@ -1188,6 +1218,7 @@ mod tests {
                 notes,
                 decoded_bytes: 8,
                 loadable: true,
+                sound: None,
             })
         }
     }
@@ -1256,6 +1287,70 @@ mod tests {
                 }
             )
         );
+    }
+
+    /// What loading a set's members measured joins each member's facts: an articulation's
+    /// attack comes from the member that plays it, as the median of the regions that play it,
+    /// and the set holds a note as long as its longest member. A member that does not load
+    /// measures nothing, so its articulation's attack and the set's hold are unknown, and the
+    /// other member keeps what it measured (TST-03).
+    #[test]
+    fn verifying_a_set_measures_each_member() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let root = dir.path().join("lib");
+        library_with_sets(&root);
+        let horn = InstrumentId::of_set(&LibraryId::parse("lib").expect("valid"), "horn");
+        let measured = |ms| Attack {
+            ms,
+            source: AttackSource::Measured,
+        };
+        let attacks = |set: &InstrumentPreset| {
+            set.articulation_attacks()
+                .into_iter()
+                .map(|(entry, attack)| (entry.name.id(), attack))
+                .collect::<Vec<_>>()
+        };
+
+        let mut catalog = InstrumentCatalog::discover_with(std::slice::from_ref(&root), &[]);
+        let loader = FakeLoader {
+            failing: "Nothing.sfz",
+        };
+        assert_eq!(catalog.verify(&horn, &loader), Ok(&Availability::Available));
+        let set = preset(&catalog, "lib/@horn");
+        // Horn Sus: 40, 90 and 200 ms for `via: patch`; 40 and 90 under switch 30.
+        assert_eq!(
+            attacks(set),
+            [
+                ("sustain", measured(90)),
+                ("staccato", measured(5)),
+                ("sustain", measured(65)),
+            ]
+        );
+        assert_eq!(set.patch_attack_ms(), Some(5), "the default member's patch");
+        assert_eq!(set.max_hold_ms(), Some(8_000));
+
+        let mut catalog = InstrumentCatalog::discover_with(std::slice::from_ref(&root), &[]);
+        let loader = FakeLoader {
+            failing: "Horn Stac.sfz",
+        };
+        catalog.verify(&horn, &loader).expect("known");
+        let set = preset(&catalog, "lib/@horn");
+        let PresetKind::Set { members } = &set.kind else {
+            panic!("a set");
+        };
+        assert!(
+            members[1]
+                .facts
+                .as_ref()
+                .is_some_and(|facts| facts.sound.is_none()),
+            "inspected, but not measured"
+        );
+        assert_eq!(
+            attacks(set),
+            [("sustain", measured(90)), ("sustain", measured(65))]
+        );
+        assert_eq!(set.patch_attack_ms(), None);
+        assert_eq!(set.max_hold_ms(), None);
     }
 
     /// A manifest with another ID takes no profile, even when the profile's detect files are
