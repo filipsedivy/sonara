@@ -1128,8 +1128,9 @@ mod tests {
 
     #[test]
     fn only_the_sampler_has_an_automatable_enum() {
-        // Automation applies an enum lane once per block; no golden descriptor has one, so that
-        // path cannot move a golden render (GLD-01).
+        // Automation applies an enum lane per block, and for a sampler also at the frames of its
+        // changes inside a block; no golden descriptor has one, so neither path can move a
+        // golden render (GLD-01).
         let automatable_enums = |d: &crate::plugins::PluginDescriptor| {
             d.params
                 .iter()

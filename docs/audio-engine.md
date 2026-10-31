@@ -161,8 +161,9 @@ audio hardware and no sleeping.
 - **Tests.** `crates/sonara-engine/tests/player/transport.rs` (position, restart, end of range,
   concurrency), `hanging_notes.rs` (a held voice after seek, resume and stop),
   `schedule.rs` (order, chase, tempo change, a sampler's chase), `tests/sampler.rs` (a sampler
-  after a seek, a loop wrap and a later start, with clip keyswitches, with its `articulation`
-  parameter, its changes inside a block and a note's own articulation) and
+  after a seek, a loop wrap and a later start, with clip keyswitches, with its `articulation`,
+  `mute` and `vibrato` parameters, their changes inside a block and a note's own articulation)
+  and
   `crates/sonara-app/tests/transport*.rs`.
 
 ## Offline renderer (`sonara_engine::renderer`)
