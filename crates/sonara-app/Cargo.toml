@@ -49,8 +49,8 @@ sonara-testkit.workspace = true
 tempfile.workspace = true
 
 # Writes src/composer/system_prompt_orchestra.md, the orchestration reference of the chat's
-# system prompt. `test = true` makes `cargo test` run its test, which fails while the committed file is out of
-# date; that is CI's check of the file.
+# system prompt. `test = true` makes `cargo test` run its test, which fails while the committed
+# file is out of date; that is CI's check of the file.
 [[example]]
 name = "gen_chat_reference"
 test = true

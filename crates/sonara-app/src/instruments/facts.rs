@@ -62,8 +62,8 @@ pub struct SoundFacts {
     pub attacks: Vec<RegionAttack>,
     /// The longest time a region a key press starts plays while the key is held, at the lowest
     /// key it plays, in milliseconds rounded up, at least 1: a note held longer falls silent
-    /// before its note-off. `None` when one of those regions loops while held, so a note sounds as long as
-    /// it is held, or when no region sounds on a press.
+    /// before its note-off. `None` when one of those regions loops while held, so a note sounds
+    /// as long as it is held, or when no region sounds on a press.
     pub max_hold_ms: Option<u32>,
 }
 

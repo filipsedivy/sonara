@@ -384,6 +384,11 @@ the performance layer (`sonara_midi::performance`) reads, and `SoundSource::caps
 for whatever `choose_sound` chose. Nothing is guessed: a fact the check has not recorded stays
 unknown.
 
+The sampler stores its `articulation` parameter but does not act on it yet
+([sample-libraries.md](sample-libraries.md), "Instrument type, articulation and dynamics"). So
+`articulations`, and the attacks given per articulation, say which recording of the preset each
+choice maps to (the chain's nearest-articulation step), not what a track sounds like today.
+
 | Field | From |
 |---|---|
 | `articulations` | The choices of the sampler's `articulation` parameter that the preset plays as asked, in the vocabulary's order: a mapped articulation, or a mute or vibrato that a mapped recording carries (`con_sordino` for a muted sustain). The parameter selects only on a preset that names its instrument type and maps how its articulations are reached, so a preset without a version 2 entry, a version 1 manifest's names and a percussion key map list none. `legato` is listed when the preset claims legato by overlap or by its own legato regions, or maps a legato recording. |
