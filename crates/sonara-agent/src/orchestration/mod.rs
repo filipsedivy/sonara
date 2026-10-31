@@ -13,6 +13,10 @@
 //!
 //! Several requests can be joined with `and`, `then`, `,` or `;`.
 //!
+//! [`grammar`] reads requests that give instruments something to play, in English and Czech
+//! ("strings play a legato melody, horns and timpani underneath"), into clauses and the questions
+//! they leave open; [`Orchestrator::plan`] reads only the three kinds above.
+//!
 //! A step of a plan can take a value from the reply of an earlier step, such as the id of the
 //! track that `create_track` makes ([`StepRef`]). Its argument holds a placeholder until the
 //! earlier step has run.
@@ -49,6 +53,7 @@
 //! - When the tool layer asks for its own confirmation token for a confirmed destructive step,
 //!   the step is repeated with that token: the caller's approval is the user's agreement.
 
+pub mod grammar;
 mod refs;
 
 use std::ops::Range;

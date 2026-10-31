@@ -21,6 +21,56 @@ longer matching name wins ("Keys 2" is not "Keys").
 
 `execute` also runs a plan built by hand, with the same checks.
 
+## Reading orchestration requests
+
+`grammar::parse(request)` reads a request that gives instruments something to play, in English or
+Czech, into clauses and the questions it leaves open. It reads no project and calls no tool, and
+the same request always reads the same. `Orchestrator::plan` still understands only the three
+request kinds above; the grammar is its own entry point.
+
+"strings play a legato melody, horns and timpani underneath" and "smyčce hrají legato melodii,
+lesní rohy a tympány pod tím" both read as two clauses: the strings with the role melody and the
+articulation legato, then the horns and the timpani with the role "underneath".
+
+| A clause holds | Examples |
+|---|---|
+| instruments, categories and families | the aliases of `sonara_midi::orchestration::resolve` in English and Czech, every listed case: "horns", "lesních rohů", "tympány", "strings", "clarinets" |
+| a count, the parts of a section, solo or section | "two horns", "čtyři lesní rohy", "4 horns"; "first violins", "1. housle", "horn 3", "horns 1 and 2"; "solo violin", "sekce" |
+| instruments that double the others | "violins with flute", "s pěti lesními rohy" |
+| a role | melody, counter-melody, harmony ("chords", "akordy"), bass line ("basovou linku"), pedal, rhythm, colour, or "underneath" ("pod tím"), which leaves the role to the instrument |
+| an articulation, a mute and a vibrato | the vocabulary's ids ("legato", "col legno"), "pizz", "držené", "trylky", "con sordino", "s dusítkem", "senza vibrato", "ordinario" |
+| a dynamic and a change of it | "pp" to "ff", "softly", "potichu", "velmi nahlas"; "crescendo", "zesiluje", "diminuendo", "swell" |
+| bars, a key, a density | "in bars 5-12", "v taktech 5–12"; "in D minor", "in F# minor", "v d moll", "v b dur" (B♭); "full", "plně", "thin" |
+
+Czech forms are listed one by one, as the instrument aliases are; nothing is stemmed. When an
+alias and a word of the grammar start at the same word, the longer one wins and the alias wins a
+tie: "bass line" is a role, "bass" alone an instrument, and "piano" always the instrument.
+
+**Clauses.** A semicolon and "then" ("potom", "pak") end a clause. A comma, and "and" ("a", "i")
+anywhere but in a list of instruments, part the request too, but a part that only lists
+instruments joins the part after it ("flutes, oboes and clarinets play the melody"), and a part
+that names no instrument but adds a role or a manner of playing continues the part before it
+("strings play the melody, softly"). So "horns and timpani underneath" is one clause, and "a"
+works both as the Czech "and" and as the English article. A clause that names no instrument and
+gives no role or manner of playing ("set the tempo to 96") has no assignment and is left to the
+planner's request kinds.
+
+**Questions.** Nothing is to be changed while one is open:
+
+- words where an instrument belongs that name none (after a count, beside an instrument in a list,
+  after "with", or before the verb or the "underneath" of a clause without instruments), with up
+  to three "did you mean" suggestions: aliases one edit away for words of four or five letters,
+  two edits for longer words, none for shorter ones. The distance (`strsim`) only suggests, it
+  never matches: "viola" and "violin" are one edit apart;
+- words that name several targets ("bass": the double bass or the bass voice) and a category
+  without a usual member ("bells");
+- "horns" in a request that names nothing an orchestra template plays: French horns, or a brass
+  and saxophone section;
+- a clause without instruments, two different values of one kind in a clause ("legato
+  staccato"), bars that are not a range, and a count of 0.
+
+Other unknown words are read past and listed in the clause's `ignored` words.
+
 ## Steps that use an earlier step's result
 
 A step can take a value from the reply of an earlier step of the same plan, such as the id of the
