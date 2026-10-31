@@ -129,18 +129,20 @@ fn render_with(
     render_params(installed, &params, media)
 }
 
-/// The sampler's choices: the `installed` presets, two instrument types and three
-/// articulations, as a stand-in for the application's lists. The `articulation` choices are
-/// `auto` (0), `ordinario` (1), `sustain` (2), `staccato` (3) and `legato` (4).
+/// The sampler's choices: the `installed` presets, two instrument types, three articulations,
+/// three mutes and three vibratos, as a stand-in for the application's lists. The
+/// `articulation` choices are `auto` (0), `ordinario` (1), `sustain` (2), `staccato` (3) and
+/// `legato` (4); the `mute` choices `auto` (0), `open` (1), `con_sordino` (2) and `mute_cup`
+/// (3); the `vibrato` choices `auto` (0), `ordinary` (1), `vibrato_on` (2) and `non_vibrato`
+/// (3).
 fn choices(installed: &[String]) -> SamplerChoices {
+    let owned = |ids: &[&str]| ids.iter().map(|&id| id.to_owned()).collect();
     SamplerChoices {
         presets: installed.to_vec(),
-        instrument_types: vec!["horn_f".to_owned(), "violin".to_owned()],
-        articulations: vec![
-            "sustain".to_owned(),
-            "staccato".to_owned(),
-            "legato".to_owned(),
-        ],
+        instrument_types: owned(&["horn_f", "violin"]),
+        articulations: owned(&["sustain", "staccato", "legato"]),
+        mutes: owned(&["open", "con_sordino", "mute_cup"]),
+        vibratos: owned(&["ordinary", "vibrato_on", "non_vibrato"]),
     }
 }
 

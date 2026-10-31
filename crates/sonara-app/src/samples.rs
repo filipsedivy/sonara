@@ -17,7 +17,12 @@
 //! **The sampler's other enum parameters** take their choices from the orchestration metadata:
 //! `instrument_type` offers `auto` and every [`InstrumentType`] in score order, `articulation`
 //! offers `auto`, `ordinario` and the articulation vocabulary in its frozen order
-//! ([`Articulation::ALL`]). Every sampler device shares these lists, whatever preset it plays.
+//! ([`Articulation::ALL`]), `mute` offers `auto` and every [`Mute`] in its order
+//! ([`Mute::ALL`]), and `vibrato` offers `auto` and every [`Vibrato`] in its order
+//! ([`Vibrato::ALL`]). A mute or vibrato is named by the articulation ID that names it
+//! (`con_sordino`, `non_vibrato`), and the states without one by [`MUTE_OPEN`] and
+//! [`VIBRATO_ORDINARY`], as library manifests spell them. Every sampler device shares these
+//! lists, whatever preset it plays.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -25,7 +30,7 @@ use std::path::{Path, PathBuf};
 use sonara_core::plugins::{
     PluginDescriptor, PluginRegistry, SamplerChoices, builtin_registry, sampler_descriptor,
 };
-use sonara_midi::orchestration::{Articulation, InstrumentType};
+use sonara_midi::orchestration::{Articulation, InstrumentType, Mute, Vibrato};
 
 use crate::settings::Settings;
 
@@ -38,6 +43,11 @@ pub const MAX_PATCHES: usize = 5_000;
 /// The name of the folders that hold include fragments, compared ignoring ASCII case; the scan
 /// does not enter them.
 const INCLUDES_DIR: &str = "includes";
+/// The choice of the sampler's `mute` for [`Mute::Open`], which no articulation ID names.
+pub const MUTE_OPEN: &str = "open";
+/// The choice of the sampler's `vibrato` for [`Vibrato::Ordinary`], which no articulation ID
+/// names.
+pub const VIBRATO_ORDINARY: &str = "ordinary";
 
 /// The library directories of `settings`: the strings of the `sample_libraries` list. Anything
 /// else in the key is ignored.
@@ -117,7 +127,8 @@ pub fn registry_for(presets: &[String]) -> PluginRegistry {
 }
 
 /// The sampler's choices: `presets` for `instrument`, every instrument type in score order for
-/// `instrument_type`, and the articulation vocabulary in its frozen order for `articulation`.
+/// `instrument_type`, the articulation vocabulary in its frozen order for `articulation`, and
+/// every mute and vibrato state in its order for `mute` and `vibrato`.
 fn sampler_choices(presets: &[String]) -> SamplerChoices {
     SamplerChoices {
         presets: presets.to_vec(),
@@ -128,6 +139,23 @@ fn sampler_choices(presets: &[String]) -> SamplerChoices {
         articulations: Articulation::ALL
             .iter()
             .map(|articulation| articulation.id().to_owned())
+            .collect(),
+        mutes: Mute::ALL
+            .iter()
+            .map(|mute| {
+                mute.articulation()
+                    .map_or(MUTE_OPEN, Articulation::id)
+                    .to_owned()
+            })
+            .collect(),
+        vibratos: Vibrato::ALL
+            .iter()
+            .map(|vibrato| {
+                vibrato
+                    .articulation()
+                    .map_or(VIBRATO_ORDINARY, Articulation::id)
+                    .to_owned()
+            })
             .collect(),
     }
 }
@@ -148,7 +176,7 @@ mod tests {
 
     use serde_json::json;
     use sonara_core::plugins::{ParamKind, PluginDescriptor, PluginKind};
-    use sonara_midi::orchestration::{Articulation, InstrumentType};
+    use sonara_midi::orchestration::{Articulation, InstrumentType, Mute, Vibrato};
 
     use super::{LIBRARIES_KEY, registry_for, scan_patches};
     use crate::instruments::InstalledInstruments;
@@ -338,6 +366,60 @@ mod tests {
         );
     }
 
+    /// The choices of `mute`, as released (TST-05): `auto`, then every mute in its order. An
+    /// automation lane stores the index of a choice, so none of these ever moves.
+    const RELEASED_MUTES: [&str; 10] = [
+        "auto",
+        "open",
+        "con_sordino",
+        "mute_cup",
+        "mute_harmon",
+        "mute_plunger",
+        "mute_bucket",
+        "stopped",
+        "palm_mute",
+        "xylophonic",
+    ];
+
+    /// The choices of `vibrato`, as released (TST-05).
+    const RELEASED_VIBRATOS: [&str; 4] = ["auto", "ordinary", "vibrato_on", "non_vibrato"];
+
+    #[test]
+    fn the_mute_and_vibrato_choices_are_auto_and_every_state_in_its_order() {
+        let sampler = sampler();
+        let mute = sampler.param("mute").expect("the parameter");
+        assert_eq!(mute.kind, ParamKind::Enum);
+        assert!(mute.automatable, "a lane switches it");
+        assert_eq!(
+            mute.choices.get(..RELEASED_MUTES.len()),
+            Some(&RELEASED_MUTES.map(str::to_owned)[..])
+        );
+        // Choice `i + 1` is mute `i`: the open sound, then each mute by the articulation ID
+        // that names it.
+        assert_eq!(mute.choices.len(), 1 + Mute::ALL.len());
+        for (index, state) in Mute::ALL.iter().enumerate() {
+            let named = state
+                .articulation()
+                .map_or(super::MUTE_OPEN, Articulation::id);
+            assert_eq!(mute.choices[index + 1], named, "{state:?}");
+        }
+
+        let vibrato = sampler.param("vibrato").expect("the parameter");
+        assert_eq!(vibrato.kind, ParamKind::Enum);
+        assert!(vibrato.automatable, "a lane switches it");
+        assert_eq!(vibrato.choices, RELEASED_VIBRATOS.map(str::to_owned));
+        for (index, state) in Vibrato::ALL.iter().enumerate() {
+            let named = state
+                .articulation()
+                .map_or(super::VIBRATO_ORDINARY, Articulation::id);
+            assert_eq!(vibrato.choices[index + 1], named, "{state:?}");
+        }
+        for choices in [&mute.choices, &vibrato.choices] {
+            let distinct: HashSet<&String> = choices.iter().collect();
+            assert_eq!(distinct.len(), choices.len(), "no choice twice");
+        }
+    }
+
     #[test]
     fn the_instrument_type_choices_are_auto_and_every_type_in_score_order() {
         let sampler = sampler();
@@ -376,7 +458,7 @@ mod tests {
             .find("sonara.sampler")
             .expect("registered")
             .clone();
-        for id in ["instrument_type", "articulation"] {
+        for id in ["instrument_type", "articulation", "mute", "vibrato"] {
             assert_eq!(
                 one.param(id).expect("the parameter").choices,
                 other.param(id).expect("the parameter").choices,

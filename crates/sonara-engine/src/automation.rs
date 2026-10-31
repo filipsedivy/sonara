@@ -520,6 +520,7 @@ mod tests {
             articulations: (0..articulations)
                 .map(|i| "a".to_owned() + &i.to_string())
                 .collect(),
+            ..SamplerChoices::default()
         })
         .unwrap()
     }

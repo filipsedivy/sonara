@@ -791,6 +791,12 @@ pub struct SamplerChoices {
     /// `articulation`, in the vocabulary's frozen order: append-only, because lanes store the
     /// index of a choice.
     pub articulations: Vec<String>,
+    /// The mute IDs that follow [`SAMPLER_AUTO`] in `mute`, in the vocabulary's frozen order:
+    /// append-only, because lanes store the index of a choice.
+    pub mutes: Vec<String>,
+    /// The vibrato IDs that follow [`SAMPLER_AUTO`] in `vibrato`, in the vocabulary's frozen
+    /// order: append-only, because lanes store the index of a choice.
+    pub vibratos: Vec<String>,
 }
 
 /// The descriptor of `sonara.sampler`, Sonara's own SFZ sample player (ADR 0010), with the
@@ -806,8 +812,9 @@ pub struct SamplerChoices {
 /// The parameters, in slot order: `volume`, `pan`, `release_scale` and `instrument` as before,
 /// then `instrument_type` ([`SAMPLER_AUTO`] and the given instrument type IDs; not automatable),
 /// `articulation` ([`SAMPLER_AUTO`], [`SAMPLER_ORDINARIO`] and the given articulation IDs;
-/// automatable) and `dynamics` (0 to 1, default 1; automatable). New parameters go at the end,
-/// so a slot never changes its index.
+/// automatable), `dynamics` (0 to 1, default 1; automatable), `mute` and `vibrato`
+/// ([`SAMPLER_AUTO`] and the given mute or vibrato IDs; automatable). New parameters go at the
+/// end, so a slot never changes its index.
 ///
 /// It is deliberately not in [`builtin_registry`]: that catalog reproduces the prototype and
 /// is pinned by `golden/plugins/catalog.json` (GLD-01). The application registers this
@@ -826,6 +833,8 @@ pub fn sampler_descriptor(choices: &SamplerChoices) -> Option<PluginDescriptor> 
         .into_iter()
         .chain(choices.articulations.iter().map(String::as_str))
         .collect();
+    let mutes = after_auto(&choices.mutes);
+    let vibratos = after_auto(&choices.vibratos);
     Some(PluginDescriptor {
         tags: strings(&[
             "sampler",
@@ -871,6 +880,21 @@ pub fn sampler_descriptor(choices: &SamplerChoices) -> Option<PluginDescriptor> 
                     "How loud the notes play, from 0 to 1: 1 plays them as written, lower \
                      values softer",
                 ),
+                ep("mute", "Mute", SAMPLER_AUTO, &mutes).automatable().desc(
+                    "The mute new notes play with, held over a passage: auto keeps the mute \
+                         the articulation names, if any; open plays without one; any other \
+                         choice is a mute ID such as con_sordino. A preset without a recording \
+                         of the mute plays as without the choice",
+                ),
+                ep("vibrato", "Vibrato", SAMPLER_AUTO, &vibratos)
+                    .automatable()
+                    .desc(
+                        "The vibrato new notes play with, held over a passage: auto keeps the \
+                         vibrato the articulation names, if any; ordinary is the instrument's \
+                         usual vibrato; vibrato_on and non_vibrato ask for a recording with or \
+                         without it. A preset without such a recording plays as without the \
+                         choice",
+                    ),
             ],
             concat!(
                 "Sample player for SFZ instruments (velocity layers, round robin, keyswitches, ",
@@ -879,6 +903,14 @@ pub fn sampler_descriptor(choices: &SamplerChoices) -> Option<PluginDescriptor> 
             ),
         )
     })
+}
+
+/// The choices of an enum whose first choice is [`SAMPLER_AUTO`], followed by `ids`.
+fn after_auto(ids: &[String]) -> Vec<&str> {
+    [SAMPLER_AUTO]
+        .into_iter()
+        .chain(ids.iter().map(String::as_str))
+        .collect()
 }
 
 /// The built-in descriptors, in the prototype's registration order.
@@ -947,7 +979,8 @@ mod tests {
         }
     }
 
-    /// The sampler's choices: `presets`, and two instrument types and three articulations.
+    /// The sampler's choices: `presets`, and two instrument types, three articulations, two
+    /// mutes and two vibratos.
     fn choices(presets: &[&str]) -> SamplerChoices {
         SamplerChoices {
             presets: presets.iter().map(|&p| p.to_owned()).collect(),
@@ -957,6 +990,8 @@ mod tests {
                 "legato".to_owned(),
                 "staccato".to_owned(),
             ],
+            mutes: vec!["open".to_owned(), "con_sordino".to_owned()],
+            vibratos: vec!["ordinary".to_owned(), "non_vibrato".to_owned()],
         }
     }
 
@@ -994,7 +1029,7 @@ mod tests {
     }
 
     #[test]
-    fn the_sampler_appends_instrument_type_articulation_and_dynamics() {
+    fn the_sampler_appends_instrument_type_articulation_dynamics_mute_and_vibrato() {
         let sampler = sampler_descriptor(&choices(&["lib/Horn"])).expect("a preset");
         sampler.validate().expect("a valid descriptor");
         // The processor reads its slots by index, so the order is part of the layout: new
@@ -1009,7 +1044,9 @@ mod tests {
                 "instrument",
                 "instrument_type",
                 "articulation",
-                "dynamics"
+                "dynamics",
+                "mute",
+                "vibrato"
             ]
         );
         for spec in &sampler.params {
@@ -1051,6 +1088,42 @@ mod tests {
         assert!(same(&dynamics.default, &ParamValue::Float(1.0)));
         assert!(dynamics.automatable);
         assert!(dynamics.coerce(&serde_json::json!(1.5)).is_err());
+
+        // `mute` and `vibrato`: `auto`, then the given IDs, automatable.
+        for (id, choices) in [
+            ("mute", ["auto", "open", "con_sordino"]),
+            ("vibrato", ["auto", "ordinary", "non_vibrato"]),
+        ] {
+            let state = sampler.param(id).expect("the parameter");
+            assert_eq!(state.kind, ParamKind::Enum, "{id}");
+            assert_eq!(state.choices, choices, "{id}");
+            assert!(
+                same(&state.default, &ParamValue::Str("auto".into())),
+                "{id}"
+            );
+            assert!(state.automatable, "{id}: a lane switches it");
+            assert!(same(
+                &state.coerce(&serde_json::json!(2)).expect("an index"),
+                &ParamValue::Str(choices[2].into())
+            ));
+            let unknown = state
+                .coerce(&serde_json::json!("mute_cup"))
+                .expect_err("not a choice here");
+            assert_eq!(unknown.code, ErrorCode::InvalidArgument, "{id}");
+        }
+    }
+
+    #[test]
+    fn without_mute_or_vibrato_ids_the_sampler_offers_auto_alone() {
+        let sampler = sampler_descriptor(&SamplerChoices {
+            presets: vec!["lib/Horn".to_owned()],
+            ..SamplerChoices::default()
+        })
+        .expect("a preset");
+        sampler.validate().expect("a valid descriptor");
+        for id in ["mute", "vibrato"] {
+            assert_eq!(sampler.param(id).expect("the parameter").choices, ["auto"]);
+        }
     }
 
     #[test]
@@ -1068,7 +1141,10 @@ mod tests {
             assert!(automatable_enums(&d).is_empty(), "{}", d.id);
         }
         let sampler = sampler_descriptor(&choices(&["lib/Horn"])).expect("a preset");
-        assert_eq!(automatable_enums(&sampler), ["articulation"]);
+        assert_eq!(
+            automatable_enums(&sampler),
+            ["articulation", "mute", "vibrato"]
+        );
     }
 
     #[test]
