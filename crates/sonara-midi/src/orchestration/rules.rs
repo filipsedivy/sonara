@@ -9,7 +9,7 @@
 //! - [`WEIGHTS`] gives how strongly a line sounds against the others at each dynamic band,
 //!   [`HEAVY_PERCUSSION`] the percussion that overpowers any tutti, [`REGISTER_FACTORS`] how a
 //!   register changes the weight, and [`RegisterBand`] the bands that say which notes lie near
-//!   each other.
+//!   each other. [`Dynamic`] names the six notated markings and the band each falls in.
 //! - [`LOW_INTERVAL_LIMITS`] gives the lowest note at which each interval stays clear.
 //! - [`CARRIERS`], the function table, names the instruments that carry a melody or a bass in
 //!   each register band ([`Role`], [`carriers`]).
@@ -534,6 +534,63 @@ pub enum DynamicBand {
 impl DynamicBand {
     /// The three bands, from the softest.
     pub const ALL: [Self; 3] = [Self::Soft, Self::Medium, Self::Loud];
+}
+
+/// A notated dynamic, from pianissimo to fortissimo: the six markings a score writes and a
+/// request names ("pp", "softly", the Czech "potichu").
+///
+/// Louder markings compare greater. Markings beyond the six (ppp, fff) read as their nearest
+/// neighbour (pp, ff).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum Dynamic {
+    /// pp.
+    Pianissimo,
+    /// p.
+    Piano,
+    /// mp.
+    MezzoPiano,
+    /// mf.
+    MezzoForte,
+    /// f.
+    Forte,
+    /// ff.
+    Fortissimo,
+}
+
+impl Dynamic {
+    /// The six markings, from the softest.
+    pub const ALL: [Self; 6] = [
+        Self::Pianissimo,
+        Self::Piano,
+        Self::MezzoPiano,
+        Self::MezzoForte,
+        Self::Forte,
+        Self::Fortissimo,
+    ];
+
+    /// The marking as a score prints it, such as `mf`.
+    #[must_use]
+    pub const fn marking(self) -> &'static str {
+        match self {
+            Self::Pianissimo => "pp",
+            Self::Piano => "p",
+            Self::MezzoPiano => "mp",
+            Self::MezzoForte => "mf",
+            Self::Forte => "f",
+            Self::Fortissimo => "ff",
+        }
+    }
+
+    /// The band the rules compare the marking in: pp and p are soft, mp and mf medium, f and ff
+    /// loud ([`DynamicBand`]).
+    #[must_use]
+    pub const fn band(self) -> DynamicBand {
+        match self {
+            Self::Pianissimo | Self::Piano => DynamicBand::Soft,
+            Self::MezzoPiano | Self::MezzoForte => DynamicBand::Medium,
+            Self::Forte | Self::Fortissimo => DynamicBand::Loud,
+        }
+    }
 }
 
 /// How a rule grades its findings.
@@ -1712,6 +1769,28 @@ mod tests {
         assert_eq!(by_dynamic.highest(), Level::Warning);
         assert_eq!(by_case.highest(), Level::Error);
         assert!(Level::Hint < Level::Warning && Level::Warning < Level::Error);
+    }
+
+    #[test]
+    fn markings_fall_into_the_bands_the_sources_name() {
+        // TST-10: the bands as `DynamicBand` documents them: pp and p soft, f and ff loud, and mp
+        // with mf in the middle band.
+        let bands: Vec<(&str, DynamicBand)> = Dynamic::ALL
+            .iter()
+            .map(|dynamic| (dynamic.marking(), dynamic.band()))
+            .collect();
+        assert_eq!(
+            bands,
+            [
+                ("pp", DynamicBand::Soft),
+                ("p", DynamicBand::Soft),
+                ("mp", DynamicBand::Medium),
+                ("mf", DynamicBand::Medium),
+                ("f", DynamicBand::Loud),
+                ("ff", DynamicBand::Loud),
+            ]
+        );
+        assert!(Dynamic::ALL.is_sorted(), "ALL runs from the softest");
     }
 
     #[test]
