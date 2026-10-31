@@ -28,8 +28,10 @@ rust_rtsan() {
     # The player's render step and the graph's real-time entry points (7 and 11):
     # `player` drives every kind of step, with media, MIDI and clicks, also on the null device,
     # whose callback is checked too (sonara-io/rtsan); `live` drives the graph's adoption, swaps
-    # and installs directly; `sampler` drives a sampler's chase after seeks and loop wraps and
-    # its adoption by a rebuild. The engine's golden renders are offline, not real-time code.
+    # and installs directly; `sampler` drives the sample player's paths: its chase after seeks
+    # and loop wraps, its parameters and their lanes inside blocks, notes' own articulations, the
+    # overlap legato, multi-patch sets, a dense passage at its whole polyphony, and its adoption
+    # by a rebuild. The engine's golden renders are offline, not real-time code.
     RTSAN_ENABLE=1 cargo test --locked -p sonara-engine --features sonara-engine/rtsan,sonara-io/rtsan --test player --test live --test sampler
     # The transport service: the render step and the device callback under the
     # service's calls, recordings and live MIDI, its RT-06 test included.
@@ -54,7 +56,7 @@ Usage: scripts/dev.sh <task> [args]
   rust-fmt        cargo fmt (rewrites files)
   rust-deny       cargo deny check (licences, advisories, bans, sources)
   rust-loom       loom model checks of sonara-rt
-  rust-rtsan      RealtimeSanitizer tests of sonara-rt, sonara-io, the player and the transport
+  rust-rtsan      RealtimeSanitizer tests of sonara-rt, sonara-io, the player, the sampler and the transport
   rust            rust-check, rust-deny, rust-loom, rust-rtsan
   frontend        the desktop frontend: frozen install, licences, svelte-check, build, tests
 USAGE

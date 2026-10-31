@@ -56,6 +56,18 @@
 //! notes stop. The render thread's swap and adoption run inside `assert_no_alloc`, and the
 //! replaced graph is dropped outside it, as the player drops it off the render thread (RT-02,
 //! RT-09).
+//!
+//! **A dense passage** plays the sampler's real-time paths together under a full load: a set
+//! whose patches crossfade their layers on a controller, behind velocity crossfades and a pedal
+//! gate, keyed an octave away from the clip; a chord that takes all 64 voices and steals; legato
+//! notes, notes with their own articulations, lanes that change choices inside blocks, targets
+//! that force patches, velocity zones and a controller, fixed-velocity dynamics, and live
+//! input. The oracle is straight play: a seek back to the start, every pass of a loop and a live
+//! graph play the same. Its blocks, reports, live input and swap run inside `assert_no_alloc`,
+//! and `scripts/dev.sh rust-rtsan` runs this binary under RealtimeSanitizer, which checks
+//! everything that the entry points marked `nonblocking` call: the graph's `process` and
+//! `inject` and the swap's `apply` (RT-02, RT-03). The player's render step, which reads the
+//! reports, is marked too; here they are read outside it.
 
 use std::fmt::Write as _;
 use std::fs;
@@ -2236,4 +2248,236 @@ fn a_set_over_the_memory_cap_warns_and_plays_silence() {
     // base project play on.
     let unloaded = render_with(&["lib/gone".to_owned()], None, &media).expect("renders");
     assert!(audio.data == unloaded.data, "the set adds nothing");
+}
+
+// --- A dense passage ---
+
+/// The two patches of the set `lib/@dense` in `dir`, each a soft and a loud layer on every pair
+/// of keys from C2 to G5 (36 to 79), looping: the soft layer fades out and the loud one in on
+/// the modulation wheel (CC 1), whose value also raises both by up to 6 dB; the loud layer
+/// fades in with the velocity from 20 to 100 and starts only while the sustain pedal is up.
+/// Patch 0 plays a 110 and a 220 Hz tone, patch 1 a 330 and a 440 Hz one.
+fn dense_patches(dir: &Path) -> Vec<PathBuf> {
+    [(0, 110.0, 220.0), (1, 330.0, 440.0)]
+        .iter()
+        .map(|&(member, soft_hz, loud_hz)| {
+            let (soft, loud) = (format!("soft{member}.wav"), format!("loud{member}.wav"));
+            write_wav(&dir.join(&soft), soft_hz);
+            write_wav(&dir.join(&loud), loud_hz);
+            let mut sfz = String::from(
+                "<global> ampeg_release=0.005 loop_mode=loop_continuous loop_start=4410 \
+                 loop_end=44000 volume_oncc1=6\n",
+            );
+            let layers = [
+                format!("xfout_locc1=0 xfout_hicc1=127 sample={soft}"),
+                format!(
+                    "xfin_locc1=0 xfin_hicc1=127 xfin_lovel=20 xfin_hivel=100 locc64=0 \
+                     hicc64=63 sample={loud}"
+                ),
+            ];
+            for layer in &layers {
+                writeln!(sfz, "<group> {layer}").expect("writes a string");
+                for key in (36..80).step_by(2) {
+                    writeln!(
+                        sfz,
+                        "<region> lokey={key} hikey={} pitch_keycenter={key}",
+                        key + 1
+                    )
+                    .expect("writes a string");
+                }
+            }
+            let patch = dir.join(format!("dense{member}.sfz"));
+            fs::write(&patch, sfz).expect("write a patch of the set");
+            patch
+        })
+        .collect()
+}
+
+/// The preset `lib/@dense`: the set of [`dense_patches`] in `dir`, keyed an octave below the
+/// clips (key offset -12), every note at velocity 100 scaled by `dynamics`, with an overlap
+/// legato of 20 ms from 30 ms into the sample and a gap of 10 ms. `ordinario` and `sustain`
+/// play patch 0 as it is, or without vibrato in its velocity zone 60 to 127, or muted
+/// (`con_sordino`, `mute_cup`) patch 1 with the modulation wheel at 100; `staccato` plays patch 1
+/// in the velocity zone 20 to 90, and `legato` patch 0 joined by the legato.
+fn dense_preset(dir: &Path) -> MediaProvider {
+    let patches = dense_patches(dir);
+    let in_patch = |member, selector, legato| {
+        Some(ArticulationTarget {
+            member,
+            selector,
+            legato,
+        })
+    };
+    let targets = TargetTable::tabulate(5, 4, 4, |choice, passage| match choice {
+        1 | 2 if passage.mute >= 2 => in_patch(
+            1,
+            Some(Selector::Controller {
+                number: 1,
+                value: 100,
+            }),
+            false,
+        ),
+        1 | 2 if passage.vibrato == 3 => {
+            in_patch(0, Some(Selector::Velocity { lo: 60, hi: 127 }), false)
+        }
+        1 | 2 => in_patch(0, None, false),
+        3 => in_patch(1, Some(Selector::Velocity { lo: 20, hi: 90 }), false),
+        4 => in_patch(0, None, true),
+        _ => None,
+    });
+    let mapping = Arc::new(SamplerMapping::new(
+        targets,
+        DynamicsDrive::Fixed(100),
+        Some(LegatoSpec {
+            crossfade_ms: 20,
+            start_offset_ms: 30,
+            gap_ms: 10,
+        }),
+        -12,
+    ));
+    no_media().with_instruments(move |value| {
+        (value == "lib/@dense").then(|| InstrumentSource {
+            id: value.to_owned(),
+            patches: patches.clone(),
+            mapping: Arc::clone(&mapping),
+        })
+    })
+}
+
+/// A dense passage on `lib/@dense`, silent from [`AFTER_DENSE`]: a chord of 32
+/// keys from beat 1/16, a beat and a half long, on two channels, every eighth key marked
+/// `staccato`; a melody of three abutting notes on a third channel, the first marked `sustain`
+/// and the others `legato`; the modulation wheel stepping on both chord channels, set at beat
+/// 0 as a seek back there needs; the sustain pedal down from beat 1.25 to 1.75; and lanes that
+/// change the `articulation` (at beats 0.75 and 1.5), the `vibrato` (0.5), the `mute` (1) inside
+/// blocks and the `dynamics` (1).
+fn dense_project() -> (Project, PluginRegistry) {
+    let mut notes = Vec::new();
+    for (index, key) in (48..80_u8).enumerate() {
+        let id = format!("n_{index:012}");
+        let mut chord = note(&id, key, 0.0625, 1.5);
+        chord["channel"] = json!(index % 2);
+        if index % 8 == 0 {
+            chord["articulation"] = json!("staccato");
+        }
+        notes.push(chord);
+    }
+    for (index, (key, articulation)) in [(84, "sustain"), (88, "legato"), (84, "legato")]
+        .into_iter()
+        .enumerate()
+    {
+        let id = format!("n_{:012}", 100 + index);
+        let start = 0.0625 + 0.5 * f64::from(u8::try_from(index).expect("three notes"));
+        let mut melody = marked_note(&id, key, start, 0.5, articulation);
+        melody["channel"] = json!(2);
+        notes.push(melody);
+    }
+    let control = |beat: f64, number: u8, value: u8, channel: u8| {
+        json!({"beat": beat, "kind": "cc", "value": value, "number": number,
+               "channel": channel})
+    };
+    let mut controls = Vec::new();
+    for channel in 0..2 {
+        for (beat, value) in [(0.0, 0), (0.25, 32), (0.5, 64), (0.875, 127), (1.25, 64)] {
+            controls.push(control(beat, 1, value, channel));
+        }
+        controls.push(control(0.0, 64, 0, channel));
+    }
+    controls.push(control(1.25, 64, 127, 0));
+    controls.push(control(1.75, 64, 0, 0));
+    let automation = [
+        held_lane(
+            "aut_000000000011",
+            "articulation",
+            &[(0.0, 2.0), (0.75, 3.0), (1.5, 2.0)],
+        ),
+        held_lane("aut_000000000012", "vibrato", &[(0.0, 0.0), (0.5, 3.0)]),
+        held_lane("aut_000000000013", "mute", &[(0.0, 0.0), (1.0, 2.0)]),
+        held_lane("aut_000000000014", "dynamics", &[(0.0, 1.0), (1.0, 0.6)]),
+    ];
+    sampler_project(
+        &json!({"instrument": "lib/@dense"}),
+        &notes,
+        &controls,
+        &automation,
+    )
+}
+
+/// A block start (beat 2.4107) after every voice of [`dense_project`] has ended: the pedal lets
+/// the last notes go at beat 1.75, and they release over 5 ms.
+const AFTER_DENSE: i64 = 113 * BLOCK;
+
+/// Plays the blocks from `from` up to `to` as [`play`] does, and reads the voices after each
+/// from the reports, as the render thread reads them, inside `assert_no_alloc` too (RT-02).
+/// Returns the output and the most voices that sounded.
+fn play_counting(graph: &mut RenderGraph, from: i64, to: i64) -> (Vec<[f64; 2]>, f64) {
+    let mut out = Vec::new();
+    let mut most = 0.0_f64;
+    let mut frame = from;
+    while frame < to {
+        graph.read_media(frame).expect("no media to read");
+        out.extend_from_slice(assert_no_alloc(|| graph.process(frame, true)));
+        most = most.max(assert_no_alloc(|| voices(graph)));
+        frame += BLOCK;
+    }
+    (out, most)
+}
+
+/// The sampler's real-time paths under a full load, through the render graph's real-time entry
+/// points, which `scripts/dev.sh rust-rtsan` also runs under RealtimeSanitizer: every block,
+/// report, live input and swap inside `assert_no_alloc` (RT-02, RT-03).
+#[test]
+fn a_dense_passage_plays_within_the_voices_and_as_straight_play_after_a_seek() {
+    // The chord asks for 64 voices and the melody's first note for 2 more, so the sampler
+    // steals and plays all 64 (TST-07); the legato notes join the melody, the lanes change
+    // choices inside blocks, the targets force patches, velocity zones and a controller, and
+    // the controllers crossfade the layers. The oracles are straight play (TST-10): a seek back
+    // to the start from where the passage has ended, and every pass of a loop over it, play
+    // as it does; so does a live graph of the project that gets live input the patch does not
+    // play, merged into a block where a lane changes a choice.
+    let dir = tempfile::tempdir().expect("a tempdir");
+    let media = dense_preset(dir.path());
+    let project = dense_project();
+    let (heard, most) = play_counting(&mut graph_of(&project, &media), 0, AFTER_DENSE);
+    assert_eq!(most, 64.0, "the passage plays the sampler's every voice");
+    assert!(loudest(&heard) > 0.1, "the passage sounds");
+    let mut graph = graph_of(&project, &media);
+    play_counting(&mut graph, 0, AFTER_DENSE);
+    assert_eq!(assert_no_alloc(|| voices(&graph)), 0.0, "silent at the end");
+    let (after, _) = play_counting(&mut graph, 0, AFTER_DENSE);
+    assert!(after == heard, "a seek back to the start");
+    for pass in 2..=3 {
+        let (again, _) = play_counting(&mut graph, 0, AFTER_DENSE);
+        assert!(again == heard, "pass {pass} of a loop over the passage");
+    }
+
+    let (project, registry) = &project;
+    let mut builder = GraphBuilder::new(DEFAULT_BLOCK);
+    let mut current = None;
+    assert!(swap_in(&mut current, fresh(&mut builder, project, registry, &media)).is_none());
+    let live = current.as_mut().expect("a graph plays");
+    let node = live.node_index(KICK).expect("the sampler track");
+    // Beat 0.75, the change to `staccato`, lies at frame 18 000, inside block 35.
+    let unplayed = InstrumentEvent {
+        offset: 80,
+        kind: EventKind::NoteOn,
+        pitch: 127,
+        velocity: 100,
+        channel: 3,
+        value: 0,
+        number: 0,
+        articulation: None,
+    };
+    let mut played = Vec::new();
+    let mut frame = 0;
+    while frame < AFTER_DENSE {
+        if frame == 35 * BLOCK {
+            assert!(assert_no_alloc(|| live.inject(node, &[unplayed])));
+        }
+        live.read_media(frame).expect("no media to read");
+        played.extend_from_slice(assert_no_alloc(|| live.process(frame, true)));
+        frame += BLOCK;
+    }
+    assert_eq!(live.live_events_dropped(), 0);
+    assert!(played == heard, "the live graph plays as the offline one");
 }
