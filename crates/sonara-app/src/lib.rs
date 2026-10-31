@@ -21,6 +21,8 @@
 //! The menus and shortcuts add the native menu bar's tree ([`menus`]). The AI composer
 //! ([`composer`]) runs a headless Claude Code as an agent that composes in the open project;
 //! the AI Chat ([`chat`]) is a conversation with such an agent, as a queue of tasks.
+//! The instrument catalog ([`instruments`]) says what plays a part, and the ensemble plans
+//! ([`ensembles`]) work out the tracks, folders, buses, sounds and pans of an ensemble template.
 #![forbid(unsafe_code)]
 
 pub mod about;
@@ -33,6 +35,7 @@ pub mod clock;
 pub mod composer;
 pub mod context;
 pub mod edit;
+pub mod ensembles;
 pub mod eq_response;
 pub mod error;
 pub mod events;

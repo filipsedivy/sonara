@@ -431,6 +431,10 @@ band's guitar and drum kit, so the big band lists 15 of its 17 players. Where a 
 in, such as the horn in F for the Classical orchestra's natural horn or the tenor trombone for
 Beethoven's alto trombone, the part plays it and its note says so.
 
+What applying a template builds (the tracks, folders, buses, sounds and pans) is worked out by
+the application's ensemble plans ([instrument-catalog.md](instrument-catalog.md), "What an
+ensemble builds").
+
 ## Rules
 
 `orchestration::rules` holds orchestration rules as data. The predicates that check notes against

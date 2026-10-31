@@ -397,6 +397,39 @@ unknown.
 A built-in sound, silence, and a preset that is not in the catalog's snapshot are sounds nothing
 is known about (`SoundCaps::default()`).
 
+## What an ensemble builds
+
+`ensembles::plan` works out what applying one of the ensemble templates of the orchestration
+metadata builds ([orchestration-metadata.md](orchestration-metadata.md), "Ensembles"), so that
+every caller builds the same tracks. It takes the template, a seating and a string size it offers
+(its defaults when none is given), the parts (its required parts, or the ones named, each with its
+articulations and range), whether to make folders and buses, and the chain's preferences. The plan
+is a list of tracks in the order to create them, each referring only to tracks before it:
+
+- **A bus per family** in use, first ("Strings Bus"), because a track can feed only a bus that
+  exists. Each part feeds its family's bus instead of the master.
+- **A folder per family** in use ("Woodwinds", "Brass", "Percussion", "Plucked", "Keyboards",
+  "Voices", "Strings"), each followed by its family's parts. The folders come in the order their
+  first part appears, which for a full score is score order and keeps a piano trio's piano last; a
+  family's parts all go into its folder, so a wind quintet's bassoon joins the other woodwinds
+  above the horn. Without folders the parts keep the template's order exactly.
+- **One track per part**, named as the score names it ("Violins I", "Piccolo (Fl. 3)"), with the
+  part as the track stores it: the instrument type, the name, the players (a string section's
+  from the string size, one for a wind part or a doubling, none stated for a choir section of 16 to
+  20) and solo or section, and for a doubled instrument the part of the player who plays it
+  ("Flute 3").
+- **Its sound**, which `choose_sound` picks, asked for a section for a string or choir section and
+  for a solo otherwise: the whole answer, with its messages and any question to ask first. The
+  answer "no" takes the sound the question offers instead.
+- **Its place**: the part's stage place in the seating as a track pan (the Romantic orchestra's
+  second violins at −0.30 in the American seating, +0.55 in the antiphonal one; a chamber group
+  centred), unless the chosen preset's `in_situ` says it was recorded with the players in their
+  places. Then the track stays centred, because the samples carry the stage image.
+
+A seating the template does not offer, a string size it does not have, a part it does not have
+(the match is exact: a display name is not a slug), a part named twice and an empty selection are
+refused. The plan creates nothing, reads no project and adds no reverb; the caller applies it.
+
 ## Licence and installation notes
 
 - Install a library by adding its directory to `sample_libraries` and restarting
@@ -411,11 +444,12 @@ is known about (`SoundCaps::default()`).
 
 ## Not done
 
-No agent tool, CLI command or GUI lists the catalog itself or asks it what plays a part yet. The
-sampler's `instrument` choices are its available patches' IDs; the device editor shows them as the
-presets' names grouped by library (`InstalledInstruments::by_library`), and a preset whose name
-another preset of the same library shares also shows its patch path below the library. The sampler
-plays one patch per device, so it offers no multi-patch set, although the catalog lists the sets
-and `choose_sound` may answer with one. The catalog records a patch's facts only when `verify` runs
-on it, one preset at a time. A General MIDI or SF2 source would add bank and program. Sound
-quality of any library has not been judged.
+No agent tool, CLI command or GUI lists the catalog itself, asks it what plays a part or applies
+an ensemble plan yet. The sampler's `instrument` choices are its available patches' IDs; the
+device editor shows them as the presets' names grouped by library
+(`InstalledInstruments::by_library`), and a preset whose name another preset of the same library
+shares also shows its patch path below the library. The sampler plays one patch per device, so it
+offers no multi-patch set, although the catalog lists the sets and `choose_sound` may answer with
+one. The catalog records a patch's facts only when `verify` runs on it, one preset at a time. A
+General MIDI or SF2 source would add bank and program. Sound quality of any library has not been
+judged.
