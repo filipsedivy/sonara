@@ -78,10 +78,11 @@ fn render(profiles: &[Profile]) -> Vec<String> {
 }
 
 /// One line per instrument id the profile's playable patches play, under a `folder` line when
-/// its presets share a folder. The folders come in the score order of their first instrument,
-/// the lines in score order within a folder, and the kits last. A patch the profile judges
-/// unplayable, a multi-patch set (the sampler plays one patch) and a patch that claims no
-/// instrument and maps no key are left out.
+/// its presets share a folder. The lines whose presets share no folder come first, before any
+/// `folder` line, because a line names its presets below the folder line above it. The folders
+/// follow in the score order of their first instrument, the lines in score order within a
+/// folder, and the kits last. A patch the profile judges unplayable, a multi-patch set (the
+/// sampler plays one patch) and a patch that claims no instrument and maps no key are left out.
 fn profile_lines(profile: &Profile) -> Vec<String> {
     let mut rows: Vec<(Option<InstrumentType>, Vec<Preset>)> = Vec::new();
     for entry in &profile.claims.entries {
@@ -134,6 +135,9 @@ fn profile_lines(profile: &Profile) -> Vec<String> {
             None => folders.push((folder, vec![line])),
         }
     }
+    // The lines outside any folder first: after a `folder` line they would read as inside it.
+    // A stable sort keeps the score order of the folders.
+    folders.sort_by_key(|(folder, _)| !folder.is_empty());
     folders
         .into_iter()
         .flat_map(|(folder, lines)| {
@@ -384,6 +388,43 @@ mod tests {
                 "flute: Flute",
                 "folder Strings/",
                 "cello: Cello Sus sustain; Cello Pizz pizzicato",
+            ]
+        );
+    }
+
+    /// A line whose presets share no folder never follows a `folder` line, where it would read
+    /// as inside that folder and name presets that do not exist (TST-06): the cello at the
+    /// library's root comes before the folder of the flute, which precedes it in score order.
+    #[test]
+    fn presets_outside_a_folder_come_before_the_folders() {
+        let profile = parse(
+            r#"{"version": 2, "id": "lib", "name": "A Library", "detect": ["a.sfz"],
+                "instruments": [
+                  {"path": "Winds/Flute.sfz", "instrument": "flute"},
+                  {"path": "Brass/Horn.sfz", "instrument": "horn_f"},
+                  {"path": "Cello.sfz", "instrument": "cello"},
+                  {"path": "Winds/Oboe.sfz", "instrument": "oboe"}
+                ]}"#,
+        )
+        .expect("a valid profile");
+        let lines = render(std::slice::from_ref(&profile));
+        let block: Vec<&str> = lines
+            .iter()
+            .skip_while(|line| !line.starts_with("lib ("))
+            .map(String::as_str)
+            .collect();
+        // Oracle: each preset id is the library, the folder line above the line, and the name:
+        // lib/Cello, lib/Winds/Flute, lib/Winds/Oboe, lib/Brass/Horn.
+        assert_eq!(
+            block,
+            [
+                "lib (A Library):",
+                "cello: Cello",
+                "folder Winds/",
+                "flute: Flute",
+                "oboe: Oboe",
+                "folder Brass/",
+                "horn_f: Horn",
             ]
         );
     }
