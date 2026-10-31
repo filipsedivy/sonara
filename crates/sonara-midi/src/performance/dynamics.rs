@@ -83,11 +83,13 @@
 //!   crossfades on another controller takes the same values there
 //!   ([`ControllerLane::on_controller`]).
 //!
-//! The first event holds from before the first note-on, as a later onset's value does, so the
-//! controller is set before the note that needs it. Along a curve the events follow the lane at
-//! most once per engine block (at the slowest sample rate, the longest block), stopping a block
-//! short of the curve's next point, and an event that repeats the value before it is left out.
-//! The last value holds after the part's last note.
+//! The first event lies two blocks before the first note-on as played, as a later onset's value
+//! does, or at the clip's start when the note lies nearer to it. At one frame the engine sends
+//! note-ons before controller events, so a first note at the clip's very start begins under the
+//! controller's earlier value: expression reaches it at once, a crossfade from the next block.
+//! Along a curve the events follow the lane at most once per engine block (at the slowest sample
+//! rate, the longest block), stopping a block short of the curve's next point, and an event that
+//! repeats the value before it is left out. The last value holds after the part's last note.
 //!
 //! Everything is a pure function of the line and the score: no random choice is made, so the same
 //! input gives the same result (TST-04). Nothing here runs on a real-time thread (RT-01).
