@@ -7,7 +7,8 @@
 //!
 //! 1. **Exact.** A playable preset ([`InstrumentPreset::is_playable`]) that plays the instrument
 //!    in the size asked for. A preset plays the instrument when its manifest or profile says so,
-//!    or when its percussion key map has keys for it.
+//!    when its path names it (a guess, which ranks last), or when its percussion key map has keys
+//!    for it.
 //! 2. **Nearest articulation.** An articulation the chosen preset does not play is played by the
 //!    nearest one it does, or imitated by rewriting the notes ([`nearest_articulation`]).
 //! 3. **Solo or section swap.** When no preset of the size asked for is installed, a preset of
@@ -17,7 +18,8 @@
 //!    the neighbour. A neighbour whose playable range holds the part's notes comes first, in the
 //!    order of preference; one that does not, or that changes the family, the pitch or the role of
 //!    the part, is offered only with a question to the user. Nothing is moved by an octave
-//!    without that question.
+//!    without that question, and the chain moves no note itself: the question names the range
+//!    the notes outside it go into ([`Confirmation::move_into`]).
 //! 5. **General MIDI.** A General MIDI program needs a General MIDI engine, which this build does
 //!    not have, so the chain goes on from step 4 to step 6.
 //! 6. **Built-in.** A preset of the Poly Synth, or keys of the Drum Kit, that approximates the
@@ -209,6 +211,11 @@ pub struct Notice {
 pub struct Confirmation {
     /// The question, in words for the user.
     pub question: String,
+    /// When the part reaches beyond the playable range of the neighbour that plays it: that
+    /// range. The answer yes means the notes outside it are moved by octaves into it, which the
+    /// caller does; the sound plan holds the notes as written. `None` when the question moves
+    /// no note.
+    pub move_into: Option<PitchRange>,
     /// What plays when the user declines.
     pub otherwise: Box<SoundPlan>,
 }
@@ -726,8 +733,8 @@ fn best(candidates: Vec<Candidate<'_>>, preferences: ChainPreferences) -> Option
         })
 }
 
-/// Whether `preset` plays `instrument`: its manifest or profile says so, or its key map has keys
-/// for it.
+/// Whether `preset` plays `instrument`: its manifest or profile says so, its path names it, or
+/// its key map has keys for it.
 fn plays(preset: &InstrumentPreset, instrument: InstrumentType) -> bool {
     preset
         .instrument
@@ -918,20 +925,19 @@ fn plan_from<'a>(
             candidate,
             out_of_range,
         }) => {
+            let beyond = request.pitched_span().filter(|_| out_of_range);
             let question = words::neighbour_question(
                 request.instrument,
                 &neighbour,
                 &candidate.preset.id,
-                if out_of_range {
-                    request.pitched_span()
-                } else {
-                    None
-                },
+                beyond,
             );
+            let move_into = beyond.and_then(|_| playable(neighbour.instrument));
             let mut plan = sampler_plan(candidate, request, requests, Some(neighbour));
             if let Some(question) = question {
                 plan.confirm = Some(Confirmation {
                     question,
+                    move_into,
                     otherwise: Box::new(plan_from(fallbacks, request, requests)),
                 });
             }
@@ -950,6 +956,7 @@ fn plan_from<'a>(
             notices.extend(articulation_notices(&articulations, instrument));
             let confirm = row.asks_first.then(|| Confirmation {
                 question: words::builtin_question(instrument, row.sound),
+                move_into: None,
                 otherwise: Box::new(plan_from(fallbacks, request, requests)),
             });
             SoundPlan {

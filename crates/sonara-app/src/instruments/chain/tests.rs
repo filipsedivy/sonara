@@ -937,6 +937,15 @@ fn step_4_a_neighbour_out_of_range_asks_first() {
         "The part reaches A#1 to A#4, beyond Tuba's playable range of A0 to G4. Play it on Tuba \
          with the notes outside that range moved by an octave, or leave Tuba out?"
     );
+    // The answer yes moves the notes above G4 into the tuba's range, which the caller does: the
+    // question carries the range (oracle: the tuba's record), and the plan keeps the notes.
+    assert_eq!(confirm.move_into, playable(InstrumentType::Tuba));
+    assert_eq!(
+        confirm
+            .move_into
+            .map(|range| (range.low().get(), range.high().get())),
+        Some((21, 67))
+    );
     assert_eq!(confirm.otherwise.step, Step::Builtin);
     assert_eq!(
         messages(&confirm.otherwise),
@@ -972,6 +981,10 @@ fn step_4_a_neighbour_that_changes_the_role_asks_first() {
         confirm.question,
         "No Soprano is installed; Sopranos (lib/Choir) can play the part, but it changes the \
          part's role. Use it?"
+    );
+    assert_eq!(
+        confirm.move_into, None,
+        "the part names no range, so no note moves"
     );
     assert_eq!(
         confirm.otherwise.source,
@@ -1162,6 +1175,7 @@ fn step_7_declining_the_last_sound_leaves_the_track_silent() {
          can play the part on key 39, but as another kind of sound. Use it, or leave the track \
          silent?"
     );
+    assert_eq!(confirm.move_into, None);
     assert_eq!(
         *confirm.otherwise,
         SoundPlan {

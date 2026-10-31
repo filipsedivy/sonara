@@ -54,8 +54,9 @@ them directly. Each directory is scanned for `.sfz` files with the same rules as
 (eight levels deep, hidden folders, symbolic links and folders named `includes` skipped, at most
 5,000 patches), and its optional manifest, over the profile Sonara ships for the library if there
 is one, is merged in. A patch the manifest does not list is still found and gets an inferred
-family, an inferred instrument when its path names one, and no articulations. A manifest or profile entry whose file is gone becomes `missing`;
-one that names a file in an `includes` folder is listed like any other entry.
+family, an inferred instrument when its path names one, and no articulations. A manifest or
+profile entry whose file is gone becomes `missing`; one that names a file in an `includes` folder
+is listed like any other entry.
 
 Nothing fails the discovery. Missing or non-directory roots, an unreadable or invalid manifest,
 a rejected manifest entry, a library that two of Sonara's profiles match, a duplicate library ID
@@ -313,7 +314,9 @@ tries, in order:
 1. **A preset of the instrument** in the size asked for. A preset counts only when it is
    **playable**: available, and, where its patch has been checked, with a region that can play,
    no sample file missing and a verdict other than `not`. A patch nobody has checked yet still
-   counts. A percussion patch plays an instrument on the keys its key map gives it.
+   counts. A preset plays the instrument when its manifest or profile says so, or when its path
+   names it (a guess, which ranks last), and a percussion patch plays an instrument on the keys
+   its key map gives it.
 2. **The nearest articulation** of that preset for one it lacks: the articulation it refines
    (`trill` for `trill_half`), then its stand-ins from the orchestration metadata, then the
    ordinary sound with the notes rewritten to imitate it (a staccato as notes cut to a quarter, a
@@ -327,7 +330,9 @@ tries, in order:
    preset. One whose playable range holds the part comes first. One that does not, or that
    changes the family, loses the pitches or changes the part's role (a choir for a solo voice), is
    offered with a question, and the answer "no" goes on down the list. Nothing is moved by an
-   octave without asking.
+   octave without asking: for a part beyond the neighbour's range, the question carries that
+   range, and the answer "yes" means the caller moves the notes outside it by octaves into it;
+   the chain itself moves no note.
 5. **General MIDI** is skipped: Sonara has no General MIDI player.
 6. **A built-in sound:** a Poly Synth preset (`Strings` for the strings, `Brass`, `Choir Pad`,
    `Glass Bells` for bells and so on) or Drum Kit keys of the `Cinematic Toms` kit for
@@ -356,9 +361,11 @@ VSCO 2 CE and VCSL. Every substitution comes back as a sentence for the user, fo
 
 ## Not done
 
-No agent tool, CLI command or GUI lists the catalog itself or asks it what plays a part yet. The sampler's `instrument` choices
-are its available presets' IDs; the device editor shows them as the presets' names grouped by
-library (`InstalledInstruments::by_library`), and a preset whose name another preset of the same
-library shares also shows its patch path below the library. The catalog lists no set as a
-preset, and records a patch's facts only when `verify` runs on it, one preset at a time. A General
-MIDI or SF2 source would add bank and program. Sound quality of any library has not been judged.
+No agent tool, CLI command or GUI lists the catalog itself or asks it what plays a part yet. The
+sampler's `instrument` choices are its available patches' IDs; the device editor shows them as the
+presets' names grouped by library (`InstalledInstruments::by_library`), and a preset whose name
+another preset of the same library shares also shows its patch path below the library. The sampler
+plays one patch per device, so it offers no multi-patch set, although the catalog lists the sets
+and `choose_sound` may answer with one. The catalog records a patch's facts only when `verify` runs
+on it, one preset at a time. A General MIDI or SF2 source would add bank and program. Sound
+quality of any library has not been judged.
