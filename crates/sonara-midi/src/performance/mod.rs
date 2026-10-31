@@ -2,7 +2,8 @@
 //!
 //! [`perform`] takes one part's line ([`PartLine`]): its notes at sounding pitch, the instrument
 //! that plays it, the part's role in the texture and what the chosen sound can do
-//! ([`SoundCaps`]). It returns the notes to write ([`Performed`]).
+//! ([`SoundCaps`]). It returns the notes to write, the articulation of each note and the passages
+//! of the sampler's `articulation` lane that play them ([`Performed`], [`articulate()`]).
 //!
 //! The lines come from [`voicing`], whose helpers give the parts of an ensemble their notes for a
 //! melody or a run of chords, family by family, applying the orchestration rules as they write.
@@ -19,19 +20,24 @@
 //!
 //! Nothing here runs on a real-time thread (RT-01).
 
+pub mod articulate;
 pub mod check;
 mod seed;
 pub mod voicing;
 
 use std::fmt;
 
-use sonara_core::midi::{MidiNote, sort_notes};
+use sonara_core::midi::MidiNote;
+use sonara_core::model::automation::AutomationPoint;
 use sonara_core::time::{TempoMap, TimeSignatureMap};
 use thiserror::Error;
 
 use crate::orchestration::{Articulation, Instrument, PitchRange, is_snake_case};
 
 pub use crate::orchestration::rules::Role;
+pub use articulate::{
+    Articulated, NoteArticulation, Passage, Rule, Source, articulate, articulation_choice,
+};
 pub use seed::Seed;
 
 /// The most bytes a [`PartId`] holds.
@@ -53,6 +59,18 @@ pub enum PerformanceError {
     /// The sound's capabilities contradict themselves; the source says how.
     #[error("the sound's capabilities are invalid")]
     InvalidCaps(#[from] CapsError),
+    /// A note starts before beat 0 or at a beat that is not finite, lasts no time or a length
+    /// that is not finite, or has a pitch above 127 or a velocity of 0 or above 127.
+    #[error("note {0} is not a valid note")]
+    InvalidNote(String),
+    /// A note's articulation is no id of the articulation vocabulary.
+    #[error("note {note} has the articulation {id:?}, which is not in the vocabulary")]
+    UnknownArticulation {
+        /// The id of the note.
+        note: String,
+        /// The articulation it names.
+        id: String,
+    },
 }
 
 /// The id of one part of a performance, such as `violins_1` or `horn_3`: the slug of an
@@ -302,33 +320,55 @@ pub struct Performed {
     pub part: PartId,
     /// The notes to write, in the project's note order: by start, then pitch, then id.
     pub notes: Vec<MidiNote>,
+    /// The articulation of each note, in the order of [`Performed::notes`].
+    pub articulations: Vec<NoteArticulation>,
+    /// The passages of the part's sound, in time order, each with its switch on the sampler's
+    /// `articulation` lane.
+    pub passages: Vec<Passage>,
+}
+
+impl Performed {
+    /// The points of the sampler's `articulation` lane, one per passage, in time order: `hold`
+    /// points of [`articulation_choice`] at timeline beats.
+    #[must_use]
+    pub fn articulation_lane(&self) -> Vec<AutomationPoint> {
+        articulate::lane(&self.passages)
+    }
 }
 
 /// Performs `line` within `score`. The same line, score and seed give the same result, whatever
 /// other parts are performed (TST-04): a stage that makes a random choice draws it from the part's
-/// own stream of `seed` ([`Seed::stream`]). Ordering the notes, the one stage so far, makes none.
+/// own stream of `seed` ([`Seed::stream`]). Articulation, the one stage so far, makes none.
 ///
 /// The notes come back in the project's note order (start, then pitch, then id; the order of
-/// [`sort_notes`]), each with every field kept, its articulation included.
+/// [`sort_notes`](sonara_core::midi::sort_notes)), each with every field kept, its articulation
+/// included, with the articulation of each and the passages that play them ([`articulate()`]):
+/// only the strokes of a tremolo or a roll that the sound plays are merged into one held note.
 ///
 /// # Errors
-/// [`PerformanceError::InvalidCaps`] when `line.caps` fails [`SoundCaps::check`]; its source is
-/// the [`CapsError`].
+/// - [`PerformanceError::InvalidCaps`] when `line.caps` fails [`SoundCaps::check`]; its source is
+///   the [`CapsError`];
+/// - [`PerformanceError::InvalidNote`] and [`PerformanceError::UnknownArticulation`] for a note
+///   that [`articulate()`] rejects.
 #[expect(
     unused_variables,
-    reason = "the signature fixes what every stage of a performance reads: the score's tempo and \
-              metre and the part's own random stream; ordering the notes reads neither"
+    reason = "the signature fixes what every stage of a performance reads, the part's own random \
+              stream included; articulation makes no random choice"
 )]
 pub fn perform(
     line: &PartLine,
     score: &ScoreContext,
     seed: Seed,
 ) -> Result<Performed, PerformanceError> {
-    line.caps.check()?;
-    let mut notes = line.notes.clone();
-    sort_notes(&mut notes);
+    let Articulated {
+        notes,
+        articulations,
+        passages,
+    } = articulate(line, score)?;
     Ok(Performed {
         part: line.part.clone(),
         notes,
+        articulations,
+        passages,
     })
 }

@@ -336,8 +336,11 @@ fn a_tacet_part_performs_to_no_notes() {
         Performed {
             part: part("double_basses"),
             notes: Vec::new(),
+            articulations: Vec::new(),
+            passages: Vec::new(),
         }
     );
+    assert_eq!(performed.articulation_lane(), []);
 }
 
 #[test]
@@ -391,7 +394,8 @@ fn notes_strategy() -> impl Strategy<Value = Vec<MidiNote>> {
 
 proptest! {
     /// Whatever order the line lists its notes in, the performance holds the same notes in the
-    /// project's note order (TST-09).
+    /// project's note order (TST-09). The line's sound lists no articulation, so no stroke is
+    /// merged and every note comes back unchanged.
     #[test]
     fn perform_ignores_the_order_of_the_input(
         (notes, shuffled) in notes_strategy().prop_flat_map(|notes| {

@@ -322,7 +322,7 @@ impl<'a> Context<'a> {
 }
 
 /// Whether `note` holds valid values: its fields are public, so a caller can build any.
-fn is_valid(note: &MidiNote) -> bool {
+pub(super) fn is_valid(note: &MidiNote) -> bool {
     note.start.is_finite()
         && note.start >= 0.0
         && note.length.is_finite()
@@ -332,7 +332,7 @@ fn is_valid(note: &MidiNote) -> bool {
 }
 
 /// The project's note order: by start, then pitch, then id.
-fn note_order(a: &MidiNote, b: &MidiNote) -> std::cmp::Ordering {
+pub(super) fn note_order(a: &MidiNote, b: &MidiNote) -> std::cmp::Ordering {
     a.start
         .total_cmp(&b.start)
         .then(a.pitch.cmp(&b.pitch))

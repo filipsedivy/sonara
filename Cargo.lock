@@ -4256,6 +4256,7 @@ dependencies = [
  "serde_json",
  "sonara-core",
  "sonara-project",
+ "sonara-rt",
  "sonara-testkit",
  "thiserror 2.0.21",
  "unicode-normalization",

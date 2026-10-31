@@ -22,6 +22,8 @@ unicode-normalization.workspace = true
 proptest.workspace = true
 serde_json.workspace = true
 sonara-project.workspace = true
+# The engine's block size, which the articulation switches lead by (a unit test compares them).
+sonara-rt.workspace = true
 sonara-testkit.workspace = true
 
 [lints]
