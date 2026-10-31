@@ -1,19 +1,21 @@
 //! Dynamics through the public API: the level table, phrases and their shapes, the velocities a
-//! performance writes and the points of the sampler's `dynamics` lane.
+//! performance writes, the points of the sampler's `dynamics` lane and the controller events of
+//! the part's clip that can take the lane's place.
 //!
 //! The worked numbers come from a string melody, a horn chord that swells and a timpani roll at
 //! 72 BPM in 4/4, the tempo of an orchestration of an eight-bar theme in D minor.
 
 use proptest::collection::vec;
 use proptest::prelude::*;
-use sonara_core::midi::MidiNote;
+use sonara_core::midi::{ControlKind, MidiControlEvent, MidiNote};
 use sonara_core::model::automation::{AutomationPoint, CurveKind};
 use sonara_core::time::{TempoMap, TimeSignatureMap};
 use sonara_midi::orchestration::rules::DynamicBand;
 use sonara_midi::orchestration::{Articulation, instrument};
 use sonara_midi::performance::check::velocity_band;
 use sonara_midi::performance::dynamics::{
-    LEVELS, Level, Remark, cc_value, level_velocity, marking, part_marking, value_at,
+    EXPRESSION, LEVELS, Level, MODULATION, Remark, cc_value, level_velocity, marking, part_marking,
+    value_at,
 };
 use sonara_midi::performance::{
     Dynamic, DynamicsKind, DynamicsRequest, HumanizeRequest, LegatoKind, PartId, PartLine,
@@ -27,6 +29,9 @@ const BLOCK_S: f64 = 512.0 / 22_050.0;
 
 /// Two blocks at 72 BPM, in beats: how far a held value leads its note-on.
 const LEAD_72: f64 = 2.0 * BLOCK_S * 72.0 / 60.0;
+
+/// One block at 72 BPM, in beats: the closest two controller events along a curve may lie.
+const BLOCK_72: f64 = BLOCK_S * 72.0 / 60.0;
 
 fn score_at(bpm: f64, origin: f64) -> ScoreContext {
     ScoreContext::new(
@@ -874,6 +879,442 @@ proptest! {
                     }
                 }
                 DynamicsKind::Cc => prop_assert_eq!(level.velocity, note.velocity),
+            }
+        }
+    }
+}
+
+/// The controller value in force at content beat `beat`: the value of the last event at or
+/// before it, or `None` before the first.
+fn in_force(events: &[MidiControlEvent], beat: f64) -> Option<i64> {
+    events
+        .iter()
+        .take_while(|event| event.beat <= beat + 1e-9)
+        .last()
+        .map(|event| event.value)
+}
+
+/// A controller value as a number.
+fn number_of(value: i64) -> f64 {
+    f64::from(u8::try_from(value).expect("a controller value of 0-127"))
+}
+
+/// The controller value that gives the `dynamics` value `d` its level, before rounding: the gain
+/// `d²` of the sampler's square law on expression, `d` itself on a crossfade's controller.
+fn exact_value(kind: DynamicsKind, d: f64) -> f64 {
+    match kind {
+        DynamicsKind::Cc => 127.0 * d,
+        DynamicsKind::Velocity | DynamicsKind::Fixed(_) => 127.0 * d * d,
+    }
+}
+
+/// The level a note-on plays at under expression `value`, as a velocity: the sampler's level
+/// follows the square of the velocity, and expression is a linear gain.
+fn heard(velocity: u8, value: i64) -> f64 {
+    f64::from(velocity) * (number_of(value) / 127.0).sqrt()
+}
+
+#[test]
+fn each_sound_carries_its_dynamics_on_one_controller() {
+    assert_eq!((EXPRESSION, MODULATION), (11, 1));
+    assert_eq!(DynamicsKind::Velocity.controller(), EXPRESSION);
+    assert_eq!(DynamicsKind::Fixed(100).controller(), EXPRESSION);
+    assert_eq!(DynamicsKind::Cc.controller(), MODULATION);
+}
+
+#[test]
+fn expression_swells_a_held_chord_at_the_level_the_lane_gives_it() {
+    let mut notes: Vec<MidiNote> = (0..8)
+        .map(|bar| note(&format!("n_{bar}"), 65, f64::from(bar) * 4.0, 4.0))
+        .collect();
+    notes[6] = written("n_6", 67, 24.0, 4.0, "crescendo_swell");
+    let performed = run(&line(
+        "horn_f",
+        Role::Harmony,
+        notes,
+        two_layers(&[Articulation::Sustain]),
+        request(MezzoForte),
+    ));
+    let controller = &performed.dynamics.controller;
+    assert_eq!((controller.number, controller.channel), (EXPRESSION, 0));
+    let events = performed.dynamics_events();
+    assert_eq!(events, controller.events);
+    // The chords are written at mf (76) and hold mp (62): expression 127 · (62/76)² = 84.5,
+    // which rounds to 85, from the clip's start until the swell.
+    let first = events.first().expect("a value from the clip's start");
+    assert_eq!((first.beat, first.value), (0.0, 85));
+    assert!(events.get(1).is_some_and(|event| event.beat > 24.0));
+    // The swell reaches mf, expression 127, at 60 % of the chord, and falls back to 85 before
+    // the next chord, one value a step. The curve flattens towards its peak, so 127 is in force
+    // from where the lane rounds to it, before the peak's own point.
+    assert_eq!(in_force(&events, 26.4), Some(127));
+    let peak = events
+        .iter()
+        .position(|event| event.value == 127)
+        .expect("the swell's peak");
+    let lane = &performed.dynamics.lane;
+    let reached = events[peak].beat;
+    assert!(reached < 26.4 && 127.0 * value_at(lane, reached).powi(2) >= 126.5);
+    assert!(127.0 * value_at(lane, reached - BLOCK_72).powi(2) < 126.5);
+    assert!(
+        events[..=peak]
+            .windows(2)
+            .all(|pair| pair[0].value < pair[1].value)
+    );
+    assert!(
+        events[peak..]
+            .windows(2)
+            .all(|pair| pair[0].value > pair[1].value)
+    );
+    let last = events.last().expect("the swell's end");
+    assert_eq!(last.value, 85);
+    assert!(last.beat > 26.4 && last.beat <= 28.0 - LEAD_72 + 1e-9);
+    // Along the curves at most one event a block.
+    assert!(
+        events
+            .windows(2)
+            .all(|pair| pair[1].beat - pair[0].beat >= BLOCK_72 - 1e-9)
+    );
+    // Every chord is heard at mp: 76 at the gain 85/127 is 62.2.
+    for note in &performed.notes {
+        let value = in_force(&events, note.start).expect("a value at every note-on");
+        assert!(
+            (heard(note.velocity, value) - 62.0).abs() < 0.5,
+            "{} at {value}",
+            note.id
+        );
+    }
+    // Each event is a control change the clip accepts as it stands.
+    for event in &events {
+        let valid = MidiControlEvent::new(event.beat, ControlKind::Cc, event.value, 11, 0)
+            .expect("a valid controller event");
+        assert_eq!(&valid, event);
+    }
+}
+
+#[test]
+fn expression_puts_each_note_on_of_an_arc_on_its_level() {
+    let line = line(
+        "violin",
+        Role::Melody,
+        melody(),
+        two_layers(&[Articulation::Legato]),
+        request(MezzoForte),
+    );
+    let performed = run(&line);
+    let events = performed.dynamics_events();
+    // Written at f (95), the note-ons play 76, 86, 95, 85, 76, 76, 86, 95, 91 and 81: expression
+    // 127 · (level / 95)², rounded.
+    let at_onsets: Vec<i64> = performed
+        .notes
+        .iter()
+        .map(|note| in_force(&events, note.start).expect("a value at every note-on"))
+        .collect();
+    assert_eq!(at_onsets, [81, 104, 127, 102, 81, 81, 104, 127, 117, 92]);
+    for ((note, level), &value) in performed
+        .notes
+        .iter()
+        .zip(&performed.dynamics.notes)
+        .zip(&at_onsets)
+    {
+        let gap = heard(note.velocity, value) - f64::from(level.velocity);
+        assert!(gap.abs() < 0.5, "{} heard {gap} off its level", note.id);
+    }
+    // The first phrase ends half a step below mf (69), 127 · (69/95)² = 67.0, held through the
+    // rest before the second.
+    assert_eq!(in_force(&events, 15.0), Some(67));
+    // Each event is the lane's value at its beat.
+    for event in &events {
+        let d = value_at(&performed.dynamics.lane, event.beat);
+        assert_eq!(number_of(event.value), (127.0 * d * d).round(), "{event:?}");
+    }
+}
+
+#[test]
+fn humanized_note_ons_find_their_levels_in_force() {
+    let mut line = line(
+        "violin",
+        Role::Melody,
+        melody(),
+        two_layers(&[Articulation::Legato]),
+        request(MezzoForte),
+    );
+    line.humanize = HumanizeRequest::default();
+    let performed = run(&line);
+    let moved = performed
+        .notes
+        .iter()
+        .zip(melody())
+        .filter(|(played, written)| (played.start - written.start).abs() > 1e-6)
+        .count();
+    assert!(moved > 0, "humanization moves the note-ons");
+    let events = performed.dynamics_events();
+    let at_onsets: Vec<Option<i64>> = performed
+        .notes
+        .iter()
+        .map(|note| in_force(&events, note.start))
+        .collect();
+    let expected = [81, 104, 127, 102, 81, 81, 104, 127, 117, 92].map(Some);
+    assert_eq!(at_onsets, expected);
+}
+
+#[test]
+fn modulation_carries_the_crossfade_values_of_the_level_table() {
+    let notes = vec![note("n_1", 60, 0.0, 2.0), note("n_2", 62, 2.0, 2.0)];
+    let caps = SoundCaps {
+        dynamics: DynamicsKind::Cc,
+        ..SoundCaps::default()
+    };
+    // A harmony part holds mp, the value 0.45: modulation 57.15, which rounds to 57.
+    let pad = run(&line(
+        "violin",
+        Role::Harmony,
+        notes.clone(),
+        caps.clone(),
+        request(MezzoForte),
+    ));
+    let controller = &pad.dynamics.controller;
+    assert_eq!((controller.number, controller.channel), (MODULATION, 0));
+    let held: Vec<(f64, i64)> = controller
+        .events
+        .iter()
+        .map(|event| (event.beat, event.value))
+        .collect();
+    assert_eq!(held, [(0.0, 57)]);
+    // A melody's arc: mf's 0.60 (76) at the first note-on, f's 0.75 (95) at the peak, and half a
+    // step below mf, 0.525 (66.7, so 67), at the end; the notes keep their levels' velocities.
+    let tune = run(&line(
+        "violin",
+        Role::Melody,
+        notes,
+        caps,
+        request(MezzoForte),
+    ));
+    let events = tune.dynamics_events();
+    assert_eq!(in_force(&events, 0.0), Some(76));
+    assert_eq!(in_force(&events, 2.0), Some(95));
+    let last = events.last().expect("the arc's end");
+    assert!(last.value == 67 && last.beat <= 4.0 + 1e-9, "{last:?}");
+    assert_eq!(velocities(&tune), [76, 95]);
+    let peak = events
+        .iter()
+        .position(|event| event.value == 95)
+        .expect("the peak");
+    assert!(
+        events[..=peak]
+            .windows(2)
+            .all(|pair| pair[0].value < pair[1].value)
+    );
+    assert!(
+        events[peak..]
+            .windows(2)
+            .all(|pair| pair[0].value > pair[1].value)
+    );
+    // Each event is the value the `dynamics` parameter writes for the lane at its beat.
+    for event in &events {
+        let d = value_at(&tune.dynamics.lane, event.beat);
+        assert_eq!(number_of(event.value), (127.0 * d).round(), "{event:?}");
+    }
+}
+
+#[test]
+fn a_fixed_velocity_takes_expression_at_the_lanes_gain() {
+    // The sound plays 64; mp (62) is the lane's 62/64, the gain (62/64)², expression 119.2.
+    let caps = SoundCaps {
+        dynamics: DynamicsKind::Fixed(64),
+        ..SoundCaps::default()
+    };
+    let performed = run(&line(
+        "violin",
+        Role::Harmony,
+        vec![note("n_1", 60, 0.0, 2.0)],
+        caps,
+        request(MezzoForte),
+    ));
+    let controller = &performed.dynamics.controller;
+    assert_eq!(controller.number, EXPRESSION);
+    let events: Vec<(f64, i64)> = controller
+        .events
+        .iter()
+        .map(|event| (event.beat, event.value))
+        .collect();
+    assert_eq!(events, [(0.0, 119)]);
+    assert!((heard(64, 119) - 62.0).abs() < 0.5);
+}
+
+#[test]
+fn controller_events_lie_in_the_clip_on_the_parts_channel() {
+    let on_channel = |id: &str, pitch: i64, start: f64| {
+        MidiNote::new(id, pitch, start, 1.0, 80, 5).expect("a valid note")
+    };
+    let line = line(
+        "violin",
+        Role::Harmony,
+        vec![on_channel("n_1", 60, 0.0), on_channel("n_2", 64, 2.0)],
+        two_layers(&[]),
+        request(MezzoForte),
+    );
+    // The clip's content starts at timeline beat 8: the lane lies on the timeline, the events in
+    // the clip, at the beats of its notes.
+    let performed = perform(&line, &score_at(72.0, 8.0), Seed::default()).expect("a valid line");
+    assert_lane(
+        &performed.dynamics_lane(),
+        &[point(8.0, 1.0, CurveKind::Hold)],
+    );
+    let expected = MidiControlEvent {
+        beat: 0.0,
+        kind: ControlKind::Cc,
+        value: 127,
+        number: 11,
+        channel: 5,
+    };
+    let controller = &performed.dynamics.controller;
+    assert_eq!(controller.events, std::slice::from_ref(&expected));
+    assert_eq!(controller.channel, 5);
+    // A preset that crossfades on breath (2) takes the same values there.
+    let breath = controller.on_controller(2).expect("a MIDI controller");
+    assert_eq!(breath.number, 2);
+    assert_eq!(breath.channel, 5);
+    assert_eq!(
+        breath.events,
+        [MidiControlEvent {
+            number: 2,
+            ..expected
+        }]
+    );
+    assert_eq!(
+        controller.on_controller(127).map(|lane| lane.number),
+        Some(127)
+    );
+    assert_eq!(controller.on_controller(128), None);
+}
+
+#[test]
+fn a_part_without_notes_writes_no_controller_events() {
+    for kind in [
+        DynamicsKind::Velocity,
+        DynamicsKind::Fixed(100),
+        DynamicsKind::Cc,
+    ] {
+        let caps = SoundCaps {
+            dynamics: kind,
+            ..SoundCaps::default()
+        };
+        let performed = run(&line(
+            "violin",
+            Role::Melody,
+            Vec::new(),
+            caps,
+            request(MezzoForte),
+        ));
+        let controller = &performed.dynamics.controller;
+        assert_eq!(controller.number, kind.controller());
+        assert_eq!(controller.channel, 0);
+        assert_eq!(controller.events, []);
+        assert_eq!(performed.dynamics_events(), []);
+    }
+}
+
+proptest! {
+    /// The controller events keep their contract (TST-07): valid clip events in strictly
+    /// ascending order on the part's channel with no value repeated, each the lane's value at its
+    /// beat, at most one a block along a curve, the lane's value in force at every note-on as
+    /// played, and in between never further from the lane than rounding and the lane's own
+    /// movement over the two blocks before.
+    #[test]
+    fn controller_events_follow_the_lane(
+        notes in notes_strategy(),
+        instrument_id in prop_oneof![Just("violin"), Just("timpani"), Just("horn_f"), Just("harp")],
+        role_index in 0_usize..7,
+        kind in kind_strategy(),
+        marking in marking_strategy(),
+        roll_to in proptest::option::of(marking_strategy()),
+        swells in any::<bool>(),
+        origin in 0_u32..8,
+        humanized in any::<bool>(),
+    ) {
+        let caps = SoundCaps {
+            articulations: vec![Articulation::Roll, Articulation::Sustain],
+            legato: LegatoKind::None,
+            layers: vec![62, 127],
+            dynamics: kind,
+            ..SoundCaps::default()
+        };
+        let request = DynamicsRequest { marking, swells, roll_to };
+        let mut line = line(instrument_id, Role::ALL[role_index], notes, caps, request);
+        if humanized {
+            line.humanize = HumanizeRequest::default();
+        }
+        let origin = f64::from(origin);
+        let performed = perform(&line, &score_at(72.0, origin), Seed::default())
+            .expect("a valid line");
+        let lane = &performed.dynamics.lane;
+        let controller = &performed.dynamics.controller;
+        let events = &controller.events;
+        prop_assert_eq!(events.is_empty(), performed.notes.is_empty());
+        prop_assert_eq!(controller.number, kind.controller());
+        prop_assert_eq!(controller.channel, 0);
+        // The lane's value at a content beat, as a controller value before rounding.
+        let exact = |beat: f64| exact_value(kind, value_at(lane, origin + beat));
+        // Where the lane has a point, and where the first value starts to hold.
+        let breakpoints: Vec<f64> = lane
+            .iter()
+            .map(|point| point.beat - origin)
+            .chain(events.first().map(|event| event.beat))
+            .collect();
+        let on_breakpoint = |beat: f64| breakpoints.iter().any(|&at| (at - beat).abs() < 1e-6);
+        for event in events {
+            let valid = MidiControlEvent::new(
+                event.beat,
+                ControlKind::Cc,
+                event.value,
+                i64::from(controller.number),
+                i64::from(controller.channel),
+            )
+            .expect("a valid controller event");
+            prop_assert_eq!(&valid, event);
+            prop_assert!(
+                (number_of(event.value) - exact(event.beat)).abs() <= 0.5 + 1e-6,
+                "{:?} against {}", event, exact(event.beat)
+            );
+        }
+        for pair in events.windows(2) {
+            prop_assert!(pair[1].beat > pair[0].beat, "{:?}", pair);
+            prop_assert_ne!(pair[0].value, pair[1].value);
+            if !(on_breakpoint(pair[0].beat) && on_breakpoint(pair[1].beat)) {
+                prop_assert!(pair[1].beat - pair[0].beat >= BLOCK_72 - 1e-6, "{:?}", pair);
+            }
+        }
+        for note in &performed.notes {
+            let value = in_force(events, note.start);
+            prop_assert!(value.is_some(), "{} starts before the first event", note.id);
+            let value = value.map_or(0.0, number_of);
+            prop_assert!(
+                (value - exact(note.start)).abs() <= 0.5 + 1e-6,
+                "{} reads {} for {}", note.id, value, exact(note.start)
+            );
+        }
+        if let (Some(first), Some(last)) = (events.first(), lane.last()) {
+            let end = last.beat - origin + 1.0;
+            let mut beat = first.beat;
+            while beat <= end {
+                let held = in_force(events, beat).map_or(0.0, number_of);
+                let target = exact(beat);
+                let from = (beat - 2.0 * BLOCK_72 - 1e-6).max(first.beat);
+                // The lane runs monotonically between its points, so its movement over the
+                // window shows at the window's ends and on both sides of its points.
+                let drift = breakpoints
+                    .iter()
+                    .filter(|&&at| at > from && at <= beat)
+                    .flat_map(|&at| [at, at - 1e-9])
+                    .chain([from, beat])
+                    .map(|at| (exact(at) - target).abs())
+                    .fold(0.0, f64::max);
+                prop_assert!(
+                    (held - target).abs() <= 0.5 + drift + 1e-6,
+                    "{} at beat {} against {} (drift {})", held, beat, target, drift
+                );
+                beat += BLOCK_72 / 2.0;
             }
         }
     }

@@ -6,9 +6,10 @@
 //! each carrying the articulation it asks for in its own `articulation` field, the articulation of
 //! each note with what the sound plays for it, and the passages of the sampler's `articulation`
 //! lane that play them ([`Performed`], [`articulate()`]), the velocity each note is written at
-//! with the points of the sampler's `dynamics` lane that shape its phrases ([`dynamics`]), and how
-//! each note was humanized: moved by the small deviations of its family's players and earlier by
-//! the attack of the sound that plays it ([`humanize`]).
+//! with the points of the sampler's `dynamics` lane that shape its phrases, or the same shape as
+//! the controller events of the part's clip ([`dynamics`]), and how each note was humanized:
+//! moved by the small deviations of its family's players and earlier by the attack of the sound
+//! that plays it ([`humanize`]).
 //!
 //! The lines come from [`voicing`], whose helpers give the parts of an ensemble their notes for a
 //! melody or a run of chords, family by family, applying the orchestration rules as they write.
@@ -36,7 +37,7 @@ pub mod voicing;
 use std::fmt;
 use std::ops::RangeInclusive;
 
-use sonara_core::midi::MidiNote;
+use sonara_core::midi::{MidiControlEvent, MidiNote};
 use sonara_core::model::automation::AutomationPoint;
 use sonara_core::time::{TempoMap, TimeSignatureMap};
 use thiserror::Error;
@@ -47,7 +48,7 @@ pub use crate::orchestration::rules::{Dynamic, Role};
 pub use articulate::{
     Articulated, NoteArticulation, Passage, Rule, Source, articulate, articulation_choice,
 };
-pub use dynamics::{Dynamics, DynamicsRequest};
+pub use dynamics::{ControllerLane, Dynamics, DynamicsRequest};
 pub use humanize::{Compensation, HumanizeRequest, Humanized, NoteTiming};
 pub use seed::Seed;
 
@@ -150,6 +151,21 @@ pub enum DynamicsKind {
     Fixed(u8),
     /// `dynamics` is an absolute level that drives the patch's controller crossfade.
     Cc,
+}
+
+impl DynamicsKind {
+    /// The MIDI controller that carries a part's dynamics in its clip ([`ControllerLane`]):
+    /// expression ([`EXPRESSION`](dynamics::EXPRESSION), 11), a gain, for a sound whose level
+    /// follows the velocity or a fixed velocity, and modulation
+    /// ([`MODULATION`](dynamics::MODULATION), 1), the controller libraries crossfade their
+    /// dynamic layers on, for a sound whose level drives a controller crossfade.
+    #[must_use]
+    pub const fn controller(self) -> u8 {
+        match self {
+            Self::Velocity | Self::Fixed(_) => dynamics::EXPRESSION,
+            Self::Cc => dynamics::MODULATION,
+        }
+    }
 }
 
 /// What the chosen sound of a part can do: the facts the instrument catalog knows about a preset,
@@ -409,8 +425,8 @@ pub struct Performed {
     /// The passages of the part's sound, in time order, each with its switch on the sampler's
     /// `articulation` lane.
     pub passages: Vec<Passage>,
-    /// The part's dynamics: its phrases, the level of each note and the points of the sampler's
-    /// `dynamics` lane.
+    /// The part's dynamics: its phrases, the level of each note, and the points of the sampler's
+    /// `dynamics` lane or, in their place, the controller events of the part's clip.
     pub dynamics: Dynamics,
     /// How each note was humanized, in the order of [`Performed::notes`].
     pub humanized: Humanized,
@@ -430,6 +446,14 @@ impl Performed {
     pub fn dynamics_lane(&self) -> Vec<AutomationPoint> {
         self.dynamics.lane.clone()
     }
+
+    /// The part's dynamics as controller events of its clip, at content beats in time order, to
+    /// write in place of the `dynamics` lane ([`ControllerLane`]): each a control change of
+    /// [`DynamicsKind::controller`] on the channel of the part's first note.
+    #[must_use]
+    pub fn dynamics_events(&self) -> Vec<MidiControlEvent> {
+        self.dynamics.controller.events.clone()
+    }
 }
 
 /// Performs `line` within `score`. The same line, score and seed give the same result, whatever
@@ -445,8 +469,9 @@ impl Performed {
 ///    earlier by the attack of the sound that plays it, as `line.humanize` asks.
 /// 3. **Dynamics** ([`dynamics`]) shapes the phrases of the notes as written and writes each note
 ///    at the velocity they give it; the `dynamics` lane holds each onset's level across the
-///    note-ons as played. Humanization then moves each written velocity by its deviation, inside
-///    the velocity layer its note-on plays.
+///    note-ons as played, and the controller events that can take its place follow the lane.
+///    Humanization then moves each written velocity by its deviation, inside the velocity layer
+///    its note-on plays.
 /// 4. The switches of the `articulation` lane are placed ahead of the note-ons as played, so an
 ///    advanced note-on still starts with its passage's articulation.
 /// 5. Each note is written with the articulation it asks for in its own `articulation` field

@@ -8,8 +8,8 @@ use sonara_core::midi::MidiNote;
 use sonara_core::time::{TempoMap, TimeSignatureMap};
 use sonara_midi::orchestration::{Articulation, PitchRange, ensembles, instrument};
 use sonara_midi::performance::{
-    CapsError, Dynamic, Dynamics, DynamicsKind, DynamicsRequest, HumanizeRequest, Humanized,
-    LegatoKind, MAX_PART_ID_BYTES, PartId, PartLine, PerformanceError, Performed, Role,
+    CapsError, ControllerLane, Dynamic, Dynamics, DynamicsKind, DynamicsRequest, HumanizeRequest,
+    Humanized, LegatoKind, MAX_PART_ID_BYTES, PartId, PartLine, PerformanceError, Performed, Role,
     ScoreContext, Seed, SoundCaps, perform,
 };
 
@@ -355,6 +355,11 @@ fn a_tacet_part_performs_to_no_notes() {
                 phrases: Vec::new(),
                 notes: Vec::new(),
                 lane: Vec::new(),
+                controller: ControllerLane {
+                    number: 11,
+                    channel: 0,
+                    events: Vec::new(),
+                },
                 remarks: Vec::new(),
             },
             humanized: Humanized {
@@ -365,6 +370,7 @@ fn a_tacet_part_performs_to_no_notes() {
     );
     assert_eq!(performed.articulation_lane(), []);
     assert_eq!(performed.dynamics_lane(), []);
+    assert_eq!(performed.dynamics_events(), []);
 }
 
 #[test]

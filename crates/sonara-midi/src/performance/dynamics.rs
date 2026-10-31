@@ -65,6 +65,30 @@
 //! before the earliest of them to the latest. On a sound without a `dynamics` parameter the same
 //! shape can drive the track's `volume_db` lane ([`Dynamics::volume_lane`]).
 //!
+//! **Controller events.** The same shape also comes as the events of one MIDI controller in the
+//! part's clip ([`ControllerLane`]), which move with the clip where the lane stays with the track.
+//! They take the lane's place, with `dynamics` left at its default 1: written together, the two
+//! would shape the level twice. The controller follows the sound ([`DynamicsKind::controller`]):
+//!
+//! - **Velocity and fixed.** Expression (CC 11), which the sampler applies as a linear gain of
+//!   `value / 127` to everything the track plays. The lane's value `d` gives a note the gain `d²`
+//!   (a note-on plays its velocity times `d`, and the sampler's level follows the square of the
+//!   velocity; a held note follows `(d / d₀)²`), so the event's value is `127 · d²`, and every
+//!   note plays at the level the lane would give it. Expression does not scale the velocity, so
+//!   a note plays the layer of its written velocity, its phrase's loudest level in velocity mode,
+//!   where the lane would pick the layer of its own level.
+//! - **Controller.** Modulation (CC 1), the controller libraries crossfade their dynamic layers
+//!   on: the value is the controller value `dynamics` writes, `127 · d`. Both values are rounded
+//!   half away from zero, as the sampler rounds the parameter's controller value. A preset that
+//!   crossfades on another controller takes the same values there
+//!   ([`ControllerLane::on_controller`]).
+//!
+//! The first event holds from before the first note-on, as a later onset's value does, so the
+//! controller is set before the note that needs it. Along a curve the events follow the lane at
+//! most once per engine block (at the slowest sample rate, the longest block), stopping a block
+//! short of the curve's next point, and an event that repeats the value before it is left out.
+//! The last value holds after the part's last note.
+//!
 //! Everything is a pure function of the line and the score: no random choice is made, so the same
 //! input gives the same result (TST-04). Nothing here runs on a real-time thread (RT-01).
 
@@ -72,7 +96,7 @@ use std::f64::consts::PI;
 use std::ops::Range;
 
 use sonara_core::EPSILON;
-use sonara_core::midi::MidiNote;
+use sonara_core::midi::{ControlKind, MidiControlEvent, MidiNote};
 use sonara_core::model::automation::{AutomationPoint, CurveKind};
 
 use super::articulate::{
@@ -423,6 +447,9 @@ pub struct Dynamics {
     /// The points of the sampler's `dynamics` lane, at timeline beats in time order; empty for a
     /// line without notes.
     pub lane: Vec<AutomationPoint>,
+    /// The same shape as the events of one MIDI controller in the part's clip, to write in place
+    /// of the lane.
+    pub controller: ControllerLane,
     /// What could not be done as asked.
     pub remarks: Vec<Remark>,
 }
@@ -442,6 +469,52 @@ impl Dynamics {
                     ..*point
                 })
                 .collect()
+        })
+    }
+}
+
+/// The MIDI controller number of expression, which the sampler applies as a linear gain.
+pub const EXPRESSION: u8 = 11;
+
+/// The MIDI controller number of modulation, the wheel libraries crossfade their dynamic layers
+/// on.
+pub const MODULATION: u8 = 1;
+
+/// A part's dynamics as the events of one MIDI controller in its clip (see the module
+/// documentation): control changes in the shape of the clip's controller events, ready for the
+/// clip's `controls`, to write in place of the `dynamics` lane.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ControllerLane {
+    /// The controller number, 0-127: [`DynamicsKind::controller`] of the sound.
+    pub number: u8,
+    /// The MIDI channel of the events, 0-15: the channel of the part's first note, 0 for a part
+    /// without notes.
+    pub channel: u8,
+    /// The events, at content beats of the part's clip (the beats of its notes) in strictly
+    /// ascending order, each a control change of [`ControllerLane::number`] on
+    /// [`ControllerLane::channel`] with a value of 0-127 that holds until the next event, and
+    /// no two following events with one value. Empty for a part without notes.
+    pub events: Vec<MidiControlEvent>,
+}
+
+impl ControllerLane {
+    /// The same events on controller `number`, for a sound whose dynamic layers crossfade on a
+    /// controller other than modulation: the values are the ones its `dynamics` parameter would
+    /// write into that controller. `None` for a number above 127, which MIDI has no controller
+    /// for.
+    #[must_use]
+    pub fn on_controller(&self, number: u8) -> Option<Self> {
+        (number <= 127).then(|| Self {
+            number,
+            channel: self.channel,
+            events: self
+                .events
+                .iter()
+                .map(|event| MidiControlEvent {
+                    number: i64::from(number),
+                    ..event.clone()
+                })
+                .collect(),
         })
     }
 }
@@ -551,13 +624,13 @@ pub(super) fn shape(
         .collect();
     let rings = Class::of(line.instrument.family()) == Class::Struck;
     let written = written_velocities(&spans, &points, &onset_levels, rings, kind);
-    let lane_points = Lane {
+    let placer = Lane {
         clock: &clock,
         score,
         kind,
         written: &written,
-    }
-    .points(
+    };
+    let mut lane_points = placer.points(
         &notes,
         &groups,
         onsets,
@@ -566,6 +639,17 @@ pub(super) fn shape(
         &shape_points,
         &onset_levels,
     );
+    // The first note-on as played, as the lane places its onsets.
+    let first_lead = notes.first().map(|note| {
+        let first = onsets.first().map_or(note.start, |onset| onset.first);
+        placer.lead(first, None)
+    });
+    let channel = notes.first().map_or(0, |note| note.channel);
+    let controller = controller_lane(&lane_points, first_lead, kind, channel, &clock);
+    let origin = score.origin();
+    for point in &mut lane_points {
+        point.beat += origin;
+    }
     let mut remarks = remarks_bound;
     if let DynamicsKind::Fixed(velocity) = kind {
         let wanted = points
@@ -604,6 +688,7 @@ pub(super) fn shape(
             phrases,
             notes: levels,
             lane: lane_points,
+            controller,
             remarks,
         },
         scales,
@@ -1100,7 +1185,7 @@ impl Lane<'_> {
         beat.clamp(0.0, start)
     }
 
-    /// The lane's points at timeline beats: at each onset its level, held from the lead of its
+    /// The lane's points at content beats: at each onset its level, held from the lead of its
     /// first note-on to its last note-on (`onsets`, one per onset group, as played), where the
     /// shape's curve from the onset as written continues, and between the onsets the shape's own
     /// points.
@@ -1174,10 +1259,6 @@ impl Lane<'_> {
             let value = self.value(Level::from_steps(point.point.value), point.phrase);
             push(&mut lane, point.point.beat, value, point.point.curve);
         }
-        let origin = self.score.origin();
-        for point in &mut lane {
-            point.beat += origin;
-        }
         lane
     }
 }
@@ -1194,6 +1275,99 @@ fn push(lane: &mut Vec<AutomationPoint>, beat: f64, value: f64, curve: CurveKind
         return;
     }
     lane.push(AutomationPoint { beat, value, curve });
+}
+
+/// The events of the controller that carries `lane`, the points of the `dynamics` lane at content
+/// beats, on `channel` (see the module documentation). The first value holds from `first_lead`,
+/// the content beat from which the first note-on's value holds, when it lies before the lane's
+/// first point.
+fn controller_lane(
+    lane: &[AutomationPoint],
+    first_lead: Option<f64>,
+    kind: DynamicsKind,
+    channel: u8,
+    clock: &Clock<'_>,
+) -> ControllerLane {
+    let value = |d: f64| controller_value(kind, d);
+    let mut steps: Vec<(f64, u8)> = Vec::new();
+    if let Some(first) = lane.first() {
+        let from = first_lead.map_or(first.beat, |lead| lead.min(first.beat));
+        step(&mut steps, from, value(first.value));
+    }
+    let block_s = block_seconds();
+    for (index, point) in lane.iter().enumerate() {
+        step(&mut steps, point.beat, value(point.value));
+        let Some(next) = lane.get(index + 1) else {
+            break;
+        };
+        if point.curve == CurveKind::Hold || next.beat - point.beat <= BEAT_EPSILON {
+            continue;
+        }
+        // Along the curve one value a block, the last a block before the curve's next point.
+        let from_s = clock.seconds(point.beat);
+        let last_s = clock.seconds(next.beat) - block_s;
+        let mut count: u32 = 1;
+        loop {
+            let at_s = from_s + f64::from(count) * block_s;
+            if at_s > last_s {
+                break;
+            }
+            let beat = clock.beat(at_s);
+            step(&mut steps, beat, value(value_at(lane, beat)));
+            let Some(more) = count.checked_add(1) else {
+                break;
+            };
+            count = more;
+        }
+    }
+    let number = kind.controller();
+    let events = steps
+        .into_iter()
+        .map(|(beat, value)| MidiControlEvent {
+            beat: beat.max(0.0),
+            kind: ControlKind::Cc,
+            value: i64::from(value),
+            number: i64::from(number),
+            channel: i64::from(channel),
+        })
+        .collect();
+    ControllerLane {
+        number,
+        channel,
+        events,
+    }
+}
+
+/// The controller value that gives the level of the `dynamics` value `d` on a sound of `kind`:
+/// `127 · d²` on expression, the sampler's gain for `d` in velocity and fixed mode, and `127 · d`,
+/// the value `dynamics` writes, in controller mode; rounded half away from zero, as the sampler
+/// rounds the parameter, and kept within 0-127.
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "the value is rounded and kept within 0-127 first"
+)]
+fn controller_value(kind: DynamicsKind, d: f64) -> u8 {
+    let share = match kind {
+        DynamicsKind::Velocity | DynamicsKind::Fixed(_) => d * d,
+        DynamicsKind::Cc => d,
+    };
+    (share * 127.0).round().clamp(0.0, 127.0) as u8
+}
+
+/// Appends the controller value `value` from content beat `beat` on: it replaces an event at the
+/// last event's beat, as the later of two lane points at one beat counts, and an event that
+/// repeats the value in force is left out.
+fn step(steps: &mut Vec<(f64, u8)>, beat: f64, value: u8) {
+    if steps
+        .last()
+        .is_some_and(|&(last, _)| beat <= last + BEAT_EPSILON)
+    {
+        steps.pop();
+    }
+    if steps.last().is_none_or(|&(_, last)| last != value) {
+        steps.push((beat, value));
+    }
 }
 
 /// The notes written at their velocities, with the level of each and the factor its written
