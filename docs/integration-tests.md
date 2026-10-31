@@ -17,7 +17,7 @@ They run on the null audio backend, need no hardware and no network, and are par
 
 | Contract | Test | What it checks |
 |---|---|---|
-| agent-tools | `contract_agent_tools` | 57 tools, each titled and described and classed read, write or destructive; calling every read tool leaves the project version unchanged |
+| agent-tools | `contract_agent_tools` | 58 tools, each titled and described and classed read, write or destructive; calling every read tool leaves the project version unchanged |
 | project-commands | `contract_project_commands` | an invalid operation is refused and leaves version and tracks as they were; a valid one reports `committed` and `changes.created`; `undo` restores the tracks |
 | song-project | `contract_song_project_round_trips` | save, open again: the same tracks; the manifest carries a version |
 | orchestration-metadata | `contract_orchestration_metadata` | unique ids, a source or an estimate on every record, an articulation `Supported` only when a library declared it, an unknown one never |

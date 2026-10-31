@@ -1,5 +1,6 @@
-//! Clip and note tools (the prototype's "clips and notes" section): MIDI clips and their notes,
-//! and moving, editing, splitting, duplicating and deleting clips.
+//! Clip and note tools (the prototype's "clips and notes" section): MIDI clips, their notes and
+//! (agent API 1.1) their controller events, and moving, editing, splitting, duplicating and
+//! deleting clips.
 
 use std::collections::HashSet;
 
@@ -7,12 +8,13 @@ use serde_json::json;
 use sonara_core::commands::clip::{
     AddNotes, CreateMidiClip as CreateMidiClipCommand, DeleteClips as DeleteClipsCommand,
     DeleteNotes, DuplicateClip as DuplicateClipCommand, EditNotes, MoveClip as MoveClipCommand,
-    NoteEdit, ReplaceNotes, SetClipProperties, SplitClip as SplitClipCommand, TrimClip,
+    NoteEdit, ReplaceNotes, SetClipProperties, SetControlEvents, SplitClip as SplitClipCommand,
+    TrimClip,
 };
 use sonara_core::commands::{Command, Transaction};
 use sonara_core::error::DomainError;
 use sonara_core::ids::{self, IdGenerator};
-use sonara_core::midi::MidiNote;
+use sonara_core::midi::{ControlKind, MidiControlEvent, MidiNote};
 use sonara_core::model::clip::{Clip, Fade, FadeCurve as ClipFadeCurve};
 use sonara_midi::transforms::{self, HumanizeOptions, QuantizeOptions, VelocityScale};
 
@@ -22,6 +24,7 @@ use crate::context::AgentContext;
 use crate::contract::args::{
     AddMidiNotes, CreateMidiClip, DeleteClips, DuplicateClip, EditClip, EditMidiNotes, FadeCurve,
     HumanizeSpec, MoveClip, NoteEditInput, NoteInput, QuantizeSpec, SplitClip,
+    WriteMidiControllers,
 };
 use crate::conversion;
 use crate::registry::ToolResult;
@@ -69,6 +72,42 @@ pub(super) fn add_midi_notes(ctx: &AgentContext, args: AddMidiNotes) -> ToolResu
     } = args;
     let notes = conversion::notes(&notes, &mut ctx.app().ids())?;
     Ok(ctx.commit(&AddNotes { clip_id, notes }, dry_run)?)
+}
+
+/// `write_midi_controllers` (agent API 1.1): replaces every event of one MIDI controller (CC) in
+/// a MIDI clip with the given events, as one undo step (`Edit Controllers`). Events of other
+/// controllers and of other kinds (pitch bend, channel pressure) stay.
+///
+/// The controller is matched by its number on every channel, as `SetControlEvents` matches it;
+/// the new events carry the given channel.
+pub(super) fn write_midi_controllers(ctx: &AgentContext, args: WriteMidiControllers) -> ToolResult {
+    let WriteMidiControllers {
+        dry_run,
+        clip_id,
+        controller,
+        events,
+        channel,
+    } = args;
+    let events = events
+        .iter()
+        .map(|event| {
+            MidiControlEvent::new(
+                event.beat,
+                ControlKind::Cc,
+                i64::from(event.value),
+                i64::from(controller),
+                i64::from(channel),
+            )
+        })
+        .collect::<Result<Vec<_>, DomainError>>()?;
+    let command = SetControlEvents {
+        clip_id,
+        events,
+        // The whole clip: every event of the controller is replaced.
+        start: f64::NEG_INFINITY,
+        end: f64::INFINITY,
+    };
+    Ok(ctx.commit(&command, dry_run)?)
 }
 
 /// The note edits of `edit_midi_notes` before the transforms: a replacement of every note,

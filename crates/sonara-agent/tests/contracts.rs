@@ -90,7 +90,7 @@ fn contract_agent_tools() {
     let world = World::new();
     world.ok("create_project", &json!({"name": "Contract", "bpm": 120}));
     let specs = world.service.tools();
-    assert_eq!(specs.len(), 57);
+    assert_eq!(specs.len(), 58);
     let tools: Vec<&ToolSpec> = TOOLS.iter().collect();
     let mut reads = 0;
     for spec in &tools {

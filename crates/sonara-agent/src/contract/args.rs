@@ -868,6 +868,36 @@ impl ToolArgs for EditMidiNotes {
     const MODEL: &'static Model = &inputs::EDIT_MIDI_NOTES;
 }
 
+/// `ControllerEventInput`: an event of `write_midi_controllers`.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ControllerEventInput {
+    /// Beats from the clip start.
+    pub beat: f64,
+    /// Controller value, 0 to 127.
+    pub value: u8,
+}
+
+/// `WriteMidiControllers`: the arguments of `write_midi_controllers`.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct WriteMidiControllers {
+    /// Validate and describe the change without committing it.
+    pub dry_run: bool,
+    /// The MIDI clip.
+    pub clip_id: String,
+    /// MIDI CC number, 0 to 127.
+    pub controller: u8,
+    /// The controller's new events.
+    pub events: Vec<ControllerEventInput>,
+    /// MIDI channel of the new events, 0 to 15.
+    pub channel: u8,
+}
+
+impl ToolArgs for WriteMidiControllers {
+    const MODEL: &'static Model = &inputs::WRITE_MIDI_CONTROLLERS;
+}
+
 /// `GenerateMidi`: the arguments of `generate_midi`.
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]

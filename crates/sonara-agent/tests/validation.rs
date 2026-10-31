@@ -86,6 +86,7 @@ fn structs() -> Vec<(&'static Model, RoundTrip)> {
         StartRecording,
         OperationId,
         Relink,
+        WriteMidiControllers,
     ]
     .to_vec()
 }

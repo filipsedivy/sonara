@@ -91,6 +91,8 @@ pub fn register_builtin(registry: &mut ToolRegistry) -> Result<(), RegistryError
     registry.register("export_stems", render::export_stems)?;
     registry.register("analyze_audio", render::analyze_audio)?;
     registry.register("get_audio_analysis", render::get_audio_analysis)?;
+    // Added in agent API 1.1.
+    registry.register("write_midi_controllers", clips::write_midi_controllers)?;
     Ok(())
 }
 
@@ -122,7 +124,7 @@ mod tests {
         // Every tool of the contract, in contract order.
         let contract: Vec<&str> = TOOLS.iter().map(|spec| spec.name).collect();
         assert_eq!(names, contract);
-        assert_eq!(names.len(), 57);
+        assert_eq!(names.len(), 58);
         assert_eq!(
             register_builtin(&mut registry),
             Err(RegistryError::Duplicate("get_project_state"))

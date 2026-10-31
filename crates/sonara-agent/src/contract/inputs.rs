@@ -1,5 +1,6 @@
-//! The input models of the 57 agent tools: a port of the prototype's
-//! `sonara.agent.schemas.models` as data.
+//! The input models of the agent tools: a port of the prototype's
+//! `sonara.agent.schemas.models` as data, and the models of the tools that a later API version
+//! adds (`super::versions`).
 //!
 //! Fields are listed in pydantic's order. Fields inherited from the prototype's base classes
 //! (`Mutating`, `Confirmable`, `RenderRange`) are shared constants, listed where pydantic puts
@@ -711,6 +712,54 @@ pub static EDIT_MIDI_NOTES: Model = Model::tool_input(
         )
         .default_value(Constant::Null)
         .description("Replace the clip's notes entirely"),
+    ],
+);
+
+/// `ControllerEventInput`: an event of `write_midi_controllers` (added in agent API 1.1).
+pub static CONTROLLER_EVENT_INPUT: Model = Model::plain(
+    "ControllerEventInput",
+    &[
+        Field::new("beat", Kind::Float(NumberBounds::NONE.ge(Number::Int(0))))
+            .description("Beats from the clip start"),
+        Field::new(
+            "value",
+            Kind::Int(NumberBounds::NONE.ge(Number::Int(0)).le(Number::Int(127))),
+        )
+        .description("Controller value 0-127; it holds until the controller's next event"),
+    ],
+);
+
+/// `WriteMidiControllers`: the arguments of `write_midi_controllers` (added in agent API 1.1).
+pub static WRITE_MIDI_CONTROLLERS: Model = Model::tool_input(
+    "WriteMidiControllers",
+    &[
+        DRY_RUN,
+        Field::new("clip_id", Kind::STR),
+        Field::new(
+            "controller",
+            Kind::Int(NumberBounds::NONE.ge(Number::Int(0)).le(Number::Int(127))),
+        )
+        .description(
+            "MIDI CC number, for example 1 = modulation, 7 = volume, 11 = expression, \
+             64 = sustain pedal (64 or more is down)",
+        ),
+        Field::new(
+            "events",
+            Kind::List(
+                &Kind::Model(&CONTROLLER_EVENT_INPUT),
+                LengthBounds::NONE.min_length(1).max_length(20000),
+            ),
+        )
+        .description("The controller's new events; they replace all of its events in the clip"),
+        Field::new(
+            "channel",
+            Kind::Int(NumberBounds::NONE.ge(Number::Int(0)).le(Number::Int(15))),
+        )
+        .default_value(Constant::Int(0))
+        .description(
+            "MIDI channel of the new events, as a note's channel; the controller's events are \
+             replaced on every channel",
+        ),
     ],
 );
 

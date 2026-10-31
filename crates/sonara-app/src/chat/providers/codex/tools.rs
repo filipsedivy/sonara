@@ -14,7 +14,7 @@
 use crate::chat::boundary::DENIED_SONARA_TOOLS;
 
 /// Every tool of the Agent API, by name, in the order of `docs/agent-api.md`.
-pub const ALL_SONARA_TOOLS: [&str; 57] = [
+pub const ALL_SONARA_TOOLS: [&str; 58] = [
     "add_effect",
     "add_marker",
     "add_midi_notes",
@@ -72,6 +72,7 @@ pub const ALL_SONARA_TOOLS: [&str; 57] = [
     "stop_playback",
     "undo",
     "verify_project",
+    "write_midi_controllers",
 ];
 
 /// The tools Codex may call: every tool of the Agent API that the chat does not deny.
@@ -128,7 +129,7 @@ mod tests {
         let mut all = ALL_SONARA_TOOLS.to_vec();
         all.sort_unstable();
         assert_eq!(union, all);
-        assert_eq!(allowed.len(), 57 - 13);
+        assert_eq!(allowed.len(), 58 - 13);
     }
 
     #[test]
@@ -150,6 +151,7 @@ mod tests {
             "create_track",
             "set_tempo",
             "generate_midi",
+            "write_midi_controllers",
             "undo",
         ] {
             assert!(allowed.contains(&name), "{name}");

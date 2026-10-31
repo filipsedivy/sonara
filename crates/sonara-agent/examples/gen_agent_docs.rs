@@ -108,6 +108,10 @@ Options: `--connect auto|always|never`, `--allow PATH` (repeatable), `--base-dir
   instrument track takes, is `{instrument, name, players, solo, player, notation: {transposition,
   clef}}`. The project stores a note's articulation with the note and a part with its track
   (project format version 2).
+- **Controller events.** `write_midi_controllers` writes one MIDI controller (CC) of a clip as
+  events `{beat, value}`: beats from the clip start, values 0-127, each value holding until the
+  next event. The call replaces every event of that controller number in the clip and keeps the
+  other controllers, pitch bend and the notes.
 
 ## Safety
 

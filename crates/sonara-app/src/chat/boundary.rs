@@ -69,4 +69,18 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn the_tools_that_edit_clip_content_are_not_denied() {
+        // They change only the open project, undoably, like any other edit of a chat run.
+        for name in [
+            "create_midi_clip",
+            "add_midi_notes",
+            "edit_midi_notes",
+            "write_midi_controllers",
+            "create_automation",
+        ] {
+            assert!(!DENIED_SONARA_TOOLS.contains(&name), "{name} is denied");
+        }
+    }
 }

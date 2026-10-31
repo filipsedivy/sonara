@@ -57,6 +57,10 @@ Options: `--connect auto|always|never`, `--allow PATH` (repeatable), `--base-dir
   instrument track takes, is `{instrument, name, players, solo, player, notation: {transposition,
   clef}}`. The project stores a note's articulation with the note and a part with its track
   (project format version 2).
+- **Controller events.** `write_midi_controllers` writes one MIDI controller (CC) of a clip as
+  events `{beat, value}`: beats from the clip start, values 0-127, each value holding until the
+  next event. The call replaces every event of that controller number in the clip and keeps the
+  other controllers, pitch bend and the notes.
 
 ## Safety
 
@@ -92,6 +96,7 @@ result and error code of 1.0 keeps its meaning, so a client written for 1.0 work
 
 - the optional argument `part` of [`create_track`](#create_track)
 - the optional field `articulation` of `NoteInput`, in [`create_midi_clip`](#create_midi_clip), [`add_midi_notes`](#add_midi_notes), [`edit_midi_notes`](#edit_midi_notes)
+- the tool [`write_midi_controllers`](#write_midi_controllers)
 
 ## Error codes
 
@@ -127,7 +132,7 @@ result and error code of 1.0 keeps its meaning, so a client written for 1.0 work
 
 ## Tool reference
 
-57 tools: [`add_effect`](#add_effect), [`add_marker`](#add_marker), [`add_midi_notes`](#add_midi_notes), [`add_section`](#add_section), [`analyze_audio`](#analyze_audio), [`cancel_operation`](#cancel_operation), [`configure_routing`](#configure_routing), [`create_automation`](#create_automation), [`create_midi_clip`](#create_midi_clip), [`create_project`](#create_project), [`create_track`](#create_track), [`delete_clips`](#delete_clips), [`delete_track`](#delete_track), [`duplicate_clip`](#duplicate_clip), [`edit_clip`](#edit_clip), [`edit_midi_notes`](#edit_midi_notes), [`export_audio`](#export_audio), [`export_midi`](#export_midi), [`export_stems`](#export_stems), [`generate_midi`](#generate_midi), [`get_audio_analysis`](#get_audio_analysis), [`get_capabilities`](#get_capabilities), [`get_history`](#get_history), [`get_operation_status`](#get_operation_status), [`get_project_state`](#get_project_state), [`import_audio`](#import_audio), [`import_midi`](#import_midi), [`list_midi_devices`](#list_midi_devices), [`list_operations`](#list_operations), [`list_plugins`](#list_plugins), [`list_tracks`](#list_tracks), [`load_impulse_response`](#load_impulse_response), [`move_clip`](#move_clip), [`open_project`](#open_project), [`play_preview`](#play_preview), [`redo`](#redo), [`relink_media`](#relink_media), [`remove_effect`](#remove_effect), [`rename_track`](#rename_track), [`render_preview`](#render_preview), [`save_project`](#save_project), [`set_effect_parameter`](#set_effect_parameter), [`set_instrument`](#set_instrument), [`set_loop`](#set_loop), [`set_metadata`](#set_metadata), [`set_midi_input`](#set_midi_input), [`set_project_length`](#set_project_length), [`set_tempo`](#set_tempo), [`set_time_signature`](#set_time_signature), [`set_track_pan`](#set_track_pan), [`set_track_state`](#set_track_state), [`set_track_volume`](#set_track_volume), [`split_clip`](#split_clip), [`start_recording`](#start_recording), [`stop_playback`](#stop_playback), [`undo`](#undo), [`verify_project`](#verify_project)
+58 tools: [`add_effect`](#add_effect), [`add_marker`](#add_marker), [`add_midi_notes`](#add_midi_notes), [`add_section`](#add_section), [`analyze_audio`](#analyze_audio), [`cancel_operation`](#cancel_operation), [`configure_routing`](#configure_routing), [`create_automation`](#create_automation), [`create_midi_clip`](#create_midi_clip), [`create_project`](#create_project), [`create_track`](#create_track), [`delete_clips`](#delete_clips), [`delete_track`](#delete_track), [`duplicate_clip`](#duplicate_clip), [`edit_clip`](#edit_clip), [`edit_midi_notes`](#edit_midi_notes), [`export_audio`](#export_audio), [`export_midi`](#export_midi), [`export_stems`](#export_stems), [`generate_midi`](#generate_midi), [`get_audio_analysis`](#get_audio_analysis), [`get_capabilities`](#get_capabilities), [`get_history`](#get_history), [`get_operation_status`](#get_operation_status), [`get_project_state`](#get_project_state), [`import_audio`](#import_audio), [`import_midi`](#import_midi), [`list_midi_devices`](#list_midi_devices), [`list_operations`](#list_operations), [`list_plugins`](#list_plugins), [`list_tracks`](#list_tracks), [`load_impulse_response`](#load_impulse_response), [`move_clip`](#move_clip), [`open_project`](#open_project), [`play_preview`](#play_preview), [`redo`](#redo), [`relink_media`](#relink_media), [`remove_effect`](#remove_effect), [`rename_track`](#rename_track), [`render_preview`](#render_preview), [`save_project`](#save_project), [`set_effect_parameter`](#set_effect_parameter), [`set_instrument`](#set_instrument), [`set_loop`](#set_loop), [`set_metadata`](#set_metadata), [`set_midi_input`](#set_midi_input), [`set_project_length`](#set_project_length), [`set_tempo`](#set_tempo), [`set_time_signature`](#set_time_signature), [`set_track_pan`](#set_track_pan), [`set_track_state`](#set_track_state), [`set_track_volume`](#set_track_volume), [`split_clip`](#split_clip), [`start_recording`](#start_recording), [`stop_playback`](#stop_playback), [`undo`](#undo), [`verify_project`](#verify_project), [`write_midi_controllers`](#write_midi_controllers)
 
 ### `add_effect`
 
@@ -875,4 +880,18 @@ Undo the last edit (shared history with the GUI).
 *Verify project integrity* · safety: **read**
 
 Check media presence, sizes and hashes, and the routing graph. ``intact`` is true when nothing is missing, mismatched or misrouted.
+
+### `write_midi_controllers`
+
+*Write MIDI controllers* · safety: **write**
+
+Write the events of one MIDI controller (CC) into a MIDI clip: for example expression (CC 11) or modulation (CC 1) curves that shape a part's dynamics, or the sustain pedal (CC 64). The new events replace every event of that controller in the clip, as one undoable step; other controllers and the notes stay. Event beats are relative to the clip start, and a value holds until the controller's next event.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `dry_run` | boolean | false | Validate and describe the change without committing it |
+| `clip_id` | string | required |  |
+| `controller` | integer | required | MIDI CC number, for example 1 = modulation, 7 = volume, 11 = expression, 64 = sustain pedal (64 or more is down) (≥ 0, ≤ 127) |
+| `events` | array<ControllerEventInput> | required | The controller's new events; they replace all of its events in the clip (min items 1, max items 20000) |
+| `channel` | integer | 0 | MIDI channel of the new events, as a note's channel; the controller's events are replaced on every channel (≥ 0, ≤ 15) |
 

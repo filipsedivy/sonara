@@ -60,6 +60,8 @@ pub static ADDITIONS: &[Addition] = &[
         model: "NoteInput",
         field: "articulation",
     },
+    // A tool that writes the events of one MIDI controller (CC) into a MIDI clip.
+    Addition::Tool("write_midi_controllers"),
 ];
 
 /// Whether `name` is a tool that [`API_VERSION`] adds.

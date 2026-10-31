@@ -1,6 +1,7 @@
-//! The 57 agent tools: name, title, safety class and input model of each, in the order of the
-//! prototype's `@tool(name, title, Model, Safety)` decorators in `sonara.agent.tools.handlers`.
-//! Tool listings keep this order.
+//! The agent tools: name, title, safety class and input model of each. The 57 tools of the
+//! recorded contract come first, in the order of the prototype's `@tool(name, title, Model,
+//! Safety)` decorators in `sonara.agent.tools.handlers`; the tools a later API version adds
+//! (`super::versions`) follow them. Tool listings keep this order.
 
 use super::inputs;
 use super::model::Model;
@@ -67,8 +68,8 @@ pub fn find(name: &str) -> Option<&'static ToolSpec> {
     TOOLS.iter().find(|tool| tool.name == name)
 }
 
-/// Every tool, in the prototype's registration order.
-pub static TOOLS: [ToolSpec; 57] = [
+/// Every tool: the prototype's, in its registration order, then the added ones.
+pub static TOOLS: [ToolSpec; 58] = [
     ToolSpec {
         name: "create_project",
         title: "Create project",
@@ -559,5 +560,18 @@ pub static TOOLS: [ToolSpec; 57] = [
         idempotent: true,
         docstring: "What this Sonara build can do: API version, export formats, audio engine status,
             allowed file locations and limits.",
+    },
+    // Added in agent API 1.1.
+    ToolSpec {
+        name: "write_midi_controllers",
+        title: "Write MIDI controllers",
+        input: &inputs::WRITE_MIDI_CONTROLLERS,
+        safety: Safety::Write,
+        idempotent: false,
+        docstring: "Write the events of one MIDI controller (CC) into a MIDI clip: for example
+            expression (CC 11) or modulation (CC 1) curves that shape a part's dynamics, or the
+            sustain pedal (CC 64). The new events replace every event of that controller in the
+            clip, as one undoable step; other controllers and the notes stay. Event beats are
+            relative to the clip start, and a value holds until the controller's next event.",
     },
 ];
