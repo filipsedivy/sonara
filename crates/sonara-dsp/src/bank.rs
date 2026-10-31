@@ -659,11 +659,12 @@ pub enum DynamicsDrive {
 /// attack of its sample.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LegatoSpec {
-    /// The crossfade between the two notes, in milliseconds.
+    /// The crossfade between the two notes, in milliseconds; the sampler plays at least 5.
     pub crossfade_ms: u16,
     /// Where the new note's sample starts, in milliseconds into it.
     pub start_offset_ms: u16,
-    /// The longest silence between two notes that still joins them, in milliseconds.
+    /// The longest silence between two notes that still joins them, in milliseconds: 0 still
+    /// joins a note that starts on the frame where the one before ends.
     pub gap_ms: u16,
 }
 

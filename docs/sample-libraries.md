@@ -110,7 +110,8 @@ Sonatina's legato patches are written this way: the first note of a phrase plays
 each note played while the previous key is still held plays the legato group, which overlaps the
 old note for the patch's `off_time`. Held keyswitch keys do not count as notes (sfizz counts
 them), keys the sustain pedal holds after their release are not down, and all notes off (a seek or
-a loop wrap) starts the next note as a new phrase.
+a loop wrap) starts the next note as a new phrase. A patch without such regions can still play
+legato through an overlap legato that its library claims (below, "How `legato` plays").
 
 An exclusive group switches off the notes of the regions that name it in `off_by`, and each fades
 out as its region's `off_mode` says: `fast` (the default) in 10 ms, `normal` over the region's own
@@ -245,6 +246,33 @@ pitch the instrument sounds. Keyswitch notes are moved too: a clip writes them w
 moves them onto the patch's keyswitch keys, and a note moved onto a keyswitch key selects that
 switch. A note moved below 0 or above 127 is not played. The articulation parameter selects the
 patch's own keyswitch and is not moved.
+
+**How `legato` plays.** The `legato` choice, or a note's own `legato`, plays what the preset's
+library says about its legato (`legato` in [instrument-catalog.md](instrument-catalog.md)). A
+preset whose own regions play legato (`{"kind": "trigger"}`) plays the legato articulation it
+maps, else its ordinary sound, whose `trigger=first` and `trigger=legato` regions do the work
+(above). A preset that claims no legato plays the nearest articulation it has. A preset that claims an overlap legato
+(`{"kind": "overlap", "crossfade_ms": 90, "start_offset_ms": 60, "gap_ms": 0}`) plays its
+ordinary sound and joins its notes:
+
+- A legato note that starts while the note before it is still held, or at most `gap_ms`
+  milliseconds after that note's release, crossfades from it over `crossfade_ms` milliseconds
+  (at least 5). A gap of 0 still joins a note that starts exactly where the one before ends.
+- The old note fades out from where it is while the new one fades in, both along an
+  equal-power curve (a cosine and a sine), so the level does not dip mid-way. The new note
+  starts `start_offset_ms` milliseconds into its sample, past the sample's attack; an offset
+  past the sample's loop starts at the loop, and one past the end of a sample that does not loop
+  is not taken. Once the crossfade is over, the new note plays and releases as any note.
+- The new note decides: a note in another articulation sounds beside the one before it, and a
+  legato note after it joins it all the same. The legato is monophonic, so a chord played legato
+  keeps only its last note; every other choice plays polyphonic.
+- A note on the same key as the one before plays its attack again, as does the first note of a
+  phrase and the first note after a seek or a loop wrap. A note left by a crossfade plays no
+  release samples.
+
+This is an emulation from the sustained samples, not recorded transitions, and how good it
+sounds depends on the library and the times. Neither shipped profile claims an overlap legato
+(its times wait for a listening check), so it plays only for a preset whose manifest claims one.
 
 **How `dynamics` plays.** What it drives depends on the preset, as its library's manifest or
 Sonara's profile says (`dynamics` in [instrument-catalog.md](instrument-catalog.md)):

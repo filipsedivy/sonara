@@ -1,14 +1,15 @@
 //! `sonara.sampler` against synthetic banks: layers, round robin, release, release triggers,
 //! the sustain pedal, keyswitches, exclusive groups, controllers, polyphony, the articulation
-//! and dynamics parameters, a note's own articulation, the key offset and the real-time rules
-//! (TST-10: every check compares against a value that follows from the bank, not "it ran").
-//! Every block, and every parameter change of the articulation and dynamics tests, runs under
-//! `assert_no_alloc` (RT-02).
+//! and dynamics parameters, a note's own articulation, the key offset, the overlap legato and
+//! the real-time rules (TST-10: every check compares against a value that follows from the
+//! bank, not "it ran"). Every block, and every parameter change of the articulation and
+//! dynamics tests, runs under `assert_no_alloc` (RT-02).
 //!
 //! The samples are constants, so a voice's steady-state output is its sample value times the
-//! velocity gain `(velocity / 127)²`, which the tests compute independently of the engine.
+//! velocity gain `(velocity / 127)²`, which the tests compute independently of the engine; a
+//! legato crossfade adds the equal-power gains `cos` and `sin` of the fraction it has done.
 
-use std::f64::consts::FRAC_1_SQRT_2;
+use std::f64::consts::{FRAC_1_SQRT_2, FRAC_PI_2};
 use std::sync::Arc;
 
 use assert_no_alloc::{AllocDisabler, assert_no_alloc};
@@ -27,8 +28,9 @@ use sonara_dsp::processors::{create, param_slots};
 #[global_allocator]
 static ALLOCATOR: AllocDisabler = AllocDisabler;
 
-/// The sampler's descriptor with one patch and three articulations: the `articulation` choices
-/// are `auto` (0), `ordinario` (1), `sustain` (2), `staccato` (3) and `pizzicato` (4).
+/// The sampler's descriptor with one patch and four articulations: the `articulation` choices
+/// are `auto` (0), `ordinario` (1), `sustain` (2), `staccato` (3), `pizzicato` (4) and
+/// `legato` (5).
 fn descriptor() -> sonara_core::plugins::PluginDescriptor {
     sampler_descriptor(&SamplerChoices {
         presets: vec!["/library/violin.sfz".to_owned()],
@@ -36,6 +38,7 @@ fn descriptor() -> sonara_core::plugins::PluginDescriptor {
             "sustain".to_owned(),
             "staccato".to_owned(),
             "pizzicato".to_owned(),
+            "legato".to_owned(),
         ],
         ..SamplerChoices::default()
     })
@@ -3656,4 +3659,584 @@ fn a_dynamics_value_outside_its_range_plays_as_the_nearest_end() {
         let layer = if played <= 40 { 0.5 } else { 0.25 };
         close(level(&attack), layer * gain(played));
     }
+}
+
+// --- The overlap legato ---
+
+/// The `articulation` choice `sustain` of [`descriptor`].
+const SUSTAIN_CHOICE: u16 = 2;
+/// The `articulation` choice `legato` of [`descriptor`].
+const LEGATO_CHOICE: u16 = 5;
+
+/// Overlap legato times in milliseconds: the crossfade, the start offset and the gap.
+fn overlap(crossfade_ms: u16, start_offset_ms: u16, gap_ms: u16) -> LegatoSpec {
+    LegatoSpec {
+        crossfade_ms,
+        start_offset_ms,
+        gap_ms,
+    }
+}
+
+/// The mapping of a preset whose library says it plays legato by overlapping its notes with
+/// the times `spec` (`None`: a preset that claims no overlap legato): `sustain` and `legato`
+/// both play the patch as it is, and only `legato` is the legato target.
+fn legato_mapping(spec: Option<LegatoSpec>) -> SamplerMapping {
+    let target = |legato| {
+        Some(ArticulationTarget {
+            selector: None,
+            legato,
+        })
+    };
+    SamplerMapping::new(
+        vec![None, target(false), target(false), None, None, target(true)],
+        DynamicsDrive::Velocity,
+        spec,
+        0,
+    )
+}
+
+/// One region per key, each at its own key centre: key 60 plays 0.5, key 62 plays 0.25 and key
+/// 64 plays 0.125.
+fn line() -> SampleBank {
+    let note = |key, sample| Region {
+        key_lo: key,
+        key_hi: key,
+        pitch_keycenter: key,
+        ..region(sample)
+    };
+    SampleBank {
+        samples: vec![constant(0.5), constant(0.25), constant(0.125)],
+        regions: vec![note(60, 0), note(62, 1), note(64, 2)],
+        ..SampleBank::default()
+    }
+}
+
+/// A prepared sampler playing `bank` with the [`legato_mapping`] of `spec` and the
+/// `articulation` choice `choice`.
+fn legato_sampler(bank: SampleBank, spec: Option<LegatoSpec>, choice: &str) -> Box<dyn Processor> {
+    mapped(bank, legato_mapping(spec), &articulation(choice))
+}
+
+/// The frames of `ms` milliseconds at the tests' rate.
+fn frames_of(ms: u16) -> f64 {
+    f64::from(ms) / 1000.0 * f64::from(RATE)
+}
+
+/// The gains of an equal-power crossfade over `frames` frames on its frame `index` (from 0):
+/// the note it leaves is heard at the cosine and the note it joins at the sine of the part done
+/// by the end of that frame, as an angle from 0 to π/2.
+fn crossfade(index: u32, frames: f64) -> (f64, f64) {
+    let angle = (f64::from(index + 1) / frames).min(1.0) * FRAC_PI_2;
+    (angle.cos(), angle.sin())
+}
+
+/// The level of a voice on frame `index` (from 0) of a linear fade from `from` to 0 over
+/// `frames` frames.
+fn faded_from(from: f64, index: u32, frames: f64) -> f64 {
+    from * (1.0 - f64::from(index + 1) / frames).max(0.0)
+}
+
+/// Checks every frame of `block` against `expected` of the frame's index in it, on both
+/// channels, within the rounding of the per-frame ramps.
+fn assert_frames(block: &[[f64; 2]], expected: impl Fn(u32) -> f64) {
+    for (frame, index) in block.iter().zip(0_u32..) {
+        let want = expected(index);
+        assert!(
+            (frame[0] - want).abs() < 1e-9 && (frame[1] - want).abs() < 1e-9,
+            "frame {index}: {frame:?} != {want}"
+        );
+    }
+}
+
+/// Plays `events` on `processor` in one block of `frames` frames (at most [`BLOCK`]), inside
+/// `assert_no_alloc` (RT-02).
+fn run_frames(
+    processor: &mut dyn Processor,
+    events: &[InstrumentEvent],
+    frames: usize,
+) -> Vec<[f64; 2]> {
+    let mut buffer = vec![[0.0; 2]; frames];
+    let ctx = BlockContext {
+        frame: 0,
+        sample_rate: RATE,
+        beat: 0.0,
+        bpm: 120.0,
+        playing: true,
+        sidechain: None,
+        events,
+    };
+    assert_no_alloc(|| processor.process(&mut buffer, &ctx));
+    buffer
+}
+
+#[test]
+fn legato_overlap_crossfades_over_the_profile_time() {
+    // 62 starts while 60 is held: 60 (0.5) fades out and 62 (0.25) fades in over the preset's
+    // 20 ms crossfade (960 frames), along the equal-power curves, and then 60 stops.
+    let mut processor = legato_sampler(line(), Some(overlap(20, 0, 0)), "legato");
+    let first = run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    close(level(&first), 0.5);
+    let joined = run(&mut *processor, &[event(EventKind::NoteOn, 62, 127)]);
+    let frames = frames_of(20);
+    assert_frames(&joined, |index| {
+        let (left, entered) = crossfade(index, frames);
+        0.5 * left + 0.25 * entered
+    });
+    assert!(
+        (0..960).all(|index| {
+            let (left, entered) = crossfade(index, frames);
+            (left * left + entered * entered - 1.0).abs() < 1e-12
+        }),
+        "the two notes keep their power through the crossfade"
+    );
+    assert_eq!(voices(&*processor), 1.0, "the left note has stopped");
+}
+
+/// A sample in three parts: 0.25 for its first 60 ms (2880 frames, the attack), 0.75 for the
+/// next 1000 frames and 1.0 after.
+fn attack_then_sustain() -> Sample {
+    Sample {
+        rate: RATE,
+        channels: 1,
+        data: (0..SAMPLE_FRAMES)
+            .map(|frame| match frame {
+                0..2880 => 0.25,
+                2880..3880 => 0.75,
+                _ => 1.0,
+            })
+            .collect(),
+    }
+}
+
+#[test]
+fn a_joined_note_starts_past_its_samples_attack() {
+    // With a start offset of 60 ms, a joined 62 reads its sample from frame 2880 on: 0.75 from
+    // its first frame, rising with the 10 ms crossfade, and 1.0 from 1000 frames later. Played
+    // with nothing to join, it starts at the sample's start, its attack part, 0.25.
+    let mut bank = line();
+    bank.samples[1] = attack_then_sustain();
+    let spec = Some(overlap(10, 60, 0));
+    let mut alone = legato_sampler(bank.clone(), spec, "legato");
+    let attack = run(&mut *alone, &[event(EventKind::NoteOn, 62, 127)]);
+    // After the region's shortest attack, 0.5 ms (24 frames).
+    assert_frames(&attack[30..], |_| 0.25);
+
+    let mut joined = legato_sampler(bank, spec, "legato");
+    run(&mut *joined, &[event(EventKind::NoteOn, 60, 127)]);
+    let block = run(&mut *joined, &[event(EventKind::NoteOn, 62, 127)]);
+    let frames = frames_of(10);
+    assert_frames(&block, |index| {
+        let (left, entered) = crossfade(index, frames);
+        let read = if index < 1000 { 0.75 } else { 1.0 };
+        0.5 * left + read * entered
+    });
+}
+
+/// A sample that reads 0.25 before frame 1000, 0.75 from 1000 to 1249 and 1.0 from 1250 on.
+fn steps(frame: u32) -> f32 {
+    match frame {
+        0..1000 => 0.25,
+        1000..1250 => 0.75,
+        _ => 1.0,
+    }
+}
+
+#[test]
+fn a_start_offset_past_the_loop_or_the_end_stays_in_the_sample() {
+    // The 60 ms start offset (frame 2880) lies past the loop end and past the region end
+    // (2000). A looping region starts at its loop start (1000) and loops on from there; a
+    // region that does not loop starts at its start, without the skip, and ends at frame 2000.
+    let data = (0..u32::try_from(SAMPLE_FRAMES).unwrap())
+        .map(steps)
+        .collect();
+    let mut bank = line();
+    bank.samples[1] = Sample {
+        rate: RATE,
+        channels: 1,
+        data,
+    };
+    let frames = frames_of(10);
+    let looping = Region {
+        loop_mode: LoopMode::Continuous,
+        loop_start: 1000,
+        loop_end: 2000,
+        ..bank.regions[1].clone()
+    };
+    let ending = Region {
+        end: 2000,
+        ..bank.regions[1].clone()
+    };
+    for (region, read) in [
+        (
+            looping,
+            (|index| steps(1000 + index % 1000)) as fn(u32) -> f32,
+        ),
+        (
+            ending,
+            |index| if index < 2000 { steps(index) } else { 0.0 },
+        ),
+    ] {
+        let mut bank = bank.clone();
+        bank.regions[1] = region;
+        let mut processor = legato_sampler(bank, Some(overlap(10, 60, 0)), "legato");
+        run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+        let block = run(&mut *processor, &[event(EventKind::NoteOn, 62, 127)]);
+        assert_frames(&block, |index| {
+            let (left, entered) = crossfade(index, frames);
+            0.5 * left + f64::from(read(index)) * entered
+        });
+    }
+}
+
+#[test]
+fn legato_same_pitch_retriggers() {
+    // A press of the legato note's own key plays its attack beside it, as without the legato:
+    // the oracle is the same phrase in `sustain`.
+    let phrase = |choice| -> Vec<[f64; 2]> {
+        let mut processor = legato_sampler(line(), Some(overlap(20, 60, 0)), choice);
+        let blocks: [&[InstrumentEvent]; 4] = [
+            &[event(EventKind::NoteOn, 60, 127)],
+            &[event(EventKind::NoteOn, 60, 127)],
+            &[event(EventKind::NoteOff, 60, 0)],
+            &[],
+        ];
+        blocks
+            .iter()
+            .flat_map(|events| run(&mut *processor, events))
+            .collect()
+    };
+    let oracle = phrase("sustain");
+    close(oracle[2 * BLOCK - 1][0], 1.0);
+    assert_eq!(phrase("legato"), oracle);
+}
+
+#[test]
+fn chord_in_legato_mode_is_monophonic() {
+    // Three keys on one frame: each joins the one before, which has not sounded yet, so only
+    // the last sounds, fading in over the crossfade. In `sustain` the whole chord sounds.
+    let chord = [
+        event(EventKind::NoteOn, 60, 127),
+        event(EventKind::NoteOn, 62, 127),
+        event(EventKind::NoteOn, 64, 127),
+    ];
+    let spec = Some(overlap(20, 0, 0));
+    let mut legato = legato_sampler(line(), spec, "legato");
+    let block = run(&mut *legato, &chord);
+    let frames = frames_of(20);
+    assert_frames(&block, |index| 0.125 * crossfade(index, frames).1);
+    assert_eq!(voices(&*legato), 1.0);
+
+    let mut sustain = legato_sampler(line(), spec, "sustain");
+    close(level(&run(&mut *sustain, &chord)), 0.875);
+    assert_eq!(voices(&*sustain), 3.0);
+}
+
+#[test]
+fn a_note_that_joins_nothing_plays_its_attack() {
+    // The first note of a phrase, a note after the legato note's release beyond the gap, and
+    // the first note after all notes off (a seek or a loop wrap), which ends the held legato
+    // note, play exactly as in `sustain`.
+    let phrase = |choice| -> Vec<[f64; 2]> {
+        let mut processor = legato_sampler(line(), Some(overlap(20, 60, 0)), choice);
+        let blocks: [&[InstrumentEvent]; 6] = [
+            &[event(EventKind::NoteOn, 60, 127)],
+            &[event(EventKind::NoteOff, 60, 0)],
+            &[],
+            &[event(EventKind::NoteOn, 62, 127)],
+            &[event(EventKind::AllNotesOff, 0, 0)],
+            &[event(EventKind::NoteOn, 64, 127)],
+        ];
+        blocks
+            .iter()
+            .flat_map(|events| run(&mut *processor, events))
+            .collect()
+    };
+    let oracle = phrase("sustain");
+    for (block, sounding) in [(0, 0.5), (3, 0.25), (5, 0.125)] {
+        close(oracle[(block + 1) * BLOCK - 1][0], sounding);
+    }
+    assert_eq!(phrase("legato"), oracle);
+}
+
+#[test]
+fn a_note_that_starts_where_the_last_one_ends_is_joined() {
+    // The engine sends the note-offs of a frame before its note-ons. With a gap of 0, a note
+    // that starts on the frame of the legato note's release joins it exactly as one that
+    // starts while it is held; a frame later it plays its attack, as in `sustain`.
+    let spec = Some(overlap(20, 0, 0));
+    let mut held = legato_sampler(line(), spec, "legato");
+    run(&mut *held, &[event(EventKind::NoteOn, 60, 127)]);
+    let overlapped = run(&mut *held, &[event(EventKind::NoteOn, 62, 127)]);
+    let mut abutting = legato_sampler(line(), spec, "legato");
+    run(&mut *abutting, &[event(EventKind::NoteOn, 60, 127)]);
+    let joined = run(
+        &mut *abutting,
+        &[
+            event(EventKind::NoteOff, 60, 0),
+            event(EventKind::NoteOn, 62, 127),
+        ],
+    );
+    assert_eq!(joined, overlapped);
+
+    let later = |choice| {
+        let mut processor = legato_sampler(line(), spec, choice);
+        run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+        run(
+            &mut *processor,
+            &[
+                event(EventKind::NoteOff, 60, 0),
+                at_offset(1, event(EventKind::NoteOn, 62, 127)),
+            ],
+        )
+    };
+    assert_eq!(later("legato"), later("sustain"));
+}
+
+#[test]
+fn a_note_within_the_gap_joins_the_released_note_where_its_release_has_brought_it() {
+    // 60 releases over 1 s. 62 starts 10 ms (480 frames) after the release, within the 10 ms
+    // gap: from there 60 fades over the crossfade instead of its release, from the level its
+    // release has reached, 1 - 480/48000, along the curve that sounds at that level, and 62
+    // fades in. One frame later, beyond the gap, 62 plays its attack beside 60's release, as
+    // in `sustain`.
+    let mut bank = line();
+    bank.regions[0].release = 1.0;
+    let spec = Some(overlap(20, 0, 10));
+    let mut processor = legato_sampler(bank.clone(), spec, "legato");
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    let block = run(
+        &mut *processor,
+        &[
+            event(EventKind::NoteOff, 60, 0),
+            at_offset(480, event(EventKind::NoteOn, 62, 127)),
+        ],
+    );
+    let release = f64::from(RATE);
+    assert_frames(&block[..480], |index| 0.5 * faded_from(1.0, index, release));
+    let reached = 1.0 - 480.0 / release;
+    let on_the_curve = reached.asin() / FRAC_PI_2;
+    let frames = frames_of(20);
+    assert_frames(&block[480..], |index| {
+        let left = faded_from(on_the_curve, index, frames);
+        0.5 * (left * FRAC_PI_2).sin() + 0.25 * crossfade(index, frames).1
+    });
+
+    let later = |choice| {
+        let mut processor = legato_sampler(bank.clone(), spec, choice);
+        run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+        run(
+            &mut *processor,
+            &[
+                event(EventKind::NoteOff, 60, 0),
+                at_offset(481, event(EventKind::NoteOn, 62, 127)),
+            ],
+        )
+    };
+    assert_eq!(later("legato"), later("sustain"));
+}
+
+#[test]
+fn a_crossfade_from_a_note_in_its_attack_starts_where_it_is_heard() {
+    // 60 rises over a 100 ms attack (4800 frames); 62 joins it 20 ms in, where 60 sounds at a
+    // fifth of its level. 60 fades from there along the curve that sounds at that level, so
+    // its level does not jump.
+    let mut bank = line();
+    bank.regions[0].attack = 0.1;
+    let mut processor = legato_sampler(bank, Some(overlap(20, 0, 0)), "legato");
+    let block = run(
+        &mut *processor,
+        &[
+            event(EventKind::NoteOn, 60, 127),
+            at_offset(960, event(EventKind::NoteOn, 62, 127)),
+        ],
+    );
+    assert_frames(&block[..960], |index| 0.5 * f64::from(index + 1) / 4800.0);
+    let on_the_curve = 0.2_f64.asin() / FRAC_PI_2;
+    let frames = frames_of(20);
+    assert_frames(&block[960..], |index| {
+        let left = faded_from(on_the_curve, index, frames);
+        0.5 * (left * FRAC_PI_2).sin() + 0.25 * crossfade(index, frames).1
+    });
+}
+
+/// [`line`] with a release sample of key 60 that plays 0.0625.
+fn line_with_tail() -> SampleBank {
+    let mut bank = line();
+    bank.samples.push(constant(0.0625));
+    bank.regions.push(Region {
+        key_lo: 60,
+        key_hi: 60,
+        trigger: Trigger::Release,
+        ..region(3)
+    });
+    bank
+}
+
+#[test]
+fn a_note_the_legato_leaves_starts_no_release_samples() {
+    // 62 joins the held 60, which is released after the crossfade. In `legato`, 60's release
+    // sample does not start, at the release or when the pedal lifts, and the pedal does not
+    // hold 60 through the crossfade: 62 sounds alone. In `sustain` the release sample starts
+    // beside 62.
+    for pedal_down in [false, true] {
+        let play = |choice| {
+            let mut processor = legato_sampler(line_with_tail(), Some(overlap(20, 0, 0)), choice);
+            if pedal_down {
+                run(&mut *processor, &[pedal(true)]);
+            }
+            run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+            run(&mut *processor, &[event(EventKind::NoteOn, 62, 127)]);
+            let joined = voices(&*processor);
+            run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+            let lifted = run(&mut *processor, &[pedal(false)]);
+            (joined, level(&lifted), voices(&*processor))
+        };
+        let (joined, alone, sounding) = play("legato");
+        assert_eq!((joined, sounding), (1.0, 1.0), "pedal down: {pedal_down}");
+        close(alone, 0.25);
+        let (_, sustained, _) = play("sustain");
+        close(sustained, 0.25 + 0.0625);
+    }
+}
+
+#[test]
+fn legato_run_keeps_two_voices_per_layer() {
+    // A run faster than the 90 ms crossfade: a note every 500 frames (10.4 ms), each released
+    // 250 frames after the next starts. Each transition shortens the fade of the note before
+    // the one it leaves to 10 ms (480 frames), so 500 frames after each start only that note
+    // and the one it left sound.
+    let bank = SampleBank {
+        samples: vec![constant(0.5)],
+        regions: vec![Region {
+            key_lo: 48,
+            key_hi: 72,
+            ..region(0)
+        }],
+        ..SampleBank::default()
+    };
+    let mut processor = legato_sampler(bank, Some(overlap(90, 0, 0)), "legato");
+    let keys = [60, 62, 64, 65, 67, 69, 71, 72, 71, 69, 67, 65];
+    let mut previous = None;
+    for (index, key) in keys.into_iter().enumerate() {
+        let mut events = vec![event(EventKind::NoteOn, key, 127)];
+        if let Some(previous) = previous {
+            events.push(at_offset(250, event(EventKind::NoteOff, previous, 0)));
+        }
+        run_frames(&mut *processor, &events, 500);
+        let expected = if index == 0 { 1.0 } else { 2.0 };
+        assert_eq!(voices(&*processor), expected, "after note {index}");
+        previous = Some(key);
+    }
+}
+
+#[test]
+fn a_note_joins_by_its_own_legato_articulation() {
+    // On a device that plays `sustain`, a note marked `legato` joins the held note before it,
+    // as every note does under the `legato` choice: the new note's legato decides. On a device
+    // that plays `legato`, a note marked `sustain` joins nothing: it sounds beside the held
+    // note, as in `sustain`; and the next note, which plays `legato`, joins it.
+    let spec = Some(overlap(20, 0, 0));
+    let mut by_note = legato_sampler(line(), spec, "sustain");
+    run(&mut *by_note, &[event(EventKind::NoteOn, 60, 127)]);
+    let joined = run(&mut *by_note, &[marked(62, LEGATO_CHOICE)]);
+    let mut by_device = legato_sampler(line(), spec, "legato");
+    run(&mut *by_device, &[event(EventKind::NoteOn, 60, 127)]);
+    assert_eq!(
+        joined,
+        run(&mut *by_device, &[event(EventKind::NoteOn, 62, 127)])
+    );
+
+    let mut beside = legato_sampler(line(), spec, "legato");
+    run(&mut *beside, &[event(EventKind::NoteOn, 60, 127)]);
+    let both = run(&mut *beside, &[marked(62, SUSTAIN_CHOICE)]);
+    close(level(&both), 0.75);
+    assert_eq!(voices(&*beside), 2.0);
+    let block = run(&mut *beside, &[event(EventKind::NoteOn, 64, 127)]);
+    let frames = frames_of(20);
+    assert_frames(&block, |index| {
+        let (left, entered) = crossfade(index, frames);
+        0.5 + 0.25 * left + 0.125 * entered
+    });
+}
+
+#[test]
+fn the_legato_target_without_an_overlap_claim_joins_nothing() {
+    // TST-03: a legato target of a preset that claims no overlap legato (its own regions play
+    // legato, or nothing is claimed) has no times to join with: the overlapping phrase plays
+    // as in `sustain`, both notes sounding.
+    let phrase = |choice| -> Vec<[f64; 2]> {
+        let mut processor = legato_sampler(line(), None, choice);
+        let blocks: [&[InstrumentEvent]; 4] = [
+            &[event(EventKind::NoteOn, 60, 127)],
+            &[event(EventKind::NoteOn, 62, 127)],
+            &[event(EventKind::NoteOff, 60, 0)],
+            &[event(EventKind::NoteOff, 62, 0)],
+        ];
+        blocks
+            .iter()
+            .flat_map(|events| run(&mut *processor, events))
+            .collect()
+    };
+    let oracle = phrase("sustain");
+    close(oracle[2 * BLOCK - 1][0], 0.75);
+    assert_eq!(phrase("legato"), oracle);
+}
+
+#[test]
+fn a_joined_note_releases_as_any_note() {
+    // Once its crossfade is done, a joined note plays at full level and fades out over its
+    // release linearly, as any note: the same frames as in `sustain`, where the note it
+    // overlapped has ended too.
+    let release = |choice| {
+        let mut processor = legato_sampler(line(), Some(overlap(20, 0, 0)), choice);
+        run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+        run(&mut *processor, &[event(EventKind::NoteOn, 62, 127)]);
+        run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+        run(&mut *processor, &[event(EventKind::NoteOff, 62, 0)])
+    };
+    let legato = release("legato");
+    // The region's shortest release, 5 ms (240 frames).
+    assert_frames(&legato, |index| 0.25 * faded_from(1.0, index, 240.0));
+    assert_eq!(legato, release("sustain"));
+}
+
+#[test]
+fn an_exclusive_group_keeps_the_crossfade_of_the_left_note() {
+    // In a monophonic patch (every region in group 1, which switches them off), the joined
+    // note's group would switch the held one off in 10 ms; the transition keeps its crossfade.
+    // Without the legato the group cuts it.
+    let mut bank = line();
+    for region in &mut bank.regions {
+        region.group = 1;
+        region.off_by = 1;
+    }
+    let spec = Some(overlap(20, 0, 0));
+    let mut legato = legato_sampler(bank.clone(), spec, "legato");
+    run(&mut *legato, &[event(EventKind::NoteOn, 60, 127)]);
+    let block = run(&mut *legato, &[event(EventKind::NoteOn, 62, 127)]);
+    let frames = frames_of(20);
+    assert_frames(&block, |index| {
+        let (left, entered) = crossfade(index, frames);
+        0.5 * left + 0.25 * entered
+    });
+
+    let mut sustain = legato_sampler(bank, spec, "sustain");
+    run(&mut *sustain, &[event(EventKind::NoteOn, 60, 127)]);
+    let cut = run(&mut *sustain, &[event(EventKind::NoteOn, 62, 127)]);
+    assert_frames(&cut, |index| {
+        0.5 * faded_from(1.0, index, 480.0) + 0.25 * (f64::from(index + 1) / 24.0).min(1.0)
+    });
+}
+
+#[test]
+fn a_crossfade_lasts_at_least_five_ms() {
+    // TST-03: a mapping built with a crossfade of 0 ms (the manifest allows 10 to 500) still
+    // crossfades, over the shortest fade-out, 5 ms (240 frames), so the transition never clicks.
+    let mut processor = legato_sampler(line(), Some(overlap(0, 0, 0)), "legato");
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    let joined = run(&mut *processor, &[event(EventKind::NoteOn, 62, 127)]);
+    assert_frames(&joined, |index| {
+        let (left, entered) = crossfade(index, 240.0);
+        0.5 * left + 0.25 * entered
+    });
 }

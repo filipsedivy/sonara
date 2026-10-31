@@ -85,6 +85,32 @@
 //!   starts its phrase with a `first` note. A key released under the sustain pedal is not down,
 //!   and a key pressed again while it is still down counts itself, so the second press is
 //!   joined as in sfizz. All notes off releases every key, so the next press is a `first` note.
+//! - **Overlap legato.** A preset whose library says it plays legato by overlapping its notes
+//!   ([`SamplerMapping::legato`]) joins the notes that play its legato target
+//!   ([`ArticulationTarget::legato`], the `legato` choice), as the parameter's choice or as a
+//!   note's own articulation. Such a note, pressed while the note pressed before it is still
+//!   held or at most the preset's gap after its release, crossfades from it over the preset's
+//!   crossfade time (at least 5 ms): the old note fades out from where it is, a release under
+//!   way included, and the new one fades in from the preset's start offset into its sample,
+//!   past the sample's attack, in place of the region's attack. The new note's articulation
+//!   decides, as with a library's legato patch: a note that plays another one joins nothing,
+//!   and a legato note after it joins it all the same.
+//!
+//!   Both fades follow an equal-power curve, the level heard being `sin(level · π/2)`, so two
+//!   uncorrelated sounds keep their power mid-way instead of dipping by 3 dB; a voice still in
+//!   its attack starts its fade where it is heard, and a joined note at full level plays and
+//!   releases as any note. A start offset at or past the loop end of a looping region starts
+//!   at the loop start, and one at or past the end of a region that does not loop is not
+//!   taken, so the note still sounds.
+//!
+//!   The legato is monophonic: a chord played legato keeps its last note. A press of the last
+//!   note's own key plays its attack beside it, as without the legato; so does a press with no
+//!   note held or just released, and the first press after all notes off, so a seek or a loop
+//!   wrap starts the phrase with an attack. A note left this way starts no release regions at
+//!   its release, and neither an exclusive group nor the sustain pedal changes its fade; a fade
+//!   that an earlier transition started is shortened to 10 ms, so a run faster than the
+//!   crossfade keeps at most two notes sounding beyond those short tails. Keyswitch keys play
+//!   no part in it. It is an emulation from sustained samples, not recorded transitions.
 //! - **Velocity.** A region's gain follows the note's velocity as its `amp_veltrack` says: the
 //!   curve `(velocity / 127)²` at the default 100 %, constant at 0 %, inverted below 0. Its
 //!   velocity crossfade (`xfin_*vel`, `xfout_*vel`, `xf_velcurve`) scales it too, so dynamic
@@ -151,13 +177,14 @@
 //! ([`Region::on_key`] is false: a key of -1, or a region a controller starts) is never started
 //! by a key press or release.
 
+use std::f64::consts::FRAC_PI_2;
 use std::sync::Arc;
 
 use super::DEFAULT_SPEC;
 use super::params::{choice, float};
 use crate::bank::{
-    Controllers, DynamicsDrive, LoopMode, OffMode, Region, SampleBank, SamplerMapping,
-    SamplerSetup, Selector, Trigger,
+    ArticulationTarget, Controllers, DynamicsDrive, LegatoSpec, LoopMode, OffMode, Region, Sample,
+    SampleBank, SamplerMapping, SamplerSetup, Selector, Trigger,
 };
 use crate::filters::db_to_amp;
 use crate::processor::{
@@ -251,11 +278,16 @@ struct Voice {
     /// The value `live_gain` reaches on this block's last frame.
     live_target: f64,
     level: f64,
+    /// How the level is heard. A voice that a legato crossfade fades in leaves the equal-power
+    /// curve when it reaches full level, so its release is the same as any note's.
+    curve: Curve,
     attack_step: f64,
     release_step: f64,
     releasing: bool,
     /// Key released while the pedal was down: releases when the pedal comes up.
     held_by_pedal: bool,
+    /// What a transition of the overlap legato does with the voice.
+    transition: Transition,
     off_by: u32,
     age: u64,
 }
@@ -276,27 +308,101 @@ impl Voice {
         live_step: 0.0,
         live_target: 1.0,
         level: 0.0,
+        curve: Curve::Linear,
         attack_step: 0.0,
         release_step: 0.0,
         releasing: false,
         held_by_pedal: false,
+        transition: Transition::Untouched,
         off_by: 0,
         age: 0,
     };
+
+    /// The level as it is heard: along the equal-power curve during a legato crossfade.
+    fn heard(&self) -> f64 {
+        match self.curve {
+            Curve::Linear => self.level,
+            Curve::EqualPower => (self.level * FRAC_PI_2).sin(),
+        }
+    }
+
+    /// Fades the voice out over `seconds` along the equal-power curve, from where it is heard,
+    /// as a transition of the overlap legato leaves its note: a fade of its release under way
+    /// starts again over the crossfade, and the sustain pedal no longer holds it.
+    fn leave(&mut self, sample_rate: u32, seconds: f64) {
+        if self.curve == Curve::Linear {
+            // The level on the curve that sounds as the level does now, so the fade starts
+            // where the voice is heard, also in its attack or its release.
+            if self.level < 1.0 {
+                self.level = self.level.clamp(0.0, 1.0).asin() / FRAC_PI_2;
+            }
+            self.curve = Curve::EqualPower;
+        }
+        self.held_by_pedal = false;
+        self.releasing = false;
+        self.transition = Transition::Leaving;
+        start_release(self, sample_rate, seconds);
+    }
+}
+
+/// How a voice's level is heard.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Curve {
+    /// As it is: a linear attack and release.
+    Linear,
+    /// Along the equal-power curve, `sin(level · π/2)`, as in a legato crossfade: the powers of
+    /// a note that fades out this way and of one that fades in add up to the same all through
+    /// the crossfade, where linear fades of two uncorrelated sounds dip by 3 dB mid-way.
+    EqualPower,
+}
+
+/// What a transition of the overlap legato does with a voice.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Transition {
+    /// Nothing: a release region's voice, a controller's, or one that an exclusive group or all
+    /// notes off switched off.
+    Untouched,
+    /// The sound of a key press, held or fading with its key's release: a transition from its
+    /// key fades it out over the crossfade.
+    Joinable,
+    /// Fading out under a transition: a later one shortens the fade to [`CHOKE_RELEASE`], and
+    /// no exclusive group switches it off.
+    Leaving,
+}
+
+/// How a key press that the overlap legato joins to the note before it starts its regions.
+#[derive(Debug, Clone, Copy)]
+struct Join {
+    /// The crossfade in seconds: the fade-in of the new note, in place of its regions' attack.
+    crossfade: f64,
+    /// How far into its sample the new note starts, in seconds past the region's offset.
+    skip: f64,
+}
+
+/// The last key press of a note, the one that a press of the overlap legato joins.
+#[derive(Debug, Clone, Copy)]
+struct LastNote {
+    key: u8,
+    channel: u8,
+    /// The frame of the key's release since the press ([`Sampler::frame`]); `None` while the key
+    /// is held.
+    released_at: Option<u64>,
 }
 
 /// What starts a voice.
 #[derive(Debug, Clone, Copy)]
 enum Start {
     /// A key press or release: the key, the velocity it was pressed with, its channel, the
-    /// `dynamics` it was pressed with (at least [`MIN_DYNAMICS`]) and what the note's own
-    /// articulation forces, if it has one.
+    /// `dynamics` it was pressed with (at least [`MIN_DYNAMICS`]), what the note's own
+    /// articulation forces, if it has one, and how the overlap legato joins a press to the note
+    /// before it, if it does.
     Key {
         key: u8,
         velocity: u8,
         channel: u8,
         dynamics: f64,
         articulation: Option<Forced>,
+        joined: Option<Join>,
     },
     /// A controller event on a channel: the region plays at its `pitch_keycenter`, and no
     /// velocity changes its gain.
@@ -316,6 +422,9 @@ struct Forced {
     /// A controller number and the value the regions read for it on every channel, until an
     /// event of that controller replaces it.
     controller: Option<(u8, u8)>,
+    /// Whether new notes are joined by the preset's overlap legato
+    /// ([`ArticulationTarget::legato`]).
+    legato: bool,
 }
 
 impl Forced {
@@ -324,11 +433,20 @@ impl Forced {
         switch: None,
         velocity: None,
         controller: None,
+        legato: false,
     };
+
+    /// What `target` forces: its selector and its legato; nothing without a target.
+    fn of(target: Option<ArticulationTarget>) -> Self {
+        target.map_or(Self::NONE, |target| Self {
+            legato: target.legato,
+            ..Self::select(target.selector)
+        })
+    }
 
     /// What `selector` forces; nothing for a target without one, a patch that is the
     /// articulation. Values outside the MIDI range are brought into it.
-    fn of(selector: Option<Selector>) -> Self {
+    fn select(selector: Option<Selector>) -> Self {
         match selector {
             None => Self::NONE,
             Some(Selector::Keyswitch(key)) => Self {
@@ -409,6 +527,16 @@ pub(crate) struct Sampler {
     /// The keys released while the sustain pedal was down: their release regions start when
     /// the pedal lifts.
     released_under_pedal: [Option<KeyRelease>; 128],
+    /// The keys that a transition of the overlap legato left while they were held: their
+    /// release starts no release regions.
+    key_left: [bool; 128],
+    /// The last key press of a note (not of a keyswitch key), which the next press of the
+    /// overlap legato joins when it is held or just released; `None` after a reset and all
+    /// notes off.
+    last_note: Option<LastNote>,
+    /// The frame of the event being applied, counted from the last reset (wrapping): what the
+    /// gap of the overlap legato is measured with.
+    frame: u64,
     /// The last value of every controller, per MIDI channel.
     controllers: [Controllers; CHANNELS],
     /// The last keyswitch the clips selected, or the patch's default switch.
@@ -442,6 +570,9 @@ impl Sampler {
             key_articulation: [None; 128],
             key_down: [false; 128],
             released_under_pedal: [None; 128],
+            key_left: [false; 128],
+            last_note: None,
+            frame: 0,
             controllers: [Controllers::INITIAL; CHANNELS],
             last_switch: None,
             articulation: SamplerMapping::AUTO,
@@ -464,6 +595,9 @@ impl Sampler {
         self.key_articulation = [None; 128];
         self.key_down = [false; 128];
         self.released_under_pedal = [None; 128];
+        self.key_left = [false; 128];
+        self.last_note = None;
+        self.frame = 0;
         self.controllers = [self.initial_controllers(); CHANNELS];
         self.last_switch = self.default_switch();
         self.round_robin = 0;
@@ -483,7 +617,7 @@ impl Sampler {
             .setup
             .as_deref()
             .and_then(|setup| setup.mapping.target(self.articulation));
-        self.forced = Forced::of(target.and_then(|target| target.selector));
+        self.forced = Forced::of(target);
     }
 
     /// What the articulation of a note-on, the `articulation` choice with index `choice`,
@@ -493,7 +627,7 @@ impl Sampler {
     /// note plays the parameter's choice.
     fn own_articulation(&self, choice: Option<u16>) -> Option<Forced> {
         let target = self.setup.as_deref()?.mapping.target(choice?)?;
-        Some(Forced::of(target.selector))
+        Some(Forced::of(Some(target)))
     }
 
     /// The keyswitch new notes play with: the forced one, else the clips' last one.
@@ -637,8 +771,11 @@ impl Sampler {
                 self.force();
                 self.pedal = false;
                 self.key_down = [false; 128];
-                // Everything stops: the releases under the pedal start no tail.
+                // Everything stops: the releases under the pedal start no tail, and the next
+                // legato press starts a phrase with its attack.
                 self.released_under_pedal = [None; 128];
+                self.key_left = [false; 128];
+                self.last_note = None;
                 // The pedal is up, and the controllers say so too.
                 for controllers in &mut self.controllers {
                     controllers.set(SUSTAIN, 0);
@@ -649,6 +786,7 @@ impl Sampler {
                 for voice in &mut self.voices {
                     if voice.active {
                         start_release(voice, self.spec.sample_rate, CHOKE_RELEASE);
+                        voice.transition = Transition::Untouched;
                     }
                 }
             }
@@ -740,11 +878,21 @@ impl Sampler {
         // Counted before this key is marked down, so a press of a key that is still down
         // counts that key (sfizz counts both presses too).
         let another_key_down = self.another_key_down(&bank);
-        if bank.keyswitches.contains(key) {
+        let switch_key = bank.keyswitches.contains(key);
+        if switch_key {
             self.select_switch(key);
         }
+        // A keyswitch key plays no part in the overlap legato.
+        let joined = if switch_key {
+            None
+        } else {
+            self.press_legato(key, event.channel, own.unwrap_or(self.forced).legato)
+        };
         if let Some(down) = self.key_down.get_mut(usize::from(key)) {
             *down = true;
+        }
+        if let Some(left) = self.key_left.get_mut(usize::from(key)) {
+            *left = false;
         }
         if let Some(vel) = self.key_velocity.get_mut(usize::from(key)) {
             *vel = velocity;
@@ -767,6 +915,7 @@ impl Sampler {
             channel: event.channel,
             dynamics,
             articulation: own,
+            joined,
         };
         let mut advanced = false;
         for (index, region) in bank.regions.iter().enumerate() {
@@ -794,6 +943,70 @@ impl Sampler {
         self.forced.switch = None;
     }
 
+    /// The overlap legato of a press of `key` on `channel`, a note that plays the legato target
+    /// when `legato` is true: `None` for a note that plays its attack. A legato press on another
+    /// key than the last note's, while that one is held or at most the preset's gap after its
+    /// release, leaves it ([`Self::leave_note`]) and is joined to it. Every press becomes the
+    /// last note; a press that does not play the legato target, or one of a preset without an
+    /// overlap legato, joins nothing.
+    fn press_legato(&mut self, key: u8, channel: u8, legato: bool) -> Option<Join> {
+        let pressed = LastNote {
+            key,
+            channel,
+            released_at: None,
+        };
+        let previous = self.last_note.replace(pressed);
+        if !legato {
+            return None;
+        }
+        let spec = self.setup.as_deref()?.mapping.legato?;
+        let from = previous.filter(|note| note.key != key && self.within_gap(note, spec))?;
+        let crossfade = (f64::from(spec.crossfade_ms) / 1000.0).max(MIN_RELEASE);
+        self.leave_note(from, crossfade);
+        Some(Join {
+            crossfade,
+            skip: f64::from(spec.start_offset_ms) / 1000.0,
+        })
+    }
+
+    /// Whether a legato press now joins `note`: it is held, or it was released at most the
+    /// gap of `spec` ago, a release on the frame of the press included.
+    fn within_gap(&self, note: &LastNote, spec: LegatoSpec) -> bool {
+        // At most 100 ms at 384 kHz in a valid mapping, far from the limit of a u64.
+        let gap = u64::from(spec.gap_ms).saturating_mul(u64::from(self.spec.sample_rate)) / 1000;
+        note.released_at
+            .is_none_or(|released| self.frame.wrapping_sub(released) <= gap)
+    }
+
+    /// A transition of the overlap legato leaves `note`: its voices fade out over `crossfade`
+    /// seconds from where they are heard ([`Voice::leave`]), and the fades of earlier
+    /// transitions are shortened to [`CHOKE_RELEASE`], so a fast run keeps at most two notes
+    /// sounding beyond those short tails. The note starts no release regions that have not
+    /// started yet: none at the release of its key while it is held, and none waiting for the
+    /// sustain pedal.
+    fn leave_note(&mut self, note: LastNote, crossfade: f64) {
+        let rate = self.spec.sample_rate;
+        for voice in self.voices.iter_mut().filter(|voice| voice.active) {
+            match voice.transition {
+                Transition::Leaving => start_release(voice, rate, CHOKE_RELEASE),
+                Transition::Joinable
+                    if voice.key == Some(note.key) && voice.channel == note.channel =>
+                {
+                    voice.leave(rate, crossfade);
+                }
+                Transition::Joinable | Transition::Untouched => {}
+            }
+        }
+        if note.released_at.is_none()
+            && let Some(left) = self.key_left.get_mut(usize::from(note.key))
+        {
+            *left = true;
+        }
+        if let Some(waiting) = self.released_under_pedal.get_mut(usize::from(note.key)) {
+            *waiting = None;
+        }
+    }
+
     /// Whether a key other than a keyswitch key of `bank` is down: what selects between the
     /// `first` and `legato` regions of a press. A key the sustain pedal holds after its release
     /// is not down.
@@ -808,6 +1021,18 @@ impl Sampler {
         if let Some(down) = self.key_down.get_mut(usize::from(key)) {
             *down = false;
         }
+        // The last note's release: a legato press within the gap after it still joins it.
+        if let Some(note) = self.last_note.as_mut()
+            && note.key == key
+            && note.channel == event.channel
+            && note.released_at.is_none()
+        {
+            note.released_at = Some(self.frame);
+        }
+        let left = self
+            .key_left
+            .get_mut(usize::from(key))
+            .is_some_and(std::mem::take);
         let rate = self.spec.sample_rate;
         let pedal = self.pedal;
         let scale = self.settings.map_or(1.0, |s| s.release_scale);
@@ -831,6 +1056,11 @@ impl Sampler {
             } else {
                 start_release(voice, rate, region.release.max(MIN_RELEASE) * scale);
             }
+        }
+        if left {
+            // A note that a legato transition left has faded already, and its release starts
+            // no release regions, now or when the pedal lifts.
+            return;
         }
         // A note with an articulation of its own releases with its keyswitch, else with the
         // switch active now.
@@ -908,6 +1138,7 @@ impl Sampler {
             channel,
             dynamics: release.dynamics,
             articulation: release.articulation,
+            joined: None,
         };
         for (index, region) in bank.regions.iter().enumerate() {
             if starts(region.trigger)
@@ -921,7 +1152,9 @@ impl Sampler {
 
     /// Silences the voices that exclusive group `group` switches off, each over the fade its
     /// region's `off_mode` gives ([`off_fade`]). A switched-off voice is off: the sustain pedal
-    /// no longer holds it, so lifting the pedal does not cut a long `off_time` fade short.
+    /// no longer holds it, so lifting the pedal does not cut a long `off_time` fade short, and
+    /// no legato transition fades it again. A voice that a legato transition fades out keeps
+    /// its crossfade.
     fn choke(&mut self, bank: &SampleBank, group: u32) {
         if group == 0 {
             return;
@@ -929,8 +1162,9 @@ impl Sampler {
         let rate = self.spec.sample_rate;
         let scale = self.settings.map_or(1.0, |s| s.release_scale);
         for voice in &mut self.voices {
-            if voice.active && voice.off_by == group {
+            if voice.active && voice.off_by == group && voice.transition != Transition::Leaving {
                 voice.held_by_pedal = false;
+                voice.transition = Transition::Untouched;
                 start_release(voice, rate, off_fade(bank, voice.region, scale));
             }
         }
@@ -943,13 +1177,14 @@ impl Sampler {
         if sample.frames() == 0 || self.spec.sample_rate == 0 {
             return;
         }
-        let (key, pitch, velocity_gain, channel, dynamics, articulation) = match start {
+        let (key, pitch, velocity_gain, channel, dynamics, articulation, joined) = match start {
             Start::Key {
                 key,
                 velocity,
                 channel,
                 dynamics,
                 articulation,
+                joined,
             } => (
                 Some(key),
                 key,
@@ -957,6 +1192,7 @@ impl Sampler {
                 channel,
                 dynamics,
                 articulation,
+                joined,
             ),
             Start::Controller { channel } => (
                 None,
@@ -964,6 +1200,7 @@ impl Sampler {
                 1.0,
                 channel,
                 self.start_dynamics(),
+                None,
                 None,
             ),
         };
@@ -983,7 +1220,27 @@ impl Sampler {
         let controllers = self.controllers_of(channel, articulation.unwrap_or(self.forced));
         let live_gain = region.controller_gain(&controllers)
             * dynamics_gain(self.drive(), self.dynamics, dynamics);
-        let attack = region.attack.max(MIN_ATTACK);
+        // A note the overlap legato joins fades in over the crossfade, along the equal-power
+        // curve, from past its sample's attack.
+        let (pos, attack, curve) = match joined {
+            Some(join) => (
+                joined_position(region, sample, join.skip),
+                join.crossfade,
+                Curve::EqualPower,
+            ),
+            None => (
+                frames_f64(region.offset),
+                region.attack.max(MIN_ATTACK),
+                Curve::Linear,
+            ),
+        };
+        // A key press's sound is what a legato transition leaves; a release region is the
+        // note's tail and plays on, as it does past a later release of its key.
+        let transition = if key.is_some() && !region.trigger.is_release() {
+            Transition::Joinable
+        } else {
+            Transition::Untouched
+        };
         self.clock = self.clock.wrapping_add(1);
         let voice = Voice {
             active: true,
@@ -991,7 +1248,7 @@ impl Sampler {
             sample: region.sample,
             key,
             channel,
-            pos: frames_f64(region.offset),
+            pos,
             step,
             gain,
             dynamics,
@@ -1000,10 +1257,12 @@ impl Sampler {
             live_step: 0.0,
             live_target: live_gain,
             level: 0.0,
+            curve,
             attack_step: 1.0 / (attack * rate),
             release_step: 0.0,
             releasing: false,
             held_by_pedal: false,
+            transition,
             off_by: region.off_by,
             age: self.clock,
         };
@@ -1051,15 +1310,8 @@ impl Sampler {
                 voice.active = false;
                 continue;
             };
-            let frames = sample.frames();
-            let end = if region.end == 0 {
-                frames
-            } else {
-                region.end.min(frames)
-            };
-            let looping = matches!(region.loop_mode, LoopMode::Continuous | LoopMode::Sustain)
-                && region.loop_end > region.loop_start
-                && region.loop_end <= frames;
+            let end = play_end(region, sample);
+            let looping = loops(region, sample);
             let step = voice.step * bend;
             for frame in out.iter_mut() {
                 if voice.releasing {
@@ -1070,6 +1322,11 @@ impl Sampler {
                     }
                 } else if voice.level < 1.0 {
                     voice.level = (voice.level + voice.attack_step).min(1.0);
+                    // At full level the curve and the level agree: a joined note plays and
+                    // releases as any note from here.
+                    if voice.level >= 1.0 {
+                        voice.curve = Curve::Linear;
+                    }
                 }
                 if looping && voice.pos >= frames_f64(region.loop_end) {
                     voice.pos -= frames_f64(region.loop_end.saturating_sub(region.loop_start));
@@ -1090,7 +1347,7 @@ impl Sampler {
                     end,
                 );
                 voice.live_gain += voice.live_step;
-                let amp = voice.gain * voice.live_gain * voice.level * master;
+                let amp = voice.gain * voice.live_gain * voice.heard() * master;
                 frame[0] += l * amp * pan_l;
                 frame[1] += r * amp * pan_r;
                 voice.pos += step;
@@ -1177,6 +1434,12 @@ fn frames_f64(frames: usize) -> f64 {
     frames as f64
 }
 
+/// A count of frames in a block as the sampler's frame clock counts them; a block holds far
+/// fewer than `u64::MAX` frames.
+fn frame_count(frames: usize) -> u64 {
+    u64::try_from(frames).unwrap_or(u64::MAX)
+}
+
 /// The whole frame below a non-negative position.
 #[expect(
     clippy::cast_possible_truncation,
@@ -1205,6 +1468,43 @@ fn in_switch(region: &Region, switch: Option<u8>) -> bool {
 fn in_sequence(region: &Region, counter: u32) -> bool {
     region.seq_length <= 1
         || counter.checked_rem(region.seq_length).map(|n| n + 1) == Some(region.seq_position)
+}
+
+/// The frame where `region` stops playing `sample`: its `end`, within the sample, or the
+/// sample's end when it gives none.
+fn play_end(region: &Region, sample: &Sample) -> usize {
+    let frames = sample.frames();
+    if region.end == 0 {
+        frames
+    } else {
+        region.end.min(frames)
+    }
+}
+
+/// Whether `region` loops in `sample`: a loop mode that loops, around a loop that lies in the
+/// sample.
+fn loops(region: &Region, sample: &Sample) -> bool {
+    matches!(region.loop_mode, LoopMode::Continuous | LoopMode::Sustain)
+        && region.loop_end > region.loop_start
+        && region.loop_end <= sample.frames()
+}
+
+/// Where a note that the overlap legato joins starts in `region`'s `sample`, in source frames:
+/// `skip` seconds past the region's offset, past the sample's attack. A start at or past the
+/// loop end of a looping region starts at the loop start, where the sustain goes on; one at or
+/// past the end of a region that does not loop starts at the offset, without the skip, so the
+/// note still sounds.
+fn joined_position(region: &Region, sample: &Sample, skip: f64) -> f64 {
+    let offset = frames_f64(region.offset);
+    let skipped = offset + skip * f64::from(sample.rate);
+    if loops(region, sample) {
+        if skipped >= frames_f64(region.loop_end) {
+            return frames_f64(region.loop_start);
+        }
+    } else if skipped >= frames_f64(play_end(region, sample)) {
+        return offset;
+    }
+    skipped
 }
 
 /// Starts a linear fade-out of `seconds` from the voice's current level.
@@ -1274,8 +1574,10 @@ impl Processor for Sampler {
         let n = buffer.len();
         self.aim_live_gains(n);
         let events = ctx.events;
+        let first = self.frame;
         let (mut next, mut pos) = (0, 0);
         while pos < n {
+            self.frame = first.wrapping_add(frame_count(pos));
             while let Some(event) = events.get(next)
                 && event.offset <= pos
             {
@@ -1289,6 +1591,7 @@ impl Processor for Sampler {
             }
             pos = end;
         }
+        self.frame = first.wrapping_add(frame_count(n));
         self.settle_live_gains();
     }
 

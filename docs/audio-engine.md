@@ -249,9 +249,16 @@ into the per-voice gain that the controller crossfades ramp over each block, so 
 multiplies by exactly 1 and renders bit for bit as before; with a controller it writes
 `round(dynamics · 127)` into that controller on every channel when it changes, on a reset and at
 every all-notes-off (the chased value of the controller follows and wins), and leaves velocities
-alone. A live graph rebuild keeps a sampler device whose instrument is unchanged (the same preset
-with the same mapping, so the same setup), so its sounding notes ring on through an edit during
-playback, and a new parameter value, such as an `articulation`, reaches it as a parameter change.
+alone. With the mapping's overlap legato, a note-on that plays a legato target while the note
+pressed before it is held, or at most the mapping's gap after its release (measured with a frame
+clock the processor counts from its last reset), fades that note's voices out and the new note's
+in over the crossfade, both along the equal-power curve `sin(level · π/2)`, and starts the new
+note's regions past the start offset in place of their attack; earlier crossfades still sounding
+are cut to 10 ms, so voices cannot pile up, and every step is a lookup or a loop over the
+preallocated voices. A live graph rebuild keeps a sampler device whose instrument is unchanged
+(the same preset with the same mapping, so the same setup), so its sounding notes ring on through
+an edit during playback, and a new parameter value, such as an `articulation`, reaches it as a
+parameter change.
 Another preset, or a changed mapping of the same preset, builds the device again from the cached
 patch, and its sounding notes stop. There are no measured load or memory numbers for it yet
 (HW-01: they are measured locally).

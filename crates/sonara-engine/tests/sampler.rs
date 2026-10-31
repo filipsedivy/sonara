@@ -25,6 +25,12 @@
 //! written softer play; on a preset whose dynamics drive expression it sets CC 11 as a clip's
 //! event does, also after a seek and on every pass of a loop.
 //!
+//! **The overlap legato** of a preset that claims it joins clip notes that abut (the engine
+//! sends the note-off of a frame before its note-ons): the oracle is the same notes in
+//! `sustain`, equal before the first join and after each crossfade, and different inside it. A
+//! seek into the phrase starts the note there with its attack, as in `sustain`, and the next
+//! note joins it.
+//!
 //! **Live rebuilds** (an edit during playback) keep a sampler whose instrument is unchanged, so
 //! its sounding notes ring on: the oracle is the graph that was never rebuilt, bit for bit, and
 //! a new `articulation` reaches the kept sampler exactly as a lane that steps there does.
@@ -43,7 +49,7 @@ use assert_no_alloc::{AllocDisabler, assert_no_alloc};
 use serde_json::{Value, json};
 use sonara_core::model::project::Project;
 use sonara_core::plugins::{PluginRegistry, SamplerChoices, builtin_registry, sampler_descriptor};
-use sonara_dsp::bank::{ArticulationTarget, DynamicsDrive, SamplerMapping, Selector};
+use sonara_dsp::bank::{ArticulationTarget, DynamicsDrive, LegatoSpec, SamplerMapping, Selector};
 use sonara_engine::{
     Applied, DEFAULT_BLOCK, GraphBuilder, GraphOptions, OfflineRenderer, RenderGraph,
     RenderRequest, RenderedAudio, Tail, Update, apply,
@@ -119,13 +125,18 @@ fn render_with(
     render_params(installed, &params, media)
 }
 
-/// The sampler's choices: the `installed` presets, two instrument types and two articulations,
-/// as a stand-in for the application's lists.
+/// The sampler's choices: the `installed` presets, two instrument types and three
+/// articulations, as a stand-in for the application's lists. The `articulation` choices are
+/// `auto` (0), `ordinario` (1), `sustain` (2), `staccato` (3) and `legato` (4).
 fn choices(installed: &[String]) -> SamplerChoices {
     SamplerChoices {
         presets: installed.to_vec(),
         instrument_types: vec!["horn_f".to_owned(), "violin".to_owned()],
-        articulations: vec!["sustain".to_owned(), "staccato".to_owned()],
+        articulations: vec![
+            "sustain".to_owned(),
+            "staccato".to_owned(),
+            "legato".to_owned(),
+        ],
     }
 }
 
@@ -1504,6 +1515,122 @@ fn another_preset_or_a_changed_mapping_rebuilds_the_sampler() {
         assert!(
             played[LATER_NOTE..] == heard[LATER_NOTE..],
             "{case}: the later note plays the new instrument"
+        );
+    }
+}
+
+/// The preset `lib/legato`, played from the [`keyswitch_patch`] at `patch` with the mapping of a
+/// preset whose library says it plays legato by overlapping its notes, with a 20 ms crossfade,
+/// no start offset and no gap: `sustain` and `legato` (the choices 2 and 4 of [`choices`]) both
+/// play C1 (24), and only `legato` joins its notes.
+fn legato_preset(patch: &Path) -> MediaProvider {
+    let patch = patch.to_owned();
+    let target = |legato| {
+        Some(ArticulationTarget {
+            selector: Some(Selector::Keyswitch(24)),
+            legato,
+        })
+    };
+    let mapping = Arc::new(SamplerMapping::new(
+        vec![None, target(false), target(false), None, target(true)],
+        DynamicsDrive::Velocity,
+        Some(LegatoSpec {
+            crossfade_ms: 20,
+            start_offset_ms: 0,
+            gap_ms: 0,
+        }),
+        0,
+    ));
+    no_media().with_instruments(move |value| {
+        (value == "lib/legato").then(|| InstrumentSource {
+            id: value.to_owned(),
+            patch: patch.clone(),
+            mapping: Arc::clone(&mapping),
+        })
+    })
+}
+
+/// The frames of the 20 ms crossfade at 48 kHz.
+const CROSSFADE: usize = 960;
+/// The frames after a join from which a joined note sounds as a note that attacks: past the
+/// crossfade, with a margin for the last step of its ramp.
+const JOINED: usize = CROSSFADE + 64;
+/// A block start inside D4 of the legato phrase (beat 0.8107).
+const INSIDE_D4: i64 = 38 * BLOCK;
+
+#[test]
+fn abutting_legato_notes_crossfade_also_after_a_seek() {
+    // C4, D4 and E4 abut: each starts on the frame where the one before ends (13500 and 25500),
+    // and the engine sends that note-off first. Under `legato` each later note joins the one
+    // before over a 20 ms crossfade; under `sustain` the old note releases in 5 ms and the new
+    // one attacks. With no start offset, the joined note then plays the same frames as the
+    // attacked one.
+    let (_dir, patch) = keyswitch_patch();
+    let media = legato_preset(&patch);
+    let notes = [
+        note("n_000000000001", 60, 0.0625, 0.5),
+        note("n_000000000002", 62, 0.5625, 0.5),
+        note("n_000000000003", 64, 1.0625, 0.5),
+    ];
+    let project = |articulation: &str| {
+        sampler_project(
+            &json!({"instrument": "lib/legato", "articulation": articulation}),
+            &notes,
+            &[],
+            &[],
+        )
+    };
+    let (legato, sustain) = (project("legato"), project("sustain"));
+    let joined = play(&mut graph_of(&legato, &media), 0, END);
+    let attacked = play(&mut graph_of(&sustain, &media), 0, END);
+    assert!(loudest(&joined) > 0.1, "the phrase sounds");
+    let [d4, e4] = [13_500, 25_500];
+    assert!(
+        joined[..d4] == attacked[..d4],
+        "the phrase starts with an attack"
+    );
+    for (join, until) in [(d4, e4), (e4, joined.len())] {
+        assert!(
+            joined[join..join + CROSSFADE] != attacked[join..join + CROSSFADE],
+            "a crossfade at frame {join}"
+        );
+        assert!(
+            joined[join + JOINED..until] == attacked[join + JOINED..until],
+            "the note joined at frame {join} plays on as attacked"
+        );
+    }
+
+    // A seek into D4 starts it with its attack, as in `sustain`, and E4 still joins it; every
+    // pass of a loop from there plays the same.
+    let seek = |project| {
+        let mut graph = graph_of(project, &media);
+        play(&mut graph, 0, AFTER_LAST_NOTE);
+        play(&mut graph, INSIDE_D4, END)
+    };
+    let (after, oracle) = (seek(&legato), seek(&sustain));
+    let e4_after = e4 - usize::try_from(INSIDE_D4).expect("a frame of the render");
+    assert!(
+        loudest(&after[..e4_after]) > 0.1,
+        "D4 sounds after the seek"
+    );
+    assert!(
+        after[..e4_after] == oracle[..e4_after],
+        "D4 attacks after the seek"
+    );
+    assert!(
+        after[e4_after..e4_after + CROSSFADE] != oracle[e4_after..e4_after + CROSSFADE],
+        "E4 joins D4 after the seek"
+    );
+    assert!(
+        after[e4_after + JOINED..] == joined[e4 + JOINED..],
+        "E4 plays on as in straight play"
+    );
+    let mut looping = graph_of(&legato, &media);
+    let first = play(&mut looping, INSIDE_D4, AFTER_LAST_NOTE);
+    for pass in 2..=3 {
+        assert!(
+            play(&mut looping, INSIDE_D4, AFTER_LAST_NOTE) == first,
+            "pass {pass} of the loop"
         );
     }
 }
