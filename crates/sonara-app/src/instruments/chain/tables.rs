@@ -124,9 +124,11 @@ const fn asking(row: BuiltinRow) -> BuiltinRow {
 const TOMS: &[u8] = &[41, 43, 45, 47, 48, 50];
 
 /// The built-in sound of every instrument type, at the type's place in score order (the order of
-/// [`InstrumentType::ALL`]). Long woodwinds and flutes take the soft pad, reeds the square lead,
-/// brass, strings and voices the presets named after them, plucked strings, harpsichords and
-/// mallets the pluck, bells the glass bells, pianos the electric keys and organs the pad.
+/// [`InstrumentType::ALL`]). The flutes and the contrabassoon take the soft pad, the piccolo and
+/// the other reeds the square lead; brass, strings and voices the presets named after them;
+/// plucked strings, the harpsichord, clavichord and clavinet, the xylophone and the marimba the
+/// pluck; bells, the vibraphone and the celesta the glass bells; pianos the electric keys; organs
+/// and the accordion the pad.
 /// Percussion takes the Drum Kit's keys of the same General MIDI sounds, with the toms for the
 /// timpani, whose pitches they lose. The triangle, which the Drum Kit lacks, rings on a high key
 /// of the glass bells. A whip played as a clap and a prepared piano played as a pluck change
