@@ -224,6 +224,13 @@ pub enum Remark {
         /// The chord's start in beats.
         start: f64,
     },
+    /// No layout of the chord starting at `start` fits under the melody the family plays under
+    /// ([`ChordOptions::under`]), so the family's chord reaches above the melody's lowest note
+    /// there.
+    Crosses {
+        /// The chord's start in beats.
+        start: f64,
+    },
     /// The string section divides `ways` ways, as every other upper section does (VOI-10).
     Divided {
         /// The section's part.
@@ -253,6 +260,7 @@ impl Remark {
         match self {
             Self::Tacet { rule, .. } => *rule,
             Self::Unvoiced { .. } | Self::Thinned { .. } => None,
+            Self::Crosses { .. } => Some(RuleId::Bal03),
             Self::Divided { .. } => Some(RuleId::Voi10),
             Self::Undoubled { rule } => Some(*rule),
         }
@@ -307,21 +315,27 @@ pub enum Density {
 }
 
 /// How a family helper writes its chords.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct ChordOptions {
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ChordOptions<'a> {
     /// Whether the family plays the chord's bass note as its lowest voice; otherwise another
     /// family has the bass and this one may invert the chord.
     pub carries_bass: bool,
     /// The velocity of every note, 1-127.
     pub velocity: u8,
+    /// A melody on top of the chords: every note the family sounds during a chord lies below the
+    /// lowest melody note sounding with it, so the melody stays on top of the weight (BAL-03).
+    /// A chord no layout fits under the melody is laid out as if no melody sounded and
+    /// reported ([`Remark::Crosses`]). `None` leaves the chords free.
+    pub under: Option<&'a [MidiNote]>,
 }
 
-impl Default for ChordOptions {
-    /// The family carries the bass, at [`DEFAULT_VELOCITY`].
+impl Default for ChordOptions<'_> {
+    /// The family carries the bass, at [`DEFAULT_VELOCITY`], under no melody.
     fn default() -> Self {
         Self {
             carries_bass: true,
             velocity: DEFAULT_VELOCITY,
+            under: None,
         }
     }
 }
@@ -602,6 +616,41 @@ struct ChordRules<'a> {
     accept: &'a dyn Fn(&[i64]) -> bool,
     /// The velocity of every note.
     velocity: u8,
+    /// The melody the chords stay under, if any.
+    under: Option<&'a [MidiNote]>,
+}
+
+/// The ranges of the voices of `groups` under `ceiling`: each voice's range with its top
+/// lowered so that its highest member sounds at most `ceiling`; `None` when a range would be
+/// empty.
+fn under_ceiling(groups: &[VoiceGroup], ceiling: i64) -> Option<Vec<PitchRange>> {
+    groups
+        .iter()
+        .map(|voice| {
+            let above = voice
+                .members
+                .iter()
+                .map(|&(_, offset)| offset)
+                .max()
+                .unwrap_or_default();
+            let high = voice.range.high().get().min(ceiling - above);
+            PitchRange::try_new(voice.range.low().get(), high).ok()
+        })
+        .collect()
+}
+
+/// The highest pitch a chord in `slot` may sound under `melody`: a semitone below the lowest
+/// melody note sounding during the slot, or `None` when none does.
+fn ceiling(melody: &[MidiNote], slot: &ChordSlot) -> Option<i64> {
+    melody
+        .iter()
+        .filter(|note| {
+            note.start < slot.end() - super::articulate::BEAT_EPSILON
+                && slot.start < note.end() - super::articulate::BEAT_EPSILON
+        })
+        .map(|note| i64::from(note.pitch))
+        .min()
+        .map(|lowest| lowest - 1)
 }
 
 /// Whether every two notes the members of `groups` sound for the voices `pitches` clear their
@@ -642,7 +691,20 @@ fn write_chords(
     let mut layouts = Vec::with_capacity(slots.len());
     let mut previous: Option<Vec<i64>> = None;
     for slot in slots {
-        let pitches = layout::lay_out(&slot.chord, &voices, &layout_rules, previous.as_deref());
+        let lay_out = |ranges: &[PitchRange]| {
+            layout::lay_out(&slot.chord, ranges, &layout_rules, previous.as_deref())
+        };
+        let ceiling = rules.under.and_then(|melody| ceiling(melody, slot));
+        let mut pitches = match ceiling {
+            Some(ceiling) => under_ceiling(groups, ceiling).and_then(|ranges| lay_out(&ranges)),
+            None => lay_out(&voices),
+        };
+        if pitches.is_none() && ceiling.is_some() {
+            pitches = lay_out(&voices);
+            if pitches.is_some() {
+                score.remarks.push(Remark::Crosses { start: slot.start });
+            }
+        }
         if let Some(pitches) = &pitches {
             for (voice, &pitch) in groups.iter().zip(pitches) {
                 for &(place, offset) in &voice.members {
@@ -709,6 +771,7 @@ mod tests {
             carries_bass: true,
             accept: &|_| true,
             velocity: 64,
+            under: None,
         };
         let layouts = write_chords(
             &mut score,

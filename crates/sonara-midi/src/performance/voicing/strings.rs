@@ -50,7 +50,7 @@ pub fn strings_divisi(
     chords: &[ChordSlot],
     strings: &[Carrier],
     voices: usize,
-    options: ChordOptions,
+    options: ChordOptions<'_>,
     ids: &mut dyn IdGenerator,
 ) -> Result<Voiced, VoicingError> {
     use InstrumentType::{Cello, DoubleBass, Viola, Violin};
@@ -138,6 +138,7 @@ pub fn strings_divisi(
         carries_bass: options.carries_bass,
         accept: &accept,
         velocity: options.velocity,
+        under: options.under,
     };
     let slots = sorted_slots(chords)?;
     write_chords(&mut score, &slots, &groups, &rules, ids)?;

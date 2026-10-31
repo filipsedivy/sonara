@@ -34,17 +34,17 @@ pub enum WindLayout {
 }
 
 /// How [`woodwind_pairs`] writes its chords.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct WindOptions {
-    /// Whether the woodwinds carry the bass, and their velocity.
-    pub chord: ChordOptions,
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct WindOptions<'a> {
+    /// Whether the woodwinds carry the bass, their velocity and the melody they stay under.
+    pub chord: ChordOptions<'a>,
     /// How the pairs lie against each other.
     pub layout: WindLayout,
     /// The dynamic the chords are played at, which decides which registers are weak or strong.
     pub dynamic: DynamicBand,
 }
 
-impl Default for WindOptions {
+impl Default for WindOptions<'_> {
     /// Superposed pairs at mp to mf with the default chord options.
     fn default() -> Self {
         Self {
@@ -85,7 +85,7 @@ impl Default for WindOptions {
 pub fn woodwind_pairs(
     chords: &[ChordSlot],
     winds: &[Carrier],
-    options: WindOptions,
+    options: WindOptions<'_>,
     ids: &mut dyn IdGenerator,
 ) -> Result<Voiced, VoicingError> {
     check_inputs(winds, options.chord.velocity)?;
@@ -166,6 +166,7 @@ pub fn woodwind_pairs(
         carries_bass: options.chord.carries_bass,
         accept: &accept,
         velocity: options.chord.velocity,
+        under: options.chord.under,
     };
     let slots = sorted_slots(chords)?;
     let mut score = Score::new(winds);

@@ -53,7 +53,7 @@ pub fn horns(
     chords: &[ChordSlot],
     horns: &[Carrier],
     bassoon: Option<&Carrier>,
-    options: ChordOptions,
+    options: ChordOptions<'_>,
     ids: &mut dyn IdGenerator,
 ) -> Result<Voiced, VoicingError> {
     let mut carriers = horns.to_vec();
@@ -88,6 +88,7 @@ pub fn horns(
         carries_bass: options.carries_bass,
         accept: &|_| true,
         velocity: options.velocity,
+        under: options.under,
     };
     let layouts = write_chords(&mut score, &slots, &groups, &rules, ids)?;
     let (Some(bassoon), Some(&lowest)) = (bassoon, order.first()) else {
@@ -175,7 +176,7 @@ impl Kind {
 pub fn brass_chorale(
     chords: &[ChordSlot],
     brass: &[Carrier],
-    options: ChordOptions,
+    options: ChordOptions<'_>,
     ids: &mut dyn IdGenerator,
 ) -> Result<Voiced, VoicingError> {
     check_inputs(brass, options.velocity)?;
@@ -256,6 +257,7 @@ pub fn brass_chorale(
         carries_bass: options.carries_bass,
         accept: &|_| true,
         velocity: options.velocity,
+        under: options.under,
     };
     write_chords(&mut score, &slots, &groups, &rules, ids)?;
     Ok(score.finish())

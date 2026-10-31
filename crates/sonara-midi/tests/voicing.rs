@@ -255,6 +255,96 @@ fn a_bassoon_doubles_the_horns_bass_an_octave_below() {
     );
 }
 
+/// One melody note per bar of 4/4 from beat 0, at the pitches given.
+fn melody_bars(pitches: &[i64]) -> Vec<MidiNote> {
+    pitches
+        .iter()
+        .zip(0_u32..)
+        .map(|(&pitch, bar)| {
+            MidiNote::new(
+                format!("top_{bar}"),
+                pitch,
+                4.0 * f64::from(bar),
+                4.0,
+                90,
+                0,
+            )
+            .expect("a valid note")
+        })
+        .collect()
+}
+
+#[test]
+fn chords_under_a_melody_stay_below_its_lowest_note() {
+    // BAL-03: the melody stays on top. Free, four horns voice G minor after D minor as B♭4, G4,
+    // D4, G3; under a melody on B♭4 the chord moves down to B♭3, G3, D3, G2, the lowest four
+    // voices still widening downward (SPC-05).
+    let chords = bars(&["Dm", "Gm"]);
+    let melody = melody_bars(&[69, 70]);
+    let under = ChordOptions {
+        under: Some(&melody),
+        ..ChordOptions::default()
+    };
+    let voiced = horns(&chords, &four_horns(), None, under, &mut ids()).expect("the horns voice");
+    assert_eq!(pitches(&voiced, "horn_1"), [65, 58]);
+    assert_eq!(pitches(&voiced, "horn_3"), [62, 55]);
+    assert_eq!(pitches(&voiced, "horn_2"), [57, 50]);
+    assert_eq!(pitches(&voiced, "horn_4"), [50, 43]);
+    assert!(voiced.remarks.is_empty(), "{:?}", voiced.remarks);
+    // A melody note that ends before a chord starts does not hold it down.
+    let early = vec![
+        MidiNote::new("early", 60, 0.0, 4.0, 90, 0).expect("a valid note"),
+        MidiNote::new("late", 80, 4.0, 4.0, 90, 0).expect("a valid note"),
+    ];
+    let voiced = horns(
+        &chords,
+        &four_horns(),
+        None,
+        ChordOptions {
+            under: Some(&early),
+            ..ChordOptions::default()
+        },
+        &mut ids(),
+    )
+    .expect("the horns voice");
+    assert_eq!(pitches(&voiced, "horn_1")[1], 70);
+}
+
+#[test]
+fn a_chord_that_cannot_stay_under_the_melody_crosses_and_says_so() {
+    // TST-03: under a melody on C3 no horn chord fits, so each is laid out as if no melody
+    // sounded and reported against BAL-03.
+    let chords = bars(&["Dm", "Gm"]);
+    let melody = melody_bars(&[48, 48]);
+    let under = ChordOptions {
+        under: Some(&melody),
+        ..ChordOptions::default()
+    };
+    let crossed = horns(&chords, &four_horns(), None, under, &mut ids()).expect("the horns voice");
+    let free = horns(
+        &chords,
+        &four_horns(),
+        None,
+        ChordOptions::default(),
+        &mut ids(),
+    )
+    .expect("the horns voice");
+    assert_eq!(crossed.parts, free.parts);
+    assert_eq!(
+        crossed.remarks,
+        [
+            Remark::Crosses { start: 0.0 },
+            Remark::Crosses { start: 4.0 }
+        ]
+    );
+    assert!(
+        crossed
+            .remarks
+            .iter()
+            .all(|remark| remark.rule() == Some(RuleId::Bal03))
+    );
+}
+
 #[test]
 fn horns_reject_what_they_cannot_voice() {
     // TST-03: one input per error.
@@ -899,7 +989,7 @@ fn pair(name: &str, instrument: InstrumentType) -> [Carrier; 2] {
 }
 
 /// Chords over a bass the strings carry.
-fn upper_options(layout: WindLayout) -> WindOptions {
+fn upper_options(layout: WindLayout) -> WindOptions<'static> {
     WindOptions {
         chord: ChordOptions {
             carries_bass: false,
