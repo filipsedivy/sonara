@@ -124,9 +124,15 @@ does not hold a note its group has switched off. `off_curve` and `off_shape` are
 The sampler keeps the last value of every MIDI controller on each of the 16 channels. They start
 at 0, volume (CC 7) and expression (CC 11) at 127, or where the patch sets them with `set_ccN`,
 and a reset of the sampler brings them back there; all notes off lifts the sustain pedal, so CC 64
-reads 0 afterwards. `set_ccN` sets only what the patch's own controller opcodes read: the volume and
-expression the sampler applies start full, and the pedal up, whatever the patch sets. A patch uses
-the controllers in four ways, each on the channel of its note:
+reads 0 afterwards. When playback jumps (a seek, a loop wrap, or a start of playback or of a
+render after the beginning), the engine sends all notes off and then the last value of
+modulation (CC 1), expression (CC 11) and sustain (CC 64) that the track's clips set before the
+new position, each on the channel that set it, so the swell, the level and the pedal are where
+playing up to it leaves them. A controller that the clips set only after the new position keeps
+its value, and a region that a re-sent value starts, such as a pedal noise, plays again there.
+`set_ccN` sets only what the patch's own controller opcodes read: the volume and expression the
+sampler applies start full, and the pedal up, whatever the patch sets. A patch uses the
+controllers in four ways, each on the channel of its note:
 
 - **Gates** (`loccN`/`hiccN`): a region plays only while controller N lies in its range when the
   region starts, at the key press, at the key release for a release sample (at the pedal's lift
@@ -160,10 +166,14 @@ unknown `loop_mode` and `off_mode` values, which play as if the opcode were abse
 `loop_mode` plays as `no_loop`, or loops a sample that carries its own loop, below) and the headers
 whose opcodes it skips
 (`<curve>`, `<effect>`, `<midi>`, `<sample>`). A keyswitch key selects an articulation; it makes no
-sound unless a region of the patch also covers that key, and then it does both. Regions that the
-patch starts from a controller instead of a key (`on_locc`/`on_hicc`, such as Salamander's pedal
-noises) or that have a key of -1 (`key`, `lokey` or `hikey`) never play on a key; the controller
-starts the former (above).
+sound unless a region of the patch also covers that key, and then it does both. When playback
+jumps, the sampler goes back to the patch's default articulation, and the engine selects again
+the one of the last keyswitch note that started before the new position, without sounding that
+key. So a seek, a loop wrap or a render that starts later plays the articulation that playing up
+to that point selects, and a keyswitch note need not be held through the passage it selects.
+Regions that the patch starts from a controller instead of a key (`on_locc`/`on_hicc`, such as
+Salamander's pedal noises) or that have a key of -1 (`key`, `lokey` or `hikey`) never play on a
+key; the controller starts the former (above).
 
 A region whose sample file is missing, or that names a generator other than `*silence` (`*sine`,
 `*saw` and the like), is left out: the rest of the patch plays, and the load warning names each

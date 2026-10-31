@@ -1022,23 +1022,37 @@ fn keyswitch_selects_the_articulation() {
     );
 }
 
-#[test]
-fn all_notes_off_keeps_the_switch() {
-    // Pins the current behaviour: all notes off (also sent on a seek or a loop wrap while
-    // playing) silences the voices but keeps the last keyswitch, so the articulation chosen
-    // before the jump stays active after it.
+/// Two articulations on the keys from 36 up, selected by the keyswitch keys 24 (0.5) and 25
+/// (0.25), with `default` active before any switch; key 25 also starts a region of its own
+/// (0.125), as a press of a switch key that a region covers does.
+fn switched_bank(default: Option<u8>) -> SampleBank {
     let articulation = |sample, switch| Region {
         sw_last: Some(switch),
         key_lo: 36,
         ..region(sample)
     };
-    let bank = SampleBank {
-        samples: vec![constant(0.5), constant(0.25)],
-        regions: vec![articulation(0, 24), articulation(1, 25)],
-        keyswitches: switches(&[(24, 25)], Some(24)),
+    SampleBank {
+        samples: vec![constant(0.5), constant(0.25), constant(0.125)],
+        regions: vec![
+            articulation(0, 24),
+            articulation(1, 25),
+            Region {
+                key_lo: 25,
+                key_hi: 25,
+                ..region(2)
+            },
+        ],
+        keyswitches: switches(&[(24, 25)], default),
         ..SampleBank::default()
-    };
-    let mut processor = sampler(bank);
+    }
+}
+
+#[test]
+fn all_notes_off_restores_the_default_switch() {
+    // All notes off, which the engine sends when playback jumps, makes the patch's default
+    // switch active again; the chase then re-sends the last keyswitch before the new position
+    // (`a_keyswitch_event_selects_without_sounding`).
+    let mut processor = sampler(switched_bank(Some(24)));
     // The default articulation sounds; the switch press changes only the next notes.
     let before = run(
         &mut *processor,
@@ -1047,14 +1061,87 @@ fn all_notes_off_keeps_the_switch() {
             event(EventKind::NoteOn, 25, 127),
         ],
     );
-    close(level(&before), 0.5);
+    close(level(&before), 0.5 + 0.125);
+    close(
+        level(&run(&mut *processor, &[event(EventKind::NoteOn, 62, 127)])),
+        0.5 + 0.125 + 0.25,
+    );
     let silenced = run(&mut *processor, &[event(EventKind::AllNotesOff, 0, 0)]);
     close(level(&silenced), 0.0);
     assert_eq!(processor.report().entries(), [("voices", 0.0)]);
     close(
         level(&run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)])),
+        0.5,
+    );
+}
+
+#[test]
+fn all_notes_off_restores_no_switch_where_the_patch_has_no_default() {
+    // The oracle is the freshly loaded patch: before any switch no articulation plays.
+    let mut fresh = sampler(switched_bank(None));
+    let silent = run(&mut *fresh, &[event(EventKind::NoteOn, 60, 127)]);
+    close(level(&silent), 0.0);
+    let mut processor = sampler(switched_bank(None));
+    run(&mut *processor, &[event(EventKind::KeySwitch, 25, 0)]);
+    close(
+        level(&run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)])),
         0.25,
     );
+    run(&mut *processor, &[event(EventKind::AllNotesOff, 0, 0)]);
+    let after = run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    assert_eq!(after, silent);
+    assert_eq!(processor.report().entries(), [("voices", 0.0)]);
+}
+
+#[test]
+fn a_keyswitch_event_selects_without_sounding() {
+    let mut processor = sampler(switched_bank(Some(24)));
+    // A press of key 25 switches and also sounds the region on that key.
+    run(&mut *processor, &[event(EventKind::NoteOn, 25, 127)]);
+    assert_eq!(processor.report().entries(), [("voices", 1.0)]);
+    let mut processor = sampler(switched_bank(Some(24)));
+    // The keyswitch event only switches: nothing sounds, no voice starts.
+    let switched = run(&mut *processor, &[event(EventKind::KeySwitch, 25, 0)]);
+    assert!(switched.iter().flatten().all(|v| *v == 0.0), "{switched:?}");
+    assert_eq!(processor.report().entries(), [("voices", 0.0)]);
+    close(
+        level(&run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)])),
+        0.25,
+    );
+    // A chase in one block: all notes off, the last switch, then the chased note.
+    let chased = run(
+        &mut *processor,
+        &[
+            event(EventKind::AllNotesOff, 0, 0),
+            event(EventKind::KeySwitch, 25, 0),
+            event(EventKind::NoteOn, 62, 127),
+        ],
+    );
+    close(level(&chased), 0.25);
+    assert_eq!(processor.report().entries(), [("voices", 1.0)]);
+}
+
+#[test]
+fn a_keyswitch_event_of_another_key_changes_nothing() {
+    let mut processor = sampler(switched_bank(Some(24)));
+    run(&mut *processor, &[event(EventKind::KeySwitch, 25, 0)]);
+    // Key 60 is no keyswitch key of the patch: the switch stays at 25, and nothing sounds.
+    let ignored = run(&mut *processor, &[event(EventKind::KeySwitch, 60, 0)]);
+    assert!(ignored.iter().flatten().all(|v| *v == 0.0));
+    close(
+        level(&run(&mut *processor, &[event(EventKind::NoteOn, 62, 127)])),
+        0.25,
+    );
+    // A sampler without an instrument ignores it too.
+    let mut empty = create("sonara.sampler").expect("the sampler exists");
+    empty.prepare(ProcessSpec {
+        sample_rate: RATE,
+        block_size: BLOCK,
+        channels: 2,
+    });
+    empty.set_params(&param_slots(&descriptor(), &Params::new()).expect("valid parameters"));
+    let out = run(&mut *empty, &[event(EventKind::KeySwitch, 25, 0)]);
+    assert!(out.iter().flatten().all(|v| *v == 0.0));
 }
 
 #[test]

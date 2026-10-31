@@ -639,7 +639,9 @@ impl PolySynth {
                 }
                 self.sustain_pedal = false;
             }
-            EventKind::ChannelPressure => {}
+            // The synth has no keyswitches; the engine sends keyswitch events to samplers only,
+            // so the synth's events and output stay the golden ones (GLD-01).
+            EventKind::ChannelPressure | EventKind::KeySwitch => {}
         }
     }
 
@@ -1166,6 +1168,22 @@ mod tests {
         let out = block(&mut synth, &[event(0, EventKind::NoteOn, 60, 100)]);
         assert_eq!(out, [[0.0; 2]; BLOCK]);
         assert_eq!(synth.tail_seconds(), 0.5);
+    }
+
+    #[test]
+    fn a_keyswitch_event_changes_nothing() {
+        // Beside a note at the same offset the segments stay the same, so the oracle is the
+        // note alone, bit for bit, also in the blocks after it.
+        let on = event(0, EventKind::NoteOn, 60, 100);
+        let switch = event(0, EventKind::KeySwitch, 24, 0);
+        let mut plain = prepared(&[]);
+        let mut switched = prepared(&[]);
+        let first = block(&mut plain, &[on]);
+        assert!(first.iter().flatten().any(|v| *v != 0.0), "the note sounds");
+        assert_eq!(block(&mut switched, &[on, switch]), first);
+        for _ in 0..2 {
+            assert_eq!(block(&mut switched, &[]), block(&mut plain, &[]));
+        }
     }
 
     #[test]

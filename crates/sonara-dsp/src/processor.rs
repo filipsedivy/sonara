@@ -78,6 +78,11 @@ pub enum EventKind {
     ChannelPressure,
     /// Every sounding note stops.
     AllNotesOff,
+    /// The keyswitch key `pitch` selects its articulation without sounding: no region starts
+    /// and the key does not count as held. The engine's chase sends it to a sampler for the
+    /// last keyswitch note before the new position; an instrument without keyswitches ignores
+    /// it.
+    KeySwitch,
 }
 
 /// A MIDI-like event at frame `offset` within the current block.
@@ -87,7 +92,7 @@ pub struct InstrumentEvent {
     pub offset: usize,
     /// What happened.
     pub kind: EventKind,
-    /// MIDI pitch (notes).
+    /// MIDI pitch (notes), or the key of a [`EventKind::KeySwitch`].
     pub pitch: u8,
     /// Velocity (notes).
     pub velocity: u8,

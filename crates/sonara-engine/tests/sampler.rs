@@ -2,16 +2,31 @@
 //! patch named by the device's `instrument` parameter. The library is generated in a tempdir; nothing licensed is
 //! needed. These checks prove the integration (patch loaded, notes reach the sampler, output is
 //! audible and does not clip); they say nothing about how a real library sounds.
+//!
+//! **The chase** (a seek, a loop wrap, a render that starts later): a sampler gets the clip's
+//! last keyswitch and its last modulation, expression and sustain values before the new
+//! position, so it plays there as playing up to it does. The oracle is the same graph played
+//! without the jump, bit for bit. The binary installs `AllocDisabler`, and every block of these
+//! checks is processed inside `assert_no_alloc` (RT-02). The Poly Synth and the Drum Kit keep
+//! the plain chase: `tests/golden_render.rs` pins their renders byte for byte (GLD-01).
 
+use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use assert_no_alloc::{AllocDisabler, assert_no_alloc};
 use serde_json::{Value, json};
-use sonara_core::plugins::{SamplerChoices, builtin_registry, sampler_descriptor};
-use sonara_engine::{OfflineRenderer, RenderRequest, RenderedAudio, Tail};
+use sonara_core::model::project::Project;
+use sonara_core::plugins::{PluginRegistry, SamplerChoices, builtin_registry, sampler_descriptor};
+use sonara_engine::{
+    DEFAULT_BLOCK, GraphOptions, OfflineRenderer, RenderGraph, RenderRequest, RenderedAudio, Tail,
+};
 use sonara_media::{InstrumentSource, MediaProvider};
 use sonara_project::serializer::{loads, project_from_value};
 use sonara_testkit::Golden;
+
+#[global_allocator]
+static ALLOCATOR: AllocDisabler = AllocDisabler;
 
 const KICK: &str = "trk_000000000003";
 
@@ -19,8 +34,8 @@ const KICK: &str = "trk_000000000003";
     clippy::cast_possible_truncation,
     reason = "the amplitude 16000 fits an i16"
 )]
-/// A 16-bit mono WAV of a 110 Hz sine, one second long at 44.1 kHz.
-fn write_wav(path: &Path) {
+/// A 16-bit mono WAV of a sine at `hz`, one second long at 44.1 kHz.
+fn write_wav(path: &Path, hz: f64) {
     let frames = 44_100_u32;
     let mut bytes = Vec::new();
     bytes.extend_from_slice(b"RIFF");
@@ -33,7 +48,7 @@ fn write_wav(path: &Path) {
     bytes.extend_from_slice(b"data");
     bytes.extend_from_slice(&(frames * 2).to_le_bytes());
     for i in 0..frames {
-        let x = (f64::from(i) / 44_100.0 * 110.0 * std::f64::consts::TAU).sin();
+        let x = (f64::from(i) / 44_100.0 * hz * std::f64::consts::TAU).sin();
         let value = (x * 16_000.0).round() as i16;
         bytes.extend_from_slice(&value.to_le_bytes());
     }
@@ -42,7 +57,7 @@ fn write_wav(path: &Path) {
 
 fn patch_dir() -> (tempfile::TempDir, PathBuf) {
     let dir = tempfile::tempdir().expect("a tempdir");
-    write_wav(&dir.path().join("tone.wav"));
+    write_wav(&dir.path().join("tone.wav"), 110.0);
     let sfz = dir.path().join("tone.sfz");
     fs::write(
         &sfz,
@@ -449,4 +464,200 @@ fn a_stored_choice_that_is_not_text_still_fails_the_build() {
             "{params}: {error}"
         );
     }
+}
+
+/// A patch with three articulations of the keys 36 to 72, a 110, 220 and 330 Hz tone, selected
+/// by the keyswitch keys C1 (24, the default), C#1 (25) and D1 (26). The release is 5 ms, so a
+/// note is silent soon after its end.
+fn keyswitch_patch() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("a tempdir");
+    let mut sfz = String::from(
+        "<global> sw_lokey=24 sw_hikey=26 sw_default=24 ampeg_release=0.005 \
+         lokey=36 hikey=72 pitch_keycenter=60\n",
+    );
+    for (switch, hz) in [(24, 110.0), (25, 220.0), (26, 330.0)] {
+        write_wav(&dir.path().join(format!("{switch}.wav")), hz);
+        writeln!(sfz, "<region> sw_last={switch} sample={switch}.wav").expect("writes a string");
+    }
+    let patch = dir.path().join("articulations.sfz");
+    fs::write(&patch, sfz).expect("write the patch");
+    (dir, patch)
+}
+
+/// The frames of a beat at 120 bpm and the base project's 48 kHz.
+const BEAT: i64 = 24_000;
+/// The frames of a block.
+const BLOCK: i64 = 512;
+/// A block start after the switch to C#1 and before the note it selects (beat 0.896).
+const AFTER_SWITCH: i64 = 42 * BLOCK;
+/// A block start after the last note, which is silent there (beat 4.5013).
+const AFTER_LAST_NOTE: i64 = 211 * BLOCK;
+/// The end of the checks (beat 5.12).
+const END: i64 = 240 * BLOCK;
+
+/// The base project reduced to one sampler track that plays `instrument` at 120 bpm, without
+/// the master's limiter, so the output is the sampler's alone. Its clip sets the expression
+/// (CC 11) at beat 0 and plays C4 with the default articulation; switches to C#1 at beat 0.75
+/// and plays C4 at beat 1; switches to D1 at beat 3, lowers the expression at beat 3.25 and
+/// plays D4 at beat 3.5. Each note is half a beat long.
+fn keyswitch_project(instrument: &str) -> (Project, PluginRegistry) {
+    let golden = Golden::open().expect("golden data is available (set SONARA_GOLDEN)");
+    let bytes = golden
+        .bytes("workflows/sidechain_preview/final.project.json")
+        .expect("the base project");
+    let mut data = loads(&bytes).expect("project JSON");
+    let note = |id: &str, pitch: u8, start: f64, length: f64| {
+        json!({"id": id, "pitch": pitch, "start": start, "length": length, "velocity": 100,
+               "channel": 0})
+    };
+    let expression = |beat: f64, value: u8| {
+        json!({"beat": beat, "kind": "cc", "value": value, "number": 11,
+               "channel": 0})
+    };
+    let clip = json!({"type": "midi", "id": "clp_000000000008", "name": "Articulations",
+        "start": 0.0, "length": 8.0, "content_offset": 0.0, "loop_length": null, "muted": false,
+        "color": null,
+        "notes": [note("n_000000000001", 60, 0.0625, 0.5), note("n_000000000002", 25, 0.75, 0.125),
+                  note("n_000000000003", 60, 1.0, 0.5), note("n_000000000004", 26, 3.0, 0.125),
+                  note("n_000000000005", 62, 3.5, 0.5)],
+        "controls": [expression(0.0, 100), expression(3.25, 50)]});
+    let mut track = data
+        .get("tracks")
+        .and_then(Value::as_array)
+        .and_then(|tracks| tracks.iter().find(|t| t["id"] == KICK))
+        .expect("the kick track")
+        .clone();
+    track["instrument"] = json!({"id": "dev_000000000004", "plugin_id": "sonara.sampler",
+        "name": "Sonara Sampler", "enabled": true, "params": {"instrument": instrument},
+        "sidechain_id": null, "preset": null, "state": {}});
+    track["clips"] = json!([clip]);
+    data.insert("tracks".to_owned(), json!([track]));
+    data.insert(
+        "tempo_map".to_owned(),
+        json!([{"beat": 0.0, "bpm": 120.0, "ramp": false}]),
+    );
+    data.get_mut("master").expect("the master")["inserts"] = json!([]);
+    let project = project_from_value(&data).expect("the edited project loads");
+    let mut registry = builtin_registry();
+    let descriptor =
+        sampler_descriptor(&choices(&[instrument.to_owned()])).expect("one instrument");
+    registry.register(descriptor).expect("registers once");
+    (project, registry)
+}
+
+/// A fresh graph of [`keyswitch_project`], reset as for play from stop.
+fn keyswitch_graph(patch: &Path) -> RenderGraph {
+    let (project, registry) = keyswitch_project(&path(patch));
+    let mut graph = RenderGraph::new(
+        &project,
+        &registry,
+        &no_media(),
+        DEFAULT_BLOCK,
+        &GraphOptions::default(),
+    )
+    .expect("the graph builds");
+    assert!(graph.warnings().is_empty(), "{:?}", graph.warnings());
+    assert_eq!(graph.block_size(), 512);
+    assert_eq!(graph.latency(), 0);
+    graph.reset();
+    graph
+}
+
+/// Plays the blocks from `from` up to `to`, each processed inside `assert_no_alloc` (RT-02).
+fn play(graph: &mut RenderGraph, from: i64, to: i64) -> Vec<[f64; 2]> {
+    let mut out = Vec::new();
+    let mut frame = from;
+    while frame < to {
+        graph.read_media(frame).expect("no media to read");
+        out.extend_from_slice(assert_no_alloc(|| graph.process(frame, true)));
+        frame += BLOCK;
+    }
+    out
+}
+
+/// The loudest absolute sample of `frames`.
+fn loudest(frames: &[[f64; 2]]) -> f64 {
+    frames
+        .iter()
+        .flatten()
+        .fold(0.0, |p, v| f64::max(p, v.abs()))
+}
+
+#[test]
+fn a_chase_restores_the_clip_key_switch() {
+    let (_dir, patch) = keyswitch_patch();
+    let mut straight = keyswitch_graph(&patch);
+    let heard = play(&mut straight, 0, END);
+    // The three notes: beats 0.0625, 1 and 3.5, each half a beat long.
+    let notes = [
+        (BEAT / 16, BEAT * 9 / 16),
+        (BEAT, BEAT * 3 / 2),
+        (BEAT * 7 / 2, BEAT * 4),
+    ];
+    for (on, off) in notes {
+        let at = |frame: i64| usize::try_from(frame).unwrap();
+        assert!(loudest(&heard[at(on)..at(off)]) > 0.1, "a note at {on}");
+    }
+    // Each seek comes from after the last note, where D1 and the lower expression are active.
+    // Back to beat 0, before every switch, the default articulation C1 plays again; to beat
+    // 0.896, the switch C#1 and the expression set before it.
+    for to in [0, AFTER_SWITCH] {
+        let mut jumping = keyswitch_graph(&patch);
+        play(&mut jumping, 0, AFTER_LAST_NOTE);
+        let after = play(&mut jumping, to, END);
+        let from = usize::try_from(to).unwrap();
+        assert!(
+            after == heard[from..],
+            "a seek to frame {to} plays as played through"
+        );
+    }
+}
+
+#[test]
+fn every_pass_of_a_loop_sounds_the_same() {
+    // A loop wrap chases like a seek. The first pass starts as playback starts there (a reset
+    // and a chase); the switch to D1 and the lower expression inside the loop must not reach
+    // the next pass.
+    let (_dir, patch) = keyswitch_patch();
+    for start in [0, AFTER_SWITCH] {
+        let mut graph = keyswitch_graph(&patch);
+        let first = play(&mut graph, start, AFTER_LAST_NOTE);
+        assert!(loudest(&first) > 0.1, "the loop from frame {start} sounds");
+        for pass in 2..=3 {
+            let again = play(&mut graph, start, AFTER_LAST_NOTE);
+            assert!(again == first, "pass {pass} of the loop from frame {start}");
+        }
+    }
+}
+
+#[test]
+fn a_render_from_a_later_beat_is_the_slice_of_the_full_render() {
+    // An offline render chases at its first block, so the articulation and the expression
+    // that the clip selected before the start apply.
+    let (_dir, patch) = keyswitch_patch();
+    let (project, registry) = keyswitch_project(&path(&patch));
+    let media = no_media();
+    let renderer = OfflineRenderer::new(&registry, &media);
+    let render = |start_beat: f64| {
+        renderer
+            .render(
+                &project,
+                &RenderRequest {
+                    start_beat,
+                    end_beat: Some(5.0),
+                    tail: Tail::None,
+                    ..RenderRequest::default()
+                },
+                None,
+            )
+            .expect("renders")
+    };
+    let full = render(0.0);
+    // Beat 0.875 is after the switch note ends and before the note it selects.
+    let part = render(0.875);
+    assert_eq!(part.start_frame, BEAT * 7 / 8);
+    assert!(part.stats.warnings.is_empty(), "{:?}", part.stats.warnings);
+    assert!(loudest(&part.data) > 0.1, "the note at beat 1 sounds");
+    let from = usize::try_from(part.start_frame).unwrap();
+    assert!(part.data == full.data[from..], "the render from beat 0.875");
 }

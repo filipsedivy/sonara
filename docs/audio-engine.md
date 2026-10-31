@@ -144,9 +144,19 @@ audio hardware and no sleeping.
   an all-notes-off (a fast release), then a note-on for every note that is sounding at that
   frame. A seek past a note's end therefore releases its voice, and a seek into a note
   retriggers it. A stop leaves no voice: the next play builds a fresh graph.
+- **A sampler's chase** also restores what the clips selected before that frame. The sampler
+  returns to the patch's default keyswitch at the all-notes-off; then, before the chased notes,
+  it gets a keyswitch event for the last note on a keyswitch key of its patch that started
+  before the frame (it selects the articulation without sounding the key), and the last value
+  before the frame of the modulation (CC 1), expression (CC 11) and sustain (CC 64)
+  controllers. So a seek, a loop wrap or a render that starts later plays the articulation, the
+  level and the pedal that playing up to that frame leaves. A controller with no event before
+  the frame keeps its value. The schedule's buffer has room for these events from the build on.
+  Every other instrument, the Poly Synth and the Drum Kit among them, gets the plain chase.
 - **Tests.** `crates/sonara-engine/tests/player/transport.rs` (position, restart, end of range,
   concurrency), `hanging_notes.rs` (a held voice after seek, resume and stop),
-  `schedule.rs` (order, chase, tempo change) and `crates/sonara-app/tests/transport*.rs`.
+  `schedule.rs` (order, chase, tempo change, a sampler's chase), `tests/sampler.rs` (a sampler
+  after a seek, a loop wrap and a later start) and `crates/sonara-app/tests/transport*.rs`.
 
 ## Offline renderer (`sonara_engine::renderer`)
 
@@ -166,7 +176,9 @@ audio hardware and no sleeping.
   each channel.
 - **MIDI.** Note on/off and controller events are scheduled sample-accurately, with tempo
   ramps honoured. On a discontinuity (start, seek, loop), sounding notes are chased:
-  all-notes-off, then the notes already sounding are retriggered.
+  all-notes-off, then the notes already sounding are retriggered. A sampler also gets its last
+  keyswitch and its last CC 1, 11 and 64 values (above), so a render that starts later than the
+  first keyswitch note plays the same articulation as the full render.
 - **Tails.** The `auto` tail renders until the output stays below −100 dBFS for 250 ms,
   bounded by the summed processor tails (at most 30 s).
 - **Media.** Uncompressed media at the project rate is read directly with seeks. Other media

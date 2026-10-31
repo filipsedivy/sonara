@@ -28,8 +28,9 @@ rust_rtsan() {
     # The player's render step and the graph's real-time entry points (7 and 11):
     # `player` drives every kind of step, with media, MIDI and clicks, also on the null device,
     # whose callback is checked too (sonara-io/rtsan); `live` drives the graph's adoption, swaps
-    # and installs directly. The engine's golden renders are offline, not real-time code.
-    RTSAN_ENABLE=1 cargo test --locked -p sonara-engine --features sonara-engine/rtsan,sonara-io/rtsan --test player --test live
+    # and installs directly; `sampler` drives a sampler's chase after seeks and loop wraps. The
+    # engine's golden renders are offline, not real-time code.
+    RTSAN_ENABLE=1 cargo test --locked -p sonara-engine --features sonara-engine/rtsan,sonara-io/rtsan --test player --test live --test sampler
     # The transport service: the render step and the device callback under the
     # service's calls, recordings and live MIDI, its RT-06 test included.
     RTSAN_ENABLE=1 cargo test --locked -p sonara-app --features sonara-engine/rtsan,sonara-io/rtsan --test transport --test transport_state

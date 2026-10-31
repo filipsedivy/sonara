@@ -835,7 +835,7 @@ impl Builder<'_> {
         let mut schedule = None;
         let mut instrument = None;
         if track.kind == TrackKind::Instrument {
-            let track_schedule = NoteSchedule::build(
+            let mut track_schedule = NoteSchedule::build(
                 track.midi_clips(),
                 &self.project.tempo_map,
                 self.spec.sample_rate,
@@ -844,17 +844,28 @@ impl Builder<'_> {
                 PlayableNotes::All => NoteSet::ALL,
                 PlayableNotes::Scheduled => track_schedule.pitches(),
             };
-            schedule = Some(track_schedule);
-            if let Some(device) = track.instrument.as_ref().filter(|d| d.enabled) {
-                instrument =
-                    self.slot(track, device, position, SlotPosition::Instrument, playable)?;
+            if let Some(device) = track.instrument.as_ref().filter(|d| d.enabled)
+                && let Some((slot, state)) =
+                    self.slot(track, device, position, SlotPosition::Instrument, playable)?
+            {
+                // Only a sampler gets the keyswitch and controllers in its chase; every other
+                // instrument keeps the plain chase and its golden output (GLD-01).
+                if device.plugin_id == SAMPLER_ID {
+                    let switch_keys = state
+                        .sample_bank
+                        .as_ref()
+                        .map_or(NoteSet::EMPTY, |bank| bank.keyswitches.keys().collect());
+                    track_schedule.chase_sampler(switch_keys);
+                }
+                instrument = Some(slot);
             }
+            schedule = Some(track_schedule);
         }
         let mut inserts = Vec::new();
         if !bypass {
             for device in track.inserts.iter().filter(|d| d.enabled) {
                 let at = SlotPosition::Insert(inserts.len());
-                if let Some(slot) = self.slot(track, device, position, at, NoteSet::ALL)? {
+                if let Some((slot, _)) = self.slot(track, device, position, at, NoteSet::ALL)? {
                     inserts.push(slot);
                 }
             }
@@ -959,8 +970,9 @@ impl Builder<'_> {
         has_instrument.then(LiveInput::new)
     }
 
-    /// The processor slot of `device` on `track` (`_slot`), prepared for `playable_notes`, or
-    /// `None` with a warning when its plugin is not available.
+    /// The processor slot of `device` on `track` (`_slot`), prepared for `playable_notes`, with
+    /// the device state it was given (a sampler's loaded instrument among it), or `None` with a
+    /// warning when its plugin is not available.
     ///
     /// A live build that reuses the previous graph's processor builds a cheap stand-in instead
     /// (deferred, without an impulse response or playable notes, so the reverb synthesizes
@@ -974,7 +986,7 @@ impl Builder<'_> {
         node: usize,
         position: SlotPosition,
         playable_notes: NoteSet,
-    ) -> Result<Option<DeviceSlot>, EngineError> {
+    ) -> Result<Option<(DeviceSlot, DeviceState)>, EngineError> {
         let descriptor = self.registry.find(&device.plugin_id);
         let processor = descriptor.and_then(|_| create(&device.plugin_id));
         let (Some(descriptor), Some(mut processor)) = (descriptor, processor) else {
@@ -1049,14 +1061,15 @@ impl Builder<'_> {
             .and_then(|id| self.index.get(id).copied())
             // Processing order puts a sidechain source first; a later one has no signal yet.
             .filter(|&source| source < node);
-        Ok(Some(DeviceSlot {
+        let slot = DeviceSlot {
             processor,
             params,
             lanes,
             sidechain,
             instance,
             requested: None,
-        }))
+        };
+        Ok(Some((slot, state)))
     }
 
     /// The parameters of a sampler, and the instrument it plays.

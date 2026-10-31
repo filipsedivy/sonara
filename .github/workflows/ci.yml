@@ -124,7 +124,7 @@ jobs:
       - name: RealtimeSanitizer
         run: |
           cargo test --locked -p sonara-rt -p sonara-io --features sonara-rt/rtsan,sonara-io/rtsan
-          cargo test --locked -p sonara-engine --features sonara-engine/rtsan,sonara-io/rtsan --test player --test live
+          cargo test --locked -p sonara-engine --features sonara-engine/rtsan,sonara-io/rtsan --test player --test live --test sampler
           cargo test --locked -p sonara-app --features sonara-engine/rtsan,sonara-io/rtsan --test transport --test transport_state
         env:
           RTSAN_ENABLE: "1"

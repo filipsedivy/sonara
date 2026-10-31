@@ -7,7 +7,12 @@
 //! - **Layers and articulations.** A key press starts every region whose key range, velocity
 //!   range, keyswitch, random range and round-robin position match. A press of one of the
 //!   patch's keyswitch keys makes it the active switch; the patch's default switch is active
-//!   until then, also when the patch has no keyswitch keys.
+//!   until then, also when the patch has no keyswitch keys. A keyswitch event
+//!   ([`EventKind::KeySwitch`]) of a keyswitch key makes it the active switch too, without
+//!   starting the regions mapped to that key or holding it down. All notes off makes the
+//!   default switch active again: the engine sends it when playback jumps (start, seek, loop
+//!   wrap), followed by a keyswitch event for the last keyswitch note before the new position,
+//!   so the articulation there is the one that playing up to it selects.
 //! - **Legato triggers.** A `trigger=first` region starts only on a press while no other key is
 //!   down, and a `trigger=legato` region only on a press while one is, as the SFZ format and the
 //!   reference player sfizz read them ([`Trigger::starts_on_press`]). Sonatina's legato patches
@@ -46,13 +51,15 @@
 //! - **Playback.** Linear interpolation, constant memory: 64 preallocated voices, the oldest
 //!   one is stolen when all sound (a releasing one first).
 //! - **Controls.** Sustain pedal (CC 64), volume (CC 7), expression (CC 11), pitch bend
-//!   (±2 semitones) and all notes off.
+//!   (±2 semitones), keyswitch events and all notes off.
 //! - **Controller table.** The sampler keeps the last value of every controller on each of the
 //!   16 MIDI channels, preallocated, starting where the patch sets them
 //!   ([`SampleBank::controllers`]) and back there on a reset. All notes off lifts the sustain
-//!   pedal, so it sets controller 64 to 0 on every channel; the other values stay. Sustain,
-//!   volume and expression still act on every channel, and start up and full whatever the
-//!   patch sets.
+//!   pedal, so it sets controller 64 to 0 on every channel; the other values stay. After it,
+//!   the engine's chase re-sends the last modulation (1), expression (11) and sustain (64)
+//!   values before the new position as ordinary controller events, so a region that such an
+//!   event starts (a pedal noise) starts again there. Sustain, volume and expression still act
+//!   on every channel, and start up and full whatever the patch sets.
 //! - **Controller gates.** A region with `loccN`/`hiccN` starts only while the controllers of
 //!   the note's channel lie in its ranges ([`Region::gates_open`]), read when the region would
 //!   start: at the key press, at the key release (for a release region under the pedal, at the
@@ -264,13 +271,18 @@ impl Sampler {
         self.key_down = [false; 128];
         self.released_under_pedal = [None; 128];
         self.controllers = [self.initial_controllers(); CHANNELS];
-        self.last_switch = self.bank.as_ref().and_then(|bank| bank.keyswitches.default);
+        self.last_switch = self.default_switch();
         self.round_robin = 0;
         self.rng = RNG_SEED;
         self.bend = 0.0;
         self.volume_cc = 1.0;
         self.expression_cc = 1.0;
         self.pedal = false;
+    }
+
+    /// The switch that is active before any keyswitch: the patch's `sw_default`.
+    fn default_switch(&self) -> Option<u8> {
+        self.bank.as_ref().and_then(|bank| bank.keyswitches.default)
     }
 
     /// Where the controllers of every channel start: as the patch sets them.
@@ -306,7 +318,20 @@ impl Sampler {
             EventKind::PitchBend => self.bend = f64::from(event.value) / 8192.0 * BEND_RANGE,
             EventKind::Cc => self.control_change(event),
             EventKind::ChannelPressure => {}
+            EventKind::KeySwitch => {
+                // Only a keyswitch key of the patch selects an articulation, as with a press.
+                if self
+                    .bank
+                    .as_ref()
+                    .is_some_and(|bank| bank.keyswitches.contains(event.pitch))
+                {
+                    self.last_switch = Some(event.pitch);
+                }
+            }
             EventKind::AllNotesOff => {
+                // Back to the default articulation: the engine's chase follows with the last
+                // keyswitch before the new position, if there is one.
+                self.last_switch = self.default_switch();
                 self.pedal = false;
                 self.key_down = [false; 128];
                 // Everything stops: the releases under the pedal start no tail.
