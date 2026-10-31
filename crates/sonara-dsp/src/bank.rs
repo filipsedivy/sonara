@@ -9,10 +9,11 @@
 //!
 //! A sampler device receives its bank inside a [`SamplerSetup`], beside the [`SamplerMapping`]
 //! of the preset it plays: what each choice of its `articulation` parameter selects in the
-//! patch, what its `dynamics` parameter drives, how the preset plays legato and how far incoming
-//! notes are moved. The application compiles the mapping from what the library's manifest or
-//! Sonara's profile says about the preset, off the real-time thread; the render thread only
-//! looks a choice up ([`SamplerMapping::target`]).
+//! patch under each choice of its `mute` and `vibrato` parameters, what its `dynamics`
+//! parameter drives, how the preset plays legato and how far incoming notes are moved. The
+//! application compiles the mapping from what the library's manifest or Sonara's profile says
+//! about the preset, off the real-time thread; the render thread only looks a choice up
+//! ([`SamplerMapping::target_under`]).
 
 use std::sync::Arc;
 
@@ -668,24 +669,214 @@ pub struct LegatoSpec {
     pub gap_ms: u16,
 }
 
+/// The passage state a sampler plays in: the choices of its `mute` and `vibrato` parameters, by
+/// index. Choice 0 of either is `auto`, which forces no state of its own.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct Passage {
+    /// The choice of `mute`: `auto` (0), then the mutes in the order the parameter offers them.
+    pub mute: u16,
+    /// The choice of `vibrato`: `auto` (0), then the vibratos in the order the parameter offers
+    /// them.
+    pub vibrato: u16,
+}
+
+impl Passage {
+    /// `mute` and `vibrato` at `auto`: the articulation choice alone decides.
+    pub const AUTO: Self = Self {
+        mute: 0,
+        vibrato: 0,
+    };
+}
+
+/// The articulation target of every choice of the sampler's `articulation` parameter under every
+/// [`Passage`], built off the real-time thread and looked up on it without allocating
+/// ([`Self::target`]).
+///
+/// A table that tells no mute (or no vibrato) apart, because no mute changes any target, keeps
+/// one column for that state, and every choice of it plays as `auto`. So the table of a preset
+/// that records no mute or vibrato is one target per articulation choice, and two tables that
+/// select the same compare equal (TYP-10).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TargetTable {
+    /// The target of each cell, articulation choice first: the cell of articulation choice
+    /// `a` under the mute choice `m` and the vibrato choice `v` is at index
+    /// `(a * mutes + m) * vibratos + v`. Shorter than the cells when the last ones have no
+    /// target, and empty when none has one.
+    cells: Box<[Option<ArticulationTarget>]>,
+    /// The mute choices the table tells apart, `auto` among them: 1 when every mute plays as
+    /// `auto`.
+    mutes: u16,
+    /// The vibrato choices the table tells apart, `auto` among them: 1 when every vibrato plays
+    /// as `auto`.
+    vibratos: u16,
+}
+
+impl TargetTable {
+    /// Setup: the target of every cell of `choices` articulation choices under `mutes` mute
+    /// choices and `vibratos` vibrato choices (each counted with `auto`; 0 counts as 1), as
+    /// `target` gives it for an articulation choice and a passage. The cell of `auto` under
+    /// [`Passage::AUTO`] has no target whatever `target` says: nothing is forced there.
+    #[must_use]
+    pub fn tabulate(
+        choices: u16,
+        mutes: u16,
+        vibratos: u16,
+        mut target: impl FnMut(u16, Passage) -> Option<ArticulationTarget>,
+    ) -> Self {
+        let (mutes, vibratos) = (mutes.max(1), vibratos.max(1));
+        let cells = Self::positions(choices, mutes, vibratos)
+            .map(|(choice, passage)| target(choice, passage))
+            .collect();
+        Self {
+            cells,
+            mutes,
+            vibratos,
+        }
+        .canonical()
+    }
+
+    /// Real-time: the target of the articulation choice `choice` under `passage`; `None` for a
+    /// cell without one and for a choice beyond the table. A mute or vibrato choice the table
+    /// does not tell apart plays as `auto`.
+    #[must_use]
+    pub fn target(&self, choice: u16, passage: Passage) -> Option<ArticulationTarget> {
+        let mute = if passage.mute < self.mutes {
+            passage.mute
+        } else {
+            0
+        };
+        let vibrato = if passage.vibrato < self.vibratos {
+            passage.vibrato
+        } else {
+            0
+        };
+        let index = usize::from(choice)
+            .checked_mul(usize::from(self.mutes))?
+            .checked_add(usize::from(mute))?
+            .checked_mul(usize::from(self.vibratos))?
+            .checked_add(usize::from(vibrato))?;
+        self.cells.get(index).copied().flatten()
+    }
+
+    /// The position of every cell of `choices` articulation choices under `mutes` and
+    /// `vibratos` choices, as an articulation choice and a passage, in cell order.
+    fn positions(
+        choices: u16,
+        mutes: u16,
+        vibratos: u16,
+    ) -> impl Iterator<Item = (u16, Passage)> + Clone {
+        (0..choices).flat_map(move |choice| {
+            (0..mutes).flat_map(move |mute| {
+                (0..vibratos).map(move |vibrato| (choice, Passage { mute, vibrato }))
+            })
+        })
+    }
+
+    /// The articulation choices the stored cells cover.
+    fn choices(&self) -> u16 {
+        let per_choice = usize::from(self.mutes)
+            .saturating_mul(usize::from(self.vibratos))
+            .max(1);
+        u16::try_from(self.cells.len().div_ceil(per_choice)).unwrap_or(u16::MAX)
+    }
+
+    /// Setup: the same table in its canonical form: no target for `auto` under
+    /// [`Passage::AUTO`], one column for a state whose every choice plays as its `auto`, and
+    /// no trailing cells without a target.
+    fn canonical(mut self) -> Self {
+        if let Some(auto) = self.cells.first_mut() {
+            *auto = None;
+        }
+        let choices = self.choices();
+        if self.mutes > 1 && self.plays_as_auto(choices, |passage| Passage { mute: 0, ..passage }) {
+            self = self.with_columns(choices, 1, self.vibratos);
+        }
+        if self.vibratos > 1
+            && self.plays_as_auto(choices, |passage| Passage {
+                vibrato: 0,
+                ..passage
+            })
+        {
+            self = self.with_columns(choices, self.mutes, 1);
+        }
+        let used = self
+            .cells
+            .iter()
+            .rposition(Option::is_some)
+            .map_or(0, |last| last.saturating_add(1));
+        let mut cells = self.cells.into_vec();
+        cells.truncate(used);
+        Self {
+            cells: cells.into_boxed_slice(),
+            ..self
+        }
+    }
+
+    /// Whether every cell of `choices` articulation choices has the target of the cell that
+    /// `auto` turns its passage into: the same passage with one state at `auto`.
+    fn plays_as_auto(&self, choices: u16, auto: impl Fn(Passage) -> Passage) -> bool {
+        Self::positions(choices, self.mutes, self.vibratos).all(|(choice, passage)| {
+            self.target(choice, passage) == self.target(choice, auto(passage))
+        })
+    }
+
+    /// The table of `choices` articulation choices with `mutes` and `vibratos` columns, each
+    /// cell read from this one.
+    fn with_columns(&self, choices: u16, mutes: u16, vibratos: u16) -> Self {
+        let cells = Self::positions(choices, mutes, vibratos)
+            .map(|(choice, passage)| self.target(choice, passage))
+            .collect();
+        Self {
+            cells,
+            mutes,
+            vibratos,
+        }
+    }
+}
+
+impl Default for TargetTable {
+    /// No target in any cell: the table of a preset about which nothing is claimed.
+    fn default() -> Self {
+        Self {
+            cells: Box::default(),
+            mutes: 1,
+            vibratos: 1,
+        }
+    }
+}
+
+impl From<Vec<Option<ArticulationTarget>>> for TargetTable {
+    /// Setup: the table with the target of each articulation choice, by index, whatever the
+    /// mute and the vibrato. A target given for `auto` is dropped, because `auto` has none.
+    fn from(targets: Vec<Option<ArticulationTarget>>) -> Self {
+        Self {
+            cells: targets.into_boxed_slice(),
+            mutes: 1,
+            vibratos: 1,
+        }
+        .canonical()
+    }
+}
+
 /// How the sampler plays one preset beyond its patch, compiled by the application off the
 /// real-time thread from what the library's manifest or Sonara's profile says about the
 /// preset, and read on the render thread without allocating (RT-02).
 ///
-/// - **Articulation targets**, one per choice of the sampler's `articulation` parameter, in the
-///   order of its choices: [`Self::AUTO`], [`Self::ORDINARIO`], then the articulation
-///   vocabulary. A choice the preset does not map holds the target of the nearest articulation
-///   it plays, chosen when the mapping was compiled, so the render thread never searches.
-///   `auto` never has a target: the patch's own default and the keyswitch notes of clips decide.
+/// - **Articulation targets** ([`TargetTable`]), one per choice of the sampler's `articulation`
+///   parameter under each choice of its `mute` and `vibrato` parameters, in the order of their
+///   choices: [`Self::AUTO`], [`Self::ORDINARIO`], then the articulation vocabulary; `auto`,
+///   then the mutes; `auto`, then the vibratos. A combination the preset does not record holds
+///   the target of the nearest it plays, chosen when the mapping was compiled, so the render
+///   thread never searches. `auto` with `mute` and `vibrato` at `auto` never has a target: the
+///   patch's own default and the keyswitch notes of clips decide.
 /// - **Dynamics**, **legato** and the **key offset** the preset is played with.
 ///
 /// The default is the mapping of a preset about which nothing is claimed: no target for any
 /// choice, velocity dynamics, no overlap legato and no key offset, so the patch plays as it is.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SamplerMapping {
-    /// The target of each choice, by index; shorter than the choices when the last ones have
-    /// none, and empty when no choice has one, so that equal mappings compare equal.
-    targets: Box<[Option<ArticulationTarget>]>,
+    /// The target of each articulation choice under each passage state.
+    targets: TargetTable,
     /// What the `dynamics` parameter drives.
     pub dynamics: DynamicsDrive,
     /// The overlap legato of a preset that plays legato by overlapping its notes; `None` for a
@@ -702,37 +893,38 @@ impl SamplerMapping {
     /// ordinary sound, its default articulation.
     pub const ORDINARIO: u16 = 1;
 
-    /// Setup: a mapping with the target of each choice of the `articulation` parameter, by
-    /// index, and the dynamics, legato and key offset of the preset. A target given for
-    /// [`Self::AUTO`] is dropped, because `auto` has none.
+    /// Setup: a mapping with the articulation `targets` (a [`TargetTable`], or the target of
+    /// each choice of the `articulation` parameter by index, whatever the mute and the vibrato)
+    /// and the dynamics, legato and key offset of the preset. A target given for
+    /// [`Self::AUTO`] under [`Passage::AUTO`] is dropped, because `auto` has none.
     #[must_use]
     pub fn new(
-        mut targets: Vec<Option<ArticulationTarget>>,
+        targets: impl Into<TargetTable>,
         dynamics: DynamicsDrive,
         legato: Option<LegatoSpec>,
         key_offset: i8,
     ) -> Self {
-        if let Some(auto) = targets.get_mut(usize::from(Self::AUTO)) {
-            *auto = None;
-        }
-        let used = targets
-            .iter()
-            .rposition(Option::is_some)
-            .map_or(0, |last| last.saturating_add(1));
-        targets.truncate(used);
         Self {
-            targets: targets.into_boxed_slice(),
+            targets: targets.into(),
             dynamics,
             legato,
             key_offset,
         }
     }
 
-    /// Real-time: the target of the `articulation` choice with index `choice`; `None` for
-    /// `auto`, for a choice the preset has no target for, and for an index beyond the choices.
+    /// Real-time: the target of the `articulation` choice with index `choice` while `mute` and
+    /// `vibrato` are at `auto`; `None` for `auto`, for a choice the preset has no target for,
+    /// and for an index beyond the choices.
     #[must_use]
     pub fn target(&self, choice: u16) -> Option<ArticulationTarget> {
-        self.targets.get(usize::from(choice)).copied().flatten()
+        self.target_under(choice, Passage::AUTO)
+    }
+
+    /// Real-time: the target of the `articulation` choice with index `choice` under the
+    /// `mute` and `vibrato` choices of `passage` ([`TargetTable::target`]).
+    #[must_use]
+    pub fn target_under(&self, choice: u16, passage: Passage) -> Option<ArticulationTarget> {
+        self.targets.target(choice, passage)
     }
 
     /// Real-time: the target of [`Self::ORDINARIO`], the preset's ordinary sound.

@@ -8,10 +8,15 @@ use std::path::{Path, PathBuf};
 
 use serde_json::json;
 use sonara_core::plugins::{ParamKind, SAMPLER_AUTO, SAMPLER_ID, SAMPLER_ORDINARIO};
-use sonara_dsp::bank::{ArticulationTarget, DynamicsDrive, LegatoSpec, SamplerMapping, Selector};
+use sonara_dsp::bank::{
+    ArticulationTarget, DynamicsDrive, LegatoSpec, Passage, SamplerMapping, Selector, TargetTable,
+};
 use sonara_midi::orchestration::{Articulation, InstrumentType, Mute, Vibrato};
 
-use super::{LEADING_CHOICES, sampler_mapping};
+use super::{
+    ARTICULATION_CHOICES, Compiler, LEADING_CHOICES, MUTE_CHOICES, VIBRATO_CHOICES, count,
+    sampler_mapping, targets,
+};
 use crate::instruments::manifest::{
     ArticulationEntry, ArticulationList, ArticulationName, ArticulationVia, DynamicsMode,
     KeymapEntry, LegatoMode,
@@ -336,6 +341,402 @@ fn velocity_controller_and_patch_articulations_compile_to_their_selectors() {
     );
 }
 
+// Mute and vibrato.
+
+/// The index of `state` among the choices of the `mute` parameter: `auto`, then `Mute::ALL`.
+fn mute(state: Mute) -> u16 {
+    let position = Mute::ALL
+        .iter()
+        .position(|candidate| *candidate == state)
+        .expect("a mute");
+    u16::try_from(1 + position).expect("a small index")
+}
+
+/// The index of `state` among the choices of the `vibrato` parameter: `auto`, then
+/// `Vibrato::ALL`.
+fn vibrato(state: Vibrato) -> u16 {
+    let position = Vibrato::ALL
+        .iter()
+        .position(|candidate| *candidate == state)
+        .expect("a vibrato");
+    u16::try_from(1 + position).expect("a small index")
+}
+
+/// The passage of the `mute` and `vibrato` choices `mute` and `vibrato`, `auto` for `None`.
+fn passage(mute_state: Option<Mute>, vibrato_state: Option<Vibrato>) -> Passage {
+    Passage {
+        mute: mute_state.map_or(0, mute),
+        vibrato: vibrato_state.map_or(0, vibrato),
+    }
+}
+
+/// The articulations of VSCO 2 CE's `Flute-KS.sfz` as Sonara's profile maps them: sustain
+/// without vibrato on 36 (the default), sustain on 37, sustain with vibrato on 38 and staccato
+/// on 39.
+fn keyswitched_flute() -> InstrumentPreset {
+    let mut preset = mapped(
+        violin(),
+        vec![
+            default(ArticulationEntry {
+                vibrato: Vibrato::Off,
+                ..on_key(Articulation::Sustain, 36)
+            }),
+            on_key(Articulation::Sustain, 37),
+            ArticulationEntry {
+                vibrato: Vibrato::On,
+                ..on_key(Articulation::Sustain, 38)
+            },
+            on_key(Articulation::Staccato, 39),
+        ],
+    );
+    preset.instrument = Some(InstrumentClaim {
+        instrument: InstrumentType::Flute,
+        source: ClaimSource::Profile,
+    });
+    preset
+}
+
+/// A keyswitched trumpet: sustain on 36 (the default), sustain with a mute of no named type on
+/// 40 and with a harmon mute on 41, staccato on 39.
+fn muted_trumpet() -> InstrumentPreset {
+    let mut preset = mapped(
+        violin(),
+        vec![
+            default(on_key(Articulation::Sustain, 36)),
+            ArticulationEntry {
+                mute: Mute::Generic,
+                ..on_key(Articulation::Sustain, 40)
+            },
+            ArticulationEntry {
+                mute: Mute::Harmon,
+                ..on_key(Articulation::Sustain, 41)
+            },
+            on_key(Articulation::Staccato, 39),
+        ],
+    );
+    preset.instrument = Some(InstrumentClaim {
+        instrument: InstrumentType::TrumpetBb,
+        source: ClaimSource::Profile,
+    });
+    preset
+}
+
+#[test]
+fn a_recorded_vibrato_is_chosen_when_the_state_matches() {
+    let mapping = sampler_mapping(&keyswitched_flute());
+    let sustain = choice(Articulation::Sustain);
+    let under = |state| mapping.target_under(sustain, passage(None, Some(state)));
+    // `auto` keeps the articulation's own choice: the sustain with the ordinary vibrato.
+    assert_eq!(mapping.target(sustain), Some(switch(37)));
+    assert_eq!(under(Vibrato::On), Some(switch(38)));
+    assert_eq!(under(Vibrato::Off), Some(switch(36)));
+    assert_eq!(under(Vibrato::Ordinary), Some(switch(37)));
+    // A staccato is recorded only with the ordinary vibrato: the state is dropped.
+    for state in Vibrato::ALL {
+        assert_eq!(
+            mapping.target_under(choice(Articulation::Staccato), passage(None, Some(state))),
+            Some(switch(39)),
+            "{state:?}"
+        );
+    }
+    // The ordinary sound under a vibrato.
+    assert_eq!(mapping.default_target(), Some(switch(36)));
+    assert_eq!(
+        mapping.target_under(SamplerMapping::ORDINARIO, passage(None, Some(Vibrato::On))),
+        Some(switch(38))
+    );
+    // A stated vibrato replaces the one a vibrato choice names.
+    let non_vibrato = choice(Articulation::NonVibrato);
+    assert_eq!(mapping.target(non_vibrato), Some(switch(36)));
+    assert_eq!(
+        mapping.target_under(non_vibrato, passage(None, Some(Vibrato::On))),
+        Some(switch(38))
+    );
+}
+
+#[test]
+fn a_recorded_mute_is_chosen_when_the_state_matches() {
+    let mapping = sampler_mapping(&muted_trumpet());
+    let sustain = choice(Articulation::Sustain);
+    let under = |state| mapping.target_under(sustain, passage(Some(state), None));
+    assert_eq!(mapping.target(sustain), Some(switch(36)));
+    assert_eq!(under(Mute::Open), Some(switch(36)));
+    assert_eq!(under(Mute::Generic), Some(switch(40)));
+    assert_eq!(under(Mute::Harmon), Some(switch(41)));
+    // A mute the preset does not record gives way to the more general mute, then to none.
+    assert_eq!(under(Mute::Cup), Some(switch(40)), "a cup mute is a mute");
+    assert_eq!(under(Mute::Palm), Some(switch(36)), "no palm mute");
+    // A staccato is recorded only open.
+    assert_eq!(
+        mapping.target_under(
+            choice(Articulation::Staccato),
+            passage(Some(Mute::Harmon), None)
+        ),
+        Some(switch(39))
+    );
+    // A mute choice of `articulation` keeps its mute under `auto`; a stated mute replaces it.
+    let con_sordino = choice(Articulation::ConSordino);
+    assert_eq!(mapping.target(con_sordino), Some(switch(40)));
+    assert_eq!(
+        mapping.target_under(con_sordino, passage(Some(Mute::Open), None)),
+        Some(switch(36))
+    );
+    assert_eq!(
+        mapping.target_under(con_sordino, passage(Some(Mute::Harmon), None)),
+        Some(switch(41))
+    );
+    // A stated vibrato the trumpet does not record changes nothing.
+    assert_eq!(
+        mapping.target_under(sustain, passage(Some(Mute::Harmon), Some(Vibrato::Off))),
+        Some(switch(41))
+    );
+}
+
+#[test]
+fn auto_plays_a_stated_mute_or_vibrato_only_when_the_preset_records_it() {
+    let trumpet = sampler_mapping(&muted_trumpet());
+    let auto = |mapping: &SamplerMapping, mute_state, vibrato_state| {
+        mapping.target_under(SamplerMapping::AUTO, passage(mute_state, vibrato_state))
+    };
+    // The ordinary sound under the mute.
+    assert_eq!(auto(&trumpet, Some(Mute::Generic), None), Some(switch(40)));
+    assert_eq!(auto(&trumpet, Some(Mute::Harmon), None), Some(switch(41)));
+    assert_eq!(auto(&trumpet, Some(Mute::Bucket), None), Some(switch(40)));
+    // Open and the ordinary vibrato name nothing to select: the clips' keyswitches decide.
+    assert_eq!(auto(&trumpet, Some(Mute::Open), None), None);
+    assert_eq!(auto(&trumpet, None, Some(Vibrato::Ordinary)), None);
+    assert_eq!(
+        auto(&trumpet, Some(Mute::Open), Some(Vibrato::Ordinary)),
+        None
+    );
+    // A state the preset does not record leaves `auto` alone, not on the ordinary sound.
+    assert_eq!(auto(&trumpet, Some(Mute::Palm), None), None);
+    assert_eq!(auto(&trumpet, None, Some(Vibrato::On)), None);
+    let flute = sampler_mapping(&keyswitched_flute());
+    assert_eq!(auto(&flute, None, Some(Vibrato::On)), Some(switch(38)));
+    assert_eq!(auto(&flute, None, Some(Vibrato::Off)), Some(switch(36)));
+    // The flute's ordinary sound has no vibrato, but no mute was kept.
+    assert_eq!(auto(&flute, Some(Mute::Generic), None), None);
+    for mapping in [&trumpet, &flute] {
+        assert_eq!(auto(mapping, None, None), None, "nothing is forced");
+    }
+}
+
+#[test]
+fn a_legato_under_a_state_keeps_the_state() {
+    // Overlap legato: the ordinary sound under the state, joined.
+    let mut overlap = muted_trumpet();
+    overlap.legato = Some(profile(LegatoMode::Overlap {
+        crossfade_ms: 90,
+        start_offset_ms: 60,
+        gap_ms: 5,
+    }));
+    let mapping = sampler_mapping(&overlap);
+    let legato = choice(Articulation::Legato);
+    let joined = |key| ArticulationTarget {
+        selector: Some(Selector::Keyswitch(key)),
+        legato: true,
+    };
+    assert_eq!(mapping.target(legato), Some(joined(36)));
+    assert_eq!(
+        mapping.target_under(legato, passage(Some(Mute::Generic), None)),
+        Some(joined(40))
+    );
+    // Legato regions: the mapped legato, under the state when it is recorded so, else open;
+    // without a mapped legato, the ordinary sound under the state.
+    let mut regions = mapped(
+        muted_trumpet(),
+        [
+            mapped_entries(&muted_trumpet()),
+            vec![on_key(Articulation::Legato, 42)],
+        ]
+        .concat(),
+    );
+    regions.legato = Some(profile(LegatoMode::Trigger));
+    let mapping = sampler_mapping(&regions);
+    assert_eq!(mapping.target(legato), Some(switch(42)));
+    assert_eq!(
+        mapping.target_under(legato, passage(Some(Mute::Generic), None)),
+        Some(switch(42))
+    );
+    let mut ordinary = muted_trumpet();
+    ordinary.legato = Some(profile(LegatoMode::Trigger));
+    let mapping = sampler_mapping(&ordinary);
+    assert_eq!(mapping.target(legato), Some(switch(36)));
+    assert_eq!(
+        mapping.target_under(legato, passage(Some(Mute::Harmon), None)),
+        Some(switch(41))
+    );
+}
+
+/// The mapped articulations of `preset`.
+fn mapped_entries(preset: &InstrumentPreset) -> Vec<ArticulationEntry> {
+    match preset.articulation_map.as_ref().map(|claim| &claim.value) {
+        Some(ArticulationList::Mapped(entries)) => entries.clone(),
+        _ => Vec::new(),
+    }
+}
+
+#[test]
+fn a_preset_without_mutes_or_vibratos_keeps_one_target_per_choice() {
+    // Every mute and vibrato choice plays as `auto`, so the mapping equals the one built from
+    // the targets of the articulation choices alone (TYP-10), however the passage is stated.
+    for preset in [keyswitched_violin(), violin()] {
+        let mapping = sampler_mapping(&preset);
+        let alone: Vec<Option<ArticulationTarget>> = (0..count(ARTICULATION_CHOICES))
+            .map(|index| mapping.target(index))
+            .collect();
+        assert_eq!(
+            mapping,
+            SamplerMapping::new(alone, DynamicsDrive::Velocity, None, 0)
+        );
+        for index in 0..count(ARTICULATION_CHOICES) {
+            for mute_state in Mute::ALL {
+                for vibrato_state in Vibrato::ALL {
+                    assert_eq!(
+                        mapping.target_under(index, passage(Some(mute_state), Some(vibrato_state))),
+                        mapping.target(index)
+                    );
+                }
+            }
+        }
+    }
+    // Only the vibrato gets columns of the flute's.
+    let flute = sampler_mapping(&keyswitched_flute());
+    for state in Mute::ALL {
+        assert_eq!(
+            flute.target_under(choice(Articulation::Sustain), passage(Some(state), None)),
+            Some(switch(37)),
+            "{state:?}"
+        );
+    }
+}
+
+#[test]
+fn a_mute_or_vibrato_choice_beyond_the_lists_plays_as_auto() {
+    let mapping = sampler_mapping(&muted_trumpet());
+    let sustain = choice(Articulation::Sustain);
+    for beyond in [count(MUTE_CHOICES), u16::MAX] {
+        assert_eq!(
+            mapping.target_under(
+                sustain,
+                Passage {
+                    mute: beyond,
+                    vibrato: 0
+                }
+            ),
+            Some(switch(36))
+        );
+    }
+    assert_eq!(
+        mapping.target_under(
+            sustain,
+            Passage {
+                mute: mute(Mute::Generic),
+                vibrato: u16::MAX
+            }
+        ),
+        Some(switch(40))
+    );
+}
+
+/// Every cell of `preset`'s targets computed one by one, every mute and vibrato choice with a
+/// column of its own: the oracle of the columns [`targets`] leaves out.
+fn every_cell(preset: &InstrumentPreset) -> TargetTable {
+    let legato = preset.legato.as_ref().map(|claim| claim.value);
+    let compiler = Compiler::of(preset);
+    TargetTable::tabulate(
+        count(ARTICULATION_CHOICES),
+        count(MUTE_CHOICES),
+        count(VIBRATO_CHOICES),
+        |index, passage| compiler.target(index, passage, legato),
+    )
+}
+
+#[test]
+fn leaving_out_the_states_a_preset_does_not_record_changes_no_target() {
+    let mut overlap = keyswitched_flute();
+    overlap.legato = Some(profile(LegatoMode::Overlap {
+        crossfade_ms: 90,
+        start_offset_ms: 60,
+        gap_ms: 5,
+    }));
+    let mut regions = muted_trumpet();
+    regions.legato = Some(profile(LegatoMode::Trigger));
+    for preset in [
+        violin(),
+        keyswitched_violin(),
+        keyswitched_flute(),
+        muted_trumpet(),
+        overlap,
+        regions,
+    ] {
+        let legato = preset.legato.as_ref().map(|claim| claim.value);
+        assert_eq!(
+            targets(&preset, legato),
+            every_cell(&preset),
+            "{}",
+            preset.id
+        );
+    }
+}
+
+#[test]
+fn the_states_follow_the_order_of_the_mute_and_vibrato_choices() {
+    // The sampler indexes the columns by the choices its parameters hold, so the order is the
+    // descriptor's, which the application builds (`crate::samples`).
+    let registry = registry_for(&["lib/Violin".to_owned()]);
+    let descriptor = registry
+        .find(SAMPLER_ID)
+        .expect("the sampler is registered");
+    let choices_of = |id: &str| -> Vec<String> {
+        descriptor
+            .params
+            .iter()
+            .find(|spec| spec.id == id)
+            .expect("the parameter")
+            .choices
+            .clone()
+    };
+    let mutes = choices_of("mute");
+    assert_eq!(mutes.len(), MUTE_CHOICES);
+    assert_eq!(mutes.first().map(String::as_str), Some(SAMPLER_AUTO));
+    for state in Mute::ALL {
+        let named = state.articulation().map_or("open", Articulation::id);
+        assert_eq!(
+            mutes.get(usize::from(mute(state))).map(String::as_str),
+            Some(named)
+        );
+    }
+    let vibratos = choices_of("vibrato");
+    assert_eq!(vibratos.len(), VIBRATO_CHOICES);
+    assert_eq!(vibratos.first().map(String::as_str), Some(SAMPLER_AUTO));
+    for state in Vibrato::ALL {
+        let named = state.articulation().map_or("ordinary", Articulation::id);
+        assert_eq!(
+            vibratos
+                .get(usize::from(vibrato(state)))
+                .map(String::as_str),
+            Some(named)
+        );
+    }
+    let vibrato_on = vibratos
+        .iter()
+        .position(|id| id == "vibrato_on")
+        .and_then(|index| u16::try_from(index).ok())
+        .expect("offered");
+    assert_eq!(
+        sampler_mapping(&keyswitched_flute()).target_under(
+            choice(Articulation::Sustain),
+            Passage {
+                mute: 0,
+                vibrato: vibrato_on
+            }
+        ),
+        Some(switch(38))
+    );
+}
+
 // Dynamics, legato and the key offset.
 
 #[test]
@@ -533,4 +934,121 @@ fn an_installed_preset_resolves_with_its_compiled_mapping() {
         .resolve("plain/Strings/Violin")
         .expect("installed");
     assert_eq!(*violin.mapping, SamplerMapping::default());
+}
+
+/// A library at `root` that holds every patch the shipped profile `text` names, each an empty
+/// patch, with a manifest that names the profile's library `id`, so the profile applies to all
+/// of them.
+fn profiled_library(root: &Path, id: &str, text: &str) {
+    fn paths(value: &serde_json::Value, found: &mut Vec<String>) {
+        match value {
+            serde_json::Value::Object(map) => {
+                for (key, field) in map {
+                    match field.as_str() {
+                        Some(path) if key == "path" => found.push(path.to_owned()),
+                        _ => paths(field, found),
+                    }
+                }
+            }
+            serde_json::Value::Array(items) => items.iter().for_each(|item| paths(item, found)),
+            _ => {}
+        }
+    }
+    let profile: serde_json::Value = serde_json::from_str(text).expect("a JSON profile");
+    let mut found = Vec::new();
+    paths(&profile, &mut found);
+    assert!(found.len() > 50, "{id}: the profile names its patches");
+    for path in found {
+        write_patch(&root.join(path));
+    }
+    fs::write(
+        root.join(crate::instruments::MANIFEST_FILE),
+        json!({"version": 2, "id": id}).to_string(),
+    )
+    .expect("write the manifest");
+}
+
+#[test]
+fn the_shipped_profiles_compile_their_states_as_every_cell_does() {
+    // The compiled mapping of every preset of both shipped profiles equals the one computed cell
+    // by cell under every mute and vibrato choice, so leaving out the states a preset does not
+    // record never changes what plays (TST-10).
+    let dir = tempfile::tempdir().expect("tempdir");
+    let vsco = dir.path().join("VSCO");
+    let vcsl = dir.path().join("VCSL");
+    profiled_library(
+        &vsco,
+        "vsco2ce",
+        include_str!("../../../profiles/vsco2ce.json"),
+    );
+    profiled_library(&vcsl, "vcsl", include_str!("../../../profiles/vcsl.json"));
+    let catalog = InstrumentCatalog::discover(&[vsco, vcsl]);
+    let mut stated = Vec::new();
+    for preset in catalog.presets() {
+        let legato = preset.legato.as_ref().map(|claim| claim.value);
+        let compiled = targets(preset, legato);
+        assert_eq!(compiled, every_cell(preset), "{}", preset.id);
+        let alone: Vec<Option<ArticulationTarget>> = (0..count(ARTICULATION_CHOICES))
+            .map(|index| compiled.target(index, Passage::AUTO))
+            .collect();
+        if compiled != TargetTable::from(alone) {
+            stated.push(preset.id.to_string());
+        }
+    }
+    assert!(catalog.presets().len() > 250, "both libraries are listed");
+    // The keyswitched patches whose profile records vibrato variants switch on the state.
+    for id in [
+        "vsco2ce/Flute-KS",
+        "vcsl/Aerophones/Reed Aerophones/Saxello - Keyswitch",
+    ] {
+        assert!(
+            stated.iter().any(|stated| stated == id),
+            "{id} in {stated:?}"
+        );
+    }
+}
+
+#[test]
+fn an_installed_flute_switches_its_vibrato_with_the_state() {
+    // VSCO 2 CE's `Flute-KS` through its shipped profile: sustain without vibrato on 36 (the
+    // default), sustain on 37, sustain with vibrato on 38 and staccato on 39.
+    let dir = tempfile::tempdir().expect("tempdir");
+    let vsco = dir.path().join("VSCO");
+    write_patch(&vsco.join("Flute-KS.sfz"));
+    fs::write(
+        vsco.join(crate::instruments::MANIFEST_FILE),
+        json!({"version": 2, "id": "vsco2ce"}).to_string(),
+    )
+    .expect("write the manifest");
+    let installed = InstalledInstruments::from_catalog(&InstrumentCatalog::discover(&[vsco]));
+    let flute = installed.resolve("vsco2ce/Flute-KS").expect("installed");
+    let sustain = choice(Articulation::Sustain);
+    assert_eq!(flute.mapping.target(sustain), Some(switch(37)));
+    for (state, key) in [
+        (Vibrato::On, 38),
+        (Vibrato::Off, 36),
+        (Vibrato::Ordinary, 37),
+    ] {
+        assert_eq!(
+            flute
+                .mapping
+                .target_under(sustain, passage(None, Some(state))),
+            Some(switch(key)),
+            "{state:?}"
+        );
+    }
+    assert_eq!(
+        flute.mapping.target_under(
+            choice(Articulation::Staccato),
+            passage(None, Some(Vibrato::On))
+        ),
+        Some(switch(39))
+    );
+    assert_eq!(
+        flute
+            .mapping
+            .target_under(SamplerMapping::AUTO, passage(Some(Mute::Generic), None)),
+        None,
+        "the flute records no mute"
+    );
 }

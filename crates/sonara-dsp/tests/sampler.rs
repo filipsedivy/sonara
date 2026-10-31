@@ -18,8 +18,8 @@ use sonara_core::model::device::{ParamValue, Params};
 use sonara_core::plugins::{SamplerChoices, sampler_descriptor};
 use sonara_dsp::bank::{
     ArticulationTarget, CcCrossfade, CcDepth, CcRange, Controllers, Crossfade, CrossfadeCurve,
-    DynamicsDrive, Keyswitches, LegatoSpec, LoopMode, OffMode, Region, Sample, SampleBank,
-    SamplerMapping, SamplerSetup, Selector, Trigger,
+    DynamicsDrive, Keyswitches, LegatoSpec, LoopMode, OffMode, Passage, Region, Sample, SampleBank,
+    SamplerMapping, SamplerSetup, Selector, TargetTable, Trigger,
 };
 use sonara_dsp::processor::{
     BlockContext, DeviceState, EventKind, InstrumentEvent, ParamSlot, ProcessSpec, Processor,
@@ -2216,6 +2216,115 @@ fn a_mapping_looks_up_each_choice_without_allocating() {
             None
         ],
         "auto, ordinario, the default, a choice without a target, a target, beyond the table"
+    );
+}
+
+/// The target of a cell of the tables below: the switch `24 + choice`, moved by 10 under the
+/// mute choice 2 and by 20 under the vibrato choice 1; none for the choice 3, and for `auto` (0)
+/// but under the mute choice 2.
+fn cell(choice: u16, passage: Passage) -> Option<ArticulationTarget> {
+    let key = 24 + u8::try_from(choice).expect("a small choice");
+    let muted = passage.mute == 2;
+    let moved = key + if muted { 10 } else { 0 } + 20 * u8::from(passage.vibrato == 1);
+    (choice != 3 && (choice != 0 || muted)).then(|| switch(moved))
+}
+
+#[test]
+fn a_table_looks_up_each_cell_without_allocating() {
+    // Four articulation choices under three mute choices and two vibrato choices.
+    let table = TargetTable::tabulate(4, 3, 2, cell);
+    let mapping = SamplerMapping::new(table, DynamicsDrive::Velocity, None, 0);
+    let under = |mute, vibrato| Passage { mute, vibrato };
+    let looked_up = assert_no_alloc(|| {
+        [
+            // `auto` under `auto` has no target, whatever the cell said; under a state it has.
+            mapping.target(SamplerMapping::AUTO),
+            mapping.target_under(SamplerMapping::AUTO, under(2, 0)),
+            mapping.target_under(1, under(0, 0)),
+            mapping.target_under(1, under(1, 0)),
+            mapping.target_under(1, under(2, 0)),
+            mapping.target_under(1, under(2, 1)),
+            mapping.target_under(2, under(0, 1)),
+            mapping.target_under(3, under(2, 1)),
+            // A choice beyond the table has none; a state beyond it plays as `auto`.
+            mapping.target_under(4, under(0, 0)),
+            mapping.target_under(u16::MAX, under(u16::MAX, u16::MAX)),
+            mapping.target_under(1, under(3, 0)),
+            mapping.target_under(1, under(2, u16::MAX)),
+        ]
+    });
+    assert_eq!(
+        looked_up,
+        [
+            None,
+            Some(switch(34)),
+            Some(switch(25)),
+            Some(switch(25)),
+            Some(switch(35)),
+            Some(switch(55)),
+            Some(switch(46)),
+            None,
+            None,
+            None,
+            Some(switch(25)),
+            Some(switch(35)),
+        ]
+    );
+    assert_eq!(mapping.target(1), mapping.default_target());
+}
+
+#[test]
+fn tables_that_select_the_same_compare_equal() {
+    // A state whose every choice plays as `auto` keeps one column (TYP-10): states that
+    // change nothing make the table of the articulation choices alone.
+    let alone = |choice: u16, _: Passage| cell(choice, Passage::AUTO);
+    let by_choice: Vec<Option<ArticulationTarget>> =
+        (0..4).map(|choice| cell(choice, Passage::AUTO)).collect();
+    assert_eq!(
+        TargetTable::tabulate(4, 10, 4, alone),
+        TargetTable::from(by_choice)
+    );
+    // Only the vibrato tells cells apart: the same table as one built without mute columns.
+    let vibrato_only = |choice: u16, passage: Passage| cell(choice, Passage { mute: 0, ..passage });
+    assert_eq!(
+        TargetTable::tabulate(4, 10, 2, vibrato_only),
+        TargetTable::tabulate(4, 1, 2, vibrato_only)
+    );
+    assert_ne!(
+        TargetTable::tabulate(4, 3, 2, cell),
+        TargetTable::tabulate(4, 1, 2, vibrato_only)
+    );
+    // No target anywhere, or only for `auto` under `auto`: the default.
+    assert_eq!(
+        TargetTable::tabulate(79, 10, 4, |_, _| None),
+        TargetTable::default()
+    );
+    assert_eq!(
+        TargetTable::tabulate(79, 10, 4, |choice, passage| {
+            (choice == 0 && passage == Passage::AUTO).then(|| switch(24))
+        }),
+        TargetTable::default()
+    );
+    // A zero count counts as one column.
+    assert_eq!(
+        TargetTable::tabulate(4, 0, 0, cell),
+        TargetTable::tabulate(4, 1, 1, cell)
+    );
+    assert_eq!(
+        SamplerMapping::new(
+            TargetTable::tabulate(4, 3, 2, alone),
+            DynamicsDrive::Velocity,
+            None,
+            0
+        ),
+        SamplerMapping::new(
+            (0..4)
+                .map(|choice| cell(choice, Passage::AUTO))
+                .collect::<Vec<_>>(),
+            DynamicsDrive::Velocity,
+            None,
+            0
+        )
     );
 }
 
