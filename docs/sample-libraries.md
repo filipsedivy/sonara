@@ -211,8 +211,31 @@ and it plays forward; loops stored in AIFF or FLAC files are not read.
   its end.
 - **`dynamics`**: 0 to 1, default 1. It can be automated.
 
-Every sampler device offers the same lists, whatever preset it plays. **The sampler stores these
-values but does not play them yet**: a track sounds the same whatever they are set to.
+Every sampler device offers the same lists, whatever preset it plays.
+
+**How `articulation` plays.** `auto` forces nothing: the patch's default keyswitch and the
+keyswitch notes in the clips decide, as before. Any other choice plays what the preset's library
+maps for it (its manifest or Sonara's profile), or the nearest articulation the preset has: a
+keyswitch, selected without sounding its key; a velocity zone, into which each note's velocity is
+moved so that some dynamic range remains; or a controller value, which the patch's controller
+gates and crossfades read. A choice the preset has nothing for, such as any choice of a preset
+about which nothing is claimed, plays as `auto`. A change applies to the notes that start after
+it; sounding notes ring on. An automated change takes effect at the next 512-frame block.
+
+A keyswitch note in a clip, or a clip's event of the controller the articulation sets, still
+wins after the articulation, until the articulation is applied again: when it changes, when
+playback starts, and when it jumps (a seek or a loop wrap). After a jump the engine then selects
+again what the clip selected before the new position, so the clip's last keyswitch before it
+wins over the articulation. Back at `auto`, the clip's last keyswitch plays again.
+
+**Key offset.** A preset whose library gives a key offset (a patch keyed away from the pitch it
+sounds) has every note of a clip moved by it before it plays, so the clip is written at the
+pitch the instrument sounds. Keyswitch notes are moved too: a clip writes them where the offset
+moves them onto the patch's keyswitch keys, and a note moved onto a keyswitch key selects that
+switch. A note moved below 0 or above 127 is not played. The articulation parameter selects the
+patch's own keyswitch and is not moved.
+
+**`dynamics` is stored but not played yet**: a track sounds the same whatever it is set to.
 
 A project saved by a newer version of Sonara can hold an instrument type or an articulation that
 this version does not know. It opens unchanged, and the device plays as `auto`; the render warns

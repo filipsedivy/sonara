@@ -15,18 +15,19 @@
 //!   exactly the prototype's stable sort, without the scratch memory a stable sort allocates.
 //! - **A sampler's chase** ([`NoteSchedule::chase_sampler`]) restores more than the notes,
 //!   at offset 0 between the all-notes-off and the chased notes: a keyswitch event
-//!   ([`EventKind::KeySwitch`]) for the last note on a keyswitch key of the patch that started
-//!   before `frame`, then the last event before `frame` of each of the controllers 1
-//!   (modulation), 11 (expression) and 64 (sustain), on its own channel and in timeline order.
-//!   So a seek or a loop wrap plays the articulation, the swell and the pedal that playing up
-//!   to the new position leaves. The sampler makes its default switch active at the
-//!   all-notes-off, so a position before every keyswitch note gets the default. A controller
-//!   with no event before `frame` keeps its value. Each controller is restored once, by its
-//!   last event on whichever channel: a value an earlier event left on another channel is not
-//!   restored, which only the sampler's per-channel gates and crossfades can tell (the pedal,
-//!   volume and expression it applies act on every channel). Every other instrument (the Poly
-//!   Synth and the Drum Kit among them) gets the plain chase, so its events and its golden
-//!   renders stay the same (GLD-01).
+//!   ([`EventKind::KeySwitch`]) for the last keyswitch note of the patch that started before
+//!   `frame` (a note that the preset's key offset moves onto a keyswitch key), then the last
+//!   event before `frame` of each of the controllers 1 (modulation), 11 (expression) and 64
+//!   (sustain), on its own channel and in timeline order. So a seek or a loop wrap plays the
+//!   articulation, the swell and the pedal that playing up to the new position leaves. The
+//!   sampler makes its default switch active, and applies its articulation parameter again, at
+//!   the all-notes-off, so a position before every keyswitch note gets the default or the
+//!   parameter's articulation. A controller with no event before `frame` keeps its value. Each
+//!   controller is restored once, by its last event on whichever channel: a value an earlier
+//!   event left on another channel is not restored, which only the sampler's per-channel gates
+//!   and crossfades can tell (the pedal, volume and expression it applies act on every
+//!   channel). Every other instrument (the Poly Synth and the Drum Kit among them) gets the
+//!   plain chase, so its events and its golden renders stay the same (GLD-01).
 //!
 //! The event buffer is sized at build for the worst case, every event in one block
 //! (`1 + 2 · notes + controls`: a chased note cannot also start in the block), and a sampler's
@@ -252,10 +253,10 @@ impl NoteSchedule {
         }
     }
 
-    /// Makes the chase restore what a sampler playing a patch with the keyswitch keys
-    /// `switch_keys` needs besides the notes: its last keyswitch and the last values of the
-    /// controllers 1, 11 and 64 (see the module docs). The graph calls it for sampler
-    /// instruments only.
+    /// Makes the chase restore what a sampler whose keyswitch notes are `switch_keys` (the clip
+    /// pitches that select an articulation of its patch) needs besides the notes: its last
+    /// keyswitch and the last values of the controllers 1, 11 and 64 (see the module docs). The
+    /// graph calls it for sampler instruments only.
     ///
     /// Setup: allocates (the event buffer grows by the slots the chase adds), so it runs off
     /// the real-time thread, when the graph is built, before the first block.

@@ -145,9 +145,10 @@ audio hardware and no sleeping.
   frame. A seek past a note's end therefore releases its voice, and a seek into a note
   retriggers it. A stop leaves no voice: the next play builds a fresh graph.
 - **A sampler's chase** also restores what the clips selected before that frame. The sampler
-  returns to the patch's default keyswitch at the all-notes-off; then, before the chased notes,
-  it gets a keyswitch event for the last note on a keyswitch key of its patch that started
-  before the frame (it selects the articulation without sounding the key), and the last value
+  returns to the patch's default keyswitch, and applies its `articulation` parameter's target
+  again, at the all-notes-off; then, before the chased notes, it gets a keyswitch event for the
+  last note on a keyswitch key of its patch (after the preset's key offset) that started before
+  the frame (it selects the articulation without sounding the key), and the last value
   before the frame of the modulation (CC 1), expression (CC 11) and sustain (CC 64)
   controllers. So a seek, a loop wrap or a render that starts later plays the articulation, the
   level and the pedal that playing up to that frame leaves. A controller with no event before
@@ -158,7 +159,8 @@ audio hardware and no sleeping.
 - **Tests.** `crates/sonara-engine/tests/player/transport.rs` (position, restart, end of range,
   concurrency), `hanging_notes.rs` (a held voice after seek, resume and stop),
   `schedule.rs` (order, chase, tempo change, a sampler's chase), `tests/sampler.rs` (a sampler
-  after a seek, a loop wrap and a later start) and `crates/sonara-app/tests/transport*.rs`.
+  after a seek, a loop wrap and a later start, with clip keyswitches and with its `articulation`
+  parameter) and `crates/sonara-app/tests/transport*.rs`.
 
 ## Offline renderer (`sonara_engine::renderer`)
 
@@ -222,11 +224,20 @@ switch, a velocity zone or a controller value; for a choice the preset does not 
 articulation it plays), what `dynamics` drives, the legato and the key offset. A preset about which
 nothing is claimed gets an empty mapping and plays its patch as it is. The same preset with the
 same mapping gets the same setup again on a graph rebuild. Its `instrument_type`, `articulation`
-and `dynamics` values reach the processor as further parameter slots, which it does not read
-yet; a stored `instrument_type` or `articulation` that is not one of the choices plays as
-`auto`, with a warning, instead of failing the graph build. A graph rebuild recreates sampler
-devices, so sounding notes restart. There are no measured load or memory
-numbers for it yet (HW-01: they are measured locally).
+and `dynamics` values reach the processor as further parameter slots; a stored `instrument_type`
+or `articulation` that is not one of the choices plays as `auto`, with a warning, instead of
+failing the graph build. The processor reads `articulation` only: when the choice changes, it
+looks the choice's target up in the mapping and applies it to the notes that start after it (a
+forced keyswitch, a velocity zone or a controller value that the regions read in place of the
+clip's), without allocating. It applies the target again on a reset and at every all-notes-off,
+so a seek or a loop wrap keeps it; the keyswitch and controller events that the chase sends
+after the all-notes-off, like any keyswitch or such controller event from a clip, win after it
+until it is applied again. Every note and keyswitch event is moved by the mapping's key offset
+before the processor reads it, and one moved outside 0 to 127 is dropped; the chase's keyswitch
+notes are the clip notes that the offset moves onto a keyswitch key. `instrument_type` names the
+instrument and `dynamics` is not played yet. A graph rebuild recreates sampler devices, so
+sounding notes restart. There are no measured load or memory numbers for it yet (HW-01: they are
+measured locally).
 
 ## Measured performance
 

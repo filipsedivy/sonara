@@ -17,6 +17,10 @@
 use std::sync::Arc;
 
 use crate::filters::db_to_amp;
+use crate::processor::NoteSet;
+
+/// The highest MIDI key.
+const MAX_KEY: u8 = 127;
 
 /// What starts a region (SFZ `trigger`), as the SFZ format and the reference player sfizz read
 /// it. "Another key down" counts the keys held down that are no keyswitch keys (see
@@ -732,6 +736,15 @@ impl SamplerMapping {
     pub fn default_target(&self) -> Option<ArticulationTarget> {
         self.target(Self::ORDINARIO)
     }
+
+    /// Real-time: the key of the patch that a note on `key` in a clip plays, `key` moved by the
+    /// [key offset](Self::key_offset); `None` when that leaves the MIDI keys 0 to 127, and the
+    /// note is not played.
+    #[must_use]
+    pub fn patch_key(&self, key: u8) -> Option<u8> {
+        key.checked_add_signed(self.key_offset)
+            .filter(|moved| *moved <= MAX_KEY)
+    }
 }
 
 /// A sampler's instrument as the render graph hands it to the processor through
@@ -755,5 +768,19 @@ impl SamplerSetup {
             bank,
             mapping: Arc::default(),
         }
+    }
+
+    /// The notes of a clip that select an articulation: those whose key the key offset moves
+    /// onto a keyswitch key of the patch ([`SamplerMapping::patch_key`]). Without an offset,
+    /// the patch's keyswitch keys.
+    #[must_use]
+    pub fn switch_notes(&self) -> NoteSet {
+        (0..=MAX_KEY)
+            .filter(|key| {
+                self.mapping
+                    .patch_key(*key)
+                    .is_some_and(|moved| self.bank.keyswitches.contains(moved))
+            })
+            .collect()
     }
 }

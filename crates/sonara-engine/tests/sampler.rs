@@ -9,6 +9,11 @@
 //! without the jump, bit for bit. The binary installs `AllocDisabler`, and every block of these
 //! checks is processed inside `assert_no_alloc` (RT-02). The Poly Synth and the Drum Kit keep
 //! the plain chase: `tests/golden_render.rs` pins their renders byte for byte (GLD-01).
+//!
+//! **The `articulation` parameter** of a profiled preset selects the keyswitch its mapping
+//! names, from a stored choice or an automation lane. The oracle is the same clip in `auto` with
+//! keyswitch notes that select the same switches; a seek and every pass of a loop must play as
+//! straight play does, with the clip's own keyswitches winning after the parameter's.
 
 use std::fmt::Write as _;
 use std::fs;
@@ -19,6 +24,7 @@ use assert_no_alloc::{AllocDisabler, assert_no_alloc};
 use serde_json::{Value, json};
 use sonara_core::model::project::Project;
 use sonara_core::plugins::{PluginRegistry, SamplerChoices, builtin_registry, sampler_descriptor};
+use sonara_dsp::bank::{ArticulationTarget, DynamicsDrive, SamplerMapping, Selector};
 use sonara_engine::{
     DEFAULT_BLOCK, GraphOptions, OfflineRenderer, RenderGraph, RenderRequest, RenderedAudio, Tail,
 };
@@ -531,42 +537,75 @@ const AFTER_LAST_NOTE: i64 = 211 * BLOCK;
 /// The end of the checks (beat 5.12).
 const END: i64 = 240 * BLOCK;
 
+/// A clip note: `pitch` from beat `start`, `length` beats long, at velocity 100.
+fn note(id: &str, pitch: u8, start: f64, length: f64) -> Value {
+    json!({"id": id, "pitch": pitch, "start": start, "length": length, "velocity": 100,
+           "channel": 0})
+}
+
 /// The base project reduced to one sampler track that plays `instrument` at 120 bpm, without
 /// the master's limiter, so the output is the sampler's alone. Its clip sets the expression
 /// (CC 11) at beat 0 and plays C4 with the default articulation; switches to C#1 at beat 0.75
 /// and plays C4 at beat 1; switches to D1 at beat 3, lowers the expression at beat 3.25 and
 /// plays D4 at beat 3.5. Each note is half a beat long.
 fn keyswitch_project(instrument: &str) -> (Project, PluginRegistry) {
+    switched_project(instrument, 0)
+}
+
+/// [`keyswitch_project`] with every note of its clip `moved` semitones up, keyswitch notes
+/// included.
+fn switched_project(instrument: &str, moved: u8) -> (Project, PluginRegistry) {
+    let expression = |beat: f64, value: u8| {
+        json!({"beat": beat, "kind": "cc", "value": value, "number": 11,
+               "channel": 0})
+    };
+    sampler_project(
+        &json!({"instrument": instrument}),
+        &[
+            note("n_000000000001", 60 + moved, 0.0625, 0.5),
+            note("n_000000000002", 25 + moved, 0.75, 0.125),
+            note("n_000000000003", 60 + moved, 1.0, 0.5),
+            note("n_000000000004", 26 + moved, 3.0, 0.125),
+            note("n_000000000005", 62 + moved, 3.5, 0.5),
+        ],
+        &[expression(0.0, 100), expression(3.25, 50)],
+        &[],
+    )
+}
+
+/// The base project reduced to one sampler track at 120 bpm, without the master's limiter, so
+/// the output is the sampler's alone. The sampler stores `params` and offers their
+/// `instrument`; its clip, eight beats long, plays `notes` and `controls`, and the track has the
+/// automation lanes `automation`.
+fn sampler_project(
+    params: &Value,
+    notes: &[Value],
+    controls: &[Value],
+    automation: &[Value],
+) -> (Project, PluginRegistry) {
     let golden = Golden::open().expect("golden data is available (set SONARA_GOLDEN)");
     let bytes = golden
         .bytes("workflows/sidechain_preview/final.project.json")
         .expect("the base project");
     let mut data = loads(&bytes).expect("project JSON");
-    let note = |id: &str, pitch: u8, start: f64, length: f64| {
-        json!({"id": id, "pitch": pitch, "start": start, "length": length, "velocity": 100,
-               "channel": 0})
-    };
-    let expression = |beat: f64, value: u8| {
-        json!({"beat": beat, "kind": "cc", "value": value, "number": 11,
-               "channel": 0})
-    };
+    let instrument = params["instrument"]
+        .as_str()
+        .expect("the instrument's choice")
+        .to_owned();
     let clip = json!({"type": "midi", "id": "clp_000000000008", "name": "Articulations",
         "start": 0.0, "length": 8.0, "content_offset": 0.0, "loop_length": null, "muted": false,
-        "color": null,
-        "notes": [note("n_000000000001", 60, 0.0625, 0.5), note("n_000000000002", 25, 0.75, 0.125),
-                  note("n_000000000003", 60, 1.0, 0.5), note("n_000000000004", 26, 3.0, 0.125),
-                  note("n_000000000005", 62, 3.5, 0.5)],
-        "controls": [expression(0.0, 100), expression(3.25, 50)]});
+        "color": null, "notes": notes, "controls": controls});
     let mut track = data
         .get("tracks")
         .and_then(Value::as_array)
         .and_then(|tracks| tracks.iter().find(|t| t["id"] == KICK))
         .expect("the kick track")
         .clone();
-    track["instrument"] = json!({"id": "dev_000000000004", "plugin_id": "sonara.sampler",
-        "name": "Sonara Sampler", "enabled": true, "params": {"instrument": instrument},
+    track["instrument"] = json!({"id": SAMPLER, "plugin_id": "sonara.sampler",
+        "name": "Sonara Sampler", "enabled": true, "params": params,
         "sidechain_id": null, "preset": null, "state": {}});
     track["clips"] = json!([clip]);
+    track["automation"] = json!(automation);
     data.insert("tracks".to_owned(), json!([track]));
     data.insert(
         "tempo_map".to_owned(),
@@ -575,19 +614,25 @@ fn keyswitch_project(instrument: &str) -> (Project, PluginRegistry) {
     data.get_mut("master").expect("the master")["inserts"] = json!([]);
     let project = project_from_value(&data).expect("the edited project loads");
     let mut registry = builtin_registry();
-    let descriptor =
-        sampler_descriptor(&choices(&[instrument.to_owned()])).expect("one instrument");
+    let descriptor = sampler_descriptor(&choices(&[instrument])).expect("one instrument");
     registry.register(descriptor).expect("registers once");
     (project, registry)
 }
 
+/// The sampler device of [`sampler_project`].
+const SAMPLER: &str = "dev_000000000004";
+
 /// A fresh graph of [`keyswitch_project`], reset as for play from stop.
 fn keyswitch_graph(patch: &Path) -> RenderGraph {
-    let (project, registry) = keyswitch_project(&path(patch));
+    graph_of(&keyswitch_project(&path(patch)), &no_media())
+}
+
+/// A fresh graph of `project` with the instruments of `media`, reset as for play from stop.
+fn graph_of((project, registry): &(Project, PluginRegistry), media: &MediaProvider) -> RenderGraph {
     let mut graph = RenderGraph::new(
-        &project,
-        &registry,
-        &no_media(),
+        project,
+        registry,
+        media,
         DEFAULT_BLOCK,
         &GraphOptions::default(),
     )
@@ -696,4 +741,181 @@ fn a_render_from_a_later_beat_is_the_slice_of_the_full_render() {
     assert!(loudest(&part.data) > 0.1, "the note at beat 1 sounds");
     let from = usize::try_from(part.start_frame).unwrap();
     assert!(part.data == full.data[from..], "the render from beat 0.875");
+}
+
+/// The presets `lib/articulations` and `lib/keyed-low`, played from the [`keyswitch_patch`] at
+/// `patch` with the mapping of a profiled preset: `ordinario` on C1 (24, the patch's default),
+/// `sustain` on C#1 (25) and `staccato` on D1 (26), the choices 1 to 3 of [`choices`].
+/// `lib/keyed-low` reads the patch as keyed an octave below the pitch it sounds: its key offset
+/// is -12.
+fn articulations(patch: &Path) -> MediaProvider {
+    let patch = patch.to_owned();
+    let switch = |key| {
+        Some(ArticulationTarget {
+            selector: Some(Selector::Keyswitch(key)),
+            legato: false,
+        })
+    };
+    let mapping = |key_offset| {
+        Arc::new(SamplerMapping::new(
+            vec![None, switch(24), switch(25), switch(26)],
+            DynamicsDrive::Velocity,
+            None,
+            key_offset,
+        ))
+    };
+    let presets = [
+        ("lib/articulations", mapping(0)),
+        ("lib/keyed-low", mapping(-12)),
+    ];
+    no_media().with_instruments(move |value| {
+        presets
+            .iter()
+            .find(|(id, _)| *id == value)
+            .map(|(id, mapping)| InstrumentSource {
+                id: (*id).to_owned(),
+                patch: patch.clone(),
+                mapping: Arc::clone(mapping),
+            })
+    })
+}
+
+/// An automation lane of the sampler's `articulation`, holding the choice index of each point
+/// from its beat on.
+fn articulation_lane(points: &[(f64, f64)]) -> Value {
+    let points: Vec<Value> = points
+        .iter()
+        .map(|&(beat, value)| json!({"beat": beat, "value": value, "curve": "hold"}))
+        .collect();
+    json!({"id": "aut_000000000009", "target": {"device_id": SAMPLER, "param": "articulation"},
+           "enabled": true, "points": points})
+}
+
+/// Notes on C4 at beats 0.0625 and 1 and on D4 at beat 3.5, half a beat each: the notes of
+/// [`keyswitch_project`] without its keyswitch notes and controllers.
+fn three_notes() -> [Value; 3] {
+    [
+        note("n_000000000001", 60, 0.0625, 0.5),
+        note("n_000000000003", 60, 1.0, 0.5),
+        note("n_000000000005", 62, 3.5, 0.5),
+    ]
+}
+
+/// A block start between the second and the third note, after the lane's change at beat 2
+/// (beat 2.133).
+const AFTER_CHANGE: i64 = 100 * BLOCK;
+
+/// Checks that playing `project` straight through equals the clip-switched `oracle`, and that a
+/// seek from after the last note to each of `seeks` and a loop from there play as straight
+/// play does there.
+fn plays_as_through(
+    project: &(Project, PluginRegistry),
+    oracle: &(Project, PluginRegistry),
+    media: &MediaProvider,
+    seeks: &[i64],
+) {
+    let heard = play(&mut graph_of(oracle, media), 0, END);
+    assert!(loudest(&heard) > 0.1, "the oracle sounds");
+    let mut straight = graph_of(project, media);
+    assert!(play(&mut straight, 0, END) == heard, "straight play");
+    for &to in seeks {
+        let mut jumping = graph_of(project, media);
+        play(&mut jumping, 0, AFTER_LAST_NOTE);
+        let after = play(&mut jumping, to, END);
+        let from = usize::try_from(to).expect("a frame of the render");
+        assert!(after == heard[from..], "a seek to frame {to}");
+        let mut looping = graph_of(project, media);
+        let first = play(&mut looping, to, AFTER_LAST_NOTE);
+        for pass in 2..=3 {
+            assert!(
+                play(&mut looping, to, AFTER_LAST_NOTE) == first,
+                "pass {pass} of the loop from frame {to}"
+            );
+        }
+    }
+}
+
+#[test]
+fn a_seek_and_a_loop_keep_the_automated_articulation() {
+    // A lane plays `sustain` (C#1) from beat 0 and `staccato` (D1) from beat 2. The oracle is
+    // the same notes in `auto` with the keyswitch notes C#1 at beat 0 and D1 at beat 2, which
+    // sound nothing: the lane must select exactly what they select, at the same notes, also
+    // after a seek and on every pass of a loop.
+    let (_dir, patch) = keyswitch_patch();
+    let media = articulations(&patch);
+    let lane = articulation_lane(&[(0.0, 2.0), (2.0, 3.0)]);
+    let automated = sampler_project(
+        &json!({"instrument": "lib/articulations"}),
+        &three_notes(),
+        &[],
+        &[lane],
+    );
+    let mut switched = three_notes().to_vec();
+    switched.push(note("n_000000000002", 25, 0.0, 0.03125));
+    switched.push(note("n_000000000004", 26, 2.0, 0.125));
+    let oracle = sampler_project(
+        &json!({"instrument": "lib/articulations"}),
+        &switched,
+        &[],
+        &[],
+    );
+    plays_as_through(
+        &automated,
+        &oracle,
+        &media,
+        &[0, AFTER_SWITCH, AFTER_CHANGE],
+    );
+}
+
+#[test]
+fn a_clip_keyswitch_wins_after_the_articulation_also_after_a_seek() {
+    // `staccato` (D1) is the device's articulation, and the clip switches to C#1 at beat 0.75:
+    // the first note plays D1, the later ones C#1, as when the clip itself switches to D1 at
+    // beat 0. A seek's all notes off applies the articulation again, and the chased keyswitch
+    // of the clip wins after it, so a seek before the clip's switch plays D1 and one after it
+    // C#1, as straight play does.
+    let (_dir, patch) = keyswitch_patch();
+    let media = articulations(&patch);
+    let [first, second, third] = three_notes();
+    let clip_switch = note("n_000000000002", 25, 0.75, 0.125);
+    let forced = sampler_project(
+        &json!({"instrument": "lib/articulations", "articulation": "staccato"}),
+        &[
+            first.clone(),
+            clip_switch.clone(),
+            second.clone(),
+            third.clone(),
+        ],
+        &[],
+        &[],
+    );
+    let oracle = sampler_project(
+        &json!({"instrument": "lib/articulations"}),
+        &[
+            note("n_000000000004", 26, 0.0, 0.03125),
+            first,
+            clip_switch,
+            second,
+            third,
+        ],
+        &[],
+        &[],
+    );
+    plays_as_through(&forced, &oracle, &media, &[0, AFTER_SWITCH, AFTER_CHANGE]);
+}
+
+#[test]
+fn a_key_offset_moves_the_clip_and_its_keyswitch_notes_also_after_a_seek() {
+    // A preset keyed an octave below the pitch it sounds (key offset -12) plays a clip written
+    // an octave above the patch's keys, its keyswitch notes C#2 and D2 included, exactly as
+    // the patch played unmoved; the chase finds the moved keyswitch notes, so a seek and a loop
+    // play as straight play does.
+    let (_dir, patch) = keyswitch_patch();
+    let media = articulations(&patch);
+    plays_as_through(
+        &switched_project("lib/keyed-low", 12),
+        &switched_project("lib/articulations", 0),
+        &media,
+        &[0, AFTER_SWITCH, AFTER_CHANGE],
+    );
 }

@@ -850,11 +850,14 @@ impl Builder<'_> {
             {
                 // Only a sampler gets the keyswitch and controllers in its chase; every other
                 // instrument keeps the plain chase and its golden output (GLD-01).
+                // The keyswitch notes are clip notes, which the preset's key offset moves onto
+                // the patch's keyswitch keys.
                 if device.plugin_id == SAMPLER_ID {
-                    let switch_keys = state.sampler.as_ref().map_or(NoteSet::EMPTY, |setup| {
-                        setup.bank.keyswitches.keys().collect()
-                    });
-                    track_schedule.chase_sampler(switch_keys);
+                    let switch_notes = state
+                        .sampler
+                        .as_ref()
+                        .map_or(NoteSet::EMPTY, |setup| setup.switch_notes());
+                    track_schedule.chase_sampler(switch_notes);
                 }
                 instrument = Some(slot);
             }
