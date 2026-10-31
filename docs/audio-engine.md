@@ -136,6 +136,13 @@ audio hardware and no sleeping.
   with the same offset keep that order; a sampler's articulation, mute and vibrato changes
   (below) come between the note-offs and the note-ons. The buffer is sized at build, so no event
   is dropped and nothing allocates on the render thread.
+- **Looping clips.** A MIDI clip with a loop plays its content `[0, loop_length)` on every pass:
+  its notes and its controller events (CC, pitch bend, channel pressure) alike. The schedule
+  places every pass's events when it is built, each controller event on the frame of a note that
+  starts on its content beat, so a modulation, expression or pedal curve repeats with the loop,
+  and the value one pass leaves holds into the next until that pass's own event. What the
+  content sets before the clip start (a content offset into the loop) is not played, as in a
+  clip without a loop.
 - **Play** builds a fresh graph at the start frame; **pause** halts the stream at the device's
   software position and keeps it as the resting position; **resume** is a play from there;
   **seek** keeps the graph, moves the position and starts a new generation; **stop** halts the
@@ -152,7 +159,8 @@ audio hardware and no sleeping.
   the frame (it selects the articulation without sounding the key), and the last value
   before the frame of the modulation (CC 1), expression (CC 11) and sustain (CC 64)
   controllers. So a seek, a loop wrap or a render that starts later plays the articulation, the
-  level and the pedal that playing up to that frame leaves. A controller with no event before
+  level and the pedal that playing up to that frame leaves; early in a later pass of a looping
+  clip, that is the value the previous pass left. A controller with no event before
   the frame keeps its value. Each controller is restored once, from its last event on whichever
   channel sent it, not once per channel. The schedule's buffer has room for these events from
   the build on. A chased note-on carries the note's own articulation, as any of its note-ons
@@ -160,10 +168,11 @@ audio hardware and no sleeping.
   Every other instrument, the Poly Synth and the Drum Kit among them, gets the plain chase.
 - **Tests.** `crates/sonara-engine/tests/player/transport.rs` (position, restart, end of range,
   concurrency), `hanging_notes.rs` (a held voice after seek, resume and stop),
-  `schedule.rs` (order, chase, tempo change, a sampler's chase), `tests/sampler.rs` (a sampler
-  after a seek, a loop wrap and a later start, with clip keyswitches, with its `articulation`,
-  `mute` and `vibrato` parameters, their changes inside a block and a note's own articulation)
-  and
+  `schedule.rs` (order, chase, tempo change, looping clips, a sampler's chase),
+  `tests/sampler.rs` (a sampler after a seek, a loop wrap and a later start, with clip
+  keyswitches, with a looping clip's expression, with its `articulation`, `mute` and `vibrato`
+  parameters, their changes inside a block and a note's own articulation), `tests/renderer.rs`
+  (a looping clip's bends and pedal on the Poly Synth) and
   `crates/sonara-app/tests/transport*.rs`.
 
 ## Offline renderer (`sonara_engine::renderer`)
@@ -183,8 +192,8 @@ audio hardware and no sleeping.
   side. Mono sources are dual-mono before panning, so a centred mono source plays at 0 dB in
   each channel.
 - **MIDI.** Note on/off and controller events are scheduled sample-accurately, with tempo
-  ramps honoured. On a discontinuity (start, seek, loop), sounding notes are chased:
-  all-notes-off, then the notes already sounding are retriggered. A sampler also gets its last
+  ramps honoured, on every pass of a looping clip. On a discontinuity (start, seek, loop),
+  sounding notes are chased: all-notes-off, then the notes already sounding are retriggered. A sampler also gets its last
   keyswitch and its last CC 1, 11 and 64 values (above), so a render that starts later than the
   first keyswitch note plays the same articulation as the full render.
 - **Device automation.** Device parameters are sampled once per 512-frame block, at the

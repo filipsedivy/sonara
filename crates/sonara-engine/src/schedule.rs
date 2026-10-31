@@ -5,9 +5,18 @@
 //!
 //! - **Build:** for every unmuted clip, the clip's `playback_notes()` with
 //!   `on = beat_to_sample(t)` and `off = beat_to_sample(min(t + length, clip_end))`, at least
-//!   `on + 1`; controller events only for clips that do not loop and only inside the clip span.
+//!   `on + 1`; and its controller events inside the clip span. A clip that does not loop plays
+//!   each event at `start + (beat - content_offset)`. A looping clip plays the events of its
+//!   content `[0, loop_length)` on every pass of the loop, on the passes and the beats its notes
+//!   use ([`looped_controls`]), so an event lands on the frame of a note that starts on its
+//!   content beat, a curve repeats with the loop, and the value one pass leaves holds into the
+//!   next until that pass's first event of the controller. As with a clip that does not loop,
+//!   what the content sets before the clip start (a `content_offset` into the loop) is not
+//!   played. The prototype dropped the controller events of looping clips; no golden project
+//!   has a clip with controller events, so the golden renders stay the same (GLD-01).
 //!   Notes are sorted stably by `on`, the note-off order stably by `off`, the controller events
-//!   stably by frame.
+//!   stably by frame, every pass's events placed at build: the per-block lookup stays a binary
+//!   search into preallocated slices (RT-02, RT-05).
 //! - **Per block** (`[frame, frame + n)`): on a discontinuity (the chase), an all-notes-off and
 //!   a note-on for every note with `on < frame < off`, all at offset 0; then the note-offs, the
 //!   note-ons and the controller events of the block, stably sorted by offset. The four groups
@@ -19,7 +28,9 @@
 //!   `frame` (a note that the preset's key offset moves onto a keyswitch key), then the last
 //!   event before `frame` of each of the controllers 1 (modulation), 11 (expression) and 64
 //!   (sustain), on its own channel and in timeline order. So a seek or a loop wrap plays the
-//!   articulation, the swell and the pedal that playing up to the new position leaves. The
+//!   articulation, the swell and the pedal that playing up to the new position leaves. A
+//!   looping clip's events count on every pass they are placed on, so a position early in a
+//!   later pass, before the pass's own event, gets the value the previous pass left. The
 //!   sampler makes its default switch active, and applies its articulation parameter again, at
 //!   the all-notes-off, so a position before every keyswitch note gets the default or the
 //!   parameter's articulation. A controller with no event before `frame` keeps its value, except
@@ -68,8 +79,10 @@
     clippy::disallowed_macros
 )]
 
-use sonara_core::midi::ControlKind;
+use sonara_core::EPSILON;
+use sonara_core::midi::{ControlKind, MidiControlEvent};
 use sonara_core::model::clip::MidiClip;
+use sonara_core::model::py_mod;
 use sonara_core::time::TempoMap;
 use sonara_dsp::processor::{EventKind, InstrumentEvent, NoteSet};
 
@@ -99,6 +112,56 @@ struct Control {
     number: u8,
     value: i32,
     channel: u8,
+}
+
+impl Control {
+    /// The schedule's event of the clip's controller event `event` at timeline frame `frame`.
+    fn new(event: &MidiControlEvent, frame: i64) -> Self {
+        Self {
+            frame,
+            kind: match event.kind {
+                ControlKind::Cc => EventKind::Cc,
+                ControlKind::PitchBend => EventKind::PitchBend,
+                ControlKind::ChannelPressure => EventKind::ChannelPressure,
+            },
+            // Validated ranges: CC numbers 0–127 (a pitch bend's number is unused), values
+            // within ±8192, channels 0–15.
+            number: u8::try_from(event.number).unwrap_or(0),
+            value: i32::try_from(event.value).unwrap_or(0),
+            channel: u8::try_from(event.channel).unwrap_or(0),
+        }
+    }
+}
+
+/// The most loop passes after the first that a looping clip plays: the bound of
+/// `MidiClipData::playback_notes`, so a clip's controller events cover the passes its notes do.
+const MAX_LOOP_PASSES: u32 = 100_000;
+
+/// The controller events of the looping clip `clip`, whose loop is `loop_length` beats long, at
+/// their timeline beats, pass by pass: every pass plays the events of the content `[0,
+/// loop_length)` in their stored order.
+///
+/// The passes, the content and the span are those of the clip's notes, with the same arithmetic
+/// as `MidiClipData::playback_notes`, so an event lands on the very beat (and frame) of a note
+/// that starts on its content beat: the first pass begins `content_offset` (modulo the loop)
+/// before the clip start, and an event of a pass is played when it lies within the clip span
+/// (`EPSILON` tolerant at both ends, as a note).
+fn looped_controls(
+    clip: &MidiClip,
+    loop_length: f64,
+) -> impl Iterator<Item = (f64, &MidiControlEvent)> {
+    let clip_end = clip.start + clip.length;
+    let iteration_start = clip.start - py_mod(clip.content_offset, loop_length);
+    (0..=MAX_LOOP_PASSES)
+        .map(move |k| iteration_start + f64::from(k) * loop_length)
+        .take_while(move |&base| base < clip_end - EPSILON)
+        .flat_map(move |base| {
+            clip.controls
+                .iter()
+                .filter(move |event| event.beat < loop_length - EPSILON)
+                .map(move |event| (base + event.beat, event))
+                .filter(move |&(t, _)| t + EPSILON >= clip.start && t < clip_end - EPSILON)
+        })
 }
 
 /// The filler of unused event slots.
@@ -243,7 +306,10 @@ impl NoteSchedule {
                     articulation: note.articulation.as_deref().and_then(&mut articulation),
                 });
             }
-            if clip.loop_length.is_some() {
+            if let Some(loop_length) = clip.loop_length {
+                controls.extend(looped_controls(clip, loop_length).map(|(beat, event)| {
+                    Control::new(event, tempo.beat_to_sample(beat, sample_rate))
+                }));
                 continue;
             }
             for event in clip.controls.iter() {
@@ -251,19 +317,7 @@ impl NoteSchedule {
                 if !(clip.start <= beat && beat < clip_end) {
                     continue;
                 }
-                controls.push(Control {
-                    frame: tempo.beat_to_sample(beat, sample_rate),
-                    kind: match event.kind {
-                        ControlKind::Cc => EventKind::Cc,
-                        ControlKind::PitchBend => EventKind::PitchBend,
-                        ControlKind::ChannelPressure => EventKind::ChannelPressure,
-                    },
-                    // Validated ranges: CC numbers 0–127 (a pitch bend's number is unused),
-                    // values within ±8192, channels 0–15.
-                    number: u8::try_from(event.number).unwrap_or(0),
-                    value: i32::try_from(event.value).unwrap_or(0),
-                    channel: u8::try_from(event.channel).unwrap_or(0),
-                });
+                controls.push(Control::new(event, tempo.beat_to_sample(beat, sample_rate)));
             }
         }
         // `sort_by_key` is stable, like NumPy's `argsort(kind="stable")` and Python's sort.
@@ -727,9 +781,13 @@ mod tests {
         );
     }
 
+    /// A looping clip plays its controller events on every pass, as its notes. The prototype
+    /// dropped them (TST-06 pins the change); no golden project has a clip with controller
+    /// events, so the golden renders are unaffected (GLD-01).
     #[test]
-    fn looped_clips_repeat_notes_and_drop_controls() {
+    fn looped_clips_repeat_notes_and_controls() {
         let tempo = TempoMap::constant(120.0).unwrap();
+        // C4 at content beat 0 and CC 1 at content beat 0.5, looped every 2 beats over 4.
         let c = clip(0.0, 4.0, &[(60, 0.0, 0.5)], Some(2.0));
         let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8, |_| None);
         let all = kinds(schedule.events(0, 16, false));
@@ -738,10 +796,153 @@ mod tests {
             [
                 (0, EventKind::NoteOn, 60),
                 (2, EventKind::NoteOff, 60),
+                (2, EventKind::Cc, 0),
                 (8, EventKind::NoteOn, 60),
                 (10, EventKind::NoteOff, 60),
+                (10, EventKind::Cc, 0),
             ]
         );
+        // The buffer has room for every placed event: 1 + 2 · 2 notes + 2 controller events.
+        assert_eq!(schedule.capacity(), 1 + 2 * 2 + 2);
+    }
+
+    /// A looping clip of `length` beats from `start`, whose content from `content_offset`
+    /// repeats every `loop_length` beats, with a note (C4, a sixteenth of a beat long) and a CC 1
+    /// event at each content beat of `beats`.
+    fn twin_clip(
+        start: f64,
+        length: f64,
+        content_offset: f64,
+        loop_length: f64,
+        beats: &[f64],
+    ) -> MidiClip {
+        let ids = ["n_0", "n_1", "n_2", "n_3", "n_4", "n_5", "n_6", "n_7"];
+        assert!(beats.len() <= ids.len(), "an ID for every note");
+        let notes = ids
+            .iter()
+            .zip(beats)
+            .map(|(id, &beat)| MidiNote::new(*id, 60, beat, 0.0625, 100, 0).unwrap())
+            .collect();
+        let controls = beats
+            .iter()
+            .zip(0..)
+            .map(|(&beat, value)| {
+                MidiControlEvent::new(beat, ControlKind::Cc, value, 1, 0).unwrap()
+            })
+            .collect();
+        MidiClip::new(MidiClipData {
+            id: "clp_1".to_owned(),
+            name: "Clip".to_owned(),
+            start,
+            length,
+            notes: Arc::new(notes),
+            controls: Arc::new(controls),
+            content_offset,
+            loop_length: Some(loop_length),
+            muted: false,
+            color: None,
+            extra: JsonMap::new(),
+        })
+        .unwrap()
+    }
+
+    /// TST-07: a looping clip's controller event lands on exactly the passes and the beats
+    /// where a note that starts on its content beat plays. The oracle is the clip's own
+    /// `playback_notes()`, compared bit for bit, on a loop length, an offset and a clip end
+    /// that are no binary fractions, so a different order of the arithmetic would show.
+    #[test]
+    fn a_looped_controller_event_lands_on_the_beat_of_a_note_on_its_content_beat() {
+        // Content beats 0.7 (the loop length) and 0.9 lie outside the loop: neither plays.
+        let beats = [0.0, 0.1, 0.25, 0.3, 0.6, 0.699_999_9, 0.7, 0.9];
+        let cases = [
+            (1.1, 3.05, 0.3, 0.7),
+            (0.0, 4.0, 0.0, 0.7),
+            (2.3, 0.65, 1.55, 0.7),
+            (0.4, 7.3, 0.0, 1.1),
+            (0.0, 1e-3, 0.0, 0.7),
+        ];
+        for (start, length, content_offset, loop_length) in cases {
+            let c = twin_clip(start, length, content_offset, loop_length, &beats);
+            let notes: Vec<(u64, u64)> = c
+                .playback_notes()
+                .iter()
+                .map(|&(t, note)| (t.to_bits(), note.start.to_bits()))
+                .collect();
+            let controls: Vec<(u64, u64)> = super::looped_controls(&c, loop_length)
+                .map(|(t, event)| (t.to_bits(), event.beat.to_bits()))
+                .collect();
+            assert!(!notes.is_empty(), "the clip from {start} plays notes");
+            assert_eq!(controls, notes, "the clip from beat {start}");
+            // Through the schedule: each controller event on the frame of its note's note-on.
+            let tempo = TempoMap::constant(97.0).unwrap();
+            let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 48_000, |_| None);
+            let events = schedule.events(0, 1_000_000, false);
+            let at = |kind| -> Vec<usize> {
+                events
+                    .iter()
+                    .filter(|e| e.kind == kind)
+                    .map(|e| e.offset)
+                    .collect()
+            };
+            assert_eq!(
+                at(EventKind::Cc),
+                at(EventKind::NoteOn),
+                "from beat {start}"
+            );
+        }
+    }
+
+    /// A looping clip's controller events follow its content offset, its loop and its end, as
+    /// its notes do. The oracle is the arithmetic of the passes (a beat is 4 frames): the clip
+    /// from beat 1 to 5.5 starts half a beat into its 2-beat loop, so the passes begin at beats
+    /// 0.5, 2.5 and 4.5. Content beat 0.25 plays at 2.75 and 4.75 (not at 0.75, before the
+    /// clip start), content beat 1.5 at 2 and 4 (not at 6, past the clip end), and content
+    /// beat 2.5 (past the loop) never.
+    #[test]
+    fn looped_controller_events_follow_the_offset_the_loop_and_the_clip_end() {
+        let tempo = TempoMap::constant(120.0).unwrap();
+        let controls = [(0.25, 10), (1.5, 20), (2.5, 30)]
+            .map(|(beat, value)| {
+                MidiControlEvent::new(beat, ControlKind::Cc, value, 11, 2).unwrap()
+            })
+            .to_vec();
+        let c = MidiClip::new(MidiClipData {
+            id: "clp_1".to_owned(),
+            name: "Clip".to_owned(),
+            start: 1.0,
+            length: 4.5,
+            notes: Arc::new(Vec::new()),
+            controls: Arc::new(controls),
+            content_offset: 0.5,
+            loop_length: Some(2.0),
+            muted: false,
+            color: None,
+            extra: JsonMap::new(),
+        })
+        .unwrap();
+        let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8, |_| None);
+        assert_eq!(
+            details(schedule.events(0, 100, false)),
+            [
+                (8, EventKind::Cc, 0, 11, 20, 2),
+                (11, EventKind::Cc, 0, 11, 10, 2),
+                (16, EventKind::Cc, 0, 11, 20, 2),
+                (19, EventKind::Cc, 0, 11, 10, 2),
+            ]
+        );
+        assert_eq!(schedule.capacity(), 1 + 4);
+        // A block reads only its own window of the placed events.
+        assert_eq!(
+            details(schedule.events(11, 6, false)),
+            [
+                (0, EventKind::Cc, 0, 11, 10, 2),
+                (5, EventKind::Cc, 0, 11, 20, 2)
+            ]
+        );
+        // A muted looping clip places nothing.
+        let muted = c.edit(|d| d.muted = true).unwrap();
+        let mut silent = NoteSchedule::build([&muted].into_iter(), &tempo, 8, |_| None);
+        assert_eq!(details(silent.events(0, 100, false)), []);
     }
 
     #[test]
@@ -991,6 +1192,83 @@ mod tests {
                 (0, EventKind::NoteOn, 60, 0, 0, 0),
             ]
         );
+    }
+
+    /// A sampler's chase early in a later pass of a looping clip restores the value the
+    /// previous pass left, as playing through the loop does. The clip loops every 2 beats (8
+    /// frames) over 8 beats and sets CC 11 to 100 at content beat 0.5 and to 50 at content
+    /// beat 1.5: the oracle is the frames of its passes, 2 and 6, 10 and 14, 18 and 22, 26 and
+    /// 30.
+    #[test]
+    fn a_sampler_chase_in_a_later_pass_restores_what_the_previous_pass_left() {
+        let tempo = TempoMap::constant(120.0).unwrap();
+        let controls = [(0.5, 100), (1.5, 50)]
+            .map(|(beat, value)| {
+                MidiControlEvent::new(beat, ControlKind::Cc, value, 11, 0).unwrap()
+            })
+            .to_vec();
+        let c = MidiClip::new(MidiClipData {
+            id: "clp_1".to_owned(),
+            name: "Clip".to_owned(),
+            start: 0.0,
+            length: 8.0,
+            notes: Arc::new(Vec::new()),
+            controls: Arc::new(controls),
+            content_offset: 0.0,
+            loop_length: Some(2.0),
+            muted: false,
+            color: None,
+            extra: JsonMap::new(),
+        })
+        .unwrap();
+        let mut plain = NoteSchedule::build([&c].into_iter(), &tempo, 8, |_| None);
+        let mut schedule = plain.clone();
+        schedule.chase_sampler(NoteSet::EMPTY);
+        // Eight placed events and the restored CC 11.
+        assert_eq!(schedule.capacity(), 1 + 8 + 1);
+        let off = (0, EventKind::AllNotesOff, 0, 0, 0, 0);
+        let expression = |value| (0, EventKind::Cc, 0, 11, value, 0);
+        // (frame, the restored value): nothing before the first event; in the first pass after
+        // its second event; at the wrap and in the second pass before its first event, the
+        // first pass's last value; after it, the second pass's first; in the last pass, before
+        // its first event, the third pass's last.
+        let cases = [
+            (1, None),
+            (7, Some(50)),
+            (8, Some(50)),
+            (9, Some(50)),
+            (11, Some(100)),
+            (25, Some(50)),
+        ];
+        for (frame, restored) in cases {
+            let mut expected = [off].to_vec();
+            expected.extend(restored.map(expression));
+            assert_eq!(
+                details(schedule.events(frame, 1, true)),
+                expected,
+                "frame {frame}"
+            );
+            // A plain chase restores no controller.
+            assert_eq!(
+                details(plain.events(frame, 1, true)),
+                [off],
+                "frame {frame}"
+            );
+        }
+        // From the wrap on, a block plays the second pass's own events after the restored one.
+        assert_eq!(
+            details(schedule.events(8, 8, true)),
+            [
+                off,
+                expression(50),
+                (2, EventKind::Cc, 0, 11, 100, 0),
+                (6, EventKind::Cc, 0, 11, 50, 0),
+            ]
+        );
+        // Every placed event fits the buffer with the chase.
+        let all = schedule.events(1, 1_000, true).len();
+        assert_eq!(all, 1 + 8);
+        assert!(all <= schedule.capacity());
     }
 
     #[test]

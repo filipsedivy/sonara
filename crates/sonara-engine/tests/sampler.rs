@@ -10,6 +10,10 @@
 //! checks is processed inside `assert_no_alloc` (RT-02). The Poly Synth and the Drum Kit keep
 //! the plain chase: `tests/golden_render.rs` pins their renders byte for byte (GLD-01).
 //!
+//! **A looping clip** plays its controller events on every pass: the oracle is the same clip
+//! written out without a loop, bit for bit, also after a seek into a later pass and on every
+//! pass of a transport loop, where the chase restores the value the previous pass left.
+//!
 //! **The `articulation` parameter** of a profiled preset selects the keyswitch its mapping
 //! names, from a stored choice or an automation lane. The oracle is the same clip in `auto` with
 //! keyswitch notes that select the same switches; a seek and every pass of a loop must play as
@@ -673,6 +677,18 @@ fn sampler_project(
     controls: &[Value],
     automation: &[Value],
 ) -> (Project, PluginRegistry) {
+    looped_project(params, notes, controls, automation, None)
+}
+
+/// [`sampler_project`] whose clip repeats its content every `loop_length` beats (`None`: it
+/// does not loop).
+fn looped_project(
+    params: &Value,
+    notes: &[Value],
+    controls: &[Value],
+    automation: &[Value],
+    loop_length: Option<f64>,
+) -> (Project, PluginRegistry) {
     let golden = Golden::open().expect("golden data is available (set SONARA_GOLDEN)");
     let bytes = golden
         .bytes("workflows/sidechain_preview/final.project.json")
@@ -683,8 +699,8 @@ fn sampler_project(
         .expect("the instrument's choice")
         .to_owned();
     let clip = json!({"type": "midi", "id": "clp_000000000008", "name": "Articulations",
-        "start": 0.0, "length": 8.0, "content_offset": 0.0, "loop_length": null, "muted": false,
-        "color": null, "notes": notes, "controls": controls});
+        "start": 0.0, "length": 8.0, "content_offset": 0.0, "loop_length": loop_length,
+        "muted": false, "color": null, "notes": notes, "controls": controls});
     let mut track = data
         .get("tracks")
         .and_then(Value::as_array)
@@ -831,6 +847,101 @@ fn a_render_from_a_later_beat_is_the_slice_of_the_full_render() {
     assert!(loudest(&part.data) > 0.1, "the note at beat 1 sounds");
     let from = usize::try_from(part.start_frame).unwrap();
     assert!(part.data == full.data[from..], "the render from beat 0.875");
+}
+
+/// The looping clip of [`a_looping_clip_plays_its_expression_on_every_pass`], or (`unrolled`)
+/// the same clip written out without a loop: in each 2-beat pass, C4 at beat 0.25, the
+/// expression (CC 11) up to 120 at beat 0.75, C4 again at beat 1 and the expression down to 50
+/// at beat 1.5, each note a quarter beat long; `with_controls: false` leaves the expression
+/// out.
+fn expression_loop(patch: &Path, unrolled: bool, with_controls: bool) -> (Project, PluginRegistry) {
+    let expression = |beat: f64, value: u8| {
+        json!({"beat": beat, "kind": "cc", "value": value, "number": 11,
+               "channel": 0})
+    };
+    let passes = if unrolled { 0..4 } else { 0..1 };
+    let mut notes = Vec::new();
+    let mut controls = Vec::new();
+    for pass in passes {
+        let base = 2.0 * f64::from(pass);
+        notes.push(note(&format!("n_00000000010{pass}"), 60, base + 0.25, 0.25));
+        notes.push(note(&format!("n_00000000020{pass}"), 60, base + 1.0, 0.25));
+        if with_controls {
+            controls.push(expression(base + 0.75, 120));
+            controls.push(expression(base + 1.5, 50));
+        }
+    }
+    let loop_length = (!unrolled).then_some(2.0);
+    looped_project(
+        &json!({"instrument": path(patch)}),
+        &notes,
+        &controls,
+        &[],
+        loop_length,
+    )
+}
+
+/// A looping clip plays its controller events on every pass, as its notes (the prototype
+/// dropped them, so no golden render holds one; TST-06). The oracle is the same clip written
+/// out without a loop, bit for bit: the first C4 of the first pass plays at the full
+/// expression, and in every later pass at the 50 the previous pass left. A seek from the third
+/// pass, where the expression is 120, back into the second pass before its first note restores
+/// those 50; so do a render that starts there and every pass of a transport loop from there.
+/// Every block is processed inside `assert_no_alloc` (RT-02).
+#[test]
+fn a_looping_clip_plays_its_expression_on_every_pass() {
+    let (_dir, patch) = keyswitch_patch();
+    let media = no_media();
+    let end = 376 * BLOCK;
+    let heard = play(
+        &mut graph_of(&expression_loop(&patch, true, true), &media),
+        0,
+        end,
+    );
+    let looped = play(
+        &mut graph_of(&expression_loop(&patch, false, true), &media),
+        0,
+        end,
+    );
+    assert!(looped == heard, "the looping clip plays as written out");
+    let without = play(
+        &mut graph_of(&expression_loop(&patch, false, false), &media),
+        0,
+        end,
+    );
+    assert!(looped != without, "the expression is heard");
+    // The first C4 of each pass: from beat 0.25 and from beat 2.25, a quarter beat long.
+    let at = |frame: i64| usize::try_from(frame).unwrap();
+    let first = loudest(&heard[at(BEAT / 4)..at(BEAT / 2)]);
+    let second = loudest(&heard[at(BEAT * 9 / 4)..at(BEAT * 5 / 2)]);
+    assert!(first > 0.1, "the first pass sounds");
+    assert!(
+        second > 0.01 && second < 0.75 * first,
+        "the second pass starts at the lower expression: {second} against {first}"
+    );
+    // Beat 2.0053, just after the wrap and before the second pass's first note; beat 4.7573,
+    // after the third pass's rise to 120 and before its second note.
+    let (after_wrap, risen) = (94 * BLOCK, 223 * BLOCK);
+    let project = expression_loop(&patch, false, true);
+    let mut jumping = graph_of(&project, &media);
+    play(&mut jumping, 0, risen);
+    let after = play(&mut jumping, after_wrap, end);
+    assert!(
+        after == heard[at(after_wrap)..],
+        "a seek into the second pass"
+    );
+    let mut looping = graph_of(&project, &media);
+    let pass = play(&mut looping, after_wrap, risen);
+    assert!(
+        pass == heard[at(after_wrap)..at(risen)],
+        "a start in the second pass"
+    );
+    for again in 2..=3 {
+        assert!(
+            play(&mut looping, after_wrap, risen) == pass,
+            "pass {again} of the transport loop"
+        );
+    }
 }
 
 /// The presets `lib/articulations`, `lib/keyed-low` and `lib/muted`, played from the

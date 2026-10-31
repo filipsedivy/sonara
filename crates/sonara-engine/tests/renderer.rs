@@ -21,7 +21,8 @@
 //! - **D3**: a disabled send and a bypassed master do not ramp in the first block.
 //! - **Failure paths** with the prototype's codes, messages and warnings.
 //! - **Invariants:** the stream equals the render before trimming; a pre-roll that covers the
-//!   start renders exactly the slice of a full render.
+//!   start renders exactly the slice of a full render; a looping clip's notes, bends and pedal
+//!   on the Poly Synth render as the clip written out without a loop.
 //!
 //! The binary installs `AllocDisabler`, so the processing path of the edited project runs
 //! inside `assert_no_alloc` too (RT-02).
@@ -986,6 +987,93 @@ fn scheduled_notes_render_like_every_note() {
         "the drums play"
     );
     assert_eq!(every, scheduled, "bit-identical");
+}
+
+/// The base project with the bass's clip (the Poly Synth) replaced by one of 8 beats: in each
+/// 2-beat pass, C2 from beat 0 and E2 from beat 1, half a beat each, the pitch bend up to 4096
+/// at beat 0.5 and down to -2048 at beat 1.5, and the sustain pedal down at beat 1.25 and up
+/// at beat 1.75. As a clip that loops every 2 beats, or (`unrolled`) written out without a
+/// loop; `with_controls: false` leaves the bends and the pedal out.
+fn bass_loop(unrolled: bool, with_controls: bool) -> Project {
+    let passes = if unrolled { 0..4 } else { 0..1 };
+    let mut notes = Vec::new();
+    let mut controls = Vec::new();
+    for pass in passes {
+        let base = 2.0 * f64::from(pass);
+        for (id, pitch, beat) in [(1, 36, 0.0), (2, 40, 1.0)] {
+            notes.push(
+                json!({"id": format!("n_00000000{id}00{pass}"), "pitch": pitch,
+                "start": base + beat, "length": 0.5, "velocity": 100, "channel": 0}),
+            );
+        }
+        if with_controls {
+            controls.extend([
+                json!({"beat": base + 0.5, "kind": "pitch_bend", "value": 4096, "number": 0,
+                       "channel": 0}),
+                json!({"beat": base + 1.25, "kind": "cc", "value": 127, "number": 64,
+                       "channel": 0}),
+                json!({"beat": base + 1.5, "kind": "pitch_bend", "value": -2048, "number": 0,
+                       "channel": 0}),
+                json!({"beat": base + 1.75, "kind": "cc", "value": 0, "number": 64,
+                       "channel": 0}),
+            ]);
+        }
+    }
+    let loop_length = (!unrolled).then_some(2.0);
+    project(|data| {
+        track(data, BASS)["clips"] = json!([{"type": "midi", "id": "clp_000000000073",
+            "name": "Bass", "start": 0.0, "length": 8.0, "content_offset": 0.0,
+            "loop_length": loop_length, "muted": false, "color": null, "notes": notes,
+            "controls": controls}]);
+    })
+}
+
+/// A looping clip plays its controller events on every pass, as its notes, also on the Poly
+/// Synth: the bends and the pedal repeat with the loop, and the bend one pass leaves holds into
+/// the next. The oracle is the same clip written out without a loop, bit for bit, from a start
+/// and from a seek into the third pass. The prototype dropped the controller events of looping
+/// clips (TST-06 pins the change); no golden project has a clip with controller events, so the
+/// golden renders stay the same (`tests/golden_render.rs`, GLD-01). Every block is processed
+/// inside `assert_no_alloc` (RT-02).
+#[test]
+fn a_looping_clip_bends_the_poly_synth_on_every_pass() {
+    let registry = builtin_registry();
+    let media = no_media();
+    // The blocks from frame `from` up to 200 000 (8 beats at 126 bpm are 182 857 frames).
+    let render = |project: &Project, from: i64| {
+        let mut graph = RenderGraph::new(
+            project,
+            &registry,
+            &media,
+            RenderRequest::default().block_size,
+            &GraphOptions::default(),
+        )
+        .expect("the graph builds");
+        graph.reset();
+        let block = i64::try_from(graph.block_size()).expect("a block size");
+        let mut out = Vec::new();
+        let mut frame = from;
+        while frame < 200_000 {
+            graph.read_media(frame).expect("no media to read");
+            out.extend_from_slice(assert_no_alloc(|| graph.process(frame, true)));
+            frame += block;
+        }
+        out
+    };
+    let heard = render(&bass_loop(true, true), 0);
+    let looped = render(&bass_loop(false, true), 0);
+    assert!(looped == heard, "the looping clip plays as written out");
+    let without = render(&bass_loop(false, false), 0);
+    assert!(looped != without, "the bends and the pedal are heard");
+    // Frame 100 352 lies early in the third pass (beat 4.39), before its first bend.
+    let from = 196 * 512;
+    let later = render(&bass_loop(false, true), from);
+    let start = usize::try_from(from).expect("a frame");
+    assert!(
+        later == render(&bass_loop(true, true), from),
+        "a start in the third pass plays as written out"
+    );
+    assert_eq!(later.len(), heard.len() - start);
 }
 
 // -- Mixer and routing: mute, solo, solo-safe, buses -----
