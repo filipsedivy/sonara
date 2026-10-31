@@ -319,6 +319,9 @@ fn articulation_words_build_one_request() {
 fn dynamics_and_their_changes_read_in_both_languages() {
     let cases = [
         ("strings play pp", Some(Dynamic::Pianissimo), None),
+        // Markings beyond the six read as their nearest neighbour (`Dynamic`).
+        ("strings play ppp", Some(Dynamic::Pianissimo), None),
+        ("trombones play fff", Some(Dynamic::Fortissimo), None),
         ("strings play softly", Some(Dynamic::Piano), None),
         ("smyčce hrají potichu", Some(Dynamic::Piano), None),
         (
