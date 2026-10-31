@@ -95,8 +95,8 @@ impl InstrumentCatalog {
     }
 
     /// The presets that can be played now ([`Availability::Available`]). A set is among them
-    /// when every member is, although the sampler plays one patch per device, so
-    /// [`super::InstalledInstruments`] offers only the patches.
+    /// when every member is; [`super::InstalledInstruments`] offers it beside its patches, and
+    /// one sampler device plays all of them.
     pub fn available(&self) -> impl Iterator<Item = &InstrumentPreset> {
         self.presets
             .iter()

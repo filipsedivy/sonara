@@ -1,7 +1,8 @@
 # ADR 0010: Sample-based orchestral instruments
 
-- **Status:** Accepted (2026-10-27); decision 4 amended (2026-10-30); the live rebuild
-  consequence amended (2026-10-31)
+- **Status:** Accepted (2026-10-27); decision 4 amended (2026-10-30); decisions 2 and 4 and
+  the live rebuild and memory consequences amended for the sampler setup and multi-patch sets
+  (2026-10-31)
 - **Research:** [orchestral-audio-engine-research.md](../orchestral-audio-engine-research.md)
 
 ## Context
@@ -26,7 +27,10 @@ samples. The constraints that decide the design are rules, not taste:
 2. **Patch reading off the real-time thread:** `sonara-media::sfz` parses the SFZ subset and
    decodes the samples into an immutable `SampleBank` (`sonara-dsp::bank`), cached per patch in
    `MediaProvider`. The sampler receives the bank through `DeviceState::sample_bank`, like a
-   convolver receives its impulse response.
+   convolver receives its impulse response. *Amended 2026-10-31: the sampler now receives a
+   `SamplerSetup` through `DeviceState::sampler`, the bank beside the mapping the application
+   compiles for the preset; a multi-patch set is one bank of all its patches, cached by its
+   patch files.*
 3. **Libraries are installed by the user; none is bundled.** The settings key
    `sample_libraries` lists directories. `sonara-app::samples` scans them for `.sfz` files.
 4. **The sampler is not a built-in.** `builtin_registry()` stays at twelve descriptors, so the
@@ -47,7 +51,9 @@ samples. The constraints that decide the design are rules, not taste:
    and plays silence (decision 5). The project schema and the tools do not change; only how the
    value is read does. So that library IDs are final before projects store them, Sonara also
    recognizes VSCO 2 CE and VCSL by a few of their files and gives a copy without a manifest the
-   IDs `vsco2ce` and `vcsl`, which do not change when its folder is renamed.
+   IDs `vsco2ce` and `vcsl`, which do not change when its folder is renamed. *Amended
+   2026-10-31: a multi-patch set whose patches are all installed is a choice too, with the ID
+   `<library id>/@<set>`.*
 5. **Failure is soft.** A patch that is missing or unreadable, or an `instrument` that is not
    installed on this machine, renders as silence with a warning; it does not fail the render.
 6. **Not built, and why:**
@@ -74,7 +80,8 @@ samples. The constraints that decide the design are rules, not taste:
   per-region pan and streaming are not supported; a patch that uses them plays without them and
   the loader lists the ignored opcodes. Sonatina's performance patches need CC 1 and CC 21, so
   they play only partly.
-- Samples are decoded whole: a patch needs RAM for its samples (capped at 3 GiB). Streaming from
+- Samples are decoded whole: a patch needs RAM for its samples (capped at 3 GiB, for a
+  multi-patch set all of its patches together, since one device plays them). Streaming from
   disk is future work.
 - The sampler has no prototype, so no golden data covers it. `sonara-dsp/tests/sampler.rs`,
   `sonara-media/tests/sfz.rs` and `sonara-engine/tests/sampler.rs` pin it with generated
