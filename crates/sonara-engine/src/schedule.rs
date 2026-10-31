@@ -21,9 +21,12 @@
 //!   So a seek or a loop wrap plays the articulation, the swell and the pedal that playing up
 //!   to the new position leaves. The sampler makes its default switch active at the
 //!   all-notes-off, so a position before every keyswitch note gets the default. A controller
-//!   with no event before `frame` keeps its value. Every other instrument (the Poly Synth and
-//!   the Drum Kit among them) gets the plain chase, so its events and its golden renders stay
-//!   the same (GLD-01).
+//!   with no event before `frame` keeps its value. Each controller is restored once, by its
+//!   last event on whichever channel: a value an earlier event left on another channel is not
+//!   restored, which only the sampler's per-channel gates and crossfades can tell (the pedal,
+//!   volume and expression it applies act on every channel). Every other instrument (the Poly
+//!   Synth and the Drum Kit among them) gets the plain chase, so its events and its golden
+//!   renders stay the same (GLD-01).
 //!
 //! The event buffer is sized at build for the worst case, every event in one block
 //! (`1 + 2 · notes + controls`: a chased note cannot also start in the block), and a sampler's

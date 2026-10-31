@@ -130,6 +130,10 @@ modulation (CC 1), expression (CC 11) and sustain (CC 64) that the track's clips
 new position, each on the channel that set it, so the swell, the level and the pedal are where
 playing up to it leaves them. A controller that the clips set only after the new position keeps
 its value, and a region that a re-sent value starts, such as a pedal noise, plays again there.
+Each controller is re-sent once, on the channel that set it last: when the clips set one
+controller on several channels, the other channels keep what all notes off leaves them (the
+pedal up) or, for CC 1 and CC 11, the value they had before the jump. This matters only for a
+patch whose gates or crossfades read that controller on more than one channel.
 `set_ccN` sets only what the patch's own controller opcodes read: the volume and expression the
 sampler applies start full, and the pedal up, whatever the patch sets. A patch uses the
 controllers in four ways, each on the channel of its note:

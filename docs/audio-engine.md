@@ -151,7 +151,9 @@ audio hardware and no sleeping.
   before the frame of the modulation (CC 1), expression (CC 11) and sustain (CC 64)
   controllers. So a seek, a loop wrap or a render that starts later plays the articulation, the
   level and the pedal that playing up to that frame leaves. A controller with no event before
-  the frame keeps its value. The schedule's buffer has room for these events from the build on.
+  the frame keeps its value. Each controller is restored once, from its last event on whichever
+  channel sent it, not once per channel. The schedule's buffer has room for these events from
+  the build on.
   Every other instrument, the Poly Synth and the Drum Kit among them, gets the plain chase.
 - **Tests.** `crates/sonara-engine/tests/player/transport.rs` (position, restart, end of range,
   concurrency), `hanging_notes.rs` (a held voice after seek, resume and stop),
