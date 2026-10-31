@@ -73,6 +73,12 @@ impl InstrumentCatalog {
         &self.presets
     }
 
+    /// Every preset, sorted by ID, available or not, without the libraries and the issues.
+    #[must_use]
+    pub fn into_presets(self) -> Vec<InstrumentPreset> {
+        self.presets
+    }
+
     /// The problems found while discovering.
     #[must_use]
     pub fn issues(&self) -> &[LibraryIssue] {

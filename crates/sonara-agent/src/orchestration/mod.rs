@@ -21,6 +21,10 @@
 //! track that `create_track` makes ([`StepRef`]). Its argument holds a placeholder until the
 //! earlier step has run.
 //!
+//! What plays a part is the instrument catalog's to say, which no tool reads. The planner reads it
+//! through the runner as a library ([`CatalogReader`], [`Orchestrator::catalog`]): for each part,
+//! the preset the degradation chain chooses and what that sound can do ([`PartSound`]).
+//!
 //! # Safety
 //!
 //! - A request that cannot be resolved to exactly one plan (an unknown phrase, a missing or
@@ -53,6 +57,7 @@
 //! - When the tool layer asks for its own confirmation token for a confirmed destructive step,
 //!   the step is repeated with that token: the caller's approval is the user's agreement.
 
+mod catalog;
 pub mod grammar;
 mod refs;
 
@@ -62,6 +67,7 @@ use serde::Serialize;
 use serde_json::{Value, json};
 use sonara_core::error::{DomainError, ErrorCode};
 
+pub use self::catalog::{Catalog, CatalogReader, PartSound};
 pub use self::refs::StepRef;
 use crate::contract;
 use crate::service::AgentService;

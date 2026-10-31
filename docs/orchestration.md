@@ -71,6 +71,21 @@ planner's request kinds.
 
 Other unknown words are read past and listed in the clause's `ignored` words.
 
+## Reading the instrument catalog
+
+No agent tool reads the instrument catalog, so the planner reads it as a library, through a
+`CatalogReader` beside the `ToolRunner`. `AgentService` implements it by discovering the
+libraries of the `sample_libraries` setting as they are on disk; a test double holds a fixed
+list of presets. Reading changes nothing and calls no tool.
+
+`Orchestrator::catalog()` reads the catalog once and returns a snapshot (`Catalog`), so every
+part of a plan is chosen from the same presets. `Catalog::sound(request, preferences)` answers
+for one part: the sound plan of `instruments::choose_sound` (the preset, what it substituted, a
+question to ask first) and what that sound can do, the `SoundCaps` the performance layer reads
+(`instruments::sound_caps`, see [instrument-catalog.md](instrument-catalog.md)). Discovery checks
+no patch, so through `AgentService` a sound's velocity layers, sampled keys, measured attacks and
+longest hold are unknown; what the manifests and Sonara's profiles claim is known.
+
 ## Steps that use an earlier step's result
 
 A step can take a value from the reply of an earlier step of the same plan, such as the id of the
