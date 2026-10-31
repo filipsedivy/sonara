@@ -62,10 +62,13 @@ use crate::generators::ChordSlot;
 use crate::orchestration::rules::{NAMED_DOUBLINGS, NamedDoubling, Playing, RuleId, Spacing};
 use crate::orchestration::{InstrumentType, Part, PitchModel, PitchRange};
 
+pub(in crate::performance) use brass::in_chorale;
 pub use brass::{brass_chorale, horns};
+pub(in crate::performance) use melody::melody_carrier;
 pub use melody::{MelodyDoubling, melody_doublings};
 pub use register::{RegisterFit, fit_register};
 pub use strings::strings_divisi;
+pub(in crate::performance) use strings::upper_sections;
 pub use timpani::{TimpaniOptions, TimpaniPart, timpani};
 pub use woodwinds::{WindLayout, WindOptions, woodwind_pairs};
 

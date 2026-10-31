@@ -272,8 +272,9 @@ impl Chord {
     }
 }
 
-/// Chord qualities of the prototype's `CHORD_QUALITIES` table, in its order.
-const CHORD_QUALITIES: [(&str, &[i64]); 26] = [
+/// Chord qualities of the prototype's `CHORD_QUALITIES` table, in its order. Two names spell
+/// the major triad (`""`, `maj`) and two the minor triad (`m`, `min`); the first is the usual one.
+pub(crate) const CHORD_QUALITIES: [(&str, &[i64]); 26] = [
     ("", &[0, 4, 7]),
     ("maj", &[0, 4, 7]),
     ("m", &[0, 3, 7]),

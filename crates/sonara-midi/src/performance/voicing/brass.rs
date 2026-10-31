@@ -151,6 +151,12 @@ impl Kind {
     }
 }
 
+/// Whether [`brass_chorale`] gives `instrument` a part: a trumpet, cornet, flugelhorn, horn,
+/// trombone, euphonium, tuba or cimbasso.
+pub(in crate::performance) const fn in_chorale(instrument: InstrumentType) -> bool {
+    Kind::of(instrument).is_some()
+}
+
 /// Voices `chords` as a brass chorale for the parts `brass`, each kind given in player order.
 ///
 /// The chorale is in close order with the trumpets on top (Rimsky-Korsakov, Principles of

@@ -13,6 +13,8 @@
 //!
 //! The lines come from [`voicing`], whose helpers give the parts of an ensemble their notes for a
 //! melody or a run of chords, family by family, applying the orchestration rules as they write.
+//! [`reduction`] reads a sketch as a melody over chords in a key and spreads it over an ensemble
+//! with those helpers, one [`PartLine`] per part.
 //!
 //! A performance is a pure function of its inputs and a [`Seed`]: no clock, no environment, no
 //! hash-ordered output and no state shared between calls, so the same line, score and seed always
@@ -31,6 +33,7 @@ pub mod articulate;
 pub mod check;
 pub mod dynamics;
 pub mod humanize;
+pub mod reduction;
 mod seed;
 pub mod voicing;
 

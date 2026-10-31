@@ -145,6 +145,12 @@ pub fn strings_divisi(
     Ok(score.finish())
 }
 
+/// How many upper sections [`strings_divisi`] gives the notes above the bass to: every violin,
+/// viola and cello section but the one that plays the bass when `carries_bass`.
+pub(in crate::performance) fn upper_sections(strings: &[Carrier], carries_bass: bool) -> usize {
+    Sections::of(strings, carries_bass).upper.len()
+}
+
 /// The string sections of a chord by their places among the parts.
 struct Sections {
     /// The section that plays the bass, when the strings carry it.

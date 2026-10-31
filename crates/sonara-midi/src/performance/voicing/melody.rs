@@ -168,6 +168,19 @@ pub fn melody_doublings(
     })
 }
 
+/// The place among `parts` of the part [`melody_doublings`] makes the carrier of `melody`, or
+/// `None` for an empty melody or when no part plays it inside its comfortable range.
+pub(in crate::performance) fn melody_carrier(
+    melody: &[MidiNote],
+    parts: &[Carrier],
+) -> Option<usize> {
+    let pitches = melody.iter().map(|note| i64::from(note.pitch));
+    let (Some(lowest), Some(highest)) = (pitches.clone().min(), pitches.max()) else {
+        return None;
+    };
+    main_carrier(&Melody { lowest, highest }, parts)
+}
+
 /// The place of the part that carries the melody: the first part, in the function table's order
 /// of instruments for the melody's band and then in the order given, that plays every note
 /// inside its comfortable range.
