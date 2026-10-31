@@ -12,7 +12,7 @@ use sonara_core::plugins::SAMPLER_ID;
 use sonara_media::InstrumentSource;
 
 use super::discovery::{InstrumentCatalog, relative_to};
-use super::model::{InstrumentPreset, Library, LibraryId};
+use super::model::{InstrumentPreset, Library, LibraryId, PresetKind};
 use crate::settings::Settings;
 
 /// The playable presets of the instrument catalog, by ID, and the patch paths that projects made
@@ -70,8 +70,10 @@ struct LibraryPaths {
 }
 
 impl InstalledInstruments {
-    /// The playable presets of `catalog`: those whose [`super::Availability`] is available. A
-    /// preset that is missing or invalid is not offered, and an old path to it is not mapped.
+    /// The playable presets of `catalog`: the patches whose [`super::Availability`] is
+    /// available. A preset that is missing or invalid is not offered, and an old path to it is
+    /// not mapped. A multi-patch set ([`PresetKind::Set`]) is not offered either: the sampler
+    /// plays one patch per device, and each of the set's patches is offered as its own preset.
     #[must_use]
     pub fn from_catalog(catalog: &InstrumentCatalog) -> Self {
         let mut libraries: Vec<LibraryPaths> = catalog
@@ -84,7 +86,10 @@ impl InstalledInstruments {
             .collect();
         let mut patches = BTreeMap::new();
         let mut playable = BTreeMap::new();
-        for preset in catalog.available() {
+        for preset in catalog
+            .available()
+            .filter(|preset| preset.kind == PresetKind::Patch)
+        {
             let id = preset.id.to_string();
             let paths = catalog
                 .libraries()

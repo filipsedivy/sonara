@@ -8,13 +8,14 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 use sonara_midi::orchestration::InstrumentType;
 
+use super::facts::PatchFacts;
 use super::family::{FamilyClaim, InstrumentFamily, infer_family, infer_instrument};
 use super::manifest::{
     self, ArticulationList, Claimant, EntryTarget, Field, LibraryClaims, ManifestEntry,
 };
 use super::model::{
     Availability, CatalogError, Claim, ClaimSource, InstrumentClaim, InstrumentId,
-    InstrumentPreset, Library, LibraryId, LibraryIssue,
+    InstrumentPreset, Library, LibraryId, LibraryIssue, PresetKind, SetMember, same_path,
 };
 use super::profiles::{self, Detected, Profile};
 use super::verify::PatchLoader;
@@ -87,7 +88,9 @@ impl InstrumentCatalog {
             .and_then(|index| self.presets.get(index))
     }
 
-    /// The presets that can be played now.
+    /// The presets that can be played now ([`Availability::Available`]). A set is among them
+    /// when every member is, although the sampler plays one patch per device, so
+    /// [`super::InstalledInstruments`] offers only the patches.
     pub fn available(&self) -> impl Iterator<Item = &InstrumentPreset> {
         self.presets
             .iter()
@@ -101,7 +104,8 @@ impl InstrumentCatalog {
             .filter(move |preset| preset.family.family() == Some(family))
     }
 
-    /// The presets that play `instrument`, whoever claims it ([`InstrumentPreset::instrument`]).
+    /// The presets that play `instrument`, whoever claims it ([`InstrumentPreset::instrument`]),
+    /// patches and sets alike.
     pub fn playing(&self, instrument: InstrumentType) -> impl Iterator<Item = &InstrumentPreset> {
         self.presets.iter().filter(move |preset| {
             preset
@@ -114,9 +118,11 @@ impl InstrumentCatalog {
     /// load becomes [`Availability::Invalid`]. It also records what the loader's structural check
     /// finds in the patch ([`PatchLoader::inspect`]) as the preset's
     /// [`facts`](InstrumentPreset::facts), loaded or not, which may lower its
-    /// [`effective verdict`](InstrumentPreset::effective_verdict). A preset that is not
-    /// available is neither loaded nor inspected and keeps its state. Returns the availability
-    /// after the check.
+    /// [`effective verdict`](InstrumentPreset::effective_verdict). For a set, each member is
+    /// loaded and inspected in turn and keeps its own facts ([`SetMember::facts`]); a member
+    /// that does not load makes the set invalid, with the member's path and reason. A preset
+    /// that is not available is neither loaded nor inspected and keeps its state. Returns the
+    /// availability after the check.
     ///
     /// # Errors
     ///
@@ -135,13 +141,26 @@ impl InstrumentCatalog {
             .get_mut(index)
             .ok_or_else(|| CatalogError::UnknownInstrument(id.to_string()))?;
         if preset.availability.is_available() {
-            if let Err(err) = loader.load(&preset.patch_path) {
-                preset.availability = Availability::Invalid {
-                    reason: err.to_string(),
-                };
-            }
-            if let Some(facts) = loader.inspect(&preset.patch_path) {
-                preset.facts = Some(facts);
+            match &mut preset.kind {
+                PresetKind::Patch => check_patch(
+                    &preset.patch_path,
+                    &mut preset.availability,
+                    &mut preset.facts,
+                    loader,
+                ),
+                PresetKind::Set { members } => {
+                    for member in members.iter_mut() {
+                        if member.availability.is_available() {
+                            check_patch(
+                                &member.patch_path,
+                                &mut member.availability,
+                                &mut member.facts,
+                                loader,
+                            );
+                        }
+                    }
+                    preset.availability = set_availability(members);
+                }
             }
         }
         Ok(&preset.availability)
@@ -238,11 +257,13 @@ impl InstrumentCatalog {
     }
 
     /// Lists the patches of the library at `root`: those its claims name, and every other patch
-    /// the scan finds. Each claim keeps who makes it: a claim of the shipped profile is not the
-    /// library's word, so it is shown as the profile's, and `articulations` and `license` hold
-    /// only what the library's own manifest declares. A patch the claims name that is not on
-    /// disk is listed as missing. A multi-patch set is not a patch: its members are listed as
-    /// the patches they are.
+    /// the scan finds; then the multi-patch sets its claims define. Each claim keeps who makes
+    /// it: a claim of the shipped profile is not the library's word, so it is shown as the
+    /// profile's, and `articulations` and `license` hold only what the library's own manifest
+    /// declares. A patch the claims name that is not on disk is listed as missing. A set is
+    /// listed beside its members, which are listed as the patches they are; a set whose ID a
+    /// patch already has (a file `@<set>.sfz` in the library root) is not listed, so the
+    /// patch's ID keeps naming the patch.
     fn add_presets(&mut self, root: &Path, library: &LibraryId, claims: &LibraryClaims) {
         let canonical_root = fs::canonicalize(root).ok();
         let scanned = scan_patches(&[root.to_owned()]);
@@ -259,89 +280,222 @@ impl InstrumentCatalog {
             .filter_map(|path| relative_to(root, Path::new(path)))
             .map(|relative| (relative.to_lowercase(), relative))
             .collect();
+        // Every scanned patch, for the members of sets, which may name any of them.
+        let on_disk = found.clone();
+        let place = Place {
+            library,
+            root,
+            canonical_root: canonical_root.as_deref(),
+            license: &claims.license,
+        };
 
         let mut presets = Vec::new();
+        let mut sets = Vec::new();
         for entry in &claims.entries {
-            let EntryTarget::Path(path) = &entry.target else {
-                continue;
-            };
-            let relative = found
-                .remove(&path.to_lowercase())
-                .unwrap_or_else(|| path.clone());
-            presets.push(preset(
-                library,
-                root,
-                canonical_root.as_deref(),
-                &relative,
-                entry,
-                &claims.license,
-            ));
+            match &entry.target {
+                EntryTarget::Path(path) => {
+                    let relative = found
+                        .remove(&path.to_lowercase())
+                        .unwrap_or_else(|| path.clone());
+                    presets.push(place.patch(&relative, entry));
+                }
+                EntryTarget::Set(slug) => sets.push((slug, entry)),
+            }
         }
         for relative in found.into_values() {
             // A patch nothing claims anything about: its name and family come from its path.
             let unlisted = ManifestEntry::new(EntryTarget::Path(relative.clone()));
-            presets.push(preset(
-                library,
-                root,
-                canonical_root.as_deref(),
-                &relative,
-                &unlisted,
-                &claims.license,
-            ));
+            presets.push(place.patch(&relative, &unlisted));
+        }
+        for (slug, entry) in sets {
+            let set = place.set(slug, entry, &on_disk);
+            if presets.iter().all(|preset| preset.id != set.id) {
+                presets.push(set);
+            }
         }
         self.presets.extend(presets);
     }
 }
 
-/// The preset of the patch at `relative` (`/`-separated, spelled as on disk when it is there)
-/// in the library `library` at `root`, whose real path is `canonical_root`, with what `entry`
-/// claims about it; `license` is the library's licence. No structural check has run yet, so
-/// the preset holds no facts.
-fn preset(
-    library: &LibraryId,
-    root: &Path,
-    canonical_root: Option<&Path>,
-    relative: &str,
-    entry: &ManifestEntry,
-    license: &Field<String>,
-) -> InstrumentPreset {
-    let patch_path = root.join(relative);
-    let family = family_claim(entry, relative);
-    InstrumentPreset {
-        id: InstrumentId::new(library, relative),
-        display_name: entry
-            .name
-            .value()
+/// What every preset of one library shares: the library, where it is, and its licence.
+struct Place<'a> {
+    library: &'a LibraryId,
+    root: &'a Path,
+    /// The real path of `root`; `None` when it cannot be resolved.
+    canonical_root: Option<&'a Path>,
+    /// The library's licence.
+    license: &'a Field<String>,
+}
+
+/// What a preset plays, before any claim about it.
+struct Sound<'a> {
+    id: InstrumentId,
+    /// The words its family and instrument type are guessed from: the patch's path, or the
+    /// set's slug.
+    words: &'a str,
+    /// Its name when nothing names it: the patch's file name, or the set's slug.
+    name: String,
+    patch_path: PathBuf,
+    availability: Availability,
+    kind: PresetKind,
+}
+
+impl Place<'_> {
+    /// The preset of the patch at `relative` (`/`-separated, spelled as on disk when it is
+    /// there) with what `entry` claims about it.
+    fn patch(&self, relative: &str, entry: &ManifestEntry) -> InstrumentPreset {
+        let patch_path = self.root.join(relative);
+        let sound = Sound {
+            id: InstrumentId::new(self.library, relative),
+            words: relative,
+            name: file_stem(relative),
+            availability: check_file(&patch_path, self.canonical_root),
+            patch_path,
+            kind: PresetKind::Patch,
+        };
+        self.preset(sound, entry)
+    }
+
+    /// The preset of the multi-patch set `slug` with what `entry` claims about it. Its members
+    /// are the patches its articulations name, each once, spelled as the scan found them on
+    /// disk (`on_disk`, by lower-case path) or else as written; its patch is that of its
+    /// default articulation, else of its first one.
+    fn set(
+        &self,
+        slug: &str,
+        entry: &ManifestEntry,
+        on_disk: &BTreeMap<String, String>,
+    ) -> InstrumentPreset {
+        let mut members: Vec<SetMember> = Vec::new();
+        let mut default = None;
+        if let Some(ArticulationList::Mapped(articulations)) = entry.articulations.value() {
+            for articulation in articulations {
+                let Some(path) = articulation.member.as_deref() else {
+                    continue;
+                };
+                let index = members
+                    .iter()
+                    .position(|member| same_path(&member.path, path))
+                    .unwrap_or(members.len());
+                if index == members.len() {
+                    members.push(self.member(path, on_disk));
+                }
+                if articulation.is_default {
+                    default = default.or(Some(index));
+                }
+            }
+        }
+        let patch_path = members
+            .get(default.unwrap_or(0))
+            .map_or_else(|| self.root.to_owned(), |member| member.patch_path.clone());
+        let sound = Sound {
+            id: InstrumentId::of_set(self.library, slug),
+            words: slug,
+            name: slug.to_owned(),
+            availability: set_availability(&members),
+            patch_path,
+            kind: PresetKind::Set { members },
+        };
+        self.preset(sound, entry)
+    }
+
+    /// The member of a set at `path` below the library root, spelled as the scan found it on
+    /// disk (`on_disk`, by lower-case path), else as written.
+    fn member(&self, path: &str, on_disk: &BTreeMap<String, String>) -> SetMember {
+        let path = on_disk
+            .get(&path.to_lowercase())
             .cloned()
-            .unwrap_or_else(|| file_stem(relative)),
-        family,
-        library: library.clone(),
-        availability: check_file(&patch_path, canonical_root),
-        patch_path,
-        articulations: entry
-            .articulations
-            .declared()
-            .map(ArticulationList::ids)
-            .unwrap_or_default()
-            .into_iter()
-            .map(str::to_owned)
-            .collect(),
-        license: entry
-            .license
-            .declared()
-            .or_else(|| license.declared())
-            .cloned(),
-        instrument: instrument_claim(entry, relative, family),
-        ensemble: claim(&entry.ensemble),
-        articulation_map: claim(&entry.articulations),
-        keymap: claim(&entry.keymap),
-        key_offset: claim(&entry.key_offset),
-        dynamics: claim(&entry.dynamics),
-        legato: claim(&entry.legato),
-        in_situ: claim(&entry.in_situ),
-        license_claim: claim(&entry.license).or_else(|| claim(license)),
-        verdict: claim(&entry.verdict),
-        facts: None,
+            .unwrap_or_else(|| path.to_owned());
+        let patch_path = self.root.join(&path);
+        SetMember {
+            availability: check_file(&patch_path, self.canonical_root),
+            path,
+            patch_path,
+            facts: None,
+        }
+    }
+
+    /// The preset of `sound` with what `entry` claims about it. No structural check has run
+    /// yet, so it holds no facts.
+    fn preset(&self, sound: Sound<'_>, entry: &ManifestEntry) -> InstrumentPreset {
+        let family = family_claim(entry, sound.words);
+        InstrumentPreset {
+            id: sound.id,
+            display_name: entry.name.value().cloned().unwrap_or(sound.name),
+            family,
+            library: self.library.clone(),
+            patch_path: sound.patch_path,
+            kind: sound.kind,
+            articulations: entry
+                .articulations
+                .declared()
+                .map(ArticulationList::ids)
+                .unwrap_or_default()
+                .into_iter()
+                .map(str::to_owned)
+                .collect(),
+            license: entry
+                .license
+                .declared()
+                .or_else(|| self.license.declared())
+                .cloned(),
+            availability: sound.availability,
+            instrument: instrument_claim(entry, sound.words, family),
+            ensemble: claim(&entry.ensemble),
+            articulation_map: claim(&entry.articulations),
+            keymap: claim(&entry.keymap),
+            key_offset: claim(&entry.key_offset),
+            dynamics: claim(&entry.dynamics),
+            legato: claim(&entry.legato),
+            in_situ: claim(&entry.in_situ),
+            license_claim: claim(&entry.license).or_else(|| claim(self.license)),
+            verdict: claim(&entry.verdict),
+            facts: None,
+        }
+    }
+}
+
+/// A set's availability from its members': missing when one is missing, else invalid when one
+/// is, with that member's path and reason, else available; invalid when it has no member.
+fn set_availability(members: &[SetMember]) -> Availability {
+    if members.is_empty() {
+        return Availability::Invalid {
+            reason: "the set names no patch".to_owned(),
+        };
+    }
+    if members
+        .iter()
+        .any(|member| member.availability == Availability::Missing)
+    {
+        return Availability::Missing;
+    }
+    members
+        .iter()
+        .find_map(|member| match &member.availability {
+            Availability::Invalid { reason } => Some(Availability::Invalid {
+                reason: format!("{}: {reason}", member.path),
+            }),
+            Availability::Available | Availability::Missing => None,
+        })
+        .unwrap_or(Availability::Available)
+}
+
+/// Loads the patch at `path` through `loader`: a patch that does not load makes
+/// `availability` invalid with the loader's reason, and what the loader's structural check
+/// finds becomes `facts`.
+fn check_patch(
+    path: &Path,
+    availability: &mut Availability,
+    facts: &mut Option<PatchFacts>,
+    loader: &dyn PatchLoader,
+) {
+    if let Err(err) = loader.load(path) {
+        *availability = Availability::Invalid {
+            reason: err.to_string(),
+        };
+    }
+    if let Some(found) = loader.inspect(path) {
+        *facts = Some(found);
     }
 }
 
@@ -353,11 +507,12 @@ fn claim<T: Clone>(field: &Field<T>) -> Option<Claim<T>> {
     })
 }
 
-/// The family of a patch: what the library's manifest states, else what the shipped profile
-/// states, else the guess from `relative`, its path. A source states the family itself or the
-/// instrument type the patch plays, whose family it is; where one source states both, the
-/// family it writes wins, as a written field is the user's word over a derived one.
-fn family_claim(entry: &ManifestEntry, relative: &str) -> FamilyClaim {
+/// The family of a preset: what the library's manifest states, else what the shipped profile
+/// states, else the guess from `words`, the patch's path or the set's slug. A source states the
+/// family itself or the instrument type the preset plays, whose family it is; where one source
+/// states both, the family it writes wins, as a written field is the user's word over a
+/// derived one.
+fn family_claim(entry: &ManifestEntry, words: &str) -> FamilyClaim {
     let stated_by = |claimant: Claimant| match (entry.family.claimed(), entry.instrument.claimed())
     {
         (Some((family, by)), _) if by == claimant => Some(*family),
@@ -367,17 +522,17 @@ fn family_claim(entry: &ManifestEntry, relative: &str) -> FamilyClaim {
     stated_by(Claimant::Manifest)
         .map(FamilyClaim::Declared)
         .or_else(|| stated_by(Claimant::Profile).map(FamilyClaim::Profile))
-        .unwrap_or_else(|| infer_family(relative))
+        .unwrap_or_else(|| infer_family(words))
 }
 
-/// The instrument type of a patch: what the manifest or the shipped profile states, with its
-/// source; else a guess from `relative`, its path, kept only when the guess is of `family`, the
-/// patch's family, so a preset never claims a family and an instrument of another. A source
-/// that writes `instrument: null`, or gives the patch a key map, says that it plays several
-/// instruments, so nothing is guessed.
+/// The instrument type of a preset: what the manifest or the shipped profile states, with its
+/// source; else a guess from `words`, the patch's path or the set's slug, kept only when the
+/// guess is of `family`, the preset's family, so a preset never claims a family and an
+/// instrument of another. A source that writes `instrument: null`, or gives the patch a key
+/// map, says that it plays several instruments, so nothing is guessed.
 fn instrument_claim(
     entry: &ManifestEntry,
-    relative: &str,
+    words: &str,
     family: FamilyClaim,
 ) -> Option<InstrumentClaim> {
     match &entry.instrument {
@@ -387,7 +542,7 @@ fn instrument_claim(
         }),
         Field::Cleared => None,
         Field::Unset if entry.keymap.value().is_some() => None,
-        Field::Unset => infer_instrument(relative)
+        Field::Unset => infer_instrument(words)
             .filter(|instrument| family.family() == Some(instrument.family()))
             .map(|instrument| InstrumentClaim {
                 instrument,
@@ -458,8 +613,9 @@ mod tests {
     use crate::instruments::{
         ArticulationList, Availability, Claim, ClaimSource, DynamicsMode, EnsembleClaim,
         EnsembleKind, FamilyClaim, InstrumentClaim, InstrumentFamily, InstrumentPreset, LegatoMode,
-        LibraryIssue, MANIFEST_FILE, Verdict, VerdictState,
+        LibraryIssue, MANIFEST_FILE, PresetKind, SetMember, Verdict, VerdictState,
     };
+    use crate::instruments::{InstrumentId, LibraryId, PatchFacts, PatchLoadError, PatchLoader};
 
     fn patch(path: &Path) {
         fs::create_dir_all(path.parent().expect("a parent")).expect("mkdir");
@@ -548,10 +704,11 @@ mod tests {
         assert_eq!(library.name, "Profiled Library");
         assert_eq!(library.license, None);
         assert!(!library.has_manifest);
-        // A set is not a patch; its member is listed as the patch it is.
+        // A set is listed beside its member, which stays a preset of its own.
         assert_eq!(
             ids(&catalog),
             [
+                "lib/@violin-set",
                 "lib/Detect",
                 "lib/Gone",
                 "lib/Odd",
@@ -634,9 +791,50 @@ mod tests {
             .playing(InstrumentType::Violin)
             .map(|preset| preset.id.as_str())
             .collect();
-        assert_eq!(violins, ["lib/Odd", "lib/Strings/Violin"]);
+        assert_eq!(
+            violins,
+            ["lib/@violin-set", "lib/Odd", "lib/Strings/Violin"]
+        );
         assert_eq!(catalog.playing(InstrumentType::Flute).count(), 0);
+        assert_eq!(violin.kind, PresetKind::Patch);
         assert_eq!(catalog.issues(), []);
+    }
+
+    /// A set the profile defines claims with the profile's source too, and lists its one
+    /// member, which is on disk.
+    #[test]
+    fn a_profile_set_claims_with_the_profile_source() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let root = dir.path().join("Some Folder");
+        profiled_library(&root);
+
+        let catalog = InstrumentCatalog::discover_with(std::slice::from_ref(&root), &[profile()]);
+
+        let set = preset(&catalog, "lib/@violin-set");
+        assert_eq!(set.display_name, "violin-set");
+        assert_eq!(set.family, FamilyClaim::Profile(InstrumentFamily::Strings));
+        assert_eq!(
+            set.instrument,
+            Some(instrument(InstrumentType::Violin, ClaimSource::Profile))
+        );
+        assert_eq!(
+            set.articulation_map.as_ref().map(|claim| claim.source),
+            Some(ClaimSource::Profile)
+        );
+        assert_eq!(set.articulations, Vec::<String>::new());
+        assert_eq!(set.availability, Availability::Available);
+        assert_eq!(set.patch_path, root.join("Strings/Violin.sfz"));
+        assert_eq!(
+            set.kind,
+            PresetKind::Set {
+                members: vec![SetMember {
+                    path: "Strings/Violin.sfz".to_owned(),
+                    patch_path: root.join("Strings/Violin.sfz"),
+                    availability: Availability::Available,
+                    facts: None,
+                }]
+            }
+        );
     }
 
     /// The library's own manifest declares over the profile, field by field; what it leaves
@@ -737,6 +935,7 @@ mod tests {
         assert_eq!(
             ids(&catalog),
             [
+                "lib/@violin-set",
                 "lib/Gone",
                 "lib/Odd",
                 "lib/Snare Drum Kit",
@@ -800,6 +999,262 @@ mod tests {
             )
         );
         assert_eq!(catalog.issues(), []);
+    }
+
+    /// A library with a set of each kind: `horn` with two patches, one of them named twice and
+    /// spelled otherwise than on disk; `violin`, which names no instrument; `gone` with a
+    /// missing and an empty patch; `broken` with an empty patch; `empty` with no patch; and
+    /// `clash`, whose ID the patch `@clash.sfz` has.
+    fn library_with_sets(root: &Path) {
+        for path in [
+            "Brass/Horn Sus.sfz",
+            "Brass/Horn Stac.sfz",
+            "Violin.sfz",
+            "@clash.sfz",
+        ] {
+            patch(&root.join(path));
+        }
+        fs::write(root.join("Broken.sfz"), "").expect("write");
+        let member = |id: &str, path: &str| json!({"id": id, "via": "patch", "path": path});
+        fs::write(
+            root.join(MANIFEST_FILE),
+            json!({
+                "version": 2,
+                "instruments": [
+                    {"set": "horn", "name": "Horn", "instrument": "horn_f", "articulations": [
+                        member("sustain", "brass/horn sus.sfz"),
+                        {"id": "staccato", "via": "patch", "path": "Brass/Horn Stac.sfz",
+                         "default": true},
+                        {"id": "sustain", "via": "keyswitch", "key": 30, "mute": "con_sordino",
+                         "path": "BRASS/Horn Sus.sfz"}
+                    ]},
+                    {"set": "violin", "articulations": [member("sustain", "Violin.sfz")]},
+                    {"set": "gone", "articulations": [
+                        member("sustain", "Violin.sfz"),
+                        member("staccato", "Gone.sfz"),
+                        member("pizzicato", "Broken.sfz")
+                    ]},
+                    {"set": "broken", "articulations": [
+                        member("sustain", "Broken.sfz"),
+                        member("staccato", "Violin.sfz")
+                    ]},
+                    {"set": "empty", "instrument": "flute"},
+                    {"set": "clash", "articulations": [member("sustain", "Violin.sfz")]}
+                ]
+            })
+            .to_string(),
+        )
+        .expect("write manifest");
+    }
+
+    fn member_states(preset: &InstrumentPreset) -> Vec<(&str, &Availability)> {
+        match &preset.kind {
+            PresetKind::Set { members } => members
+                .iter()
+                .map(|member| (member.path.as_str(), &member.availability))
+                .collect(),
+            PresetKind::Patch => panic!("{} is not a set", preset.id),
+        }
+    }
+
+    /// A set lists the patches its articulations name, each once and spelled as on disk, and
+    /// plays its default articulation's patch; it is missing when a member is missing, invalid
+    /// when a member is, with the member's path, and invalid when it names no patch. A set
+    /// whose ID a patch has is not listed, so the ID keeps naming the patch (TST-03).
+    #[test]
+    fn a_set_lists_its_members_and_takes_their_availability() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let root = dir.path().join("lib");
+        library_with_sets(&root);
+
+        let catalog = InstrumentCatalog::discover_with(std::slice::from_ref(&root), &[]);
+
+        assert_eq!(
+            ids(&catalog),
+            [
+                "lib/@broken",
+                "lib/@clash",
+                "lib/@empty",
+                "lib/@gone",
+                "lib/@horn",
+                "lib/@violin",
+                "lib/Brass/Horn Stac",
+                "lib/Brass/Horn Sus",
+                "lib/Broken",
+                "lib/Violin"
+            ]
+        );
+        assert_eq!(catalog.issues(), []);
+        let available = Availability::Available;
+        let horn = preset(&catalog, "lib/@horn");
+        assert_eq!(
+            member_states(horn),
+            [
+                ("Brass/Horn Sus.sfz", &available),
+                ("Brass/Horn Stac.sfz", &available)
+            ]
+        );
+        assert_eq!(horn.patch_path, root.join("Brass/Horn Stac.sfz"));
+        assert_eq!(horn.availability, available);
+        assert_eq!(horn.display_name, "Horn");
+        assert_eq!(horn.family, FamilyClaim::Declared(InstrumentFamily::Brass));
+        assert_eq!(
+            horn.instrument,
+            Some(instrument(InstrumentType::HornF, ClaimSource::Declared))
+        );
+        assert_eq!(horn.facts, None);
+        // Without a default articulation the first one's patch plays; without a stated
+        // instrument the slug is read as a path is.
+        let violin = preset(&catalog, "lib/@violin");
+        assert_eq!(violin.patch_path, root.join("Violin.sfz"));
+        assert_eq!(violin.display_name, "violin");
+        assert_eq!(
+            (violin.family, violin.instrument),
+            (
+                FamilyClaim::Inferred(InstrumentFamily::Strings),
+                Some(instrument(InstrumentType::Violin, ClaimSource::Inferred))
+            )
+        );
+        let empty_file = Availability::Invalid {
+            reason: "the file is empty".to_owned(),
+        };
+        let gone = preset(&catalog, "lib/@gone");
+        assert_eq!(gone.availability, Availability::Missing);
+        assert_eq!(
+            member_states(gone),
+            [
+                ("Violin.sfz", &available),
+                ("Gone.sfz", &Availability::Missing),
+                ("Broken.sfz", &empty_file)
+            ]
+        );
+        assert_eq!(
+            preset(&catalog, "lib/@broken").availability,
+            Availability::Invalid {
+                reason: "Broken.sfz: the file is empty".to_owned()
+            }
+        );
+        let empty = preset(&catalog, "lib/@empty");
+        assert_eq!(
+            empty.availability,
+            Availability::Invalid {
+                reason: "the set names no patch".to_owned()
+            }
+        );
+        assert_eq!(empty.patch_path, root);
+        assert_eq!(member_states(empty), []);
+        assert_eq!(preset(&catalog, "lib/@clash").kind, PresetKind::Patch);
+        let sets_available: Vec<&str> = catalog
+            .available()
+            .filter(|preset| preset.kind != PresetKind::Patch)
+            .map(|preset| preset.id.as_str())
+            .collect();
+        assert_eq!(sets_available, ["lib/@horn", "lib/@violin"]);
+    }
+
+    /// A loader that fails the patches named `failing` and inspects every patch: no switch key,
+    /// and in `Horn Stac.sfz` one sample left out.
+    struct FakeLoader {
+        failing: &'static str,
+    }
+
+    const LEFT_OUT: &str = "sample /lib/b.wav is missing (1 region left out)";
+
+    impl PatchLoader for FakeLoader {
+        fn load(&self, patch: &Path) -> Result<(), PatchLoadError> {
+            if patch.ends_with(self.failing) {
+                Err(PatchLoadError("it does not parse".to_owned()))
+            } else {
+                Ok(())
+            }
+        }
+
+        fn inspect(&self, patch: &Path) -> Option<PatchFacts> {
+            let notes = if patch.ends_with("Horn Stac.sfz") {
+                vec![LEFT_OUT.to_owned()]
+            } else {
+                Vec::new()
+            };
+            Some(PatchFacts {
+                regions: 2,
+                playable_regions: 2,
+                sampled: Vec::new(),
+                switch_keys: Vec::new(),
+                default_switch: None,
+                ignored_opcodes: Vec::new(),
+                missing_samples: Vec::new(),
+                unreadable_samples: Vec::new(),
+                notes,
+                decoded_bytes: 8,
+                loadable: true,
+            })
+        }
+    }
+
+    /// Verifying a set loads and inspects each member, which keeps its own facts; the set's
+    /// verdict takes every member's findings, each led by the member's path, and a member that
+    /// does not load makes the set invalid. A set that is not available is not loaded.
+    #[test]
+    fn verifying_a_set_checks_each_member() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let root = dir.path().join("lib");
+        library_with_sets(&root);
+        let horn = InstrumentId::of_set(&LibraryId::parse("lib").expect("valid"), "horn");
+
+        let mut catalog = InstrumentCatalog::discover_with(std::slice::from_ref(&root), &[]);
+        let loader = FakeLoader {
+            failing: "Nothing.sfz",
+        };
+        assert_eq!(catalog.verify(&horn, &loader), Ok(&Availability::Available));
+        let set = preset(&catalog, "lib/@horn");
+        let PresetKind::Set { members } = &set.kind else {
+            panic!("a set");
+        };
+        assert!(members.iter().all(|member| member.facts.is_some()));
+        assert_eq!(set.facts, None);
+        // The key switch is checked against the patch its articulation names.
+        assert_eq!(
+            set.effective_verdict(),
+            Some(Verdict {
+                state: VerdictState::Partly,
+                lost: vec![
+                    "Brass/Horn Sus.sfz: sustain: key 30 is not a switch key of the patch"
+                        .to_owned(),
+                    format!("Brass/Horn Stac.sfz: {LEFT_OUT}"),
+                ]
+            })
+        );
+        // The member's own preset is verified on its own.
+        assert_eq!(preset(&catalog, "lib/Brass/Horn Sus").facts, None);
+
+        // A set with a missing member is neither loaded nor inspected.
+        let gone = InstrumentId::of_set(&LibraryId::parse("lib").expect("valid"), "gone");
+        assert_eq!(catalog.verify(&gone, &loader), Ok(&Availability::Missing));
+        let set = preset(&catalog, "lib/@gone");
+        let PresetKind::Set { members } = &set.kind else {
+            panic!("a set");
+        };
+        assert!(members.iter().all(|member| member.facts.is_none()));
+
+        let mut catalog = InstrumentCatalog::discover_with(std::slice::from_ref(&root), &[]);
+        let loader = FakeLoader {
+            failing: "Horn Stac.sfz",
+        };
+        assert_eq!(
+            catalog.verify(&horn, &loader),
+            Ok(&Availability::Invalid {
+                reason: "Brass/Horn Stac.sfz: it does not parse".to_owned()
+            })
+        );
+        assert_eq!(
+            member_states(preset(&catalog, "lib/@horn"))[1],
+            (
+                "Brass/Horn Stac.sfz",
+                &Availability::Invalid {
+                    reason: "it does not parse".to_owned()
+                }
+            )
+        );
     }
 
     /// A manifest with another ID takes no profile, even when the profile's detect files are

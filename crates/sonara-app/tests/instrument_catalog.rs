@@ -11,7 +11,7 @@ use sonara_app::instruments::{
     Availability, CatalogError, ClaimSource, EnsembleClaim, EnsembleKind, FamilyClaim,
     InstalledInstruments, InstrumentCatalog, InstrumentClaim, InstrumentFamily, InstrumentPreset,
     KeyZone, LibraryId, LibraryIssue, MANIFEST_FILE, MediaPatchLoader, PatchFacts, PatchLoadError,
-    PatchLoader, VelocityRange, Verdict, VerdictState,
+    PatchLoader, PresetKind, VelocityRange, Verdict, VerdictState,
 };
 use sonara_app::settings::Settings;
 use sonara_media::InstrumentSource;
@@ -170,10 +170,16 @@ fn a_version_2_manifest_rejects_a_bad_entry_alone() {
     let catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
 
     // The horn's entry is rejected and reported; the horn is still found by the scan, and the
-    // other entries are used. A multi-patch set is not listed as a preset of its own.
+    // other entries are used. A multi-patch set is listed as a preset of its own, beside its
+    // patch.
     assert_eq!(
         preset_ids(&catalog),
-        ["lib/Brass/Horn", "lib/Organ", "lib/Strings/Violin"]
+        [
+            "lib/@horns",
+            "lib/Brass/Horn",
+            "lib/Organ",
+            "lib/Strings/Violin"
+        ]
     );
     assert!(matches!(
         catalog.issues(),
@@ -918,9 +924,9 @@ fn a_detected_library_keeps_its_profile_id() {
     assert_eq!(library.name, "VSCO 2 Community Edition");
     assert!(!library.has_manifest);
     assert!(catalog.issues().is_empty(), "{:?}", catalog.issues());
-    // The profile lists the 75 patches of the library's branch `SFZ`: those not on disk are
-    // missing, so the user sees what a partial copy lacks.
-    assert_eq!(catalog.presets().len(), 75);
+    // The profile lists the 75 patches of the library's branch `SFZ` and its 15 multi-patch
+    // sets: those not on disk are missing, so the user sees what a partial copy lacks.
+    assert_eq!(catalog.presets().len(), 90);
     let flute = preset(&catalog, "vsco2ce/FluteSusVib");
     assert_eq!(flute.availability, Availability::Missing);
     assert_eq!(flute.display_name, "Flute, sustain vibrato");
@@ -976,11 +982,64 @@ fn a_detected_library_keeps_its_profile_id() {
     );
     // The percussion patch plays several instruments, so it claims none.
     assert_eq!(preset(&catalog, "vsco2ce/GM-StylePerc").instrument, None);
-
     let after = dir.path().join("Samples/vsco");
     fs::create_dir_all(after.parent().expect("a parent")).expect("mkdir");
     fs::rename(&before, &after).expect("rename");
     assert_eq!(available_ids(&InstrumentCatalog::discover(&[after])), ids);
+}
+
+/// A shipped profile's set is listed beside its patches. With only its default patch on disk,
+/// the set is missing, and each member says which of its patches are here (TST-03).
+#[test]
+fn a_partly_installed_set_is_missing_and_names_its_members() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let before = dir.path().join("VSCO-2-CE");
+    library(&before, &VSCO_DETECT);
+    library(&before, &["FHornSus.sfz"]);
+    let catalog = InstrumentCatalog::discover(std::slice::from_ref(&before));
+    let set = preset(&catalog, "vsco2ce/@horn");
+    assert_eq!(set.availability, Availability::Missing);
+    assert_eq!(set.patch_path, before.join("FHornSus.sfz"));
+    let PresetKind::Set { members } = &set.kind else {
+        panic!("a set: {:?}", set.kind);
+    };
+    assert_eq!(
+        members
+            .iter()
+            .map(|member| (member.path.as_str(), member.availability.is_available()))
+            .collect::<Vec<_>>(),
+        [
+            ("FHornSus.sfz", true),
+            ("FHornStac.sfz", false),
+            ("FHornMute.sfz", false)
+        ]
+    );
+    assert_eq!(
+        (set.family, set.instrument.map(|claim| claim.source)),
+        (
+            FamilyClaim::Profile(InstrumentFamily::Brass),
+            Some(ClaimSource::Profile)
+        )
+    );
+    assert_eq!(
+        catalog
+            .playing(InstrumentType::HornF)
+            .map(|preset| preset.id.as_str())
+            .collect::<Vec<_>>(),
+        [
+            "vsco2ce/@horn",
+            "vsco2ce/FHornMute",
+            "vsco2ce/FHornStac",
+            "vsco2ce/FHornSus"
+        ]
+    );
+    // With its other patches installed, the set is available.
+    library(&before, &["FHornStac.sfz", "FHornMute.sfz"]);
+    let catalog = InstrumentCatalog::discover(std::slice::from_ref(&before));
+    assert_eq!(
+        preset(&catalog, "vsco2ce/@horn").availability,
+        Availability::Available
+    );
 }
 
 /// The IDs of the presets that can be played, sorted.
@@ -1070,7 +1129,11 @@ fn a_manifest_that_declares_a_shipped_id_is_that_library() {
         preset(&catalog, "vsco2ce/Tuba-KS").display_name,
         "Tuba, key switches"
     );
-    assert_eq!(catalog.presets().len(), 75, "the profile's patches");
+    assert_eq!(
+        catalog.presets().len(),
+        90,
+        "the profile's patches and sets"
+    );
     // `null` clears the profile's name, so the library is shown by its ID.
     manifest(&root, &json!({"version": 2, "id": "vsco2ce", "name": null}));
     let catalog = InstrumentCatalog::discover(std::slice::from_ref(&root));
@@ -1123,12 +1186,12 @@ fn a_manifest_in_a_detected_library_overrides_the_profile() {
         preset(&catalog, "vsco2ce/ViolinEns-KS").display_name,
         "Violin Section, key switches"
     );
-    // An entry only in the manifest is added to the profile's 75.
+    // An entry only in the manifest is added to the profile's 75 patches and 15 sets.
     assert_eq!(
         preset(&catalog, "vsco2ce/Extra/Celesta").display_name,
         "Celesta"
     );
-    assert_eq!(catalog.presets().len(), 76);
+    assert_eq!(catalog.presets().len(), 91);
     assert_eq!(
         available_ids(&catalog),
         [
@@ -1194,11 +1257,18 @@ fn two_libraries(dir: &Path) -> (PathBuf, PathBuf) {
 fn installed_instruments_are_the_playable_presets_by_id() {
     let dir = tempfile::tempdir().expect("tempdir");
     let (one, vsco) = two_libraries(dir.path());
+    // Both patches of the tuba's set, so the set is available.
+    library(&vsco, &["TubaSus.sfz", "TubaStac.sfz"]);
     let catalog = InstrumentCatalog::discover(&[one, vsco]);
     // The catalog lists all of them: three of `Lib One` (one missing), and the 75 patches the
-    // VSCO 2 CE profile names (72 of them missing) and the empty patch the scan finds.
-    assert_eq!(catalog.presets().len(), 79, "the catalog lists all of them");
+    // VSCO 2 CE profile names (70 of them missing), its 15 sets (all but the tuba's missing)
+    // and the empty patch the scan finds.
+    assert_eq!(catalog.presets().len(), 94, "the catalog lists all of them");
+    let tuba = preset(&catalog, "vsco2ce/@tuba");
+    assert_eq!(tuba.availability, Availability::Available);
+    assert!(matches!(&tuba.kind, PresetKind::Set { members } if members.len() == 2));
     let installed = InstalledInstruments::from_catalog(&catalog);
+    // The sampler plays one patch per device: the set's patches are offered, the set is not.
     assert_eq!(
         installed.ids(),
         [
@@ -1206,10 +1276,14 @@ fn installed_instruments_are_the_playable_presets_by_id() {
             "lib-one/Strings/Violin",
             "vsco2ce/GM-StylePerc",
             "vsco2ce/Tuba-KS",
+            "vsco2ce/TubaStac",
+            "vsco2ce/TubaSus",
             "vsco2ce/ViolinEns-KS",
         ],
-        "a missing or an invalid preset is not offered"
+        "a missing or an invalid preset, or a set, is not offered"
     );
+    assert_eq!(installed.preset_id("vsco2ce/@tuba"), None);
+    assert_eq!(installed.resolve("vsco2ce/@tuba"), None);
     assert!(!installed.is_empty());
     assert!(InstalledInstruments::default().is_empty());
     assert_eq!(

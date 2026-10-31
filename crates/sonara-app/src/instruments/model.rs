@@ -10,8 +10,8 @@ use sonara_midi::orchestration::InstrumentType;
 use super::facts::PatchFacts;
 use super::family::FamilyClaim;
 use super::manifest::{
-    ArticulationList, DynamicsMode, EnsembleClaim, KeymapEntry, LegatoMode, Verdict, VerdictState,
-    serialize_instrument,
+    ArticulationEntry, ArticulationList, DynamicsMode, EnsembleClaim, KeymapEntry, LegatoMode,
+    Verdict, VerdictState, serialize_instrument,
 };
 
 /// The identifier of a sample library: a lower-case slug, `[a-z0-9][a-z0-9_-]*`, at most 64
@@ -86,7 +86,8 @@ impl fmt::Display for LibraryId {
 }
 
 /// The stable identifier of an instrument preset: `<library id>/<patch path below the library
-/// root, without the extension>`, for example `vsco2ce/Strings/Violin Solo`.
+/// root, without the extension>`, for example `vsco2ce/Strings/Violin Solo`, or for a
+/// multi-patch set `<library id>/@<set>`, for example `vsco2ce/@horn-solo`.
 ///
 /// It does not hold the absolute path, so it stays the same when a library is installed in
 /// another directory or on another machine.
@@ -100,6 +101,11 @@ impl InstrumentId {
             .rsplit_once('.')
             .map_or(relative_path, |(stem, _)| stem);
         Self(format!("{library}/{stem}"))
+    }
+
+    /// The ID of the multi-patch set `slug` of `library`: `<library>/@<slug>`.
+    pub(crate) fn of_set(library: &LibraryId, slug: &str) -> Self {
+        Self(format!("{library}/@{slug}"))
     }
 
     /// The ID as text.
@@ -172,6 +178,38 @@ pub struct InstrumentClaim {
     pub source: ClaimSource,
 }
 
+/// Whether a preset is one patch or a multi-patch set. Serialized into the preset as
+/// `"kind": "patch"`, or as `"kind": "set"` beside the set's `members`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum PresetKind {
+    /// One patch file, [`InstrumentPreset::patch_path`].
+    Patch,
+    /// A multi-patch set of one instrument, which a version 2 manifest or a profile defines:
+    /// several patches, each playing the articulations that name it
+    /// ([`ArticulationEntry::member`](super::ArticulationEntry::member)).
+    Set {
+        /// The patches, in the order the set's articulations first name them, each once.
+        members: Vec<SetMember>,
+    },
+}
+
+/// One patch of a multi-patch set.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct SetMember {
+    /// The patch path below the library root, `/`-separated: spelled as on disk when the scan
+    /// found the file, else as the manifest or the profile writes it.
+    pub path: String,
+    /// The patch file on this machine.
+    pub patch_path: PathBuf,
+    /// Whether the patch can be played now, by the same checks as a preset's.
+    pub availability: Availability,
+    /// What the structural check found in the patch, once
+    /// [`super::InstrumentCatalog::verify`] ran on the set with a loader that inspects patches;
+    /// `None` before.
+    pub facts: Option<PatchFacts>,
+}
+
 /// One instrument preset (`contracts/instrument-catalog.md`).
 ///
 /// Every claim keeps its source ([`ClaimSource`]): the library's manifest declares, the profile
@@ -179,20 +217,27 @@ pub struct InstrumentClaim {
 /// inferred. The fields `articulations` and `license` keep their first meaning, what the
 /// library's own manifest declares; the claims beside them add the profile's word, marked as
 /// such.
+///
+/// A preset is a patch, or a multi-patch set ([`PresetKind`]) whose own patches are also listed
+/// as the presets they are.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct InstrumentPreset {
     /// The stable ID.
     pub id: InstrumentId,
     /// The name to show: the manifest's, else that of the shipped profile that applies to the
-    /// library, else the patch's file name.
+    /// library, else the patch's file name, or a set's slug.
     pub display_name: String,
     /// The family and where that claim comes from.
     pub family: FamilyClaim,
     /// The library the preset belongs to.
     pub library: LibraryId,
     /// The patch file on this machine. SFZ presets have no bank or program: the patch is the
-    /// preset.
+    /// preset. For a set, the patch of its default articulation, else of its first one; the
+    /// library directory for a set that names no patch.
     pub patch_path: PathBuf,
+    /// One patch, or a set with its members.
+    #[serde(flatten)]
+    pub kind: PresetKind,
     /// Articulations the library's manifest declares for the patch: the names of a version 1
     /// manifest, the articulation IDs of a version 2 one. **Empty means not verified**, not
     /// "none": an articulation that is not listed is never presented as supported.
@@ -200,10 +245,12 @@ pub struct InstrumentPreset {
     /// The licence the library's manifest declares for this recording, else for the library;
     /// `None` means **unknown**.
     pub license: Option<String>,
-    /// Whether the preset can be played now.
+    /// Whether the preset can be played now. A set is available when every member is; it is
+    /// missing when a member is missing, else invalid when a member is, with that member's
+    /// reason, and invalid when it names no patch.
     pub availability: Availability,
     /// The instrument type the preset plays: declared, stated by the profile, or inferred from
-    /// the path when neither says. `None` when nothing names one type, or when the manifest or
+    /// the path, or a set's slug, when neither says. `None` when nothing names one type, or when the manifest or
     /// the profile says that the patch plays several (`instrument: null`, a key map). An
     /// inferred type is kept only when its family is the preset's family.
     pub instrument: Option<InstrumentClaim>,
@@ -230,22 +277,56 @@ pub struct InstrumentPreset {
     /// check finds may lower it: [`Self::effective_verdict`].
     pub verdict: Option<Claim<Verdict>>,
     /// What the structural check found in the patch, once [`super::InstrumentCatalog::verify`]
-    /// ran with a loader that inspects patches; `None` before.
+    /// ran with a loader that inspects patches; `None` before, and always for a set, whose
+    /// members hold their own ([`SetMember::facts`]).
     pub facts: Option<PatchFacts>,
 }
 
 impl InstrumentPreset {
     /// How well the preset plays: the claimed [`Self::verdict`], lowered by what the
-    /// structural check found ([`Self::facts`]). Facts beat claims: a patch that does not load
-    /// is [`VerdictState::Not`], and a sample left out or a claimed key switch that is not a
-    /// switch key of the patch makes it at best [`VerdictState::Partly`]; each finding is added
-    /// to what is lost. `None` when nothing is claimed and the check found nothing wrong or did
-    /// not run.
+    /// structural check found ([`Self::facts`], or each member's for a set). Facts beat claims:
+    /// a patch that does not load is [`VerdictState::Not`], and a sample left out or a claimed
+    /// key switch that is not a switch key of the patch makes it at best
+    /// [`VerdictState::Partly`]; each finding is added to what is lost. A set takes the
+    /// findings of every member, each led by the member's path, and checks a key switch against
+    /// the member that its articulation names; a member that does not load makes the whole set
+    /// [`VerdictState::Not`]. `None` when nothing is claimed and the check found nothing wrong
+    /// or did not run.
     #[must_use]
     pub fn effective_verdict(&self) -> Option<Verdict> {
-        let findings = self.facts.as_ref().map_or_else(Vec::new, |facts| {
-            facts.findings(self.articulation_map.as_ref().map(|claim| &claim.value))
-        });
+        let mapped: &[ArticulationEntry] = match self.articulation_map.as_ref() {
+            Some(Claim {
+                value: ArticulationList::Mapped(entries),
+                ..
+            }) => entries,
+            _ => &[],
+        };
+        let findings = match &self.kind {
+            PresetKind::Patch => self
+                .facts
+                .as_ref()
+                .map_or_else(Vec::new, |facts| facts.findings(mapped)),
+            PresetKind::Set { members } => members
+                .iter()
+                .flat_map(|member| {
+                    let played: Vec<&ArticulationEntry> = mapped
+                        .iter()
+                        .filter(|entry| {
+                            entry
+                                .member
+                                .as_deref()
+                                .is_some_and(|path| same_path(path, &member.path))
+                        })
+                        .collect();
+                    member
+                        .facts
+                        .as_ref()
+                        .map_or_else(Vec::new, |facts| facts.findings(played))
+                        .into_iter()
+                        .map(|(state, finding)| (state, format!("{}: {finding}", member.path)))
+                })
+                .collect(),
+        };
         let claimed = self.verdict.as_ref().map(|claim| &claim.value);
         if claimed.is_none() && findings.is_empty() {
             return None;
@@ -262,6 +343,12 @@ impl InstrumentPreset {
         }
         Some(verdict)
     }
+}
+
+/// Whether two patch paths below a library name the same file, ignoring case, as discovery
+/// matches manifest paths to the files on disk.
+pub(crate) fn same_path(a: &str, b: &str) -> bool {
+    a == b || a.to_lowercase() == b.to_lowercase()
 }
 
 /// A library root the catalog read.
@@ -354,7 +441,7 @@ mod tests {
 
     use super::{
         Availability, Claim, ClaimSource, InstrumentClaim, InstrumentId, InstrumentPreset,
-        LibraryId,
+        LibraryId, PresetKind, SetMember,
     };
     use crate::instruments::{
         ArticulationEntry, ArticulationList, ArticulationName, ArticulationVia, FamilyClaim,
@@ -410,6 +497,7 @@ mod tests {
             family: FamilyClaim::Profile(InstrumentFamily::Strings),
             library,
             patch_path: PathBuf::from("/libraries/lib/Violin.sfz"),
+            kind: PresetKind::Patch,
             articulations: Vec::new(),
             license: None,
             availability: Availability::Available,
@@ -588,6 +676,62 @@ mod tests {
         }
     }
 
+    /// A set takes each member's findings, led by the member's path, and checks a key switch
+    /// against the member its articulation names, ignoring case; a member that does not load
+    /// makes the whole set `not`. Its JSON form names the kind and the members (TST-05).
+    #[test]
+    fn a_set_takes_the_findings_of_each_member() {
+        let member = |path: &str, facts| SetMember {
+            path: path.to_owned(),
+            patch_path: PathBuf::from("/libraries/lib").join(path),
+            availability: Availability::Available,
+            facts,
+        };
+        let played_by = |articulation, path: &str| ArticulationEntry {
+            member: Some(path.to_owned()),
+            ..switch(articulation, 36)
+        };
+        let mapped = ArticulationList::Mapped(vec![
+            played_by(Articulation::Sustain, "a.sfz"),
+            played_by(Articulation::Tremolo, "B.sfz"),
+        ]);
+        let mut set = preset(None, Some(mapped), None);
+        // `a.sfz` switches on key 36; `b.sfz` has no switch key and no region that can play.
+        set.kind = PresetKind::Set {
+            members: vec![
+                member("a.sfz", Some(sound_facts())),
+                member(
+                    "b.sfz",
+                    Some(PatchFacts {
+                        switch_keys: Vec::new(),
+                        playable_regions: 0,
+                        loadable: false,
+                        ..sound_facts()
+                    }),
+                ),
+                member("c.sfz", None),
+            ],
+        };
+        assert_eq!(
+            set.effective_verdict(),
+            Some(verdict(
+                VerdictState::Not,
+                &[
+                    "b.sfz: no region of the patch can play",
+                    "b.sfz: tremolo: key 36 is not a switch key of the patch"
+                ]
+            ))
+        );
+        let value = serde_json::to_value(&set).expect("serializes");
+        assert_eq!(value["kind"], json!("set"));
+        assert_eq!(
+            value["members"][2],
+            json!({"path": "c.sfz", "patch_path": "/libraries/lib/c.sfz",
+                   "availability": {"state": "available"}, "facts": null})
+        );
+        assert_eq!(value["members"][0]["facts"]["switch_keys"], json!([36, 37]));
+    }
+
     #[test]
     fn the_worse_of_two_states_wins() {
         use VerdictState::{AsIs, Not, Partly};
@@ -643,6 +787,8 @@ mod tests {
             Some(facts),
         );
         let value = serde_json::to_value(&preset).expect("serializes");
+        assert_eq!(value["kind"], json!("patch"));
+        assert_eq!(value.get("members"), None);
         assert_eq!(
             value["instrument"],
             json!({"instrument": "violin", "source": "profile"})

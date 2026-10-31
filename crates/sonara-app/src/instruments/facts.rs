@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use serde::Serialize;
 use sonara_media::sfz::{MAX_BANK_BYTES, PatchReport};
 
-use super::manifest::{ArticulationList, ArticulationVia, VerdictState};
+use super::manifest::{ArticulationEntry, ArticulationVia, VerdictState};
 
 /// What the structural check found in a patch, copied from the SFZ reader's report so that the
 /// catalog can serialize it.
@@ -97,14 +97,14 @@ impl From<&PatchReport> for PatchFacts {
 }
 
 impl PatchFacts {
-    /// What these facts take from a preset that claims `articulations`: each finding with the
-    /// best verdict it leaves, in words for the user, in this order: a patch that does not load
-    /// ([`VerdictState::Not`]), the notes of the samples left out, and each claimed key switch
-    /// that is not a switch key of the patch ([`VerdictState::Partly`]). The unsupported
-    /// opcodes alone lower nothing: what they cost is the claim's to say.
-    pub(crate) fn findings(
+    /// What these facts take from a preset whose patch is claimed to play `articulations`: each
+    /// finding with the best verdict it leaves, in words for the user, in this order: a patch
+    /// that does not load ([`VerdictState::Not`]), the notes of the samples left out, and each
+    /// claimed key switch that is not a switch key of the patch ([`VerdictState::Partly`]). The
+    /// unsupported opcodes alone lower nothing: what they cost is the claim's to say.
+    pub(crate) fn findings<'a>(
         &self,
-        articulations: Option<&ArticulationList>,
+        articulations: impl IntoIterator<Item = &'a ArticulationEntry>,
     ) -> Vec<(VerdictState, String)> {
         let mut findings = Vec::new();
         if self.regions == 0 {
@@ -136,19 +136,17 @@ impl PatchFacts {
                 .iter()
                 .map(|note| (VerdictState::Partly, note.clone())),
         );
-        if let Some(ArticulationList::Mapped(mapped)) = articulations {
-            for articulation in mapped {
-                if let ArticulationVia::Keyswitch { key } = articulation.via
-                    && !self.switch_keys.contains(&key)
-                {
-                    findings.push((
-                        VerdictState::Partly,
-                        format!(
-                            "{}: key {key} is not a switch key of the patch",
-                            articulation.name.id()
-                        ),
-                    ));
-                }
+        for articulation in articulations {
+            if let ArticulationVia::Keyswitch { key } = articulation.via
+                && !self.switch_keys.contains(&key)
+            {
+                findings.push((
+                    VerdictState::Partly,
+                    format!(
+                        "{}: key {key} is not a switch key of the patch",
+                        articulation.name.id()
+                    ),
+                ));
             }
         }
         findings

@@ -14,7 +14,8 @@ guess from the words of the patch's path. A claim that nobody makes is `null`.
 
 | Field | Meaning |
 |---|---|
-| `id` | `<library id>/<patch path below the library, without .sfz>`, for example `vsco2ce/Strings/Violin Solo`. It holds no absolute path, so it survives moving the library or opening the project on another machine. The sampler's `instrument` parameter offers the IDs of the available presets, and projects store them ([sample-libraries.md](sample-libraries.md)). |
+| `id` | `<library id>/<patch path below the library, without .sfz>`, for example `vsco2ce/Strings/Violin Solo`, or `<library id>/@<set>` for a multi-patch set, for example `vsco2ce/@horn`. It holds no absolute path, so it survives moving the library or opening the project on another machine. The sampler's `instrument` parameter offers the IDs of the available patches, and projects store them ([sample-libraries.md](sample-libraries.md)). |
+| `kind` | `patch`, one patch file, or `set`, a multi-patch set (below) with its `members`: for each patch, its `path` below the library, its `patch_path`, its own `availability` and, once verified, its `facts`. |
 | `display_name` | The manifest's name, else the name in the profile Sonara ships for the library (below), else the file name. |
 | `family` | `strings`, `woodwinds`, `brass`, `percussion`, `keyboards`, `plucked`, `choir` or `other`, with its source: **declared**, **profile**, **inferred** (words in the path, below) or **unknown**. A manifest or profile states the family, or the instrument the patch plays, whose family it is; where one states both, the family it writes wins, and the manifest's word wins over the profile's. An inferred family is a guess; treat it as one. The family is the orchestration metadata's ([orchestration-metadata.md](orchestration-metadata.md)), so a preset and an instrument type share one family type; a manifest must spell the slug exactly, in lower case. |
 | `instrument` | The instrument type the patch plays, an ID of the orchestration metadata, with its source: `{"instrument": "violin", "source": "profile"}`. Declared or stated by a profile; else inferred from the path (below), and then kept only when its family is the preset's family. `null` when nothing names one type, or when the manifest or profile says the patch plays several (`instrument: null`, or a key map). |
@@ -24,9 +25,9 @@ guess from the words of the patch's path. A claim that nobody makes is `null`.
 | `license` | The licence the library's manifest states for this recording (a version 2 entry's own `license`), else for the library. `None` means **unknown**: read the library's own terms. |
 | `license_claim` | The licence of this recording, else of its library, as the manifest declares it or the profile states it, with the source. |
 | `verdict` | How well the preset plays as the manifest or the profile judges it, with the source: `{"value": {"state": "partly", "lost": [...]}, "source": "profile"}`. |
-| `facts` | What the structural check found in the patch (below), once `verify` has run; `null` before. |
-| `availability` | `available` (a regular, non-empty, readable file inside the library), `missing` (listed by the manifest or by Sonara's profile of the library, not on disk) or `invalid` with a reason. |
-| `patch_path` | The `.sfz` file on this machine. |
+| `facts` | What the structural check found in the patch (below), once `verify` has run; `null` before, and always for a set, whose members hold their own. |
+| `availability` | `available` (a regular, non-empty, readable file inside the library), `missing` (listed by the manifest or by Sonara's profile of the library, not on disk) or `invalid` with a reason. A set is `available` when every member is, `missing` when a member is missing, else `invalid` when a member is, with the member's path before the reason, and `invalid` when it names no patch. |
+| `patch_path` | The `.sfz` file on this machine. For a set, the patch of its `default` articulation, else of its first one. |
 
 SFZ patches have no bank or program number, so presets carry none.
 
@@ -67,7 +68,9 @@ which for `MediaPatchLoader` means parsing the SFZ and decoding every sample it 
 the sampler does, so it can be slow and use memory). A patch that fails becomes `invalid` with the
 loader's message; so does a file with no region, which discovery lists as `available` because it
 does not parse the patch. The check is stricter than playback: a patch with a missing sample is
-`invalid`, although the sampler plays its other regions. Tests use a fake loader.
+`invalid`, although the sampler plays its other regions. Tests use a fake loader. Verifying a set
+loads each of its members in turn; a member that fails makes the set `invalid`, with the member's
+path before the loader's message.
 
 The same check records the preset's `facts`: `MediaPatchLoader` reads the patch and the headers
 of its samples without decoding them, and the catalog keeps the number of regions and of regions
@@ -82,7 +85,9 @@ unreadable sample or samples over the sampler's 3 GiB cap is `not`; a sample lef
 `keyswitch` articulation whose key the patch does not switch on, makes it at best `partly`. The
 opcodes the sampler ignores lower nothing by themselves; what they cost is the claim's to say.
 Without a claim and without a finding, the verdict is unknown (`None`). The claim itself is kept
-as it was made.
+as it was made. A set takes the findings of every member, each led by the member's path, and
+checks a `keyswitch` articulation against the member that plays it; a member that does not load
+makes the whole set `not`.
 
 ## The manifest, `sonara-library.json`
 
@@ -201,8 +206,13 @@ invalid and scan the library without it.
 
 **What the catalog shows.** From a version 2 entry the catalog shows every field of the preset:
 the name, the family, the articulation IDs and the licence as before, and each of the others as
-a claim with its source (above). A set is not listed as a preset of its own: its patches are
-listed as the patches they are, each with its own entry's claims.
+a claim with its source (above). A `set` entry becomes a preset of its own, `<library id>/@<set>`
+with the kind `set`, whose members are the patches its articulations name, each once, spelled as
+on disk; each of those patches is still listed as the preset it is, with its own entry's claims.
+A set without a stated instrument or family has them inferred from its slug, as a patch has them
+from its path. A set whose ID a patch already has (a file `@<set>.sfz` in the library root) is not
+listed. The sampler plays one patch per device, so the sampler's `instrument` parameter offers a
+set's patches, not the set.
 
 **Over a shipped profile.** Sonara's profiles (below) are written in the version 2 shape. When one
 applies to a library, the library's manifest lies over it, field by field: a field the manifest
@@ -263,8 +273,9 @@ say:
   trumpet's straight mute, `mute_harmon` for the harmon mute.
 - **Sets:** an instrument's single-articulation patches form a set, for example VSCO 2 CE's
   `@horn` (`FHornSus`, `FHornStac`, `FHornMute`) and VCSL's `@timpani-1` (`Timpani 1 - Hit` and
-  `- Roll`). A second, quieter sustain recording (VSCO 2 CE's `-Quiet` patches) stays out of its
-  set.
+  `- Roll`): 15 sets in VSCO 2 CE and 4 in VCSL, listed beside the patches as `vsco2ce/@horn` and
+  `vcsl/@timpani-1`. A second, quieter sustain recording (VSCO 2 CE's `-Quiet` patches) stays out
+  of its set.
 - **Key offset:** VSCO 2 CE's piccolo, glockenspiel and xylophone and VCSL's glockenspiel and
   xylophones are keyed an octave below the pitch they sound (measured from one sample of each), so
   their entries carry `key_offset: -12`. The marimbas, vibraphones, harps and tubular bells sound

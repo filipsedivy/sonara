@@ -44,6 +44,12 @@
 //! path ([`InstrumentPreset`]). The fields that predate the profiles, the articulation IDs and the
 //! licence, keep only what the library's own manifest declares.
 //!
+//! **Multi-patch sets.** A version 2 manifest or a profile may gather one instrument's patches
+//! into a set, each patch playing some of its articulations. The catalog lists the set as a
+//! preset of its own, `<library>/@<set>` ([`PresetKind::Set`]), beside its patches, which stay
+//! presets too; the set carries its claims and each member's availability and facts. The
+//! sampler plays one patch per device, so [`InstalledInstruments`] offers only the patches.
+//!
 //! A manifest entry whose file is gone is kept as [`Availability::Missing`], so the user sees
 //! what to reinstall. Discovery opens no patch, so a file with no region is listed as available
 //! until [`InstrumentCatalog::verify`] loads it and marks it [`Availability::Invalid`]. The same
@@ -72,6 +78,6 @@ pub use manifest::{
 };
 pub use model::{
     Availability, CatalogError, Claim, ClaimSource, InstrumentClaim, InstrumentId,
-    InstrumentPreset, InvalidLibraryId, Library, LibraryId, LibraryIssue,
+    InstrumentPreset, InvalidLibraryId, Library, LibraryId, LibraryIssue, PresetKind, SetMember,
 };
 pub use verify::{MediaPatchLoader, PatchLoadError, PatchLoader};
