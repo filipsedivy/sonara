@@ -24,6 +24,11 @@
 //! note chases it with its articulation. Other instruments ignore it: the base project's Drum
 //! Kit and Poly Synth render bit for bit as without.
 //!
+//! **The `mute` and `vibrato` parameters** play the recording the preset's mapping gives the
+//! articulation under the state, from a stored choice or a lane whose change lands at its own
+//! frame; the oracle is the same notes in `auto` with keyswitch notes. A mute or vibrato a newer
+//! version added plays as `auto` with a warning.
+//!
 //! **The `dynamics` parameter** scales the velocity of later notes from a lane, as notes
 //! written softer play; on a preset whose dynamics drive expression it sets CC 11 as a clip's
 //! event does, also after a seek and on every pass of a loop.
@@ -52,7 +57,9 @@ use assert_no_alloc::{AllocDisabler, assert_no_alloc};
 use serde_json::{Value, json};
 use sonara_core::model::project::Project;
 use sonara_core::plugins::{PluginRegistry, SamplerChoices, builtin_registry, sampler_descriptor};
-use sonara_dsp::bank::{ArticulationTarget, DynamicsDrive, LegatoSpec, SamplerMapping, Selector};
+use sonara_dsp::bank::{
+    ArticulationTarget, DynamicsDrive, LegatoSpec, SamplerMapping, Selector, TargetTable,
+};
 use sonara_dsp::processor::{EventKind, InstrumentEvent};
 use sonara_engine::{
     Applied, DEFAULT_BLOCK, GraphBuilder, GraphOptions, OfflineRenderer, RenderGraph,
@@ -506,13 +513,59 @@ fn an_unknown_instrument_type_or_articulation_plays_as_auto_with_a_warning() {
 }
 
 #[test]
+fn an_unknown_mute_or_vibrato_plays_as_auto_with_a_warning() {
+    // TST-03: as for the articulation, a mute or vibrato that a newer version of Sonara added
+    // plays as `auto` with a warning instead of failing the build.
+    let (_dir, sfz) = patch_dir();
+    let installed = [path(&sfz)];
+    let auto = render_params(
+        &installed,
+        &json!({"mute": "auto", "vibrato": "auto"}),
+        &no_media(),
+    )
+    .expect("renders");
+    assert!(auto.stats.warnings.is_empty(), "{:?}", auto.stats.warnings);
+    assert!(peak(&auto) > 0.01, "the patch is audible");
+
+    let newer = render_params(
+        &installed,
+        &json!({"mute": "mute_wah", "vibrato": "molto_vibrato"}),
+        &no_media(),
+    )
+    .expect("renders instead of failing");
+    assert_eq!(
+        newer.stats.warnings,
+        [
+            "mute 'mute_wah' of 'Sonara Sampler' is unknown to this version of Sonara; it \
+             plays as 'auto'",
+            "vibrato 'molto_vibrato' of 'Sonara Sampler' is unknown to this version of \
+             Sonara; it plays as 'auto'"
+        ]
+    );
+    assert_eq!(newer.data, auto.data, "it plays exactly as auto");
+    // A value that is not text still fails, as for any parameter.
+    for params in [json!({"mute": 99}), json!({"vibrato": false})] {
+        let error = render_params(&installed, &params, &no_media()).expect_err("an invalid value");
+        assert!(
+            matches!(
+                &error,
+                sonara_engine::EngineError::Params { device, .. } if device == "dev_000000000004"
+            ),
+            "{params}: {error}"
+        );
+    }
+}
+
+#[test]
 fn offered_choices_and_dynamics_play_without_a_warning() {
     // A stored choice, given by its text or its index, is kept: nothing falls back.
     let (_dir, sfz) = patch_dir();
     let installed = [path(&sfz)];
     for params in [
-        json!({"instrument_type": "violin", "articulation": "staccato", "dynamics": 0.5}),
-        json!({"instrument_type": 1, "articulation": 1, "dynamics": 0.0}),
+        json!({"instrument_type": "violin", "articulation": "staccato", "dynamics": 0.5,
+               "mute": "con_sordino", "vibrato": "non_vibrato"}),
+        json!({"instrument_type": 1, "articulation": 1, "dynamics": 0.0, "mute": 3,
+               "vibrato": 1}),
     ] {
         let audio = render_params(&installed, &params, &no_media()).expect("renders");
         assert!(
@@ -780,24 +833,39 @@ fn a_render_from_a_later_beat_is_the_slice_of_the_full_render() {
     assert!(part.data == full.data[from..], "the render from beat 0.875");
 }
 
-/// The presets `lib/articulations` and `lib/keyed-low`, played from the [`keyswitch_patch`] at
-/// `patch` with the mapping of a profiled preset: `ordinario` on C1 (24, the patch's default),
-/// `sustain` on C#1 (25) and `staccato` on D1 (26), the choices 1 to 3 of [`choices`].
-/// `lib/keyed-low` reads the patch as keyed an octave below the pitch it sounds: its key offset
-/// is -12.
+/// The presets `lib/articulations`, `lib/keyed-low` and `lib/muted`, played from the
+/// [`keyswitch_patch`] at `patch` with the mapping of a profiled preset: `ordinario` on C1 (24,
+/// the patch's default), `sustain` on C#1 (25) and `staccato` on D1 (26), the choices 1 to 3 of
+/// [`choices`]. `lib/keyed-low` reads the patch as keyed an octave below the pitch it sounds:
+/// its key offset is -12. `lib/muted` records its sustain muted on D1 (under the `mute`
+/// choices `con_sordino` and `mute_cup`) and without vibrato on C1 (under the `vibrato` choice
+/// `non_vibrato`, while not muted).
 fn articulations(patch: &Path) -> MediaProvider {
     let patch = patch.to_owned();
+    let targets = vec![None, Some(switch(24)), Some(switch(25)), Some(switch(26))];
     let mapping = |key_offset| {
         Arc::new(SamplerMapping::new(
-            vec![None, Some(switch(24)), Some(switch(25)), Some(switch(26))],
+            targets.clone(),
             DynamicsDrive::Velocity,
             None,
             key_offset,
         ))
     };
+    let muted = TargetTable::tabulate(5, 4, 4, |choice, passage| {
+        let base = targets.get(usize::from(choice)).copied().flatten();
+        match (choice, passage.mute, passage.vibrato) {
+            (2, 2 | 3, _) => Some(switch(26)),
+            (2, _, 3) => Some(switch(24)),
+            _ => base,
+        }
+    });
     let presets = [
         ("lib/articulations", mapping(0)),
         ("lib/keyed-low", mapping(-12)),
+        (
+            "lib/muted",
+            Arc::new(SamplerMapping::new(muted, DynamicsDrive::Velocity, None, 0)),
+        ),
     ];
     no_media().with_instruments(move |value| {
         presets
@@ -1124,6 +1192,97 @@ fn a_ramped_articulation_changes_at_the_first_frame_of_each_choice() {
         &media,
         &[0, AFTER_SWITCH, AFTER_CHANGE, 60_000],
     );
+}
+
+/// A lane of the sampler's parameter `param` with the automation id `id` and `points` (beat,
+/// value), each held from its beat on.
+fn held_lane(id: &str, param: &str, points: &[(f64, f64)]) -> Value {
+    let points: Vec<Value> = points
+        .iter()
+        .map(|&(beat, value)| json!({"beat": beat, "value": value, "curve": "hold"}))
+        .collect();
+    json!({"id": id, "target": {"device_id": SAMPLER, "param": param}, "enabled": true,
+           "points": points})
+}
+
+#[test]
+fn automated_mute_and_vibrato_play_from_their_own_frames_also_after_a_seek() {
+    // `lib/muted` plays `sustain` without vibrato (C1) under a `vibrato` lane at
+    // `non_vibrato`, and a `mute` lane goes from `auto` to `con_sordino` at CHANGE, inside a
+    // block, and to `open` at beat 3.5: the notes on those beats play the muted sustain (D1)
+    // and the sustain without vibrato again (C1). The oracle is the same notes in `auto` with
+    // keyswitch notes listed before each note on its beat, also after a seek (to a block start,
+    // and to a change's own frame) and on every pass of a loop.
+    let (_dir, patch) = keyswitch_patch();
+    let media = articulations(&patch);
+    let notes = [
+        note("n_000000000001", 60, 0.0625, 0.5),
+        note("n_000000000003", 60, CHANGE, 0.5),
+        note("n_000000000005", 62, 3.5, 0.5),
+    ];
+    let automated = sampler_project(
+        &json!({"instrument": "lib/muted", "articulation": "sustain"}),
+        &notes,
+        &[],
+        &[
+            held_lane(
+                "aut_000000000009",
+                "mute",
+                &[(0.0, 0.0), (CHANGE, 2.0), (3.5, 1.0)],
+            ),
+            held_lane("aut_00000000000a", "vibrato", &[(0.0, 3.0)]),
+        ],
+    );
+    let [first, second, third] = notes;
+    let oracle = sampler_project(
+        &json!({"instrument": "lib/muted"}),
+        &[
+            note("n_000000000002", 24, 0.0, 0.031_25),
+            first,
+            note("n_000000000004", 26, CHANGE, 0.031_25),
+            second,
+            note("n_000000000006", 24, 3.5, 0.031_25),
+            third,
+        ],
+        &[],
+        &[],
+    );
+    plays_as_through(
+        &automated,
+        &oracle,
+        &media,
+        &[0, AFTER_SWITCH, BEAT, AFTER_CHANGE, BEAT * 7 / 2],
+    );
+}
+
+#[test]
+fn a_stated_mute_selects_the_muted_recording_and_auto_plays_as_before() {
+    // A stored `mute` of `mute_cup` plays the muted sustain (D1), as the clip's keyswitch note
+    // does; all three choices at `auto` play the clip as the same preset without states.
+    let (_dir, patch) = keyswitch_patch();
+    let media = articulations(&patch);
+    let muted = sampler_project(
+        &json!({"instrument": "lib/muted", "articulation": "sustain", "mute": "mute_cup"}),
+        &three_notes(),
+        &[],
+        &[],
+    );
+    let mut switched = three_notes().to_vec();
+    switched.push(note("n_000000000002", 26, 0.0, 0.031_25));
+    let oracle = sampler_project(&json!({"instrument": "lib/muted"}), &switched, &[], &[]);
+    plays_as_through(&muted, &oracle, &media, &[0, AFTER_SWITCH]);
+    let heard = play(
+        &mut graph_of(&keyswitch_project("lib/muted"), &media),
+        0,
+        END,
+    );
+    let as_before = play(
+        &mut graph_of(&keyswitch_project("lib/articulations"), &media),
+        0,
+        END,
+    );
+    assert!(loudest(&heard) > 0.1, "the clip sounds");
+    assert!(heard == as_before, "auto plays the clip's own keyswitches");
 }
 
 /// The presets `lib/by-velocity`, whose dynamics drive the velocity, and `lib/on-expression`,

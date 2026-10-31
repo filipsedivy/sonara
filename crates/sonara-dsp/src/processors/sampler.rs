@@ -40,13 +40,23 @@
 //!   choice exactly as a new parameter set does, so a choice event of the choice already in
 //!   force applies nothing again and leaves what the clips selected since alone; and it becomes
 //!   the stored choice, so the parameters of a later block start (after a seek, say) apply
-//!   their choice whenever it differs from the one the event left. A choice event of another
-//!   parameter changes nothing.
+//!   their choice whenever it differs from the one the event left. The same holds for the
+//!   `mute` and `vibrato` parameters (below); a choice event of another parameter changes
+//!   nothing.
+//! - **The `mute` and `vibrato` parameters** state the mute and the vibrato of a passage. The
+//!   target the articulation choice plays is looked up under their choices
+//!   ([`SamplerMapping::target_under`]): the preset's mapping holds, for every combination, the
+//!   recording the library made with that mute or vibrato, or the nearest it has, so a state
+//!   the preset does not record plays as `auto`. A change of the articulation choice applies
+//!   its target as above; a change of the mute or the vibrato applies the target it gives the
+//!   articulation choice only when that differs from the target in force, so a state that
+//!   changes nothing leaves what the clips selected since alone. At `auto`, both force nothing
+//!   of their own, and the sampler plays exactly as without them.
 //! - **A note's own articulation** ([`InstrumentEvent::articulation`]) takes the place of the
-//!   parameter's choice for that note alone, at the note's own frame: the note plays its
-//!   choice's target as the parameter would play it (its keyswitch, its velocity zone, its
-//!   controller value; a target without one plays the clips' last keyswitch and the controllers
-//!   as they are). It changes nothing that later notes play: the parameter's target and the
+//!   parameter's choice for that note alone, at the note's own frame, under the `mute` and
+//!   `vibrato` choices in force: the note plays its choice's target as the parameter would play
+//!   it (its keyswitch, its velocity zone, its controller value; a target without one plays the
+//!   clips' last keyswitch and the controllers as they are). It changes nothing that later notes play: the parameter's target and the
 //!   clips' last keyswitch stay as they were, so the next note without an articulation of its
 //!   own plays them again. The note's release regions play with the note's own keyswitch, or
 //!   the clips' last one at the release when its target forces none, and the controller values
@@ -193,8 +203,8 @@ use std::sync::Arc;
 use super::DEFAULT_SPEC;
 use super::params::{choice, float};
 use crate::bank::{
-    ArticulationTarget, Controllers, DynamicsDrive, LegatoSpec, LoopMode, OffMode, Region, Sample,
-    SampleBank, SamplerMapping, SamplerSetup, Selector, Trigger,
+    ArticulationTarget, Controllers, DynamicsDrive, LegatoSpec, LoopMode, OffMode, Passage, Region,
+    Sample, SampleBank, SamplerMapping, SamplerSetup, Selector, Trigger,
 };
 use crate::filters::db_to_amp;
 use crate::processor::{
@@ -212,6 +222,8 @@ const PAN: usize = 1;
 const RELEASE_SCALE: usize = 2;
 const ARTICULATION: usize = 5;
 const DYNAMICS: usize = 6;
+const MUTE: usize = 7;
+const VIBRATO: usize = 8;
 
 /// Voices that can sound at once.
 const MAX_VOICES: usize = 64;
@@ -553,7 +565,12 @@ pub(crate) struct Sampler {
     last_switch: Option<u8>,
     /// The choice of the `articulation` parameter in force, by index.
     articulation: u16,
-    /// What that choice forces over what the clips select.
+    /// The choices of the `mute` and `vibrato` parameters in force.
+    passage: Passage,
+    /// The target last applied: that of the articulation choice under the passage, in the
+    /// mapping of the preset.
+    target: Option<ArticulationTarget>,
+    /// What that target forces over what the clips select.
     forced: Forced,
     /// The value of the `dynamics` parameter, 0 to 1.
     dynamics: f64,
@@ -586,6 +603,8 @@ impl Sampler {
             controllers: [Controllers::INITIAL; CHANNELS],
             last_switch: None,
             articulation: SamplerMapping::AUTO,
+            passage: Passage::AUTO,
+            target: None,
             forced: Forced::NONE,
             dynamics: 1.0,
             round_robin: 0,
@@ -620,23 +639,47 @@ impl Sampler {
         self.drive_controller();
     }
 
-    /// Applies the target of the `articulation` choice in force, from the mapping of the
-    /// preset the sampler plays: a lookup, which neither allocates nor searches (RT-02).
+    /// Applies the target of the `articulation` choice in force under the `mute` and
+    /// `vibrato` choices in force, from the mapping of the preset the sampler plays.
     fn force(&mut self) {
-        let target = self
-            .setup
+        self.target = self.lookup();
+        self.forced = Forced::of(self.target);
+    }
+
+    /// The target of the `articulation` choice in force under the passage in force: a lookup,
+    /// which neither allocates nor searches (RT-02).
+    fn lookup(&self) -> Option<ArticulationTarget> {
+        self.setup
             .as_deref()
-            .and_then(|setup| setup.mapping.target(self.articulation));
-        self.forced = Forced::of(target);
+            .and_then(|setup| setup.mapping.target_under(self.articulation, self.passage))
+    }
+
+    /// Takes the `articulation` choice `articulation` and the `mute` and `vibrato` choices of
+    /// `passage`. A new articulation choice applies its target. A new passage applies the
+    /// target it gives the articulation choice only when that differs from the target in force,
+    /// so a mute or vibrato the preset does not record leaves what the clips selected since
+    /// alone; the same choices apply nothing again.
+    fn choose(&mut self, articulation: u16, passage: Passage) {
+        let new_choice = articulation != self.articulation;
+        self.articulation = articulation;
+        self.passage = passage;
+        if new_choice || self.lookup() != self.target {
+            self.force();
+        }
     }
 
     /// What the articulation of a note-on, the `articulation` choice with index `choice`,
-    /// forces in place of the parameter's choice: its target in the mapping of the preset the
-    /// sampler plays, a lookup like [`Self::force`]. `None` for a note without an articulation
-    /// of its own and for a choice the mapping has no target for (`auto` among them), so the
-    /// note plays the parameter's choice.
+    /// forces in place of the parameter's choice: its target under the `mute` and `vibrato`
+    /// choices in force, in the mapping of the preset the sampler plays, a lookup like
+    /// [`Self::lookup`]. `None` for a note without an articulation of its own and for a choice
+    /// the mapping has no target for (`auto` among them), so the note plays the parameter's
+    /// choice.
     fn own_articulation(&self, choice: Option<u16>) -> Option<Forced> {
-        let target = self.setup.as_deref()?.mapping.target(choice?)?;
+        let target = self
+            .setup
+            .as_deref()?
+            .mapping
+            .target_under(choice?, self.passage)?;
         Some(Forced::of(Some(target)))
     }
 
@@ -804,24 +847,36 @@ impl Sampler {
         }
     }
 
-    /// A choice event: the `articulation` parameter takes the choice `event.value` from this
-    /// frame on, as [`Self::apply_params`] takes a new choice (its target is applied only when
-    /// the choice differs from the one in force), and the stored parameters hold it, so the
-    /// next parameter set compares with what is in force. An event of another parameter, or of
-    /// a value that is no choice index, changes nothing.
+    /// A choice event: the `articulation`, `mute` or `vibrato` parameter takes the choice
+    /// `event.value` from this frame on, as [`Self::apply_params`] takes a new choice
+    /// ([`Self::choose`]), and the stored parameters hold it, so the next parameter set
+    /// compares with what is in force. An event of another parameter, or of a value that is no
+    /// choice index, changes nothing.
     fn change_choice(&mut self, event: &InstrumentEvent) {
-        if usize::from(event.number) != ARTICULATION {
-            return;
-        }
-        let Ok(articulation) = u16::try_from(event.value) else {
+        let slot = usize::from(event.number);
+        let Ok(value) = u16::try_from(event.value) else {
             return;
         };
-        self.params
-            .set(ARTICULATION, ParamSlot::Choice(articulation));
-        if articulation != self.articulation {
-            self.articulation = articulation;
-            self.force();
-        }
+        let (articulation, passage) = match slot {
+            ARTICULATION => (value, self.passage),
+            MUTE => (
+                self.articulation,
+                Passage {
+                    mute: value,
+                    ..self.passage
+                },
+            ),
+            VIBRATO => (
+                self.articulation,
+                Passage {
+                    vibrato: value,
+                    ..self.passage
+                },
+            ),
+            _ => return,
+        };
+        self.params.set(slot, ParamSlot::Choice(value));
+        self.choose(articulation, passage);
     }
 
     fn control_change(&mut self, event: &InstrumentEvent) {
@@ -1681,19 +1736,21 @@ impl Sampler {
         }
     }
 
-    /// Takes the stored parameters: the settings, the `articulation` choice, whose target is
-    /// applied only when the choice changes, and the `dynamics` value, which a preset whose
-    /// dynamics drive a controller writes into it only when the value changes. So a change of
-    /// another parameter (an automated volume) leaves what the clips selected since alone.
+    /// Takes the stored parameters: the settings, the `articulation`, `mute` and `vibrato`
+    /// choices, whose target is applied only when they change it ([`Self::choose`]), and the
+    /// `dynamics` value, which a preset whose dynamics drive a controller writes into it only
+    /// when the value changes. So a change of another parameter (an automated volume) leaves
+    /// what the clips selected since alone.
     fn apply_params(&mut self) {
         if let Some(settings) = Settings::from_slots(&self.params) {
             self.settings = Some(settings);
         }
         let articulation = choice(&self.params, ARTICULATION).unwrap_or(SamplerMapping::AUTO);
-        if articulation != self.articulation {
-            self.articulation = articulation;
-            self.force();
-        }
+        let passage = Passage {
+            mute: choice(&self.params, MUTE).unwrap_or(0),
+            vibrato: choice(&self.params, VIBRATO).unwrap_or(0),
+        };
+        self.choose(articulation, passage);
         let dynamics = dynamics_of(&self.params);
         if dynamics.to_bits() != self.dynamics.to_bits() {
             self.dynamics = dynamics;

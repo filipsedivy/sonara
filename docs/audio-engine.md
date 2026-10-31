@@ -133,9 +133,9 @@ audio hardware and no sleeping.
   every later note. Frames are `i64`; the generation and frame counters wrap on purpose.
 - **Per block.** The render thread asks the schedule for the events of `[frame, frame + n)`:
   note-offs, then note-ons, then controller events, each with its offset in the block. Events
-  with the same offset keep that order; a sampler's articulation changes (below) come between
-  the note-offs and the note-ons. The buffer is sized at build, so no event is dropped and
-  nothing allocates on the render thread.
+  with the same offset keep that order; a sampler's articulation, mute and vibrato changes
+  (below) come between the note-offs and the note-ons. The buffer is sized at build, so no event
+  is dropped and nothing allocates on the render thread.
 - **Play** builds a fresh graph at the start frame; **pause** halts the stream at the device's
   software position and keeps it as the resting position; **resume** is a play from there;
   **seek** keeps the graph, moves the position and starts a new generation; **stop** halts the
@@ -187,9 +187,9 @@ audio hardware and no sleeping.
   keyswitch and its last CC 1, 11 and 64 values (above), so a render that starts later than the
   first keyswitch note plays the same articulation as the full render.
 - **Device automation.** Device parameters are sampled once per 512-frame block, at the
-  block's first frame. A sampler's automated `articulation` also changes inside the block: each
-  change is an event among its MIDI events, at the frame a note on the point's beat starts on,
-  after the note-offs and before the note-ons of that frame. The Poly Synth, the Drum Kit and
+  block's first frame. A sampler's automated `articulation`, `mute` and `vibrato` also change
+  inside the block: each change is an event among its MIDI events, at the frame a note on the
+  point's beat starts on, after the note-offs and before the note-ons of that frame. The Poly Synth, the Drum Kit and
   every effect keep the block rate, so their renders are unchanged.
 - **Tails.** The `auto` tail renders until the output stays below −100 dBFS for 250 ms,
   bounded by the summed processor tails (at most 30 s).
@@ -227,15 +227,19 @@ holds the loaded patch beside the preset's mapping (`sonara-dsp::bank::SamplerMa
 device's `instrument` value, a preset ID or the patch path an older project stored, is turned into
 the patch file and that mapping by the resolver the application gives the `MediaProvider`. The
 application compiles the mapping once per preset, off the real-time thread, from what the
-library's manifest or Sonara's profile claims: a target for every `articulation` choice (a key
-switch, a velocity zone or a controller value; for a choice the preset does not map, the nearest
-articulation it plays), what `dynamics` drives, the legato and the key offset. A preset about which
+library's manifest or Sonara's profile claims: a target for every `articulation` choice under
+every `mute` and `vibrato` choice (a key switch, a velocity zone or a controller value; for a
+combination the preset does not record, the nearest it plays), what `dynamics` drives, the legato
+and the key offset. Only the mutes and vibratos a preset records get columns of their own in that
+table; every other choice reads the column of `auto`. A preset about which
 nothing is claimed gets an empty mapping and plays its patch as it is. The same preset with the
-same mapping gets the same setup again on a graph rebuild. Its `instrument_type`, `articulation`
-and `dynamics` values reach the processor as further parameter slots; a stored `instrument_type`
-or `articulation` that is not one of the choices plays as `auto`, with a warning, instead of
-failing the graph build. The processor reads `articulation` only: when the choice changes, it
-looks the choice's target up in the mapping and applies it to the notes that start after it (a
+same mapping gets the same setup again on a graph rebuild. Its `instrument_type`, `articulation`,
+`dynamics`, `mute` and `vibrato` values reach the processor as further parameter slots; a stored
+`instrument_type`, `articulation`, `mute` or `vibrato` that is not one of the choices plays as
+`auto`, with a warning, instead of failing the graph build. The processor reads `articulation`
+under `mute` and `vibrato`: when the articulation choice changes, or a change of the mute or the
+vibrato changes its target, it looks the target up in the mapping (a few checked multiplications
+into a flat table) and applies it to the notes that start after it (a
 forced keyswitch, a velocity zone or a controller value that the regions read in place of the
 clip's), without allocating. It applies the target again on a reset and at every all-notes-off,
 so a seek or a loop wrap keeps it; the keyswitch and controller events that the chase sends
@@ -244,7 +248,8 @@ until it is applied again. A note's own articulation travels with its note-on: w
 builds a sampler's schedule, it resolves each note's stored articulation to the index of an
 `articulation` choice (an id it does not offer is a warning, and the note carries none), and
 every other instrument's note-ons carry none. The processor looks that choice's target up at the
-note-on and plays the note with it in place of the parameter's, from the note's own frame,
+note-on, under the `mute` and `vibrato` in force, and plays the note with it in place of the
+parameter's, from the note's own frame,
 without changing what later notes play; the note's release regions and its voices' controller
 reads keep the note's target. Every note and keyswitch event is moved by the mapping's key offset
 before the processor reads it, and one moved outside 0 to 127 is dropped; the chase's keyswitch

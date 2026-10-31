@@ -95,7 +95,7 @@ so dynamic layers written that way blend instead of all sounding at full level o
 layer a note's velocity leaves silent starts no voice. `amplitude` scales a region's level in
 percent. MIDI: notes, sustain pedal (CC 64), volume (CC 7), expression (CC 11), the controllers a
 patch uses (below), pitch bend (±2 semitones) and all notes off. Parameters: volume, pan, release
-scale, instrument, and instrument type, articulation and dynamics (below).
+scale, instrument, and instrument type, articulation, dynamics, mute and vibrato (below).
 
 Release samples start when the key is released; for a key released while the sustain pedal is
 down, they start when the pedal lifts, at the velocity the key was pressed with and with the
@@ -201,7 +201,7 @@ unless it writes its own `loop_mode`, `loop_start` or `loop_end`, which win one 
 not loop by default, since nothing would end the loop. Only the first loop of a WAV file is read,
 and it plays forward; loops stored in AIFF or FLAC files are not read.
 
-## Instrument type, articulation and dynamics
+## Instrument type, articulation, dynamics, mute and vibrato
 
 - **`instrument_type`**: `auto` (the default) or an instrument type ID such as `horn_f` or
   `violin`, in score order. It names the instrument a preset plays, for a preset whose library
@@ -211,8 +211,14 @@ and it plays forward; loops stored in AIFF or FLAC files are not read.
   the position of a choice, so the list never changes its order: new articulations are added at
   its end.
 - **`dynamics`**: 0 to 1, default 1. It can be automated.
+- **`mute`**: `auto` (the default), `open`, then the mutes `con_sordino`, `mute_cup`,
+  `mute_harmon`, `mute_plunger`, `mute_bucket`, `stopped`, `palm_mute` and `xylophonic`. It can be
+  automated.
+- **`vibrato`**: `auto` (the default), `ordinary`, `vibrato_on` and `non_vibrato`. It can be
+  automated.
 
-Every sampler device offers the same lists, whatever preset it plays.
+Every sampler device offers the same lists, whatever preset it plays. Lanes store the position
+of a choice, so `mute` and `vibrato`, like `articulation`, never change their order.
 
 **How `articulation` plays.** `auto` forces nothing: the patch's default keyswitch and the
 keyswitch notes in the clips decide, as before. Any other choice plays what the preset's library
@@ -224,8 +230,8 @@ about which nothing is claimed, plays as `auto`. A change applies to the notes t
 it; sounding notes ring on. An automated change takes effect at its own frame, also inside a
 512-frame block: a point at the beat where a note starts applies to that note, and a note that
 ends there releases in the articulation it played. A linear or smooth lane changes at the first
-frame of each choice it passes. Other sampler parameters, such as `dynamics`, change once per
-block.
+frame of each choice it passes. `mute` and `vibrato` change the same way; other sampler
+parameters, such as `dynamics`, change once per block.
 
 A keyswitch note in a clip, or a clip's event of the controller the articulation sets, still
 wins after the articulation, until the articulation is applied again: when it changes, when
@@ -233,10 +239,34 @@ playback starts, and when it jumps (a seek or a loop wrap). After a jump the eng
 again what the clip selected before the new position, so the clip's last keyswitch before it
 wins over the articulation. Back at `auto`, the clip's last keyswitch plays again.
 
+**How `mute` and `vibrato` play.** They state the mute and the vibrato of a passage, which hold
+until they change. The articulation then plays the recording the preset's library maps for it
+with that mute or vibrato (`{"id": "sustain", "via": "keyswitch", "key": 38, "vibrato":
+"vibrato_on"}`, [instrument-catalog.md](instrument-catalog.md)), when there is one: on VSCO 2
+CE's `Flute-KS`, `sustain` plays its key switch 37, with `vibrato_on` 38 and with `non_vibrato`
+36. A combination the preset does not record falls back as the instrument catalog's degradation
+chain does: the vibrato gives way first, then the mute (a more general mute first, so a cup mute
+plays a straight mute's recording), and only then the articulation. So a staccato recorded only
+open plays open under any mute, and a mute or vibrato a preset does not record at all changes
+nothing.
+
+- `auto` keeps the mute or vibrato the articulation names: `con_sordino` as the `articulation` is
+  the ordinary sound muted, as before. Any other choice replaces it, so `con_sordino` with the
+  `mute` `open` plays open.
+- With the `articulation` at `auto`, a stated mute or vibrato plays the ordinary sound under it
+  when the preset records that state; otherwise nothing is forced and the clip's keyswitches
+  decide as before. `open` and `ordinary` give `auto` nothing to select.
+- A change applies to the notes that start after it, at its own frame when automated, like an
+  articulation change. It applies the articulation again only when the mute or vibrato changes
+  what the articulation plays, so a state that changes nothing leaves a clip's keyswitch after
+  the articulation alone.
+- With all three at `auto`, the sampler plays exactly as without them.
+
 **A note's own articulation.** A note can carry an articulation of its own (a note's
 `articulation`, project format version 2). The sampler plays that note in it, in place of the
 device's `articulation`, from the note's own start: what the preset maps for that
-articulation, or the nearest one it has, as above. Nothing else changes: the
+articulation under the device's `mute` and `vibrato`, or the nearest one it has, as above.
+Nothing else changes: the
 next note without an articulation of its own plays the device's articulation, or the clip's last
 keyswitch, as before. The note's release samples play in its articulation, and a controller value
 that its articulation sets stays with the note for as long as it sounds. A seek or a loop wrap
@@ -302,9 +332,10 @@ note's release samples play at the velocity it was pressed with, at the level th
 reached. An automated change reaches sounding notes at the next 512-frame block, ramped over
 that block.
 
-A project saved by a newer version of Sonara can hold an instrument type or an articulation that
-this version does not know. It opens unchanged, and the device plays as `auto`; the render warns
-`articulation '…' of '…' is unknown to this version of Sonara; it plays as 'auto'`. A note whose
+A project saved by a newer version of Sonara can hold an instrument type, an articulation, a
+mute or a vibrato that this version does not know. It opens unchanged, and the device plays that
+parameter as `auto`; the render warns, for example, `articulation '…' of '…' is unknown to this
+version of Sonara; it plays as 'auto'` (or `mute '…'`, `vibrato '…'`). A note whose
 articulation this version does not know plays the device's articulation; the render warns
 `note articulation '…' on '…' is unknown to this version of Sonara; the note plays the device's
 articulation`.

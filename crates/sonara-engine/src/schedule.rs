@@ -39,7 +39,7 @@
 //!   same (GLD-01).
 //!
 //! - **A sampler's automated enum parameters** ([`NoteSchedule::send_choices`]): each change
-//!   of one (its articulation), computed at build ([`crate::automation::choice_changes`]), is
+//!   of one (its articulation, mute or vibrato), computed at build ([`crate::automation::choice_changes`]), is
 //!   a choice event ([`EventKind::ParamChoice`]) at its frame. On equal offsets it comes after
 //!   the note-offs and before the note-ons, so a note that ends on the change's frame releases
 //!   in the choice it played, and a note that starts there plays the new one; a chase block's

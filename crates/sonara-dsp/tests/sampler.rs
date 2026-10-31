@@ -1,10 +1,10 @@
 //! `sonara.sampler` against synthetic banks: layers, round robin, release, release triggers,
-//! the sustain pedal, keyswitches, exclusive groups, controllers, polyphony, the articulation
-//! and dynamics parameters, an automated articulation change inside a block, a note's own
-//! articulation, the key offset, the overlap legato and the real-time rules (TST-10: every
-//! check compares against a value that follows from the bank, not "it ran"). Every block, and
-//! every parameter change of the articulation and dynamics tests, runs under `assert_no_alloc`
-//! (RT-02).
+//! the sustain pedal, keyswitches, exclusive groups, controllers, polyphony, the articulation,
+//! dynamics, mute and vibrato parameters, an automated articulation, mute or vibrato change
+//! inside a block, a note's own articulation, the key offset, the overlap legato and the
+//! real-time rules (TST-10: every check compares against a value that follows from the bank,
+//! not "it ran"). Every block, and every parameter change of the articulation, dynamics, mute
+//! and vibrato tests, runs under `assert_no_alloc` (RT-02).
 //!
 //! The samples are constants, so a voice's steady-state output is its sample value times the
 //! velocity gain `(velocity / 127)²`, which the tests compute independently of the engine; a
@@ -29,18 +29,18 @@ use sonara_dsp::processors::{create, param_slots};
 #[global_allocator]
 static ALLOCATOR: AllocDisabler = AllocDisabler;
 
-/// The sampler's descriptor with one patch and four articulations: the `articulation` choices
-/// are `auto` (0), `ordinario` (1), `sustain` (2), `staccato` (3), `pizzicato` (4) and
-/// `legato` (5).
+/// The sampler's descriptor with one patch, four articulations, two mutes and three vibratos:
+/// the `articulation` choices are `auto` (0), `ordinario` (1), `sustain` (2), `staccato` (3),
+/// `pizzicato` (4) and `legato` (5); the `mute` choices `auto` (0), `open` (1) and
+/// `con_sordino` (2); the `vibrato` choices `auto` (0), `ordinary` (1), `vibrato_on` (2) and
+/// `non_vibrato` (3).
 fn descriptor() -> sonara_core::plugins::PluginDescriptor {
+    let owned = |ids: &[&str]| ids.iter().map(|&id| id.to_owned()).collect();
     sampler_descriptor(&SamplerChoices {
         presets: vec!["/library/violin.sfz".to_owned()],
-        articulations: vec![
-            "sustain".to_owned(),
-            "staccato".to_owned(),
-            "pizzicato".to_owned(),
-            "legato".to_owned(),
-        ],
+        articulations: owned(&["sustain", "staccato", "pizzicato", "legato"]),
+        mutes: owned(&["open", "con_sordino"]),
+        vibratos: owned(&["ordinary", "vibrato_on", "non_vibrato"]),
         ..SamplerChoices::default()
     })
     .expect("one patch")
@@ -2771,6 +2771,191 @@ fn a_choice_event_of_another_parameter_or_no_choice_changes_nothing() {
     close(note(&mut *processor), 0.25);
 }
 
+/// The mapping of [`four_targets`] with passage states over [`four_articulations`]: under the
+/// mute `con_sordino`, `auto`, `ordinario` and `staccato` play the switch 25 (0.25); under the
+/// vibrato `vibrato_on`, `staccato` plays the switch 27 (0.0625), unless muted. Every other
+/// combination plays as without a state, `pizzicato` (27) and `sustain` (the patch as it is)
+/// among them.
+fn passage_targets() -> SamplerMapping {
+    let base = four_targets(0);
+    let table = TargetTable::tabulate(5, 3, 4, |choice, passage| match choice {
+        0 | 1 | 3 if passage.mute == 2 => Some(switch(25)),
+        3 if passage.vibrato == 2 => Some(switch(27)),
+        _ => base.target(choice),
+    });
+    SamplerMapping::new(table, DynamicsDrive::Velocity, None, 0)
+}
+
+/// The parameters with the `articulation`, `mute` and `vibrato` choices given.
+fn stated(articulation_choice: &str, mute: &str, vibrato: &str) -> Params {
+    let mut params = articulation(articulation_choice);
+    params.insert("mute".to_owned(), ParamValue::Str(mute.to_owned()));
+    params.insert("vibrato".to_owned(), ParamValue::Str(vibrato.to_owned()));
+    params
+}
+
+#[test]
+fn a_mute_or_vibrato_switches_new_notes_to_the_target_it_gives_the_articulation() {
+    let mut processor = mapped(
+        four_articulations(),
+        passage_targets(),
+        &stated("staccato", "auto", "auto"),
+    );
+    close(note(&mut *processor), 0.125);
+    // A held note rings on through the change; the next note plays the muted staccato.
+    let held = run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    close(level(&held), 0.125);
+    set(&mut *processor, &stated("staccato", "con_sordino", "auto"));
+    let both = run(&mut *processor, &[event(EventKind::NoteOn, 62, 127)]);
+    close(level(&both), 0.125 + 0.25);
+    assert_eq!(voices(&*processor), 2.0, "no voice of the switch key");
+    run(
+        &mut *processor,
+        &[
+            event(EventKind::NoteOff, 60, 0),
+            event(EventKind::NoteOff, 62, 0),
+        ],
+    );
+    // `open` and `auto` play the staccato as recorded without a mute.
+    for mute in ["open", "auto"] {
+        set(&mut *processor, &stated("staccato", mute, "auto"));
+        close(note(&mut *processor), 0.125);
+    }
+    set(&mut *processor, &stated("staccato", "auto", "vibrato_on"));
+    close(note(&mut *processor), 0.0625);
+    // A state the mapping does not record plays as `auto`.
+    set(&mut *processor, &stated("staccato", "auto", "non_vibrato"));
+    close(note(&mut *processor), 0.125);
+    // Neither state touches an articulation recorded without one.
+    for (mute, vibrato) in [("con_sordino", "vibrato_on"), ("auto", "auto")] {
+        set(&mut *processor, &stated("pizzicato", mute, vibrato));
+        close(note(&mut *processor), 0.0625);
+    }
+}
+
+#[test]
+fn auto_plays_a_recorded_mute_and_forces_nothing_else() {
+    let mut processor = mapped(
+        four_articulations(),
+        passage_targets(),
+        &stated("auto", "con_sordino", "auto"),
+    );
+    close(note(&mut *processor), 0.25);
+    // Back to open: nothing is forced, so the patch's default switch plays again.
+    set(&mut *processor, &stated("auto", "open", "auto"));
+    close(note(&mut *processor), 0.5);
+    set(&mut *processor, &stated("auto", "auto", "vibrato_on"));
+    close(note(&mut *processor), 0.5);
+}
+
+#[test]
+fn a_state_that_changes_no_target_leaves_the_clip_keyswitch_alone() {
+    // Under `pizzicato` (27), the clip selects switch 25 (0.25) after it. A mute or vibrato
+    // that gives `pizzicato` no other target applies nothing, so the clip's switch plays on.
+    let mut processor = mapped(
+        four_articulations(),
+        passage_targets(),
+        &stated("pizzicato", "auto", "auto"),
+    );
+    run(&mut *processor, &[event(EventKind::KeySwitch, 25, 0)]);
+    close(note(&mut *processor), 0.25);
+    set(&mut *processor, &stated("pizzicato", "con_sordino", "auto"));
+    close(note(&mut *processor), 0.25);
+    set(
+        &mut *processor,
+        &stated("pizzicato", "con_sordino", "vibrato_on"),
+    );
+    close(note(&mut *processor), 0.25);
+    run(
+        &mut *processor,
+        &[choice_event(0, "mute", 1), choice_event(1, "vibrato", 3)],
+    );
+    close(note(&mut *processor), 0.25);
+    // A state that changes the target wins after the clip's switch: under `staccato`, the
+    // clip selects 24 (0.5), and the mute then plays the muted staccato (25).
+    set(&mut *processor, &stated("staccato", "auto", "auto"));
+    run(&mut *processor, &[event(EventKind::KeySwitch, 24, 0)]);
+    close(note(&mut *processor), 0.5);
+    set(&mut *processor, &stated("staccato", "con_sordino", "auto"));
+    close(note(&mut *processor), 0.25);
+    // All notes off and a reset apply the target under the state again.
+    run(&mut *processor, &[event(EventKind::KeySwitch, 24, 0)]);
+    close(note(&mut *processor), 0.5);
+    run(&mut *processor, &[event(EventKind::AllNotesOff, 0, 0)]);
+    close(note(&mut *processor), 0.25);
+    run(&mut *processor, &[event(EventKind::KeySwitch, 24, 0)]);
+    assert_no_alloc(|| processor.reset());
+    close(note(&mut *processor), 0.25);
+}
+
+#[test]
+fn a_note_plays_its_own_articulation_under_the_state() {
+    // `pizzicato` (27, recorded without a mute) is the parameter's articulation under the mute:
+    // an unmarked note plays it, a `staccato` note the muted staccato (25), and without the
+    // mute the staccato (26).
+    let mut processor = mapped(
+        four_articulations(),
+        passage_targets(),
+        &stated("pizzicato", "con_sordino", "auto"),
+    );
+    close(note(&mut *processor), 0.0625);
+    close(marked_note(&mut *processor, 3), 0.25);
+    set(&mut *processor, &stated("pizzicato", "auto", "auto"));
+    close(marked_note(&mut *processor, 3), 0.125);
+    set(&mut *processor, &stated("pizzicato", "auto", "vibrato_on"));
+    close(marked_note(&mut *processor, 3), 0.0625);
+    close(note(&mut *processor), 0.0625);
+}
+
+#[test]
+fn an_automated_mute_or_vibrato_switches_new_notes_from_its_frame() {
+    // Under `staccato` (26, 0.125), one block holds a note at frame 0, a change of the mute to
+    // `con_sordino` at frame 700 with a note sent after it on that frame, and a note at frame
+    // 1400: both later notes play the muted staccato (25, 0.25).
+    let mut processor = mapped(
+        four_articulations(),
+        passage_targets(),
+        &stated("staccato", "auto", "auto"),
+    );
+    let out = run(
+        &mut *processor,
+        &[
+            event(EventKind::NoteOn, 60, 127),
+            choice_event(700, "mute", 2),
+            at_offset(700, event(EventKind::NoteOn, 62, 127)),
+            at_offset(1_400, event(EventKind::NoteOn, 64, 127)),
+        ],
+    );
+    let left = |frame: usize| out[frame][0];
+    close(left(699), 0.125);
+    assert!(
+        left(700) > 0.125,
+        "the note on the change's frame starts there"
+    );
+    close(left(1_399), 0.125 + 0.25);
+    close(level(&out), 0.125 + 0.25 + 0.25);
+    run(
+        &mut *processor,
+        &[
+            event(EventKind::NoteOff, 60, 0),
+            event(EventKind::NoteOff, 62, 0),
+            event(EventKind::NoteOff, 64, 0),
+        ],
+    );
+    // The vibrato too, once the mute is back at `auto`.
+    run(&mut *processor, &[choice_event(0, "mute", 0)]);
+    close(note(&mut *processor), 0.125);
+    run(&mut *processor, &[choice_event(0, "vibrato", 2)]);
+    close(note(&mut *processor), 0.0625);
+    // The events are the stored choices: parameters with the same choices apply nothing again,
+    // so the clip's switch after them plays on; parameters that differ apply their target.
+    run(&mut *processor, &[event(EventKind::KeySwitch, 24, 0)]);
+    set(&mut *processor, &stated("staccato", "auto", "vibrato_on"));
+    close(note(&mut *processor), 0.5);
+    set(&mut *processor, &stated("staccato", "auto", "auto"));
+    close(note(&mut *processor), 0.125);
+}
+
 /// Plays the same phrase as [`phrase`] with the switch keys of [`four_articulations`]:
 /// notes, a keyswitch event, a press of a switch key, all notes off and a chase.
 fn switched_phrase(processor: &mut dyn Processor) -> Vec<[f64; 2]> {
@@ -2801,6 +2986,20 @@ fn auto_and_a_choice_without_a_selector_play_the_clip_as_before() {
     for choice in ["auto", "sustain"] {
         let mut processor = mapped(four_articulations(), four_targets(0), &articulation(choice));
         assert_eq!(switched_phrase(&mut *processor), oracle, "{choice}");
+    }
+    // A mapping with mute and vibrato targets plays the same with all three at `auto`, and with
+    // `open` and `ordinary`, which give `auto` nothing to force.
+    for (mute, vibrato) in [
+        ("auto", "auto"),
+        ("open", "ordinary"),
+        ("auto", "non_vibrato"),
+    ] {
+        let mut processor = mapped(
+            four_articulations(),
+            passage_targets(),
+            &stated("auto", mute, vibrato),
+        );
+        assert_eq!(switched_phrase(&mut *processor), oracle, "{mute} {vibrato}");
     }
     // Every choice of a mapping without targets plays as `auto`.
     for choice in ["ordinario", "staccato", "pizzicato"] {

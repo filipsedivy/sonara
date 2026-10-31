@@ -223,7 +223,8 @@ Each articulation is `{id, via, …}`:
   `non_vibrato`), and `attack_ms` (0 to 2000), the time from a key press to the onset of its
   samples, which overrides the attack `verify` measures (above).
 - An ID appears once per mute and vibrato: `sustain` and `sustain` with `mute: con_sordino` are
-  two articulations.
+  two articulations. The sampler plays the one that matches its `mute` and `vibrato` parameters
+  ([sample-libraries.md](sample-libraries.md)).
 
 **Validation.** A version 2 manifest is checked entry by entry: an entry with an unknown
 instrument or articulation ID, a key outside 0 to 127, two defaults, a path that leaves the

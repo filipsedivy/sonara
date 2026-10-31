@@ -856,10 +856,10 @@ impl Builder<'_> {
                     self.slot(track, device, position, SlotPosition::Instrument, playable)?
             {
                 // Only a sampler gets the keyswitch and controllers in its chase, and the
-                // changes of its automated articulation at their own frames inside a block;
-                // every other instrument keeps the plain chase, block-rate parameters and its
-                // golden output (GLD-01). The keyswitch notes are clip notes, which the
-                // preset's key offset moves onto the patch's keyswitch keys.
+                // changes of its automated articulation, mute and vibrato at their own frames
+                // inside a block; every other instrument keeps the plain chase, block-rate
+                // parameters and its golden output (GLD-01). The keyswitch notes are clip notes,
+                // which the preset's key offset moves onto the patch's keyswitch keys.
                 if device.plugin_id == SAMPLER_ID {
                     let switch_notes = state
                         .sampler
@@ -1138,10 +1138,10 @@ impl Builder<'_> {
     /// (the project was made elsewhere, or the library moved) still renders, with a warning and
     /// silence from that device, instead of failing on the choice (ADR 0010).
     ///
-    /// The sampler's other enum parameters (`instrument_type`, `articulation`) are soft too: a
-    /// stored text that is not one of their choices, such as an ID that a newer version of
-    /// Sonara added, plays as the parameter's default, `auto`, with a warning. A value that is
-    /// not text still fails, as any invalid value does.
+    /// The sampler's other enum parameters (`instrument_type`, `articulation`, `mute`,
+    /// `vibrato`) are soft too: a stored text that is not one of their choices, such as an ID
+    /// that a newer version of Sonara added, plays as the parameter's default, `auto`, with a
+    /// warning. A value that is not text still fails, as any invalid value does.
     fn sampler_params(
         &mut self,
         descriptor: &PluginDescriptor,
