@@ -88,6 +88,7 @@ fn articulation_choices_index_the_samplers_parameter() {
             .iter()
             .map(|articulation| articulation.id().to_owned())
             .collect(),
+        ..SamplerChoices::default()
     })
     .expect("a preset to play");
     let choices = &descriptor
