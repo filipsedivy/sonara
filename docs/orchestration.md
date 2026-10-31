@@ -12,31 +12,100 @@ The planner is deterministic and needs no language model.
 
 | Request | Tool | Notes |
 |---|---|---|
-| "set the tempo to 96 bpm" | `set_tempo` | one number, 10 to 999 |
+| "set the tempo to 96 bpm" | `set_tempo` | one number, 10 to 999, once per request |
 | "use Poly Synth on Keys" | `set_instrument` | one instrument plugin and one instrument track, matched by name |
 | "delete track Drums" | `delete_track` | destructive |
 
 Requests can be joined with `and`, `then`, `,` or `;`. Track names match on word boundaries, and a
 longer matching name wins ("Keys 2" is not "Keys").
 
+`execute` also runs a plan built by hand, with the same checks.
+
+## Steps that use an earlier step's result
+
+A step can take a value from the reply of an earlier step of the same plan, such as the id of the
+track that `create_track` makes. The value does not exist when the plan is made, so the step lists
+a `StepRef`, and its argument holds the reference's placeholder until the step runs:
+
+```rust
+// Step 1 writes a clip on the track that step 0 creates.
+let track = StepRef::new("/track_id", 0, "/result/track_id");
+let args = json!({"track_id": track.placeholder(), "start": 0, "length": 4});
+// args["track_id"] is "{step 0: /result/track_id}" until step 0 has committed.
+```
+
+- `arg` is a JSON pointer into the step's arguments (`/track_id`, `/add_sends/0/target`).
+- `step` is the index of an earlier step in the plan.
+- `pointer` is a JSON pointer into that step's reply. Edit tools put the ids they create under
+  `result` (`create_track` replies with `result.track_id` and `result.instrument_device_id`). The
+  value there must be a string.
+- The placeholder may stand alone or inside a longer string: `"{step 0: /result/x}:dynamics"`
+  becomes `"dev_7:dynamics"`. It must appear exactly once in its argument.
+
+The value comes from the committed call's reply, never from a dry run: a dry run makes ids that
+the commit does not use.
+
 ## Flow and guarantees
 
 1. `plan(request)` calls only read tools (`list_tracks`, `list_plugins`).
-2. If any part is unknown, a number is missing or out of range, or a track or instrument is not
-   found or not unique, the result is a list of questions (`NeedsClarification`). Nothing is
-   changed, not even the clear parts of the request.
+2. If any part is unknown, a number is missing or out of range, the tempo is set more than once,
+   or a track or instrument is not found or not unique, the result is a list of questions
+   (`NeedsClarification`). Nothing is changed, not even the clear parts of the request.
 3. A plan with a destructive step is only proposed (`NeedsConfirmation`) until the caller runs it
    with `Approval::Confirmed`.
-4. Every step is validated with `dry_run` before the first commit. A refusal changes nothing
-   (`Rejected`).
-5. Steps then commit in order. A failure stops the plan (`Failed`); the report lists the steps
-   already applied, which are undoable through the normal history.
-6. If the tool layer demands its own `confirmation_token` for a confirmed destructive step, the
+4. **Validation before the first commit.** Every reference must name an earlier step and sit in
+   its argument. Every step without references must pass its tool's `dry_run` against the project
+   as it is. A step with references cannot be dry-run yet, so it must pass its tool's input
+   validation with the placeholders in place (unknown fields, types, ranges). A refusal here
+   changes nothing (`Rejected`).
+5. **Stages.** The plan commits in stages. A stage ends before the first step that needs a value
+   from a step of the same stage, so a plan without references is one stage. Before any step of a
+   later stage commits, its references are filled in from the earlier replies, and every step of
+   the stage is dry-run against the project as the earlier stages left it.
+6. **Rollback.** If anything fails after the first commit (a dry run of a later stage, a
+   reference whose value is missing from the reply, or a commit), the plan stops (`Failed`), and
+   the steps it already applied are undone with the `undo` tool, newest first. A step whose reply
+   says it changed nothing (`committed: false`) made no undo step and is skipped.
+7. **The rollback never undoes someone else's edit.** Before each `undo` it reads
+   `get_project_state`: the newest undo step must carry the label of that step's own commit
+   (`operation` in its reply), and the project version must have moved on since that commit only
+   by the plan's own later commits and the rollback's own undos. If either check fails, for
+   example because the user edited the project while the plan ran, the rollback stops there, and
+   the report says why and which steps are still applied. They stay undoable through the normal
+   history.
+8. If the tool layer demands its own `confirmation_token` for a confirmed destructive step, the
    step is repeated with that token.
 
-The `Report` holds the status, the plan, the executed steps with their error codes and a summary.
+In short: a plan that is refused before its first commit changes nothing; a plan that fails later
+is undone as far as the checks of item 7 allow, and the report says exactly how far.
+
+The rollback relies on every applied step having made exactly one undo step of its own. Every
+edit tool commits one undo step, but the history merges two edits of the same value made within
+1.5 seconds one after the other (the tempo, or the pan or volume of one track) into one. The
+planner therefore never sets the tempo twice in one plan, and a plan built by hand must not change
+the same value in two steps in a row. An edit of the same value that the user made less than 1.5
+seconds before the plan's first step can merge into that step and is then undone with it; inside
+an undo group (`sonara_app::edit::begin_undo_group`) the steps of the agent service never merge
+with the user's. The undone steps move to the redo stack, so Redo can apply them again.
+
+## The report
+
+The `Report` holds:
+
+- `status`: `done`, `needs_clarification`, `needs_confirmation`, `rejected` or `failed`;
+- `plan`: the plan as made, with references still as placeholders;
+- `executed`: the steps that committed, then the step that failed or was refused. Each
+  `StepResult` holds the step as it ran (references filled in), whether it succeeded, the error
+  code and message, the tool's reply (the commit's, or the dry run's for a refused step; none for
+  a step refused without a call) and whether the rollback undid it. A reference that cannot be
+  used is reported as `INVALID_ARGUMENT`, and a step with references for a tool that does not
+  exist as `NOT_FOUND`;
+- `rollback`, only when the run `failed`: whether every applied step was undone and, if not, why
+  the rollback stopped;
+- `summary`: the plan and its outcome in a sentence or two for the user.
 
 ## Limits
 
 No relative requests ("faster"), no composition requests, no language model. These produce
-questions. Tests use a stub runner (`crates/sonara-agent/tests/orchestration.rs`).
+questions. Tests use stub runners and the real agent service
+(`crates/sonara-agent/tests/orchestration.rs`, `crates/sonara-agent/tests/orchestration_stages.rs`).
