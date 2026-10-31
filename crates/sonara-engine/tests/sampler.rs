@@ -1656,16 +1656,18 @@ fn a_seek_into_a_note_plays_its_own_articulation() {
 fn an_unknown_note_articulation_plays_the_device_articulation_with_a_warning() {
     // A project saved by a newer version can name an articulation this one does not offer:
     // the note plays the device's `staccato`, as the same note without an articulation does,
-    // and the build warns once for the id.
+    // and the build warns once for the id. A note marked `auto` names no articulation of its
+    // own: it plays the device's too, and without a warning (TST-06: it used to be reported as
+    // unknown).
     let (_dir, patch) = keyswitch_patch();
     let media = articulations(&patch);
-    let [first, _, third] = three_notes();
+    let [first, _, _] = three_notes();
     let (project, registry) = sampler_project(
         &json!({"instrument": "lib/articulations", "articulation": "staccato"}),
         &[
             marked_note("n_000000000001", 60, 0.0625, 0.5, "flutter_tongue"),
             marked_note("n_000000000003", 60, 1.0, 0.5, "flutter_tongue"),
-            third,
+            marked_note("n_000000000005", 62, 3.5, 0.5, "auto"),
         ],
         &[],
         &[],

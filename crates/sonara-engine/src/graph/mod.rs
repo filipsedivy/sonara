@@ -943,7 +943,8 @@ impl Builder<'_> {
     /// automation indexes too. Every other instrument gets none, so its events stay the same
     /// (GLD-01). A project saved by a newer version of Sonara can name an articulation that
     /// this one does not offer: such a note plays the device's articulation, with a warning, as
-    /// an unknown stored choice of the parameter does ([`Self::sampler_params`]).
+    /// an unknown stored choice of the parameter does ([`Self::sampler_params`]). A note marked
+    /// `auto` plays the device's articulation too, without a warning.
     fn schedule(&mut self, track: &Track) -> NoteSchedule {
         let choices = track
             .instrument
@@ -959,7 +960,8 @@ impl Builder<'_> {
             self.spec.sample_rate,
             |id| {
                 let choice = note_articulation(choices?, id);
-                if choice.is_none() {
+                // `auto` names no articulation of the note's own; it is no unknown id.
+                if choice.is_none() && id != SAMPLER_AUTO {
                     unknown.insert(id.to_owned());
                 }
                 choice
