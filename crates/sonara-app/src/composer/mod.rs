@@ -8,7 +8,8 @@
 //! that ([`invocation::DENIED_TOOLS`]).
 //!
 //! - [`mod@locate`]: finds Claude Code and checks its version.
-//! - [`invocation`]: the system prompt, the tool boundaries and the command line.
+//! - [`invocation`]: the system prompt with its orchestration reference, the tool boundaries and
+//!   the command line.
 //! - [`stream`]: parses the `stream-json` output into [`stream::Event`]s for the panel.
 //! - [`run`]: starts the process, streams the events and stops it (unix only). The parser of the
 //!   output ([`LineParser`]) and the stop signals ([`StopPolicy`]) are the parts that differ
@@ -26,6 +27,7 @@ pub mod stream;
 
 pub use invocation::{
     BuildOptions, Invocation, PromptError, Workspace, build, build_with, check_prompt,
+    system_prompt,
 };
 pub use locate::{ClaudeCli, LocateError, Located, locate};
 #[cfg(unix)]

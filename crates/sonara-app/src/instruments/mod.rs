@@ -72,6 +72,11 @@
 //! which cannot see the catalog: the articulations the sampler's `articulation` parameter plays
 //! as asked, the legato and dynamics claims, the velocity layers and sampled keys the check
 //! found, and the attacks and longest hold it measured.
+//!
+//! **What the agents read** ([`agent_reference`]): the instruments of the orchestration metadata
+//! and the presets of the shipped profiles, by the instrument they play, with their
+//! articulations, switch keys and key maps, as plain text for the AI Chat's system prompt
+//! ([`crate::composer::invocation::ORCHESTRATION_REFERENCE`]).
 
 mod caps;
 mod chain;
@@ -82,6 +87,7 @@ mod installed;
 mod manifest;
 mod model;
 mod profiles;
+mod reference;
 mod verify;
 
 pub use caps::sound_caps;
@@ -104,3 +110,5 @@ pub use model::{
     SetMember,
 };
 pub use verify::{MediaPatchLoader, PatchLoadError, PatchLoader};
+
+pub use reference::agent_reference;

@@ -51,7 +51,7 @@ use std::path::Path;
 use super::tools::allowed_sonara_tools;
 use crate::chat::boundary::DENIED_SONARA_TOOLS;
 use crate::chat::provider::{SYSTEM_PROMPT_ADDENDUM, Turn};
-use crate::composer::invocation::{SYSTEM_PROMPT, search_path};
+use crate::composer::invocation::{search_path, system_prompt};
 use crate::composer::{Invocation, Workspace};
 
 /// The name of the Sonara MCP server in `-c mcp_servers.<name>`.
@@ -121,11 +121,11 @@ fn toml_path(path: &Path) -> String {
     toml_string(&path.to_string_lossy())
 }
 
-/// What the agent is told on top of Codex's own instructions: the composer's system prompt and
-/// the chat's addendum, the same text Claude Code gets.
+/// What the agent is told on top of Codex's own instructions: the composer's system prompt with
+/// the orchestration reference, and the chat's addendum, the same text Claude Code gets.
 #[must_use]
 pub fn developer_instructions() -> String {
-    format!("{SYSTEM_PROMPT}\n{SYSTEM_PROMPT_ADDENDUM}")
+    format!("{}\n{SYSTEM_PROMPT_ADDENDUM}", system_prompt())
 }
 
 /// The `-c key=value` overrides of a run, as `key=value` texts, in the order they are passed.
@@ -385,7 +385,7 @@ mod tests {
         config(r#"approvals_reviewer="user""#.to_owned());
         config(format!(
             "developer_instructions={}",
-            toml_string(&format!("{SYSTEM_PROMPT}\n{SYSTEM_PROMPT_ADDENDUM}"))
+            toml_string(&format!("{}\n{SYSTEM_PROMPT_ADDENDUM}", system_prompt()))
         ));
         config(r#"mcp_servers.sonara.command="/App/Sonara.app/Contents/MacOS/sonara""#.to_owned());
         config(

@@ -76,7 +76,9 @@ jobs:
   # side by side, where `cargo test` runs one binary after another. The suite is split in two
   # halves over two runners. Doctests are not run by nextest, so the first half runs them with
   # `cargo test --doc`. Also checks that docs/agent-api.md is up to date: the test of
-  # sonara-agent's gen_agent_docs example (`test = true`), which renders it from the tool registry.
+  # sonara-agent's gen_agent_docs example (`test = true`), which renders it from the tool registry;
+  # and the chat's generated orchestration reference, through the test of sonara-app's
+  # gen_chat_reference example.
   rust-test:
     name: rust test ${{ matrix.partition }}/2 (macos-26)
     runs-on: macos-26

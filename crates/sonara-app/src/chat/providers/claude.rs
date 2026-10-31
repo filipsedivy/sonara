@@ -271,7 +271,7 @@ mod tests {
     use std::path::PathBuf;
 
     use super::*;
-    use crate::composer::invocation::{DENIED_TOOLS, SYSTEM_PROMPT};
+    use crate::composer::invocation::{DENIED_TOOLS, SYSTEM_PROMPT, system_prompt};
 
     fn workspace() -> (tempfile::TempDir, Workspace) {
         let source = tempfile::tempdir().unwrap();
@@ -520,8 +520,12 @@ mod tests {
             .count();
         assert_eq!(flags, 1);
         let system = arg_after(&run, "--append-system-prompt");
+        assert_eq!(
+            system,
+            format!("{}\n{SYSTEM_PROMPT_ADDENDUM}", system_prompt()),
+            "the composer's prompt, the orchestration reference, then the chat's addendum"
+        );
         assert!(system.starts_with(SYSTEM_PROMPT));
-        assert!(system.ends_with(SYSTEM_PROMPT_ADDENDUM));
         assert!(system.contains("composer inside Sonara"));
         assert!(system.contains("This session is a chat"));
         assert_eq!(run.stdin, turn.stdin_text());

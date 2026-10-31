@@ -119,6 +119,26 @@ pub trait Provider: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::chat::providers::codex::invocation::developer_instructions;
+    use crate::composer::invocation::system_prompt;
+
+    /// The most characters the whole system prompt of a chat run may hold: every task carries
+    /// it, so it stays a fixed, tested cost.
+    const PROMPT_BUDGET_CHARS: usize = 24_000;
+
+    #[test]
+    fn the_whole_chat_prompt_fits_the_budget() {
+        // What both providers receive: the composer's prompt with the orchestration reference,
+        // then this addendum (Codex's developer instructions are exactly that; the Claude
+        // provider's test pins the same text in `--append-system-prompt`).
+        let whole = format!("{}\n{SYSTEM_PROMPT_ADDENDUM}", system_prompt());
+        assert_eq!(whole, developer_instructions());
+        let count = whole.chars().count();
+        assert!(
+            count <= PROMPT_BUDGET_CHARS,
+            "the chat's system prompt holds {count} characters, more than {PROMPT_BUDGET_CHARS}"
+        );
+    }
 
     #[test]
     fn the_first_message_goes_to_the_agent_as_it_is() {

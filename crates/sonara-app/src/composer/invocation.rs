@@ -30,7 +30,33 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use serde_json::json;
 
 /// The harness's system prompt: what Sonara is, what the agent may do and how it should work.
+/// A run receives it followed by [`ORCHESTRATION_REFERENCE`] ([`system_prompt`]).
 pub const SYSTEM_PROMPT: &str = include_str!("system_prompt.md");
+
+/// The orchestration reference: how orchestral parts are written with the tools, every
+/// instrument id with its ranges and the articulation ids a note may carry, and the presets of
+/// the library profiles Sonara ships.
+///
+/// `system_prompt_orchestra.md` is generated, never edited by hand: the example
+/// `gen_chat_reference` writes it from the orchestration metadata and the shipped profiles
+/// (`sonara_app::instruments::agent_reference`), and that example's test fails while the
+/// committed file differs from what they render.
+pub const ORCHESTRATION_REFERENCE: &str = include_str!("system_prompt_orchestra.md");
+
+/// The whole system prompt of a run: [`SYSTEM_PROMPT`], a line break and
+/// [`ORCHESTRATION_REFERENCE`].
+const FULL_SYSTEM_PROMPT: &str = concat!(
+    include_str!("system_prompt.md"),
+    "\n",
+    include_str!("system_prompt_orchestra.md")
+);
+
+/// [`SYSTEM_PROMPT`] followed by [`ORCHESTRATION_REFERENCE`]: what a run is told before any
+/// addendum of the caller.
+#[must_use]
+pub const fn system_prompt() -> &'static str {
+    FULL_SYSTEM_PROMPT
+}
 
 /// The name the Sonara tools have in the run (`mcp__sonara__…`).
 const SERVER: &str = "sonara";
@@ -257,7 +283,7 @@ pub fn mcp_config(sonara_cli: &Path, workspace: &Workspace) -> String {
 pub struct BuildOptions<'a> {
     /// Whether Claude Code keeps the session on disk (`false` adds `--no-session-persistence`).
     pub persist_session: bool,
-    /// Text appended to [`SYSTEM_PROMPT`] in the same `--append-system-prompt` value.
+    /// Text appended to [`system_prompt`] in the same `--append-system-prompt` value.
     pub system_prompt_addendum: Option<&'a str>,
 }
 
@@ -321,8 +347,8 @@ pub fn build_with(
     // One flag only: a second `--append-system-prompt` would replace the first.
     args.push("--append-system-prompt".to_owned());
     args.push(match options.system_prompt_addendum {
-        Some(addendum) => format!("{SYSTEM_PROMPT}\n{addendum}"),
-        None => SYSTEM_PROMPT.to_owned(),
+        Some(addendum) => format!("{}\n{addendum}", system_prompt()),
+        None => system_prompt().to_owned(),
     });
     Invocation {
         program: claude.to_path_buf(),
@@ -576,6 +602,17 @@ mod tests {
     }
 
     #[test]
+    fn the_system_prompt_is_the_composer_prompt_then_the_orchestration_reference() {
+        assert_eq!(
+            system_prompt(),
+            format!("{SYSTEM_PROMPT}\n{ORCHESTRATION_REFERENCE}")
+        );
+        assert!(ORCHESTRATION_REFERENCE.starts_with("# Orchestral parts\n"));
+        assert!(ORCHESTRATION_REFERENCE.contains("\n## Instruments\n"));
+        assert!(ORCHESTRATION_REFERENCE.contains("\n## Presets of the library profiles"));
+    }
+
+    #[test]
     fn the_system_prompt_names_the_boundaries() {
         for needle in [
             "Sonara",
@@ -641,7 +678,7 @@ mod build_options_tests {
             "--max-turns",
             "200",
             "--append-system-prompt",
-            SYSTEM_PROMPT,
+            system_prompt(),
         ];
         assert_eq!(strings(&run), expected);
     }
@@ -720,8 +757,8 @@ mod build_options_tests {
             .position(|arg| *arg == "--append-system-prompt")
             .unwrap();
         let prompt = args[position + 1];
+        assert_eq!(prompt, format!("{}\n# Addendum marker", system_prompt()));
         assert!(prompt.starts_with(SYSTEM_PROMPT));
-        assert!(prompt.ends_with("# Addendum marker"));
         assert!(prompt.contains("composer inside Sonara"));
         assert!(!args.iter().any(|arg| arg.contains("keep this off")));
         assert_eq!(run.stdin, "-- keep this off the command line");

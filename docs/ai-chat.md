@@ -19,7 +19,7 @@ project. Undo works step by step."
 | Where | What |
 |---|---|
 | `sonara_app::chat` (`crates/sonara-app/src/chat/`) | The chat: `state` (the queue as a pure state machine), `task` and `error` (the data and the error codes the window receives), `controller` (runs the tasks one after the other and tells the window), `replay` (the context given to each task), `provider` and `providers` (the `Provider` trait and its two adapters, `claude` and `codex`), `boundary` (the provider-neutral deny list) |
-| `sonara_app::composer` (`crates/sonara-app/src/composer/`) | The Claude and process layer that the chat shares: locating Claude Code, the composer command line and its tool boundary, `Workspace` (the private run folder), `Run` (starts the process, streams events, stops it), the normalised `Event`, `LineParser` and `StopPolicy`. The chat has no second process supervisor. The composer panel and its Tauri commands are gone; the command line of a Claude Code run is unchanged |
+| `sonara_app::composer` (`crates/sonara-app/src/composer/`) | The Claude and process layer that the chat shares: locating Claude Code, the composer command line and its tool boundary, `Workspace` (the private run folder), `Run` (starts the process, streams events, stops it), the normalised `Event`, `LineParser` and `StopPolicy`. The chat has no second process supervisor. The composer panel and its Tauri commands are gone; the flags of a Claude Code run are unchanged. Its system prompt now ends with the orchestration reference (see "The system prompt") |
 | `apps/sonara-desktop/src-tauri/src/chat.rs` | The Tauri commands (`chat_snapshot`, `chat_providers`, `chat_set_provider`, `chat_enqueue`, `chat_edit`, `chat_remove`, `chat_move`, `chat_stop`, `chat_resume`, `chat_clear`) and the `chat-event` stream to the window. `window.rs` opens the window (label `chat`) |
 | `apps/sonara-desktop/src/lib/chat/` | The window, a thin view of the Rust state: provider picker, thread, queue, message box, Clear dialog, Beta badge |
 
@@ -120,7 +120,7 @@ from the located CLI, the `sonara` tool path, the `Workspace` and the `Turn`), `
 stateful `LineParser` per run) and `stop_policy`. The shared `Run` supervisor starts the process
 and delivers events; a provider supplies only what differs.
 
-- **Claude Code** is the default and the reference. The command line is the composer's, unchanged
+- **Claude Code** is the default and the reference. The command line is the composer's
   (`composer::invocation::build_with`): `-p --output-format stream-json --verbose
   --include-partial-messages --strict-mcp-config --mcp-config <json> --permission-mode dontAsk
   --permission-prompts none --allowedTools mcp__sonara,WebSearch,WebFetch --disallowedTools <18
@@ -205,7 +205,7 @@ against the tool headings of [agent-api.md](agent-api.md) in both directions.
 | Reject a renamed key | not applicable | `--strict-config`: an unknown `-c` key aborts the run with exit 1 instead of silently reopening a tool |
 | No kept session | `--no-session-persistence` | `--ephemeral` |
 | Isolation | empty working directory: no repository `CLAUDE.md`, `.mcp.json` or project hook. `--bare` is not used: it reads only `ANTHROPIC_API_KEY` and never the subscription login | an empty working directory and `--skip-git-repo-check` |
-| Instructions | the composer's system prompt and the chat addendum, in `--append-system-prompt` | the same text, in `-c developer_instructions` (written as a TOML string by one function, because `-c` falls back to a plain string when a value does not parse) |
+| Instructions | the composer's system prompt, the orchestration reference and the chat addendum, in `--append-system-prompt` | the same text, in `-c developer_instructions` (written as a TOML string by one function, because `-c` falls back to a plain string when a value does not parse) |
 | Turn limit | `--max-turns 200` (a hidden flag: accepted, but not in `--help`) | none set |
 
 The rest of the Codex argv is `exec --json --color never` and `-` (the prompt on standard input,
@@ -332,14 +332,43 @@ inspected).
 
 ## The system prompt
 
-`crates/sonara-app/src/composer/system_prompt.md` is appended to the agent's own instructions. It
-says what Sonara is, that the user watches the timeline live, how to work in small visible steps
-(frame, tracks, material section by section, sound, check), the conventions of the tools (beats,
-dB, opaque identifiers, error envelopes), what the agent must not do, and how to end. On top of it
-`crates/sonara-app/src/chat/system_prompt_chat.md` says that this session is a chat: answer a
-question or small talk in plain text without touching the project, edit only when asked, treat the
-`<earlier_conversation>` block as context only, keep the safety rules, and reply in the language
-of the message.
+Both providers get the same text, in three parts, appended to the agent's own instructions:
+
+1. `crates/sonara-app/src/composer/system_prompt.md` says what Sonara is, that the user watches
+   the timeline live, how to work in small visible steps (frame, tracks, material section by
+   section, sound, check), the conventions of the tools (beats, dB, opaque identifiers, error
+   envelopes), what the agent must not do, and how to end.
+2. **The orchestration reference**, `crates/sonara-app/src/composer/system_prompt_orchestra.md`
+   (`composer::invocation::system_prompt` joins it to the first part). It is generated, never
+   written by hand, by `cargo run -p sonara-app --example gen_chat_reference` from
+   `sonara_app::instruments::agent_reference`:
+   - a short guide (`crates/sonara-app/src/instruments/reference_guide.md`): one track per part
+     with its `part`, the sampler preset chosen with `set_instrument` from the choices of
+     `list_plugins`, what a note's `articulation` records and what the preset plays, velocity and
+     controller 11 for dynamics, and that the libraries have no recorded legato;
+   - every instrument id of the orchestration metadata in score order
+     (`sonara_midi::orchestration::reference`), with its English and Czech name, its playable and
+     comfortable range at sounding pitch, its transposition and the articulation ids a note of it
+     may carry (a list equal to an earlier one, or within four ids of one of the same family, is
+     written as `as <id>`, with `without` and `plus`);
+   - the presets of the library profiles Sonara ships (VSCO 2 Community Edition and VCSL), by
+     the instrument id they play, with the articulations each plays, its switch keys and, for
+     percussion, its key map. It lists what the profiles describe, not what is installed; the
+     guide tells the agent to take the installed presets from `list_plugins`.
+
+   The composer includes the file as it includes `system_prompt.md`: the chat's privacy guard
+   (`tests/chat_save.rs`) keeps the `composer` and `chat` sources from reaching the metadata or
+   the catalog. The example's test fails while the committed file differs from what the sources
+   render, so a change of the metadata, a profile or the guide that is not regenerated, or a hand
+   edit of the file, fails the build.
+3. `crates/sonara-app/src/chat/system_prompt_chat.md` says that this session is a chat: answer a
+   question or small talk in plain text without touching the project, edit only when asked,
+   treat the `<earlier_conversation>` block as context only, keep the safety rules, and reply in
+   the language of the message.
+
+The whole text is at most 24 000 characters (`the_whole_chat_prompt_fits_the_budget` in
+`chat/provider.rs`), because every task carries it. The reference uses nearly all the room
+the other two parts leave, so adding to any part means shortening one first.
 
 ## Limits
 
@@ -371,6 +400,12 @@ of the message.
   run), and per provider the command line, the escaping of `-c` values, detection and the stream
   parser. The composer's own unit tests (parser, command line, workspace, search for `claude`,
   process handling with a fake `claude`) stay in `composer/`.
+- **The system prompt:** `chat/provider.rs` checks that the whole text stays within its 24 000
+  characters and is what Codex receives, and the Claude provider's test that it is what Claude
+  Code receives; the example `gen_chat_reference` has a test (`cargo test` runs it) that fails
+  while `composer/system_prompt_orchestra.md` differs from the rendering;
+  `sonara_midi::orchestration::reference` and `instruments/reference.rs` read their text back
+  against the metadata and the profiles.
 - **Fake CLI:** `crates/sonara-app/tests/chat_codex.rs` runs the real `CodexProvider` against a
   fake `codex` script: detection, the command line, the parser and the stop policy, with only the
   model missing.
