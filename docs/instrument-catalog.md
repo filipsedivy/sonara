@@ -377,6 +377,26 @@ VSCO 2 CE and VCSL. Every substitution comes back as a sentence for the user, fo
 "Spiccato is not available for Violin; playing staccato." or "No Cimbasso is installed; Tuba
 (vsco2ce/Tuba-KS) plays the part."
 
+## What a sound can do
+
+`instruments::sound_caps` copies what the catalog knows about a preset into the `SoundCaps` that
+the performance layer (`sonara_midi::performance`) reads, and `SoundSource::caps` does the same
+for whatever `choose_sound` chose. Nothing is guessed: a fact the check has not recorded stays
+unknown.
+
+| Field | From |
+|---|---|
+| `articulations` | The choices of the sampler's `articulation` parameter that the preset plays as asked, in the vocabulary's order: a mapped articulation, or a mute or vibrato that a mapped recording carries (`con_sordino` for a muted sustain). The parameter selects only on a preset that names its instrument type and maps how its articulations are reached, so a preset without a version 2 entry, a version 1 manifest's names and a percussion key map list none. `legato` is listed when the preset claims legato by overlap or by its own legato regions, or maps a legato recording. |
+| `legato` | The `legato` claim; none when nothing is claimed. |
+| `layers` | The top velocity of each velocity layer the check found, every boundary of every key kept (for a set, of every member), so a velocity range inside one listed layer plays the same regions at every key. One layer, `[127]`, until the check ran. |
+| `dynamics` | The `dynamics` claim; velocity when nothing is claimed. |
+| `attack_ms` | The attack of the ordinary sound and of each listed articulation that has one: the stated `attack_ms`, else the measured one (above). Sustain mapped both open and muted has one attack, the open recording's; the muted one is `con_sordino`'s. A preset the parameter does not select on plays its patch as it is: its default switch, or every region of a patch without switches. |
+| `max_hold_s` | `max_hold_ms()` in seconds. |
+| `sampled` | The lowest to the highest key that sounds (for a set, that every member sounds), less the key offset, so that it is in the notes a clip writes. A gap between them is not told apart; the verdict and `choose_sound` report it. Unknown until the check ran. |
+
+A built-in sound, silence, and a preset that is not in the catalog's snapshot are sounds nothing
+is known about (`SoundCaps::default()`).
+
 ## Licence and installation notes
 
 - Install a library by adding its directory to `sample_libraries` and restarting

@@ -484,7 +484,7 @@ impl<'a> Sound<'a> {
 
 /// The request an articulation entry or a key map row plays: its primary articulation, else the
 /// ordinary sound, with the mute and the vibrato it names or carries.
-fn named(name: ArticulationName, mute: Mute, vibrato: Vibrato) -> Request {
+pub(super) fn named(name: ArticulationName, mute: Mute, vibrato: Vibrato) -> Request {
     let (primary, mute, vibrato) = match name {
         ArticulationName::Ordinario => (None, mute, vibrato),
         ArticulationName::Vocabulary(articulation) => match articulation.axis() {

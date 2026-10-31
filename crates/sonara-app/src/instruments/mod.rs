@@ -66,7 +66,14 @@
 //! catalog with the best playable preset ([`InstrumentPreset::is_playable`]), else the nearest
 //! articulations, the other size, a neighbour of the family, a built-in sound or silence, and
 //! says in plain words what it substituted ([`SoundPlan`]).
+//!
+//! **What a sound can do** ([`sound_caps`], [`SoundSource::caps`]): the claims and facts of the
+//! chosen preset copied into the `SoundCaps` that the performance layer of `sonara-midi` reads,
+//! which cannot see the catalog: the articulations the sampler's `articulation` parameter plays
+//! as asked, the legato and dynamics claims, the velocity layers and sampled keys the check
+//! found, and the attacks and longest hold it measured.
 
+mod caps;
 mod chain;
 mod discovery;
 mod facts;
@@ -77,6 +84,7 @@ mod model;
 mod profiles;
 mod verify;
 
+pub use caps::sound_caps;
 pub use chain::{
     ArticulationChoice, Builtin, ChainPreferences, Confirmation, Notice, Reach, SoundPlan,
     SoundRequest, SoundSource, Step, Substitute, choose_sound, nearest_articulation,
