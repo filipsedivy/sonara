@@ -1,9 +1,10 @@
 //! `sonara.sampler` against synthetic banks: layers, round robin, release, release triggers,
 //! the sustain pedal, keyswitches, exclusive groups, controllers, polyphony, the articulation
-//! and dynamics parameters, a note's own articulation, the key offset, the overlap legato and
-//! the real-time rules (TST-10: every check compares against a value that follows from the
-//! bank, not "it ran"). Every block, and every parameter change of the articulation and
-//! dynamics tests, runs under `assert_no_alloc` (RT-02).
+//! and dynamics parameters, an automated articulation change inside a block, a note's own
+//! articulation, the key offset, the overlap legato and the real-time rules (TST-10: every
+//! check compares against a value that follows from the bank, not "it ran"). Every block, and
+//! every parameter change of the articulation and dynamics tests, runs under `assert_no_alloc`
+//! (RT-02).
 //!
 //! The samples are constants, so a voice's steady-state output is its sample value times the
 //! velocity gain `(velocity / 127)²`, which the tests compute independently of the engine; a
@@ -2525,6 +2526,140 @@ fn a_reset_and_a_new_instrument_apply_the_target_again() {
         ..DeviceState::default()
     });
     close(note(&mut *processor), 0.125);
+}
+
+/// The index of the parameter `id` in the sampler's descriptor order.
+fn param_index(id: &str) -> u8 {
+    let index = descriptor()
+        .params
+        .iter()
+        .position(|p| p.id == id)
+        .expect("the sampler has the parameter");
+    u8::try_from(index).expect("a parameter index fits a byte")
+}
+
+/// A choice event at frame `offset` of its block: the parameter `id` takes the choice with
+/// index `value`, as the engine sends an automated change of the `articulation` inside a block.
+fn choice_event(offset: usize, id: &str, value: i32) -> InstrumentEvent {
+    InstrumentEvent {
+        offset,
+        value,
+        number: param_index(id),
+        ..event(EventKind::ParamChoice, 0, 0)
+    }
+}
+
+#[test]
+fn an_automated_choice_switches_new_notes_from_its_frame() {
+    // The parameter plays `pizzicato` (switch 27, 0.0625). In one block, a note at frame 0, a
+    // change to `staccato` (switch 26, 0.125) at frame 700 with a note sent after it at the
+    // same frame, and a note at frame 1400: the note at 0 rings on, and both later notes play
+    // the new choice, the one on the change's own frame included.
+    let mut processor = mapped(
+        four_articulations(),
+        four_targets(0),
+        &articulation("pizzicato"),
+    );
+    let out = run(
+        &mut *processor,
+        &[
+            event(EventKind::NoteOn, 60, 127),
+            choice_event(700, "articulation", 3),
+            at_offset(700, event(EventKind::NoteOn, 62, 127)),
+            at_offset(1_400, event(EventKind::NoteOn, 64, 127)),
+        ],
+    );
+    let left = |frame: usize| out[frame][0];
+    close(left(699), 0.0625);
+    assert!(
+        left(700) > 0.0625,
+        "the note on the change's frame starts there"
+    );
+    close(left(1_399), 0.0625 + 0.125);
+    close(level(&out), 0.0625 + 0.125 + 0.125);
+    assert_eq!(voices(&*processor), 3.0, "no voice of a switch key");
+    run(
+        &mut *processor,
+        &[
+            event(EventKind::NoteOff, 60, 0),
+            event(EventKind::NoteOff, 62, 0),
+            event(EventKind::NoteOff, 64, 0),
+        ],
+    );
+    // The choice stays, and the next block start's parameters with the same choice apply
+    // nothing again.
+    close(note(&mut *processor), 0.125);
+    set(&mut *processor, &articulation("staccato"));
+    close(note(&mut *processor), 0.125);
+}
+
+#[test]
+fn the_next_parameters_apply_their_choice_after_a_choice_event() {
+    // The parameters said `pizzicato` and an event in the block changed it to `staccato`: the
+    // event is the stored choice, so parameters that say `pizzicato` again (a block start
+    // after a seek back before the change) apply it, and so does all notes off after the
+    // event the event's own choice.
+    let mut processor = mapped(
+        four_articulations(),
+        four_targets(0),
+        &articulation("pizzicato"),
+    );
+    run(&mut *processor, &[choice_event(100, "articulation", 3)]);
+    close(note(&mut *processor), 0.125);
+    run(&mut *processor, &[event(EventKind::AllNotesOff, 0, 0)]);
+    close(note(&mut *processor), 0.125);
+    set(&mut *processor, &articulation("pizzicato"));
+    close(note(&mut *processor), 0.0625);
+}
+
+#[test]
+fn a_choice_event_of_the_choice_in_force_leaves_the_clip_keyswitch_alone() {
+    // Under `staccato`, the clip selects switch 25 (0.25) after it. A choice event of
+    // `staccato`, the choice in force, applies nothing again, so the clip's switch plays on;
+    // a change to `pizzicato` (0.0625) applies its target; a clip keyswitch wins after it
+    // again; and parameters with the choice the event left apply nothing either.
+    let mut processor = mapped(
+        four_articulations(),
+        four_targets(0),
+        &articulation("staccato"),
+    );
+    run(&mut *processor, &[event(EventKind::KeySwitch, 25, 0)]);
+    close(note(&mut *processor), 0.25);
+    run(&mut *processor, &[choice_event(0, "articulation", 3)]);
+    close(note(&mut *processor), 0.25);
+    run(&mut *processor, &[choice_event(0, "articulation", 4)]);
+    close(note(&mut *processor), 0.0625);
+    run(&mut *processor, &[event(EventKind::KeySwitch, 25, 0)]);
+    close(note(&mut *processor), 0.25);
+    set(&mut *processor, &articulation("pizzicato"));
+    close(note(&mut *processor), 0.25);
+}
+
+#[test]
+fn a_choice_event_of_another_parameter_or_no_choice_changes_nothing() {
+    // `staccato` plays switch 26 (0.125) at the default volume: a choice event of
+    // `instrument_type` or of the volume, and one whose value is no choice index, leave the
+    // articulation, the level and the stored parameters as they are.
+    let mut processor = mapped(
+        four_articulations(),
+        four_targets(0),
+        &articulation("staccato"),
+    );
+    run(
+        &mut *processor,
+        &[
+            choice_event(0, "instrument_type", 1),
+            choice_event(1, "volume", 4),
+            choice_event(2, "articulation", -1),
+            choice_event(3, "articulation", i32::MAX),
+        ],
+    );
+    close(note(&mut *processor), 0.125);
+    // The stored parameters are unchanged: the same parameters again apply nothing, so a clip
+    // keyswitch after them still plays.
+    run(&mut *processor, &[event(EventKind::KeySwitch, 25, 0)]);
+    set(&mut *processor, &articulation("staccato"));
+    close(note(&mut *processor), 0.25);
 }
 
 /// Plays the same phrase as [`phrase`] with the switch keys of [`four_articulations`]:

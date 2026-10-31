@@ -10,7 +10,9 @@
 //!   block**: the render graph samples device automation once per block. Like the prototype's
 //!   dict comparison, it recomputes coefficients only when the new set differs from the stored
 //!   one, so block-clocked behaviour (the EQ's glide, the filter's LFO) keeps the prototype's
-//!   timing. The slots have a fixed capacity, so the call allocates nothing.
+//!   timing. The slots have a fixed capacity, so the call allocates nothing. A sampler also
+//!   gets the changes of its automated enum parameters inside the block, at their own frames,
+//!   as events ([`EventKind::ParamChoice`]); every other processor keeps the block rate.
 //! - **`set_state`** (setup) receives non-parameter state: a convolver's impulse response, and
 //!   the notes an instrument can receive (every note, unless an offline render passes only
 //!   the notes its schedule plays).
@@ -83,6 +85,14 @@ pub enum EventKind {
     /// last keyswitch note before the new position; an instrument without keyswitches ignores
     /// it.
     KeySwitch,
+    /// An automated enum parameter takes a new choice from this frame on: the parameter at
+    /// index `number` in descriptor order takes the choice with index `value`, as
+    /// [`Processor::set_params`] would give it at a block start. The render graph sends it to a
+    /// sampler for each change of its automated enum parameters (its `articulation`) inside a
+    /// block, so the change lands at its own frame instead of at the next block start; it
+    /// sends it to no other instrument, and an instrument that does not read the parameter
+    /// ignores it.
+    ParamChoice,
 }
 
 /// A MIDI-like event at frame `offset` within the current block.
@@ -98,9 +108,9 @@ pub struct InstrumentEvent {
     pub velocity: u8,
     /// MIDI channel.
     pub channel: u8,
-    /// Controller value, bend or pressure.
+    /// Controller value, bend or pressure, or the choice of a [`EventKind::ParamChoice`].
     pub value: i32,
-    /// Controller number.
+    /// Controller number, or the parameter index of a [`EventKind::ParamChoice`].
     pub number: u8,
     /// The articulation a note-on plays with: the index of a choice of the sampler's
     /// `articulation` parameter, which takes the place of the parameter's choice for this note

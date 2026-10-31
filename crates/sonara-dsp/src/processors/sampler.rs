@@ -32,6 +32,16 @@
 //!   which sends the clip's last keyswitch and controller values after its all notes off,
 //!   restores what the clips selected before the new position. Back at `auto`, the clips' last
 //!   keyswitch and controller values apply again.
+//!
+//!   An automated change inside a block arrives as a choice event
+//!   ([`EventKind::ParamChoice`]) at its own frame, rather than with the parameters at the
+//!   next block start: the notes from that frame on play it, a note that starts on that frame
+//!   included, since the engine sends the choice before the frame's note-ons. It changes the
+//!   choice exactly as a new parameter set does, so a choice event of the choice already in
+//!   force applies nothing again and leaves what the clips selected since alone; and it becomes
+//!   the stored choice, so the parameters of a later block start (after a seek, say) apply
+//!   their choice whenever it differs from the one the event left. A choice event of another
+//!   parameter changes nothing.
 //! - **A note's own articulation** ([`InstrumentEvent::articulation`]) takes the place of the
 //!   parameter's choice for that note alone, at the note's own frame: the note plays its
 //!   choice's target as the parameter would play it (its keyswitch, its velocity zone, its
@@ -188,8 +198,8 @@ use crate::bank::{
 };
 use crate::filters::db_to_amp;
 use crate::processor::{
-    BlockContext, DeviceState, EventKind, InstrumentEvent, ParamSlots, ProcessSpec, Processor,
-    Report,
+    BlockContext, DeviceState, EventKind, InstrumentEvent, ParamSlot, ParamSlots, ProcessSpec,
+    Processor, Report,
 };
 
 /// The plugin this processor implements.
@@ -754,6 +764,7 @@ impl Sampler {
             EventKind::PitchBend => self.bend = f64::from(event.value) / 8192.0 * BEND_RANGE,
             EventKind::Cc => self.control_change(event),
             EventKind::ChannelPressure => {}
+            EventKind::ParamChoice => self.change_choice(event),
             EventKind::KeySwitch => {
                 // Only a keyswitch key of the patch selects an articulation, as with a press.
                 if let Some(event) = self.moved(event)
@@ -790,6 +801,26 @@ impl Sampler {
                     }
                 }
             }
+        }
+    }
+
+    /// A choice event: the `articulation` parameter takes the choice `event.value` from this
+    /// frame on, as [`Self::apply_params`] takes a new choice (its target is applied only when
+    /// the choice differs from the one in force), and the stored parameters hold it, so the
+    /// next parameter set compares with what is in force. An event of another parameter, or of
+    /// a value that is no choice index, changes nothing.
+    fn change_choice(&mut self, event: &InstrumentEvent) {
+        if usize::from(event.number) != ARTICULATION {
+            return;
+        }
+        let Ok(articulation) = u16::try_from(event.value) else {
+            return;
+        };
+        self.params
+            .set(ARTICULATION, ParamSlot::Choice(articulation));
+        if articulation != self.articulation {
+            self.articulation = articulation;
+            self.force();
         }
     }
 
