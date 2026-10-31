@@ -44,6 +44,13 @@ manifest takes its folder name, lower-cased with other characters turned into `-
 folder changes its IDs, so give the library a manifest with an `id` before you use it in
 projects.
 
+A **multi-patch set**, one instrument whose articulations lie in separate patches, has the ID
+`<library id>/@<set>`, for example `vsco2ce/@trumpet` for VSCO 2 CE's trumpet sustain, vibrato
+sustain, staccato and two muted sustains. The library's manifest or Sonara's profile defines the
+set ([instrument-catalog.md](instrument-catalog.md)). It is offered beside its patches when every
+one of them is installed. One sampler device loads all of its patches and plays the one the
+`articulation`, `mute` and `vibrato` choose (below).
+
 A project saved before preset IDs stores the patch's absolute path. It still plays when that
 path lies below a configured library: Sonara reads it as the preset of that patch and leaves the
 project unchanged until you choose the instrument again, which stores the ID. A tool call or
@@ -227,8 +234,10 @@ keyswitch notes in the clips decide, as before. Any other choice plays what the 
 maps for it (its manifest or Sonara's profile), or the nearest articulation the preset has: a
 keyswitch, selected without sounding its key; a velocity zone, into which each note's velocity is
 moved so that some dynamic range remains; or a controller value, which the patch's controller
-gates and crossfades read. A choice the preset has nothing for, such as any choice of a preset
-about which nothing is claimed, plays as `auto`. A change applies to the notes that start after
+gates and crossfades read. On a multi-patch set, the choice also picks the patch that plays it,
+and `auto` plays the patch of the set's ordinary sound; each patch keeps its own keyswitches, and a
+clip's keyswitch note selects in every patch it is a keyswitch of. A choice the preset has nothing
+for, such as any choice of a preset about which nothing is claimed, plays as `auto`. A change applies to the notes that start after
 it; sounding notes ring on. An automated change takes effect at its own frame, also inside a
 512-frame block: a point at the beat where a note starts applies to that note, and a note that
 ends there releases in the articulation it played. A linear or smooth lane changes at the first
@@ -345,4 +354,10 @@ articulation`.
 ## Memory
 
 A patch's samples are decoded whole into memory (4 bytes per sample, mono or stereo). Pick
-single-articulation patches for large libraries; a patch above 3 GiB is refused.
+single-articulation patches for large libraries; a patch above 3 GiB is refused. The 3 GiB are
+per sampler device: a multi-patch set's patches are loaded together, a sample file that two of
+them name is decoded once, and a set whose samples need more than 3 GiB together is refused. The
+render then warns `instrument '…' of '…' cannot be loaded: <patch>: the samples of the set's N
+patches need more than 3072 MiB of memory together, at least M MiB with this patch's`, naming
+the patch at which they crossed the cap, and the device plays silence. Choose the set's single
+patches on separate tracks instead.

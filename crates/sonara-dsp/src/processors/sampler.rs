@@ -65,6 +65,20 @@
 //!   preset's mapping, such as any choice of a preset about which nothing is claimed, plays the
 //!   parameter's choice. The engine's chase re-sends a note that sounds at the new position
 //!   with its articulation, so a seek into it plays it as before.
+//! - **Multi-patch sets.** A preset may be a set of patches of one instrument, which one bank
+//!   holds together ([`SampleBank::member_keyswitches`]; each region knows its patch,
+//!   [`Region::member`]). A key press plays the regions of one patch only: the patch its
+//!   articulation target names ([`ArticulationTarget::member`]), the parameter's or the note's
+//!   own, else, at `auto` and for a choice without a target, the patch of the preset's
+//!   ordinary sound ([`SamplerMapping::default_member`]). So a change of the articulation
+//!   switches patches for the notes that start after it, a lookup without allocation, and
+//!   sounding notes ring on in theirs, as with a keyswitch. A note's release regions are those
+//!   of the patch the note played. Each patch keeps its own keyswitches and its own last
+//!   keyswitch: a clip's keyswitch selects the switch in every patch whose keyswitch key it
+//!   is, a target's keyswitch applies in the patch the target names, and all notes off brings
+//!   every patch back to its default switch. The controllers, the pedal, the round robin and
+//!   the voices are the device's, shared by its patches. A bank of one patch is patch 0 and
+//!   plays as described above.
 //! - **Key offset.** The preset's key offset moves every note and keyswitch event of the clips
 //!   onto the patch's keys before anything else reads it, for a patch keyed away from the pitch
 //!   it sounds ([`SamplerMapping::patch_key`]): a note moved onto a keyswitch key selects that
@@ -203,8 +217,8 @@ use std::sync::Arc;
 use super::DEFAULT_SPEC;
 use super::params::{choice, float};
 use crate::bank::{
-    ArticulationTarget, Controllers, DynamicsDrive, LegatoSpec, LoopMode, OffMode, Passage, Region,
-    Sample, SampleBank, SamplerMapping, SamplerSetup, Selector, Trigger,
+    ArticulationTarget, Controllers, DynamicsDrive, Keyswitches, LegatoSpec, LoopMode, MAX_MEMBERS,
+    OffMode, Passage, Region, Sample, SampleBank, SamplerMapping, SamplerSetup, Selector, Trigger,
 };
 use crate::filters::db_to_amp;
 use crate::processor::{
@@ -437,7 +451,12 @@ enum Start {
 /// articulation forces it in place of the parameter's for that note alone.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Forced {
-    /// The active keyswitch for new notes, until a keyswitch from a clip replaces it.
+    /// The patch of a multi-patch set that new notes play ([`ArticulationTarget::member`]);
+    /// `None` when nothing is forced, and the patch of the preset's ordinary sound plays
+    /// ([`SamplerMapping::default_member`]).
+    member: Option<u8>,
+    /// The active keyswitch for new notes in that patch, until a keyswitch from a clip replaces
+    /// it.
     switch: Option<u8>,
     /// The velocity zone new notes play in, `(lo, hi)` with 1 ≤ `lo` ≤ `hi` ≤ 127.
     velocity: Option<(u8, u8)>,
@@ -452,15 +471,17 @@ struct Forced {
 impl Forced {
     /// Nothing forced: the patch and the clips decide.
     const NONE: Self = Self {
+        member: None,
         switch: None,
         velocity: None,
         controller: None,
         legato: false,
     };
 
-    /// What `target` forces: its selector and its legato; nothing without a target.
+    /// What `target` forces: its patch, its selector and its legato; nothing without a target.
     fn of(target: Option<ArticulationTarget>) -> Self {
         target.map_or(Self::NONE, |target| Self {
+            member: Some(target.member),
             legato: target.legato,
             ..Self::select(target.selector)
         })
@@ -518,8 +539,11 @@ impl Forced {
 struct KeyRelease {
     /// The velocity the key was pressed with.
     velocity: u8,
-    /// The keyswitch active when the key was released, or the one the note's own articulation
-    /// forces.
+    /// The patch of a multi-patch set that the note played; its release regions are that
+    /// patch's.
+    member: u8,
+    /// The keyswitch of that patch active when the key was released, or the one the note's own
+    /// articulation forces.
     switch: Option<u8>,
     /// The `dynamics` the key was pressed with, so the note's tail follows the parameter as
     /// the note did.
@@ -545,6 +569,9 @@ pub(crate) struct Sampler {
     /// What the own articulation of the note last pressed on each key forces, for its release;
     /// `None` for a key whose note follows the parameter's choice.
     key_articulation: [Option<Forced>; 128],
+    /// The patch of a multi-patch set that the note last pressed on each key played, for its
+    /// release; 0 for a bank of one patch.
+    key_member: [u8; 128],
     key_down: [bool; 128],
     /// The keys released while the sustain pedal was down: their release regions start when
     /// the pedal lifts.
@@ -561,8 +588,9 @@ pub(crate) struct Sampler {
     frame: u64,
     /// The last value of every controller, per MIDI channel.
     controllers: [Controllers; CHANNELS],
-    /// The last keyswitch the clips selected, or the patch's default switch.
-    last_switch: Option<u8>,
+    /// The last keyswitch the clips selected in each patch, or the patch's default switch, by
+    /// member number ([`Region::member`]): of a bank of one patch, only the first is used.
+    switches: [Option<u8>; MAX_MEMBERS],
     /// The choice of the `articulation` parameter in force, by index.
     articulation: u16,
     /// The choices of the `mute` and `vibrato` parameters in force.
@@ -595,13 +623,14 @@ impl Sampler {
             key_velocity: [0; 128],
             key_dynamics: [None; 128],
             key_articulation: [None; 128],
+            key_member: [0; 128],
             key_down: [false; 128],
             released_under_pedal: [None; 128],
             key_left: [false; 128],
             last_note: None,
             frame: 0,
             controllers: [Controllers::INITIAL; CHANNELS],
-            last_switch: None,
+            switches: [None; MAX_MEMBERS],
             articulation: SamplerMapping::AUTO,
             passage: Passage::AUTO,
             target: None,
@@ -622,13 +651,14 @@ impl Sampler {
         self.key_velocity = [0; 128];
         self.key_dynamics = [None; 128];
         self.key_articulation = [None; 128];
+        self.key_member = [0; 128];
         self.key_down = [false; 128];
         self.released_under_pedal = [None; 128];
         self.key_left = [false; 128];
         self.last_note = None;
         self.frame = 0;
         self.controllers = [self.initial_controllers(); CHANNELS];
-        self.last_switch = self.default_switch();
+        self.switches = self.default_switches();
         self.round_robin = 0;
         self.rng = RNG_SEED;
         self.bend = 0.0;
@@ -683,15 +713,25 @@ impl Sampler {
         Some(Forced::of(Some(target)))
     }
 
-    /// The keyswitch new notes play with: the forced one, else the clips' last one.
-    fn active_switch(&self) -> Option<u8> {
-        self.switch_with(self.forced)
+    /// The patch of a multi-patch set that a note plays when `forced` is what its articulation
+    /// forces: the patch its target names, else the patch of the preset's ordinary sound
+    /// ([`SamplerMapping::default_member`]); 0 for a bank of one patch.
+    fn member_with(&self, forced: Forced) -> u8 {
+        forced.member.unwrap_or_else(|| {
+            self.setup
+                .as_deref()
+                .map_or(0, |setup| setup.mapping.default_member())
+        })
     }
 
-    /// The keyswitch a note plays with when `forced` is what its articulation forces: the
-    /// forced one, else the clips' last one.
-    fn switch_with(&self, forced: Forced) -> Option<u8> {
-        forced.switch.or(self.last_switch)
+    /// The keyswitch a note of the patch `member` plays with when `forced` is what its
+    /// articulation forces: the forced one, when the forced target plays that patch, else the
+    /// clips' last one in the patch.
+    fn switch_in(&self, member: u8, forced: Forced) -> Option<u8> {
+        forced
+            .switch
+            .filter(|_| self.member_with(forced) == member)
+            .or_else(|| self.switches.get(usize::from(member)).copied().flatten())
     }
 
     /// What the `dynamics` parameter drives in the preset the sampler plays: the velocity
@@ -760,9 +800,16 @@ impl Sampler {
         self.setup.as_ref().map(|setup| Arc::clone(&setup.bank))
     }
 
-    /// The switch that is active before any keyswitch: the patch's `sw_default`.
-    fn default_switch(&self) -> Option<u8> {
-        bank_of(self.setup.as_ref()).and_then(|bank| bank.keyswitches.default)
+    /// The switch of each patch that is active before any keyswitch, by member number: the
+    /// patch's `sw_default`.
+    fn default_switches(&self) -> [Option<u8>; MAX_MEMBERS] {
+        let mut switches = [None; MAX_MEMBERS];
+        if let Some(bank) = bank_of(self.setup.as_ref()) {
+            for (member, switch) in (0..=u8::MAX).zip(&mut switches) {
+                *switch = bank.keyswitches_of(member).default;
+            }
+        }
+        switches
     }
 
     /// Where the controllers of every channel start: as the patch sets them.
@@ -809,19 +856,17 @@ impl Sampler {
             EventKind::ChannelPressure => {}
             EventKind::ParamChoice => self.change_choice(event),
             EventKind::KeySwitch => {
-                // Only a keyswitch key of the patch selects an articulation, as with a press.
-                if let Some(event) = self.moved(event)
-                    && bank_of(self.setup.as_ref())
-                        .is_some_and(|bank| bank.keyswitches.contains(event.pitch))
-                {
+                // Only a keyswitch key of the patch (of a set's patches) selects an
+                // articulation, as with a press.
+                if let Some(event) = self.moved(event) {
                     self.select_switch(event.pitch);
                 }
             }
             EventKind::AllNotesOff => {
-                // Back to the default articulation and the articulation parameter's target:
-                // the engine's chase follows with the last keyswitch and controller values
-                // before the new position, which win after it.
-                self.last_switch = self.default_switch();
+                // Back to the default articulation of every patch and the articulation
+                // parameter's target: the engine's chase follows with the last keyswitch and
+                // controller values before the new position, which win after it.
+                self.switches = self.default_switches();
                 self.force();
                 self.pedal = false;
                 self.key_down = [false; 128];
@@ -930,10 +975,13 @@ impl Sampler {
             return;
         };
         let controllers = self.controllers_of(channel, self.forced);
-        let switch = self.active_switch();
+        // The patch new notes play, with its switch.
+        let member = self.member_with(self.forced);
+        let switch = self.switch_in(member, self.forced);
         let mut roll = None;
         for (index, region) in bank.regions.iter().enumerate() {
-            if !region.starts_on_controller(number, value)
+            if region.member != member
+                || !region.starts_on_controller(number, value)
                 || !region.gates_open(&controllers)
                 || !in_switch(region, switch)
             {
@@ -961,13 +1009,16 @@ impl Sampler {
             .unwrap_or(self.forced)
             .velocity(self.dynamic_velocity(event.velocity));
         let dynamics = self.start_dynamics();
+        // The patch the note plays, of a multi-patch set: its own articulation's, else the
+        // parameter's.
+        let member = self.member_with(own.unwrap_or(self.forced));
+        let keyswitches = bank.keyswitches_of(member);
         // Counted before this key is marked down, so a press of a key that is still down
         // counts that key (sfizz counts both presses too).
-        let another_key_down = self.another_key_down(&bank);
-        let switch_key = bank.keyswitches.contains(key);
-        if switch_key {
-            self.select_switch(key);
-        }
+        let another_key_down = self.another_key_down(keyswitches);
+        let switch_key = keyswitches.contains(key);
+        // A keyswitch key of the patch, or of another patch of a set, selects its switch there.
+        self.select_switch(key);
         // A keyswitch key plays no part in the overlap legato.
         let joined = if switch_key {
             None
@@ -989,12 +1040,15 @@ impl Sampler {
         if let Some(articulation) = self.key_articulation.get_mut(usize::from(key)) {
             *articulation = own;
         }
+        if let Some(played) = self.key_member.get_mut(usize::from(key)) {
+            *played = member;
+        }
         let roll = self.random();
         let counter = self.round_robin;
         // Read after a press of a keyswitch key has selected its switch.
         let forced = own.unwrap_or(self.forced);
         let controllers = self.controllers_of(event.channel, forced);
-        let switch = self.switch_with(forced);
+        let switch = self.switch_in(member, forced);
         let start = Start::Key {
             key,
             velocity,
@@ -1005,7 +1059,8 @@ impl Sampler {
         };
         let mut advanced = false;
         for (index, region) in bank.regions.iter().enumerate() {
-            if !region.trigger.starts_on_press(another_key_down)
+            if region.member != member
+                || !region.trigger.starts_on_press(another_key_down)
                 || !matches_note(region, key, velocity, switch)
                 || !region.gates_open(&controllers)
                 || !(region.rand_lo..region.rand_hi).contains(&roll)
@@ -1022,11 +1077,26 @@ impl Sampler {
         }
     }
 
-    /// Makes `key`, a keyswitch key of the patch that a clip pressed or sent, the active
-    /// switch: it wins over the switch an articulation forces, until that is applied again.
+    /// Makes `key`, a key that a clip pressed or sent, the active switch of every patch whose
+    /// keyswitch key it is (of a bank of one patch, of the patch): it wins over the switch an
+    /// articulation forces in that patch, until that is applied again. A key that is no
+    /// keyswitch key changes nothing.
     fn select_switch(&mut self, key: u8) {
-        self.last_switch = Some(key);
-        self.forced.switch = None;
+        let forced_member = self.member_with(self.forced);
+        let Some(bank) = bank_of(self.setup.as_ref()) else {
+            return;
+        };
+        for (member, switch) in (0..=u8::MAX)
+            .zip(&mut self.switches)
+            .take(bank.member_count())
+        {
+            if bank.keyswitches_of(member).contains(key) {
+                *switch = Some(key);
+            }
+        }
+        if bank.keyswitches_of(forced_member).contains(key) {
+            self.forced.switch = None;
+        }
     }
 
     /// The overlap legato of a press of `key` on `channel`, a note that plays the legato target
@@ -1093,13 +1163,13 @@ impl Sampler {
         }
     }
 
-    /// Whether a key other than a keyswitch key of `bank` is down: what selects between the
-    /// `first` and `legato` regions of a press. A key the sustain pedal holds after its release
-    /// is not down.
-    fn another_key_down(&self, bank: &SampleBank) -> bool {
+    /// Whether a key other than a key of `keyswitches` (those of the patch a press plays) is
+    /// down: what selects between the `first` and `legato` regions of a press. A key the
+    /// sustain pedal holds after its release is not down.
+    fn another_key_down(&self, keyswitches: &Keyswitches) -> bool {
         (0..=127_u8)
             .zip(&self.key_down)
-            .any(|(key, down)| *down && !bank.keyswitches.contains(key))
+            .any(|(key, down)| *down && !keyswitches.contains(key))
     }
 
     fn note_off(&mut self, event: &InstrumentEvent) {
@@ -1149,19 +1219,21 @@ impl Sampler {
             return;
         }
         // A note with an articulation of its own releases with its keyswitch, else with the
-        // switch active now.
+        // switch active now, in the patch the note played.
         let own = self
             .key_articulation
             .get(usize::from(key))
             .copied()
             .flatten();
+        let member = self.key_member.get(usize::from(key)).copied().unwrap_or(0);
         let release = KeyRelease {
             velocity: self
                 .key_velocity
                 .get(usize::from(key))
                 .copied()
                 .unwrap_or(event.velocity),
-            switch: self.switch_with(own.unwrap_or(self.forced)),
+            member,
+            switch: self.switch_in(member, own.unwrap_or(self.forced)),
             articulation: own,
             dynamics: self
                 .key_dynamics
@@ -1208,7 +1280,8 @@ impl Sampler {
     }
 
     /// Starts the regions of a trigger that `starts` accepts (the release triggers) that
-    /// `release` of `key` selects and whose gates the controllers of `channel` open now.
+    /// `release` of `key` selects, in the patch the note played, and whose gates the
+    /// controllers of `channel` open now.
     fn start_release_regions(
         &mut self,
         bank: &SampleBank,
@@ -1227,7 +1300,8 @@ impl Sampler {
             joined: None,
         };
         for (index, region) in bank.regions.iter().enumerate() {
-            if starts(region.trigger)
+            if region.member == release.member
+                && starts(region.trigger)
                 && matches_note(region, key, release.velocity, release.switch)
                 && region.gates_open(&controllers)
             {

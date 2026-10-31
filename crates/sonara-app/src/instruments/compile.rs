@@ -34,6 +34,11 @@
 //!   articulation. The keys of a percussion key map are chosen by the notes, and a sound whose
 //!   articulations the catalog does not know how to reach plays as it is, so neither gives a
 //!   target.
+//! - **Multi-patch sets.** A target of a set also names the patch that plays it
+//!   ([`ArticulationTarget::member`]): the position of the patch the articulation names among
+//!   the set's patches ([`PresetKind::Set`]), the order in which [`super::InstalledInstruments`]
+//!   hands them to the loader, so the sampler switches patches by the articulation. `auto`
+//!   plays the patch of the ordinary sound. A patch is patch 0.
 //! - **Legato.** The `legato` choice follows the preset's legato claim. A preset that plays
 //!   legato by overlapping its notes plays its ordinary sound (under the passage state) with the
 //!   sampler's overlap legato. A preset whose own regions play legato (SFZ `trigger=legato`)
@@ -60,7 +65,7 @@ use super::manifest::{
     ArticulationEntry, ArticulationList, ArticulationName, ArticulationVia, DynamicsMode,
     LegatoMode,
 };
-use super::model::InstrumentPreset;
+use super::model::{InstrumentPreset, PresetKind, same_path};
 
 /// The choices of the `articulation` parameter before the vocabulary: `auto` and `ordinario`.
 const LEADING_CHOICES: usize = 2;
@@ -71,9 +76,8 @@ const MUTE_CHOICES: usize = 1 + Mute::ALL.len();
 /// The choices of the `vibrato` parameter: `auto`, then every vibrato.
 const VIBRATO_CHOICES: usize = 1 + Vibrato::ALL.len();
 
-/// The sampler mapping of `preset`, as the module documentation describes it. A multi-patch
-/// set compiles as the patch it plays: a member patch is not selected (the sampler plays one
-/// patch per device).
+/// The sampler mapping of `preset`, as the module documentation describes it, for a patch or a
+/// multi-patch set.
 #[must_use]
 pub(crate) fn sampler_mapping(preset: &InstrumentPreset) -> SamplerMapping {
     let legato = preset.legato.as_ref().map(|claim| claim.value);
@@ -179,10 +183,11 @@ impl<'a> Compiler<'a> {
                 let articulation = *Articulation::ALL.get(index)?;
                 let request = state.applied(request_for(articulation));
                 match (articulation, legato) {
+                    // The ordinary sound, in its patch of a set, joined by the overlap legato.
                     (Articulation::Legato, Some(LegatoMode::Overlap { .. })) => {
                         Some(ArticulationTarget {
-                            selector: ordinary().and_then(|target| target.selector),
                             legato: true,
+                            ..ordinary().unwrap_or(ArticulationTarget::select(None))
                         })
                     }
                     (Articulation::Legato, Some(LegatoMode::Trigger)) => {
@@ -203,7 +208,7 @@ impl<'a> Compiler<'a> {
 
     /// The target of `request`, or of the nearest articulation the preset plays.
     fn nearest(&self, request: Request) -> Option<ArticulationTarget> {
-        target_of(&self.choose(request)?.reach)
+        target_of(self.preset, &self.choose(request)?.reach)
     }
 
     /// The target of a legato the preset maps, with the state of `request` when it records the
@@ -212,7 +217,7 @@ impl<'a> Compiler<'a> {
     fn mapped_legato(&self, request: Request) -> Option<ArticulationTarget> {
         let choice = self.choose(request)?;
         (played(&choice).primary() == Some(Articulation::Legato))
-            .then(|| target_of(&choice.reach))
+            .then(|| target_of(self.preset, &choice.reach))
             .flatten()
     }
 
@@ -229,7 +234,7 @@ impl<'a> Compiler<'a> {
         let keeps_vibrato =
             request.vibrato() != Vibrato::Ordinary && plays.vibrato() == request.vibrato();
         (keeps_mute || keeps_vibrato)
-            .then(|| target_of(&choice.reach))
+            .then(|| target_of(self.preset, &choice.reach))
             .flatten()
     }
 }
@@ -297,10 +302,11 @@ fn played(choice: &ArticulationChoice) -> Request {
         .map_or(choice.requested, |substitute| substitute.plays)
 }
 
-/// The target of what the chain reached: a mapped articulation's selector, or nothing to select
-/// for a whole patch; `None` for the keys of a key map and for a sound whose articulations the
-/// catalog does not know how to reach.
-fn target_of(reach: &Reach) -> Option<ArticulationTarget> {
+/// The target of what the chain reached on `preset`: the patch that plays a mapped articulation
+/// ([`member_of`]) and its selector, or nothing to select for a whole patch; `None` for the keys
+/// of a key map, for a sound whose articulations the catalog does not know how to reach, and for
+/// an articulation of a set whose patch the set does not hold.
+fn target_of(preset: &InstrumentPreset, reach: &Reach) -> Option<ArticulationTarget> {
     let Reach::Mapped(entry) = reach else {
         return None;
     };
@@ -311,9 +317,25 @@ fn target_of(reach: &Reach) -> Option<ArticulationTarget> {
         ArticulationVia::Cc { cc, value } => Some(Selector::Controller { number: cc, value }),
     };
     Some(ArticulationTarget {
+        member: member_of(preset, entry)?,
         selector,
         legato: false,
     })
+}
+
+/// The number of the patch of `preset` that plays `entry`: in a multi-patch set, the position
+/// among the set's patches of the patch the entry names, compared as discovery compares paths;
+/// 0 for a preset of one patch. `None` for an articulation of a set that names no patch, or one
+/// the set does not hold, and for a position past the most patches a bank holds.
+fn member_of(preset: &InstrumentPreset, entry: &ArticulationEntry) -> Option<u8> {
+    let PresetKind::Set { members } = &preset.kind else {
+        return Some(0);
+    };
+    let path = entry.member.as_deref()?;
+    let position = members
+        .iter()
+        .position(|member| same_path(&member.path, path))?;
+    u8::try_from(position).ok()
 }
 
 #[cfg(test)]

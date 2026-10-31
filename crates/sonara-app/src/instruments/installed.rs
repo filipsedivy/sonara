@@ -1,7 +1,7 @@
 //! The instruments the sampler can play on this machine, by preset ID: the choices of the
 //! sampler's `instrument` parameter, the same choices grouped by library with the names the
-//! device editor shows, and the resolver that turns a stored value into a patch and the
-//! compiled mapping of its preset.
+//! device editor shows, and the resolver that turns a stored value into a patch, or the
+//! patches of a multi-patch set, and the compiled mapping of its preset.
 
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
@@ -29,11 +29,14 @@ use crate::settings::Settings;
 /// library ([`InstalledInstruments::preset_id`]). The patch part is compared ignoring case, as
 /// discovery matches manifest entries; the library directory must be spelled as configured.
 ///
+/// A multi-patch set (`<library>/@<set>`) is offered beside its patches: one sampler device
+/// loads all of its patches and switches among them by the articulation.
+///
 /// One value is built when the application starts, and the registry, the media provider and
 /// the edit path all read it, so the choices and the resolver always agree.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct InstalledInstruments {
-    /// The patch file and the compiled sampler mapping of every playable preset, by ID.
+    /// The patch files and the compiled sampler mapping of every playable preset, by ID.
     patches: BTreeMap<String, Playable>,
     /// Per library directory, the preset IDs by lower-cased patch path below it.
     libraries: Vec<LibraryPaths>,
@@ -66,11 +69,12 @@ pub struct PresetChoice {
     pub label: String,
 }
 
-/// What a playable preset plays: its patch file, and its sampler mapping compiled from what is
-/// claimed about it.
+/// What a playable preset plays: its patch file, or the patch files of a multi-patch set in the
+/// order its mapping numbers them, and its sampler mapping compiled from what is claimed about
+/// it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Playable {
-    patch: PathBuf,
+    patches: Vec<PathBuf>,
     mapping: Arc<SamplerMapping>,
 }
 
@@ -82,10 +86,11 @@ struct LibraryPaths {
 }
 
 impl InstalledInstruments {
-    /// The playable presets of `catalog`: the patches whose [`super::Availability`] is
-    /// available. A preset that is missing or invalid is not offered, and an old path to it is
-    /// not mapped. A multi-patch set ([`PresetKind::Set`]) is not offered either: the sampler
-    /// plays one patch per device, and each of the set's patches is offered as its own preset.
+    /// The playable presets of `catalog`: the patches and the multi-patch sets
+    /// ([`PresetKind::Set`]) whose [`super::Availability`] is available, a set when every one of
+    /// its patches is. A preset that is missing or invalid is not offered, and an old path to it
+    /// is not mapped. A set has no path of its own, so only its ID names it; each of its patches
+    /// is offered as its own preset too.
     #[must_use]
     pub fn from_catalog(catalog: &InstrumentCatalog) -> Self {
         let mut libraries: Vec<LibraryPaths> = catalog
@@ -98,26 +103,33 @@ impl InstalledInstruments {
             .collect();
         let mut patches = BTreeMap::new();
         let mut playable = BTreeMap::new();
-        for preset in catalog
-            .available()
-            .filter(|preset| preset.kind == PresetKind::Patch)
-        {
+        for preset in catalog.available() {
             let id = preset.id.to_string();
-            let paths = catalog
-                .libraries()
-                .iter()
-                .position(|library| library.id == preset.library)
-                .and_then(|index| libraries.get_mut(index));
-            if let Some(paths) = paths
-                && let Some(relative) = relative_to(&paths.root, &preset.patch_path)
-            {
-                paths.by_path.insert(relative.to_lowercase(), id.clone());
-            }
+            let files = match &preset.kind {
+                PresetKind::Patch => {
+                    let paths = catalog
+                        .libraries()
+                        .iter()
+                        .position(|library| library.id == preset.library)
+                        .and_then(|index| libraries.get_mut(index));
+                    if let Some(paths) = paths
+                        && let Some(relative) = relative_to(&paths.root, &preset.patch_path)
+                    {
+                        paths.by_path.insert(relative.to_lowercase(), id.clone());
+                    }
+                    vec![preset.patch_path.clone()]
+                }
+                // In the order the compiled targets number the set's patches.
+                PresetKind::Set { members } => members
+                    .iter()
+                    .map(|member| member.patch_path.clone())
+                    .collect(),
+            };
             playable.insert(id.clone(), preset);
             patches.insert(
                 id,
                 Playable {
-                    patch: preset.patch_path.clone(),
+                    patches: files,
                     mapping: Arc::new(sampler_mapping(preset)),
                 },
             );
@@ -176,8 +188,9 @@ impl InstalledInstruments {
     }
 
     /// What a stored `instrument` value plays: its preset ([`Self::preset_id`]), that preset's
-    /// patch file, and the sampler mapping compiled from what the library's manifest or
-    /// Sonara's profile claims about the preset (the articulation targets, dynamics, legato and
+    /// patch file, or the patch files of a multi-patch set, and the sampler mapping compiled
+    /// from what the library's manifest or Sonara's profile claims about the preset (the
+    /// articulation targets, each with the patch of a set that plays it, dynamics, legato and
     /// key offset; nothing for a preset about which nothing is claimed). This is the media
     /// provider's instrument resolver.
     #[must_use]
@@ -185,7 +198,7 @@ impl InstalledInstruments {
         let (id, playable) = self.patches.get_key_value(self.preset_id(value)?)?;
         Some(InstrumentSource {
             id: id.clone(),
-            patch: playable.patch.clone(),
+            patches: playable.patches.clone(),
             mapping: Arc::clone(&playable.mapping),
         })
     }

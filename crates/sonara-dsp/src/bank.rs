@@ -14,6 +14,13 @@
 //! application compiles the mapping from what the library's manifest or Sonara's profile says
 //! about the preset, off the real-time thread; the render thread only looks a choice up
 //! ([`SamplerMapping::target_under`]).
+//!
+//! **Multi-patch sets.** A preset may be a set of patches of one instrument, each playing some
+//! of its articulations. One bank then holds every patch of the set, loaded together, so a
+//! sample two patches name is decoded once and the memory cap counts the device as a whole:
+//! each region knows the patch it comes from ([`Region::member`]), each patch keeps its own
+//! keyswitches ([`SampleBank::keyswitches_of`]), and an articulation target names the patch
+//! that plays it ([`ArticulationTarget::member`]).
 
 use std::sync::Arc;
 
@@ -22,6 +29,10 @@ use crate::processor::NoteSet;
 
 /// The highest MIDI key.
 const MAX_KEY: u8 = 127;
+
+/// The most patches one bank holds: a set's patches are numbered by a `u8`
+/// ([`Region::member`]).
+pub const MAX_MEMBERS: usize = 256;
 
 /// What starts a region (SFZ `trigger`), as the SFZ format and the reference player sfizz read
 /// it. "Another key down" counts the keys held down that are no keyswitch keys (see
@@ -329,6 +340,10 @@ impl Sample {
 pub struct Region {
     /// Index into [`SampleBank::samples`].
     pub sample: usize,
+    /// The patch of a multi-patch set the region comes from, numbered from 0 in the order the
+    /// set's patches were loaded; 0 in a bank of one patch. A note plays only the regions of the
+    /// patch its articulation target names ([`ArticulationTarget::member`]).
+    pub member: u8,
     /// Lowest MIDI key that plays the region.
     pub key_lo: u8,
     /// Highest MIDI key that plays the region.
@@ -415,6 +430,7 @@ impl Default for Region {
     fn default() -> Self {
         Self {
             sample: 0,
+            member: 0,
             key_lo: 0,
             key_hi: 127,
             on_key: true,
@@ -578,17 +594,33 @@ impl Default for Keyswitches {
 }
 
 /// A loaded instrument: its samples and regions. Immutable and shared.
+///
+/// It holds one patch, or every patch of a multi-patch set: then the regions of each patch
+/// carry its number ([`Region::member`]) and [`SampleBank::member_keyswitches`] holds each
+/// patch's keyswitches.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct SampleBank {
-    /// The decoded samples.
+    /// The decoded samples, each sample file once, whichever patches name it.
     pub samples: Vec<Sample>,
-    /// The regions, in patch order.
+    /// The regions, in patch order; a set's patches one after another, in the order they were
+    /// loaded.
     pub regions: Vec<Region>,
-    /// The patch's keyswitches; [`Keyswitches::NONE`] when it has none.
+    /// The patch's keyswitches; [`Keyswitches::NONE`] when it has none. For a multi-patch set,
+    /// every key that is a keyswitch of one of its patches, without a default: each patch's own
+    /// keyswitches and default are in [`SampleBank::member_keyswitches`].
     pub keyswitches: Keyswitches,
+    /// The keyswitches of each patch of a multi-patch set, by member number
+    /// ([`Region::member`]); empty for a bank of one patch, whose keyswitches are
+    /// [`SampleBank::keyswitches`]. Read through [`SampleBank::keyswitches_of`].
+    pub member_keyswitches: Vec<Keyswitches>,
     /// Where the controllers start on every MIDI channel when the instrument is loaded or
-    /// reset: [`Controllers::INITIAL`] with the values the patch sets (SFZ `set_ccN`).
+    /// reset: [`Controllers::INITIAL`] with the values the patch sets (SFZ `set_ccN`). For a
+    /// multi-patch set, each controller starts where the first patch that sets it to another
+    /// value than the initial one sets it.
     pub controllers: Controllers,
+    /// The memory the decoded samples take, in bytes: frames × channels × 4 for each sample
+    /// file, counted once however many regions and patches name it.
+    pub bytes: usize,
     /// How long the instrument can keep sounding after the last key release, in seconds: the
     /// longest release, the longest timed fade of a region that an exclusive group can switch
     /// off ([`OffMode::Time`]: a press just before the last release may have started it), and
@@ -605,6 +637,26 @@ pub struct SampleBank {
     /// not play (SFZ `*sine`). Each note counts the regions it left out. Empty when every region
     /// was loaded.
     pub load_notes: Vec<String>,
+}
+
+impl SampleBank {
+    /// The patches the bank holds: those of a multi-patch set, else 1.
+    #[must_use]
+    pub fn member_count(&self) -> usize {
+        self.member_keyswitches.len().max(1)
+    }
+
+    /// Real-time: the keyswitches of the patch numbered `member` ([`Region::member`]): of a
+    /// set's patch, its own; of a bank of one patch, [`SampleBank::keyswitches`] for patch 0.
+    /// [`Keyswitches::NONE`] for a number the bank holds no patch for.
+    #[must_use]
+    pub fn keyswitches_of(&self, member: u8) -> &Keyswitches {
+        match self.member_keyswitches.get(usize::from(member)) {
+            Some(keyswitches) => keyswitches,
+            None if self.member_keyswitches.is_empty() && member == 0 => &self.keyswitches,
+            None => &Keyswitches::NONE,
+        }
+    }
 }
 
 /// How a choice of the sampler's `articulation` parameter is reached in the patch, as the
@@ -632,12 +684,28 @@ pub enum Selector {
 /// What one choice of the sampler's `articulation` parameter plays in a preset.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ArticulationTarget {
+    /// The patch of a multi-patch set that plays the articulation, by its number
+    /// ([`Region::member`]); 0 for a preset of one patch.
+    pub member: u8,
     /// How the articulation is reached in the patch; `None` when the patch as it is plays it,
     /// with nothing to select (a patch that is the articulation).
     pub selector: Option<Selector>,
     /// Whether successive notes are joined by the sampler's overlap legato
     /// ([`SamplerMapping::legato`]).
     pub legato: bool,
+}
+
+impl ArticulationTarget {
+    /// The articulation that `selector` reaches in the preset's only patch (patch 0), without
+    /// the overlap legato.
+    #[must_use]
+    pub const fn select(selector: Option<Selector>) -> Self {
+        Self {
+            member: 0,
+            selector,
+            legato: false,
+        }
+    }
 }
 
 /// What the sampler's `dynamics` parameter drives in a preset.
@@ -933,6 +1001,14 @@ impl SamplerMapping {
         self.target(Self::ORDINARIO)
     }
 
+    /// Real-time: the patch of a multi-patch set that plays when no target names one, as
+    /// [`Self::AUTO`] does: the patch of the preset's ordinary sound ([`Self::default_target`]),
+    /// else the first, 0.
+    #[must_use]
+    pub fn default_member(&self) -> u8 {
+        self.default_target().map_or(0, |target| target.member)
+    }
+
     /// Real-time: the key of the patch that a note on `key` in a clip plays, `key` moved by the
     /// [key offset](Self::key_offset); `None` when that leaves the MIDI keys 0 to 127, and the
     /// note is not played.
@@ -944,12 +1020,13 @@ impl SamplerMapping {
 }
 
 /// A sampler's instrument as the render graph hands it to the processor through
-/// [`DeviceState::sampler`](crate::processor::DeviceState::sampler): the loaded patch and the
-/// mapping of the preset it plays. Built off the real-time thread, shared read-only, and
-/// dropped with the processor off it (RT-09).
+/// [`DeviceState::sampler`](crate::processor::DeviceState::sampler): the loaded patch, or the
+/// patches of a multi-patch set, and the mapping of the preset it plays. Built off the
+/// real-time thread, shared read-only, and dropped with the processor off it (RT-09).
 #[derive(Debug, Clone, PartialEq)]
 pub struct SamplerSetup {
-    /// The decoded samples and regions of the patch.
+    /// The decoded samples and regions of the patch, or of every patch of the set, numbered as
+    /// the mapping's targets number them ([`ArticulationTarget::member`]).
     pub bank: Arc<SampleBank>,
     /// How the preset is played beyond its patch.
     pub mapping: Arc<SamplerMapping>,
@@ -967,8 +1044,8 @@ impl SamplerSetup {
     }
 
     /// The notes of a clip that select an articulation: those whose key the key offset moves
-    /// onto a keyswitch key of the patch ([`SamplerMapping::patch_key`]). Without an offset,
-    /// the patch's keyswitch keys.
+    /// onto a keyswitch key of the patch, or of one of the patches of a set
+    /// ([`SamplerMapping::patch_key`]). Without an offset, the patch's keyswitch keys.
     #[must_use]
     pub fn switch_notes(&self) -> NoteSet {
         (0..=MAX_KEY)

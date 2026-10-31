@@ -244,8 +244,9 @@ with the kind `set`, whose members are the patches its articulations name, each 
 on disk; each of those patches is still listed as the preset it is, with its own entry's claims.
 A set without a stated instrument or family has them inferred from its slug, as a patch has them
 from its path. A set whose ID a patch already has (a file `@<set>.sfz` in the library root) is not
-listed. The sampler plays one patch per device, so the sampler's `instrument` parameter offers a
-set's patches, not the set.
+listed. The sampler's `instrument` parameter offers the set when every one of its patches is
+available, beside the patches: one sampler device loads all of the set's patches and plays the
+one that each articulation names, and `auto` plays the patch of the set's default.
 
 **Over a shipped profile.** Sonara's profiles (below) are written in the version 2 shape. When one
 applies to a library, the library's manifest lies over it, field by field: a field the manifest
@@ -454,8 +455,7 @@ No agent tool, CLI command or GUI lists the catalog itself, asks it what plays a
 an ensemble plan yet. The sampler's `instrument` choices are its available patches' IDs; the
 device editor shows them as the presets' names grouped by library
 (`InstalledInstruments::by_library`), and a preset whose name another preset of the same library
-shares also shows its patch path below the library. The sampler plays one patch per device, so it
-offers no multi-patch set, although the catalog lists the sets and `choose_sound` may answer with
-one. The catalog records a patch's facts only when `verify` runs on it, one preset at a time. A
-General MIDI or SF2 source would add bank and program. Sound quality of any library has not been
-judged.
+shares also shows its patch path below the library. The multi-patch sets whose patches are all
+available are among the choices too. The catalog records a patch's facts only when `verify` runs
+on it, one preset at a time. A General MIDI or SF2 source would add bank and program. Sound
+quality of any library has not been judged.

@@ -134,6 +134,13 @@
 //! Samples are decoded whole, at their own rate, into `f32` (no streaming yet): memory is the
 //! decoded size of the samples the patch names, capped at [`MAX_BANK_BYTES`].
 //!
+//! **Multi-patch sets.** [`load_sfz_set`] reads the patches of a set (one instrument, a patch
+//! per articulation or two) into one bank for one sampler device, with one loader: a sample file
+//! two patches name is decoded once, the memory cap counts the samples of all the patches
+//! together, and a set whose samples exceed it is not loaded, with an error that names the
+//! patch at which they crossed it. Each region knows its patch ([`Region::member`]), and each
+//! patch keeps its own keyswitches.
+//!
 //! **Inspection without decoding.** [`inspect`] reads a patch as [`load_sfz`] does, with the same
 //! regions, but opens each sample file only for its header (format, channels and length) and
 //! decodes no audio, so it is cheap enough to run over whole libraries. Its [`PatchReport`] gives
@@ -158,14 +165,15 @@ use std::path::{Path, PathBuf};
 
 use sonara_dsp::bank::{
     CcCrossfade, CcDepth, CcRange, Controllers, Crossfade, CrossfadeCurve, Keyswitches, LoopMode,
-    OffMode, Region, Sample, SampleBank, Trigger,
+    MAX_MEMBERS, OffMode, Region, Sample, SampleBank, Trigger,
 };
 
 use crate::container::WaveHeader;
 use crate::error::MediaError;
 use crate::stream::AudioStream;
 
-/// The most decoded sample memory one patch may use, in bytes.
+/// The most decoded sample memory one patch may use, in bytes; for a multi-patch set, all its
+/// patches together, since one sampler device plays them ([`load_sfz_set`]).
 pub const MAX_BANK_BYTES: usize = 3 << 30;
 /// The deepest `#include` nesting.
 const MAX_INCLUDE_DEPTH: usize = 8;
@@ -195,25 +203,105 @@ type Opcodes = HashMap<String, String>;
 ///   [`MediaError::Malformed`] and [`MediaError::Decode`] for a sample file that cannot be
 ///   decoded or has more than two channels.
 pub fn load_sfz(path: &Path) -> Result<SampleBank, MediaError> {
-    let content = read_patch(path, Reading::Decode)?;
-    let notes = content.loader.notes();
-    if content.regions.is_empty() {
-        let message = if notes.is_empty() {
-            "the patch has no playable region".to_owned()
-        } else {
-            format!("the patch has no playable region: {}", notes.join("; "))
-        };
-        return Err(MediaError::malformed(path, message));
+    load_sfz_set(&[path])
+}
+
+/// Reads the SFZ files `paths`, the patches of a multi-patch set, and the samples they name
+/// into one bank, with one loader: patch `i` of `paths` is member `i` of the bank
+/// ([`Region::member`]), with its own keyswitches ([`SampleBank::member_keyswitches`]). A sample
+/// file that several patches name is decoded once, and [`MAX_BANK_BYTES`] caps the samples of
+/// all the patches together, since one sampler device plays them. One path reads one patch
+/// exactly as [`load_sfz`] does.
+///
+/// Each patch is read as [`load_sfz`] reads it, and the bank gathers what they write: the
+/// keyswitch keys of every patch ([`SampleBank::keyswitches`], without a default: each patch
+/// keeps its own), the opcodes the sampler does not play and the notes of the regions left out.
+/// Each controller starts where the first patch that sets it to another value than the initial
+/// one sets it ([`SampleBank::controllers`]).
+///
+/// # Errors
+///
+/// - [`MediaError::InvalidArgument`] when `paths` is empty or holds more than
+///   [`MAX_MEMBERS`] patches;
+/// - [`MediaError::Malformed`] for a patch with no region left, and, naming the patch whose
+///   sample crosses it, when the samples of the set exceed [`MAX_BANK_BYTES`] together;
+/// - the other errors of [`load_sfz`] for any of the patches.
+pub fn load_sfz_set<P: AsRef<Path>>(paths: &[P]) -> Result<SampleBank, MediaError> {
+    if paths.is_empty() {
+        return Err(MediaError::InvalidArgument(
+            "a multi-patch set names no patch".to_owned(),
+        ));
     }
-    let mut bank = SampleBank::default();
-    bank.regions = content.regions;
-    bank.load_notes = notes;
-    bank.samples = content.loader.samples;
-    bank.keyswitches = content.keyswitches;
-    bank.controllers = content.controllers;
+    if paths.len() > MAX_MEMBERS {
+        return Err(MediaError::InvalidArgument(format!(
+            "a multi-patch set holds at most {MAX_MEMBERS} patches, this one names {}",
+            paths.len()
+        )));
+    }
+    let mut loader = Loader::new(Reading::Decode);
+    loader.patches = paths.len();
+    let mut members = Vec::with_capacity(paths.len());
+    for (member, path) in (0..=u8::MAX).zip(paths) {
+        let path = path.as_ref();
+        let first_note = loader.skipped.len();
+        let read = read_member(path, &mut loader, member)?;
+        if read.regions.is_empty() {
+            let notes = loader.notes_from(first_note);
+            let message = if notes.is_empty() {
+                "the patch has no playable region".to_owned()
+            } else {
+                format!("the patch has no playable region: {}", notes.join("; "))
+            };
+            return Err(MediaError::malformed(path, message));
+        }
+        members.push(read);
+    }
+    let load_notes = loader.notes();
+    let mut bank = SampleBank {
+        samples: loader.samples,
+        bytes: loader.bytes,
+        load_notes,
+        ..SampleBank::default()
+    };
+    let mut keyswitches = Vec::with_capacity(members.len());
+    let mut controllers = Vec::with_capacity(members.len());
+    for member in members {
+        bank.regions.extend(member.regions);
+        bank.ignored_opcodes.extend(member.ignored);
+        keyswitches.push(member.keyswitches);
+        controllers.push(member.controllers);
+    }
+    bank.ignored_opcodes.sort();
+    bank.ignored_opcodes.dedup();
+    bank.controllers = first_set(&controllers);
+    if let [only] = keyswitches.as_slice() {
+        bank.keyswitches = *only;
+    } else {
+        for key in keyswitches.iter().flat_map(Keyswitches::keys) {
+            bank.keyswitches.add_range(key, key);
+        }
+        bank.member_keyswitches = keyswitches;
+    }
     bank.tail_seconds = tail_seconds(&bank);
-    bank.ignored_opcodes = content.ignored;
     Ok(bank)
+}
+
+/// Where the controllers of a bank of patches that start at `each` start: each controller
+/// where the first patch that sets it to another value than [`Controllers::INITIAL`] sets it,
+/// else at its initial value. For one patch, where it starts.
+fn first_set(each: &[Controllers]) -> Controllers {
+    let mut merged = Controllers::INITIAL;
+    for number in 0..=127_u8 {
+        let initial = Controllers::INITIAL.value(number);
+        if let Some(value) = each
+            .iter()
+            .map(|controllers| controllers.value(number))
+            .find(|value| *value != initial)
+        {
+            merged.set(number, value);
+        }
+    }
+    merged
 }
 
 /// What [`inspect`] finds in a patch without decoding its samples.
@@ -428,15 +516,13 @@ fn plays_at(region: &Region) -> u128 {
         .fold(0, |mask, velocity| mask | (1 << velocity))
 }
 
-/// A patch read with its regions built: what [`load_sfz`] and [`inspect`] share.
+/// A patch read with its regions built, on a loader of its own: what [`inspect`] reads.
 struct ReadPatch {
     /// The `<region>` headers after preprocessing.
     written: usize,
     /// The regions the loader kept, in patch order.
     regions: Vec<Region>,
     keyswitches: Keyswitches,
-    /// Where the controllers start ([`SampleBank::controllers`]).
-    controllers: Controllers,
     /// The ignored opcodes, values and headers, sorted, without duplicates.
     ignored: Vec<String>,
     loader: Loader,
@@ -448,25 +534,60 @@ struct ReadPatch {
 ///
 /// The errors of [`read_preprocessed`] and of [`Loader::region`].
 fn read_patch(path: &Path, reading: Reading) -> Result<ReadPatch, MediaError> {
+    let mut loader = Loader::new(reading);
+    let read = read_member(path, &mut loader, 0)?;
+    Ok(ReadPatch {
+        written: read.written,
+        regions: read.regions,
+        keyswitches: read.keyswitches,
+        ignored: read.ignored,
+        loader,
+    })
+}
+
+/// One patch read into a loader that may already hold other patches of its set.
+struct MemberPatch {
+    /// The `<region>` headers after preprocessing.
+    written: usize,
+    /// The regions the loader kept, in patch order, each marked with the patch's number.
+    regions: Vec<Region>,
+    keyswitches: Keyswitches,
+    /// Where the patch starts the controllers.
+    controllers: Controllers,
+    /// The ignored opcodes, values and headers of this patch, sorted, without duplicates.
+    ignored: Vec<String>,
+}
+
+/// Reads the patch `path` into `loader` as member `member` of its bank: its regions are built
+/// with their samples read as the loader reads them, each marked with `member`
+/// ([`Region::member`]), and the loader keeps the samples, so a sample file another patch
+/// already named is not read again.
+///
+/// # Errors
+///
+/// The errors of [`read_preprocessed`] and of [`Loader::region`].
+fn read_member(path: &Path, loader: &mut Loader, member: u8) -> Result<MemberPatch, MediaError> {
     let dir = path.parent().unwrap_or_else(|| Path::new("."));
     let text = read_preprocessed(path, dir, &mut Defines::new(), 0)?;
     let parsed = parse(&text);
-    let mut loader = Loader::new(reading);
     let mut regions = Vec::new();
     for opcodes in &parsed.regions {
-        regions.extend(loader.region(dir, opcodes, path)?);
+        regions.extend(
+            loader
+                .region(dir, opcodes, path)?
+                .map(|region| Region { member, ..region }),
+        );
     }
     let mut ignored = parsed.ignored;
     ignored.append(&mut loader.ignored);
     ignored.sort();
     ignored.dedup();
-    Ok(ReadPatch {
+    Ok(MemberPatch {
         written: parsed.regions.len(),
         regions,
         keyswitches: parsed.keyswitches,
         controllers: parsed.controllers,
         ignored,
-        loader,
     })
 }
 
@@ -1215,6 +1336,9 @@ struct Loader {
     ignored: Vec<String>,
     /// The decoded size of the sample files read so far, in bytes.
     bytes: usize,
+    /// The patches the loader reads together, the patches of a set (1 for one patch): what the
+    /// memory cap's message says.
+    patches: usize,
 }
 
 /// What the loader knows of a sample in both readings.
@@ -1316,6 +1440,7 @@ impl Loader {
             skipped: Vec::new(),
             ignored: Vec::new(),
             bytes: 0,
+            patches: 1,
         }
     }
 
@@ -1567,7 +1692,18 @@ impl Loader {
 
     /// The notes of [`SampleBank::load_notes`].
     fn notes(&self) -> Vec<String> {
-        self.skipped.iter().map(Skipped::note).collect()
+        self.notes_from(0)
+    }
+
+    /// The notes from the one at index `first` on: those a patch read after the first `first`
+    /// notes started.
+    fn notes_from(&self, first: usize) -> Vec<String> {
+        self.skipped
+            .get(first..)
+            .unwrap_or_default()
+            .iter()
+            .map(Skipped::note)
+            .collect()
     }
 
     /// The files of the samples left out that `pick` selects, in the order the patch first
@@ -1614,13 +1750,7 @@ impl Loader {
             return Ok(self.push(None, SampleInfo { frames, file_loop }));
         }
         if self.bytes > MAX_BANK_BYTES {
-            return Err(MediaError::malformed(
-                patch,
-                format!(
-                    "the samples need more than {} MiB of memory",
-                    MAX_BANK_BYTES >> 20
-                ),
-            ));
+            return Err(MediaError::malformed(patch, self.over_cap()));
         }
         let mut data = Vec::with_capacity(frames * channels);
         let mut chunk = vec![0.0_f64; READ_FRAMES * channels];
@@ -1638,6 +1768,24 @@ impl Loader {
         };
         let frames = sample.frames();
         Ok(self.push(Some(sample), SampleInfo { frames, file_loop }))
+    }
+
+    /// Why the samples read so far exceed [`MAX_BANK_BYTES`], in words for the user: for the
+    /// patches of a set, also how many there are and how much memory their samples take with
+    /// the file that crossed the cap, in MiB rounded up, as the catalog rounds a patch's
+    /// decoded size.
+    fn over_cap(&self) -> String {
+        let cap = MAX_BANK_BYTES >> 20;
+        if self.patches > 1 {
+            format!(
+                "the samples of the set's {} patches need more than {cap} MiB of memory \
+                 together, at least {} MiB with this patch's",
+                self.patches,
+                self.bytes.div_ceil(1 << 20)
+            )
+        } else {
+            format!("the samples need more than {cap} MiB of memory")
+        }
     }
 }
 

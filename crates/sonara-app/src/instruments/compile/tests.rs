@@ -23,7 +23,7 @@ use crate::instruments::manifest::{
 };
 use crate::instruments::model::{
     Availability, Claim, ClaimSource, InstrumentClaim, InstrumentId, InstrumentPreset, LibraryId,
-    PresetKind,
+    PresetKind, SetMember,
 };
 use crate::instruments::{FamilyClaim, InstalledInstruments, InstrumentCatalog, InstrumentFamily};
 use crate::samples::registry_for;
@@ -131,6 +131,7 @@ fn switch(key: u8) -> ArticulationTarget {
 /// The target `selector` reaches, without legato.
 fn reached(selector: Selector) -> ArticulationTarget {
     ArticulationTarget {
+        member: 0,
         selector: Some(selector),
         legato: false,
     }
@@ -335,6 +336,7 @@ fn velocity_controller_and_patch_articulations_compile_to_their_selectors() {
     assert_eq!(
         mapping.target(choice(Articulation::Tremolo)),
         Some(ArticulationTarget {
+            member: 0,
             selector: None,
             legato: false,
         })
@@ -534,6 +536,7 @@ fn a_legato_under_a_state_keeps_the_state() {
     let mapping = sampler_mapping(&overlap);
     let legato = choice(Articulation::Legato);
     let joined = |key| ArticulationTarget {
+        member: 0,
         selector: Some(Selector::Keyswitch(key)),
         legato: true,
     };
@@ -775,6 +778,7 @@ fn an_overlap_legato_plays_the_ordinary_sound_joined() {
     assert_eq!(
         mapping.target(choice(Articulation::Legato)),
         Some(ArticulationTarget {
+            member: 0,
             selector: Some(Selector::Keyswitch(36)),
             legato: true,
         })
@@ -791,6 +795,7 @@ fn an_overlap_legato_plays_the_ordinary_sound_joined() {
     assert_eq!(
         sampler_mapping(&plain).target(choice(Articulation::Legato)),
         Some(ArticulationTarget {
+            member: 0,
             selector: None,
             legato: true,
         })
@@ -1051,4 +1056,205 @@ fn an_installed_flute_switches_its_vibrato_with_the_state() {
         None,
         "the flute records no mute"
     );
+}
+
+// Multi-patch sets.
+
+/// The target played by patch `member` of a set, reached there with `selector`.
+fn in_member(member: u8, selector: Option<Selector>) -> ArticulationTarget {
+    ArticulationTarget {
+        member,
+        ..ArticulationTarget::select(selector)
+    }
+}
+
+/// An articulation of a set, played by the patch `path`.
+fn played_by(articulation: Articulation, via: ArticulationVia, path: &str) -> ArticulationEntry {
+    ArticulationEntry {
+        member: Some(path.to_owned()),
+        ..entry(ArticulationName::Vocabulary(articulation), via)
+    }
+}
+
+/// A violin set of three patches, in this order: sustain (`Sus.sfz`), tremolo (`Trem.sfz`) and
+/// a keyswitched patch of short notes (`Short.sfz`) with spiccato on key 24 and pizzicato on
+/// key 25, whose entry spells the patch in other letters. The default is the articulation
+/// `default` names.
+fn violin_set(default_articulation: Articulation) -> InstrumentPreset {
+    let library = LibraryId::parse("lib").expect("a valid library id");
+    let member = |path: &str| SetMember {
+        path: path.to_owned(),
+        patch_path: PathBuf::from(format!("/libraries/lib/{path}")),
+        availability: Availability::Available,
+        facts: None,
+    };
+    let entries = [
+        played_by(Articulation::Sustain, ArticulationVia::Patch, "Sus.sfz"),
+        played_by(Articulation::Tremolo, ArticulationVia::Patch, "Trem.sfz"),
+        played_by(
+            Articulation::Spiccato,
+            ArticulationVia::Keyswitch { key: 24 },
+            "Short.sfz",
+        ),
+        played_by(
+            Articulation::Pizzicato,
+            ArticulationVia::Keyswitch { key: 25 },
+            "short.SFZ",
+        ),
+    ]
+    .into_iter()
+    .map(|entry| {
+        if entry.name == ArticulationName::Vocabulary(default_articulation) {
+            default(entry)
+        } else {
+            entry
+        }
+    })
+    .collect();
+    InstrumentPreset {
+        id: InstrumentId::of_set(&library, "violins"),
+        kind: PresetKind::Set {
+            members: vec![member("Sus.sfz"), member("Trem.sfz"), member("Short.sfz")],
+        },
+        ..mapped(violin(), entries)
+    }
+}
+
+#[test]
+fn a_set_compiles_each_articulation_to_the_patch_that_plays_it() {
+    let mapping = sampler_mapping(&violin_set(Articulation::Sustain));
+    assert_eq!(mapping.default_target(), Some(in_member(0, None)));
+    assert_eq!(mapping.default_member(), 0);
+    for (articulation, target) in [
+        (Articulation::Sustain, in_member(0, None)),
+        (Articulation::Tremolo, in_member(1, None)),
+        (
+            Articulation::Spiccato,
+            in_member(2, Some(Selector::Keyswitch(24))),
+        ),
+        // The patch is matched ignoring case, as discovery matches paths.
+        (
+            Articulation::Pizzicato,
+            in_member(2, Some(Selector::Keyswitch(25))),
+        ),
+        // Not mapped: the nearest it plays, spiccato, in its patch.
+        (
+            Articulation::Staccato,
+            in_member(2, Some(Selector::Keyswitch(24))),
+        ),
+    ] {
+        assert_eq!(
+            mapping.target(choice(articulation)),
+            Some(target),
+            "{articulation:?}"
+        );
+    }
+    assert_eq!(mapping.target(SamplerMapping::AUTO), None);
+}
+
+#[test]
+fn a_set_plays_its_ordinary_sound_in_the_patch_of_its_default() {
+    // The default in the second patch: `ordinario`, and so `auto`, play that patch.
+    let mapping = sampler_mapping(&violin_set(Articulation::Tremolo));
+    assert_eq!(mapping.default_target(), Some(in_member(1, None)));
+    assert_eq!(mapping.default_member(), 1);
+    // An overlap legato joins the ordinary sound in its patch.
+    let mut legato = violin_set(Articulation::Tremolo);
+    legato.legato = Some(profile(LegatoMode::Overlap {
+        crossfade_ms: 90,
+        start_offset_ms: 60,
+        gap_ms: 0,
+    }));
+    assert_eq!(
+        sampler_mapping(&legato).target(choice(Articulation::Legato)),
+        Some(ArticulationTarget {
+            legato: true,
+            ..in_member(1, None)
+        })
+    );
+}
+
+#[test]
+fn an_articulation_of_a_patch_the_set_does_not_hold_gets_no_target() {
+    // TST-03: an entry that names a patch outside the set's patches, or none, selects nothing,
+    // so its choice plays as `auto` rather than in a wrong patch.
+    let mut preset = violin_set(Articulation::Sustain);
+    let Some(Claim {
+        value: ArticulationList::Mapped(entries),
+        ..
+    }) = preset.articulation_map.as_mut()
+    else {
+        panic!("mapped");
+    };
+    entries.push(played_by(
+        Articulation::ColLegno,
+        ArticulationVia::Patch,
+        "Gone.sfz",
+    ));
+    entries.push(entry(
+        ArticulationName::Vocabulary(Articulation::Harmonics),
+        ArticulationVia::Patch,
+    ));
+    let mapping = sampler_mapping(&preset);
+    assert_eq!(mapping.target(choice(Articulation::ColLegno)), None);
+    assert_eq!(mapping.target(choice(Articulation::Harmonics)), None);
+    assert_eq!(
+        mapping.target(choice(Articulation::Tremolo)),
+        Some(in_member(1, None))
+    );
+}
+
+#[test]
+fn an_installed_set_resolves_to_its_patches_in_the_order_of_its_targets() {
+    // VSCO 2 CE's trumpet set through its shipped profile: sustain (the default), sustain with
+    // vibrato, staccato, and sustain with a straight and with a harmon mute, each a patch.
+    let dir = tempfile::tempdir().expect("tempdir");
+    let vsco = dir.path().join("VSCO");
+    profiled_library(
+        &vsco,
+        "vsco2ce",
+        include_str!("../../../profiles/vsco2ce.json"),
+    );
+    let installed = InstalledInstruments::from_catalog(&InstrumentCatalog::discover(
+        std::slice::from_ref(&vsco),
+    ));
+    assert!(
+        installed.ids().iter().any(|id| id == "vsco2ce/@trumpet"),
+        "the set is offered"
+    );
+    let trumpet = installed.resolve("vsco2ce/@trumpet").expect("installed");
+    assert_eq!(trumpet.id, "vsco2ce/@trumpet");
+    let patches: Vec<PathBuf> = [
+        "TrumpetSus.sfz",
+        "TrumpetSusVib.sfz",
+        "TrumpetStac.sfz",
+        "TrumpetStraightMuteSus.sfz",
+        "TrumpetHarmonMuteSus.sfz",
+    ]
+    .iter()
+    .map(|path| vsco.join(path))
+    .collect();
+    assert_eq!(trumpet.patches, patches);
+    let sustain = choice(Articulation::Sustain);
+    let mapping = &trumpet.mapping;
+    assert_eq!(mapping.default_target(), Some(in_member(0, None)));
+    assert_eq!(mapping.target(sustain), Some(in_member(0, None)));
+    assert_eq!(
+        mapping.target(choice(Articulation::Staccato)),
+        Some(in_member(2, None))
+    );
+    for (state, member) in [
+        (passage(None, Some(Vibrato::On)), 1),
+        (passage(Some(Mute::Generic), None), 3),
+        (passage(Some(Mute::Harmon), None), 4),
+    ] {
+        assert_eq!(
+            mapping.target_under(sustain, state),
+            Some(in_member(member, None)),
+            "{state:?}"
+        );
+    }
+    // Its patches stay presets of their own, each patch 0 of itself.
+    let alone = installed.resolve("vsco2ce/TrumpetStac").expect("installed");
+    assert_eq!(alone.patches, [vsco.join("TrumpetStac.sfz")]);
 }

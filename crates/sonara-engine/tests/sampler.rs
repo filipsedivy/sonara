@@ -43,6 +43,12 @@
 //! seek into the phrase starts the note there with its attack, as in `sustain`, and the next
 //! note joins it.
 //!
+//! **A multi-patch set** is one device that loads every patch of the set and switches among
+//! them by the articulation: the oracle is a keyswitch patch whose switches play the same
+//! samples, in `auto` and under a lane, bit for bit, also after a seek and on every pass of a
+//! loop. A set whose samples exceed the memory cap together warns, naming the patch at which
+//! they did, and plays silence.
+//!
 //! **Live rebuilds** (an edit during playback) keep a sampler whose instrument is unchanged, so
 //! its sounding notes ring on: the oracle is the graph that was never rebuilt, bit for bit, and
 //! a new `articulation` reaches the kept sampler exactly as a lane that steps there does.
@@ -369,7 +375,7 @@ fn resolving(patch: &Path, old_path: &str) -> MediaProvider {
     no_media().with_instruments(move |value| {
         (value == "lib/tone" || value == old_path).then(|| InstrumentSource {
             id: "lib/tone".to_owned(),
-            patch: patch.clone(),
+            patches: vec![patch.clone()],
             mapping: Arc::default(),
         })
     })
@@ -984,7 +990,7 @@ fn articulations(patch: &Path) -> MediaProvider {
             .find(|(id, _)| *id == value)
             .map(|(id, mapping)| InstrumentSource {
                 id: (*id).to_owned(),
-                patch: patch.clone(),
+                patches: vec![patch.clone()],
                 mapping: Arc::clone(mapping),
             })
     })
@@ -993,6 +999,7 @@ fn articulations(patch: &Path) -> MediaProvider {
 /// The target of an articulation that the keyswitch `key` selects.
 fn switch(key: u8) -> ArticulationTarget {
     ArticulationTarget {
+        member: 0,
         selector: Some(Selector::Keyswitch(key)),
         legato: false,
     }
@@ -1409,7 +1416,7 @@ fn dynamics_presets(patch: &Path) -> MediaProvider {
         };
         Some(InstrumentSource {
             id: value.to_owned(),
-            patch: patch.clone(),
+            patches: vec![patch.clone()],
             mapping: Arc::new(SamplerMapping::new(Vec::new(), drive, None, 0)),
         })
     })
@@ -1702,7 +1709,7 @@ fn revisable(patch: &Path, revised: Arc<AtomicBool>) -> MediaProvider {
         };
         Some(InstrumentSource {
             id: value.to_owned(),
-            patch: patch.clone(),
+            patches: vec![patch.clone()],
             mapping: Arc::new(SamplerMapping::new(
                 vec![
                     None,
@@ -1964,6 +1971,7 @@ fn legato_preset(patch: &Path) -> MediaProvider {
     let patch = patch.to_owned();
     let target = |legato| {
         Some(ArticulationTarget {
+            member: 0,
             selector: Some(Selector::Keyswitch(24)),
             legato,
         })
@@ -1981,7 +1989,7 @@ fn legato_preset(patch: &Path) -> MediaProvider {
     no_media().with_instruments(move |value| {
         (value == "lib/legato").then(|| InstrumentSource {
             id: value.to_owned(),
-            patch: patch.clone(),
+            patches: vec![patch.clone()],
             mapping: Arc::clone(&mapping),
         })
     })
@@ -2070,4 +2078,162 @@ fn abutting_legato_notes_crossfade_also_after_a_seek() {
             "pass {pass} of the loop"
         );
     }
+}
+
+// --- Multi-patch sets ---
+
+/// The three switches of [`keyswitch_patch`] (beside it in `dir`) as the three patches of a
+/// set, in this order: `24.sfz` (110 Hz), `25.sfz` (220 Hz) and `26.sfz` (330 Hz), each playing
+/// its switch's sample on the same keys with the same envelope.
+fn set_patches(dir: &Path) -> Vec<PathBuf> {
+    [24, 25, 26]
+        .iter()
+        .map(|switch| {
+            let patch = dir.join(format!("{switch}.sfz"));
+            fs::write(
+                &patch,
+                format!(
+                    "<global> ampeg_release=0.005 lokey=36 hikey=72 pitch_keycenter=60\n\
+                     <region> sample={switch}.wav\n"
+                ),
+            )
+            .expect("write a patch of the set");
+            patch
+        })
+        .collect()
+}
+
+/// A provider of two presets: `lib/articulations`, the [`keyswitch_patch`] at `patch` with
+/// `ordinario` on C1 (24), `sustain` on C#1 (25) and `staccato` on D1 (26), as in
+/// [`articulations`]; and `lib/@set`, the set of `members` ([`set_patches`]) whose targets name
+/// the patch of the same switch's sample: `ordinario` patch 0, `sustain` patch 1 and `staccato`
+/// patch 2.
+fn keyswitches_and_set(patch: &Path, members: Vec<PathBuf>) -> MediaProvider {
+    let patch = patch.to_owned();
+    let keyswitched = Arc::new(SamplerMapping::new(
+        vec![None, Some(switch(24)), Some(switch(25)), Some(switch(26))],
+        DynamicsDrive::Velocity,
+        None,
+        0,
+    ));
+    let in_patch = |member| {
+        Some(ArticulationTarget {
+            member,
+            ..ArticulationTarget::select(None)
+        })
+    };
+    let set = Arc::new(SamplerMapping::new(
+        vec![None, in_patch(0), in_patch(1), in_patch(2)],
+        DynamicsDrive::Velocity,
+        None,
+        0,
+    ));
+    no_media().with_instruments(move |value| {
+        let (patches, mapping) = match value {
+            "lib/articulations" => (vec![patch.clone()], &keyswitched),
+            "lib/@set" => (members.clone(), &set),
+            _ => return None,
+        };
+        Some(InstrumentSource {
+            id: value.to_owned(),
+            patches,
+            mapping: Arc::clone(mapping),
+        })
+    })
+}
+
+#[test]
+fn a_set_switches_patches_as_a_keyswitch_patch_switches_also_after_a_seek() {
+    // One device plays a set of three patches. In `auto` it plays the patch of the ordinary
+    // sound, as the keyswitch patch plays its default switch; a lane of `sustain` from beat 0
+    // and `staccato` from beat 2 switches patches at the same notes as the keyswitch notes C#1
+    // and D1 switch the keyswitch patch, also after a seek and on every pass of a loop (every
+    // block inside `assert_no_alloc`).
+    let (dir, patch) = keyswitch_patch();
+    let media = keyswitches_and_set(&patch, set_patches(dir.path()));
+    let in_auto = |instrument: &str| {
+        sampler_project(&json!({"instrument": instrument}), &three_notes(), &[], &[])
+    };
+    plays_as_through(
+        &in_auto("lib/@set"),
+        &in_auto("lib/articulations"),
+        &media,
+        &[0, AFTER_CHANGE],
+    );
+    let lane = articulation_lane(&[(0.0, 2.0), (2.0, 3.0)]);
+    let automated = sampler_project(
+        &json!({"instrument": "lib/@set"}),
+        &three_notes(),
+        &[],
+        &[lane],
+    );
+    let mut switched = three_notes().to_vec();
+    switched.push(note("n_000000000002", 25, 0.0, 0.03125));
+    switched.push(note("n_000000000004", 26, 2.0, 0.125));
+    let oracle = sampler_project(
+        &json!({"instrument": "lib/articulations"}),
+        &switched,
+        &[],
+        &[],
+    );
+    plays_as_through(
+        &automated,
+        &oracle,
+        &media,
+        &[0, AFTER_SWITCH, AFTER_CHANGE],
+    );
+}
+
+#[test]
+fn a_set_over_the_memory_cap_warns_and_plays_silence() {
+    // A small patch and a patch whose sample alone fits the memory cap exactly (an 8-bit mono
+    // WAV decoded to 4-byte samples, written sparse): one device loads both, so together they
+    // exceed it, and the render says so, naming the patch at which they did, instead of
+    // failing (ADR 0010).
+    let (dir, _) = keyswitch_patch();
+    let mut members = set_patches(dir.path());
+    members.truncate(1);
+    let frames = u32::try_from(sonara_media::sfz::MAX_BANK_BYTES / 4).expect("fits a WAV header");
+    let mut header = Vec::new();
+    header.extend_from_slice(b"RIFF");
+    header.extend_from_slice(&(36 + frames).to_le_bytes());
+    header.extend_from_slice(b"WAVEfmt ");
+    for field in [16_u32, 0x0001_0001, 44_100, 44_100, 0x0008_0001] {
+        header.extend_from_slice(&field.to_le_bytes());
+    }
+    header.extend_from_slice(b"data");
+    header.extend_from_slice(&frames.to_le_bytes());
+    let huge_wav = dir.path().join("huge.wav");
+    fs::write(&huge_wav, header).expect("write the header");
+    fs::OpenOptions::new()
+        .write(true)
+        .open(&huge_wav)
+        .expect("open")
+        .set_len(44 + u64::from(frames))
+        .expect("extend");
+    let huge = dir.path().join("huge.sfz");
+    fs::write(&huge, "<region> sample=huge.wav lokey=36 hikey=72\n").expect("write");
+    members.push(huge.clone());
+    let set = Arc::new(SamplerMapping::default());
+    let media = no_media().with_instruments(move |value| {
+        (value == "lib/@huge").then(|| InstrumentSource {
+            id: value.to_owned(),
+            patches: members.clone(),
+            mapping: Arc::clone(&set),
+        })
+    });
+    let audio = render_with(&["lib/@huge".to_owned()], None, &media).expect("renders");
+    assert_eq!(
+        audio.stats.warnings,
+        [format!(
+            "instrument 'lib/@huge' of 'Sonara Sampler' cannot be loaded: {}: the samples of \
+             the set's 2 patches need more than 3072 MiB of memory together, at least 3073 \
+             MiB with this patch's",
+            huge.display()
+        )]
+    );
+    // The device plays silence, as a sampler with no instrument does; the other tracks of the
+    // base project play on.
+    let unloaded = render_with(&["lib/gone".to_owned()], None, &media).expect("renders");
+    assert!(audio.data == unloaded.data, "the set adds nothing");
 }

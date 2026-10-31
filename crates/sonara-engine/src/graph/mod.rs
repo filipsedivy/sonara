@@ -1213,12 +1213,13 @@ impl Builder<'_> {
     }
 
     /// The state of a sampler: the instrument of the preset `source` that
-    /// [`Self::sampler_params`] resolved, loaded from its SFZ patch together with the mapping
-    /// the application compiled for the preset ([`MediaProvider::load_instrument`]); no
-    /// instrument without one. A patch that cannot be read is a warning, and the sampler plays
-    /// silence, as a missing impulse response does not stop a render (ADR 0010). The opcodes
-    /// the sampler does not play and the regions the loader left out (a missing sample) are
-    /// warnings too.
+    /// [`Self::sampler_params`] resolved, loaded from its SFZ patch, or from the patches of a
+    /// multi-patch set, together with the mapping the application compiled for the preset
+    /// ([`MediaProvider::load_instrument`]); no instrument without one. A patch that cannot be
+    /// read, or a set whose samples need more memory together than the cap, is a warning, and
+    /// the sampler plays silence, as a missing impulse response does not stop a render (ADR
+    /// 0010). The opcodes the sampler does not play and the regions the loader left out (a
+    /// missing sample) are warnings too.
     fn sampler_state(&mut self, device: &Device, source: Option<&InstrumentSource>) -> DeviceState {
         let Some(source) = source else {
             return DeviceState::default();

@@ -15,7 +15,9 @@ use sonara_dsp::bank::{
 use sonara_dsp::processor::{BlockContext, DeviceState, EventKind, InstrumentEvent, ProcessSpec};
 use sonara_dsp::processors::{create, param_slots};
 use sonara_media::MediaError;
-use sonara_media::sfz::{LayerZone, MAX_BANK_BYTES, PatchReport, VelocityLayer, inspect, load_sfz};
+use sonara_media::sfz::{
+    LayerZone, MAX_BANK_BYTES, PatchReport, VelocityLayer, inspect, load_sfz, load_sfz_set,
+};
 
 /// A 16-bit mono PCM WAV of `frames` frames of the constant `value`.
 fn wav(path: &Path, rate: u32, frames: u32, value: i16) {
@@ -2148,5 +2150,158 @@ fn inspect_fails_only_when_the_patch_cannot_be_read() {
     assert!(matches!(
         inspect(&path),
         Err(MediaError::Malformed { message, .. }) if message == "#include nesting is too deep"
+    ));
+}
+
+// --- Multi-patch sets ---
+
+/// Writes `text` as the patch `name` beside the fixture's `Samples` folder; returns its path.
+fn patch_file(dir: &tempfile::TempDir, name: &str, text: &str) -> std::path::PathBuf {
+    let path = dir.path().join(name);
+    fs::write(&path, text).expect("write");
+    path
+}
+
+#[test]
+fn one_patch_loads_as_a_set_of_one() {
+    let dir = library();
+    let path = dir.path().join("violin.sfz");
+    let bank = load_sfz_set(&[&path]).expect("loads");
+    // The bank of the patch alone, as the structural check of the file finds it: the same
+    // regions, keyswitches and default, ignored opcodes, notes and decoded size.
+    assert_agrees_with_the_loader(&inspect(&path).expect("inspects"), &bank);
+    assert_eq!(bank.keyswitches.default, Some(24));
+    assert_eq!(bank.member_count(), 1);
+    assert!(bank.regions.iter().all(|region| region.member == 0));
+    assert_eq!(bank.bytes, 5 * 4_410 * 4, "five files, each counted once");
+}
+
+#[test]
+fn a_set_loads_its_patches_into_one_bank_with_one_loader() {
+    let dir = library();
+    // Two patches with keyswitches of their own, which both name `loud1.wav`, set controllers
+    // and write opcodes the sampler does not play.
+    let sustain = patch_file(
+        &dir,
+        "sus.sfz",
+        "<control> set_cc1=30 <global> sw_lokey=24 sw_hikey=25 sw_default=24 cutoff=800\n\
+         <region> sw_last=24 sample=Samples/soft1.wav key=60\n\
+         <region> sw_last=25 sample=Samples/loud1.wav key=60\n",
+    );
+    let staccato = patch_file(
+        &dir,
+        "stac.sfz",
+        "<control> set_cc1=90 set_cc2=50 <global> sw_lokey=36 sw_hikey=36 sw_default=36\n\
+         <region> sw_last=36 sample=Samples/loud1.wav key=62 pan_oncc10=50\n\
+         <region> sample=Samples/absent.wav key=63\n",
+    );
+    let bank = load_sfz_set(&[&sustain, &staccato]).expect("the set loads");
+    let regions: Vec<(u8, u8, usize)> = bank
+        .regions
+        .iter()
+        .map(|region| (region.member, region.key_lo, region.sample))
+        .collect();
+    assert_eq!(
+        regions,
+        [(0, 60, 0), (0, 60, 1), (1, 62, 1)],
+        "each patch's regions in order, the shared file decoded once"
+    );
+    assert_eq!(bank.samples.len(), 2);
+    assert_eq!(bank.bytes, 2 * 4_410 * 4, "the shared file is counted once");
+    // Each patch keeps its keyswitches; the bank holds every switch key and no default.
+    let keys = |switches: &Keyswitches| switches.keys().collect::<Vec<_>>();
+    assert_eq!(keys(&bank.keyswitches), [24, 25, 36]);
+    assert_eq!(bank.keyswitches.default, None);
+    assert_eq!(bank.member_keyswitches.len(), 2);
+    assert_eq!(keys(bank.keyswitches_of(0)), [24, 25]);
+    assert_eq!(bank.keyswitches_of(0).default, Some(24));
+    assert_eq!(keys(bank.keyswitches_of(1)), [36]);
+    assert_eq!(bank.keyswitches_of(1).default, Some(36));
+    // A controller starts where the first patch that sets it sets it.
+    assert_eq!(bank.controllers.value(1), 30);
+    assert_eq!(bank.controllers.value(2), 50);
+    assert_eq!(bank.controllers.value(7), 127);
+    assert_eq!(bank.ignored_opcodes, ["cutoff", "pan_oncc*"]);
+    assert_eq!(
+        bank.load_notes,
+        [format!(
+            "sample {} is missing (1 region left out)",
+            dir.path().join("Samples/absent.wav").display()
+        )]
+    );
+}
+
+#[test]
+fn the_memory_cap_counts_the_patches_of_a_set_together() {
+    // A small patch and a patch whose one sample alone fits the cap exactly (an 8-bit mono
+    // file decoded to 4-byte samples, written sparse): each loads alone as far as the cap goes,
+    // but together they exceed it, and the set is refused before the large file is decoded.
+    let dir = library();
+    let small = patch_file(&dir, "small.sfz", "<region> sample=Samples/soft1.wav\n");
+    let frames = u32::try_from(MAX_BANK_BYTES / 4).expect("fits a WAV header");
+    let huge_wav = dir.path().join("Samples/huge.wav");
+    fs::write(&huge_wav, wav_header(1, 1, frames)).expect("write");
+    fs::OpenOptions::new()
+        .write(true)
+        .open(&huge_wav)
+        .expect("open")
+        .set_len(44 + u64::from(frames))
+        .expect("extend");
+    let huge = patch_file(&dir, "huge.sfz", "<region> sample=Samples/huge.wav\n");
+    let alone = inspect(&huge).expect("inspects");
+    assert_eq!(alone.decoded_bytes, MAX_BANK_BYTES);
+    assert!(alone.is_loadable(), "the large patch alone fits the cap");
+    let result = load_sfz_set(&[&small, &huge]);
+    assert!(
+        matches!(&result, Err(MediaError::Malformed { path, message })
+            if *path == huge
+                && message == "the samples of the set's 2 patches need more than 3072 MiB of \
+                               memory together, at least 3073 MiB with this patch's"),
+        "{result:?}"
+    );
+    assert_eq!(
+        result.expect_err("refused").to_string(),
+        format!(
+            "{}: the samples of the set's 2 patches need more than 3072 MiB of memory \
+             together, at least 3073 MiB with this patch's",
+            huge.display()
+        )
+    );
+}
+
+#[test]
+fn a_set_fails_on_a_patch_that_cannot_play() {
+    // TST-03: a patch of the set with no region left fails the set and is named, with the notes
+    // of its own regions left out; so does a set without a patch or with too many.
+    let dir = library();
+    let good = patch_file(&dir, "good.sfz", "<region> sample=Samples/soft1.wav\n");
+    let gone = patch_file(&dir, "gone.sfz", "<region> sample=Samples/absent.wav\n");
+    let result = load_sfz_set(&[&good, &gone]);
+    assert!(
+        matches!(&result, Err(MediaError::Malformed { path, message })
+        if *path == gone
+            && *message == format!(
+                "the patch has no playable region: sample {} is missing (1 region left out)",
+                dir.path().join("Samples/absent.wav").display()
+            )),
+        "{result:?}"
+    );
+    assert!(matches!(
+        load_sfz_set(&[&good, &dir.path().join("nothing.sfz")]),
+        Err(MediaError::Io {
+            operation: "read",
+            ..
+        })
+    ));
+    let none: [&Path; 0] = [];
+    assert!(matches!(
+        load_sfz_set(&none),
+        Err(MediaError::InvalidArgument(message)) if message == "a multi-patch set names no patch"
+    ));
+    let many = vec![&good; 257];
+    assert!(matches!(
+        load_sfz_set(&many),
+        Err(MediaError::InvalidArgument(message))
+            if message == "a multi-patch set holds at most 256 patches, this one names 257"
     ));
 }

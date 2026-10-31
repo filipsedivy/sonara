@@ -2,9 +2,9 @@
 //! is an uncompressed file at the project rate, the decode cache otherwise, and silence for
 //! media that is missing or cannot be read. It also loads the sampler's instruments: an
 //! application-supplied [`InstrumentResolver`] turns the stored value of a sampler's
-//! `instrument` parameter into the patch file to load and the mapping the application compiled
-//! for the preset, and [`MediaProvider::load_instrument`] hands both to the sampler as one
-//! [`SamplerSetup`].
+//! `instrument` parameter into the patch file to load, or the patches of a multi-patch set, and
+//! the mapping the application compiled for the preset, and [`MediaProvider::load_instrument`]
+//! hands both to the sampler as one [`SamplerSetup`].
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -17,7 +17,7 @@ use crate::cache::{CacheInfo, decode_to_cache};
 use crate::error::MediaError;
 use crate::format::needs_cache;
 use crate::reader::{CachedReader, DirectReader, MediaReader, SilentReader};
-use crate::sfz::load_sfz;
+use crate::sfz::load_sfz_set;
 
 /// A reader shared by everything that plays one asset at one rate.
 pub type SharedReader = Arc<Mutex<MediaReader>>;
@@ -25,14 +25,17 @@ pub type SharedReader = Arc<Mutex<MediaReader>>;
 /// Maps an asset to its file on disk.
 pub type Resolver = Box<dyn Fn(&MediaAsset) -> PathBuf + Send + Sync>;
 
-/// What a sampler's `instrument` value plays: the installed preset it names, its patch file and
-/// how the preset is played beyond the patch.
+/// What a sampler's `instrument` value plays: the installed preset it names, its patch files and
+/// how the preset is played beyond them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InstrumentSource {
     /// The preset's ID, as the sampler's `instrument` parameter offers it among its choices.
     pub id: String,
-    /// The SFZ patch file of the preset.
-    pub patch: PathBuf,
+    /// The SFZ patch files of the preset: its one patch, or the patches of a multi-patch set in
+    /// the order the mapping's targets number them
+    /// ([`ArticulationTarget::member`](sonara_dsp::bank::ArticulationTarget::member)). A source
+    /// without a patch does not load.
+    pub patches: Vec<PathBuf>,
     /// The articulation targets, dynamics, legato and key offset of the preset, compiled by the
     /// application from what is claimed about it; the default for a preset about which nothing
     /// is claimed.
@@ -65,7 +68,8 @@ pub struct MediaProvider {
     cache_dir: Option<PathBuf>,
     readers: Mutex<HashMap<Key, SharedReader>>,
     full: Mutex<HashMap<Key, Arc<FullAudio>>>,
-    banks: Mutex<HashMap<PathBuf, Arc<SampleBank>>>,
+    /// The loaded banks, by their patch files: one patch, or a set's patches in order.
+    banks: Mutex<HashMap<Vec<PathBuf>, Arc<SampleBank>>>,
     /// The instruments handed out, by preset ID.
     setups: Mutex<HashMap<String, Arc<SamplerSetup>>>,
 }
@@ -152,7 +156,7 @@ impl MediaProvider {
             Some(resolve) => resolve(value),
             None => Some(InstrumentSource {
                 id: value.to_owned(),
-                patch: PathBuf::from(value),
+                patches: vec![PathBuf::from(value)],
                 mapping: Arc::default(),
             }),
         }
@@ -319,32 +323,48 @@ impl MediaProvider {
     ///
     /// # Errors
     ///
-    /// The errors of [`load_sfz`].
+    /// The errors of [`load_sfz`](crate::sfz::load_sfz).
     pub fn load_sample_bank(&self, path: &Path) -> Result<Arc<SampleBank>, MediaError> {
-        if let Some(bank) = lock(&self.banks).get(path) {
-            return Ok(Arc::clone(bank));
-        }
-        let bank = Arc::new(load_sfz(path)?);
-        lock(&self.banks).insert(path.to_owned(), Arc::clone(&bank));
-        Ok(bank)
+        self.load_bank(&[path.to_owned()])
     }
 
-    /// The instrument a sampler plays for `source`: its patch, loaded once and shared
-    /// ([`Self::load_sample_bank`]), with the mapping of its preset. Setup: it reads and decodes
-    /// files, so it runs off the real-time thread.
-    ///
-    /// The same setup is handed out again while the preset's patch and mapping stay the same,
-    /// so a live graph rebuild can tell an unchanged instrument by its pointer; a changed
-    /// mapping gives a new setup that shares the loaded patch.
+    /// The bank of the SFZ files `patches`, one patch or the patches of a multi-patch set in
+    /// order, loaded once with one loader ([`load_sfz_set`]) and then shared, keyed by the files
+    /// in order. A set and a single patch that name the same sample files load them each.
     ///
     /// # Errors
     ///
-    /// The errors of [`load_sfz`] for the patch.
+    /// The errors of [`load_sfz_set`].
+    fn load_bank(&self, patches: &[PathBuf]) -> Result<Arc<SampleBank>, MediaError> {
+        if let Some(bank) = lock(&self.banks).get(patches) {
+            return Ok(Arc::clone(bank));
+        }
+        // Loading decodes every sample; the map is not locked meanwhile.
+        let bank = Arc::new(load_sfz_set(patches)?);
+        Ok(Arc::clone(
+            lock(&self.banks).entry(patches.to_vec()).or_insert(bank),
+        ))
+    }
+
+    /// The instrument a sampler plays for `source`: its patch, or the patches of a multi-patch
+    /// set loaded together with one loader, so one device's samples are decoded once and capped
+    /// together ([`load_sfz_set`]), loaded once and shared, with the mapping of its preset.
+    /// Setup: it reads and decodes files, so it runs off the real-time thread.
+    ///
+    /// The same setup is handed out again while the preset's patches and mapping stay the same,
+    /// so a live graph rebuild can tell an unchanged instrument by its pointer; a changed
+    /// mapping gives a new setup that shares the loaded patches.
+    ///
+    /// # Errors
+    ///
+    /// The errors of [`load_sfz_set`] for the patches: among them a set whose samples need more
+    /// memory together than [`MAX_BANK_BYTES`](crate::sfz::MAX_BANK_BYTES), and a source that
+    /// names no patch.
     pub fn load_instrument(
         &self,
         source: &InstrumentSource,
     ) -> Result<Arc<SamplerSetup>, MediaError> {
-        let bank = self.load_sample_bank(&source.patch)?;
+        let bank = self.load_bank(&source.patches)?;
         let mut setups = lock(&self.setups);
         if let Some(setup) = setups.get(&source.id)
             && Arc::ptr_eq(&setup.bank, &bank)
@@ -407,7 +427,7 @@ mod tests {
             provider().resolve_instrument("/library/Violin.sfz"),
             Some(InstrumentSource {
                 id: "/library/Violin.sfz".to_owned(),
-                patch: PathBuf::from("/library/Violin.sfz"),
+                patches: vec![PathBuf::from("/library/Violin.sfz")],
                 mapping: Arc::default(),
             })
         );
@@ -418,7 +438,7 @@ mod tests {
         let media = provider().with_instruments(|value| {
             let violin = || InstrumentSource {
                 id: "lib/Violin".to_owned(),
-                patch: PathBuf::from("/root/lib/Violin.sfz"),
+                patches: vec![PathBuf::from("/root/lib/Violin.sfz")],
                 mapping: Arc::default(),
             };
             match value {
@@ -428,7 +448,7 @@ mod tests {
         });
         let expected = Some(InstrumentSource {
             id: "lib/Violin".to_owned(),
-            patch: PathBuf::from("/root/lib/Violin.sfz"),
+            patches: vec![PathBuf::from("/root/lib/Violin.sfz")],
             mapping: Arc::default(),
         });
         assert_eq!(media.resolve_instrument("lib/Violin"), expected);
@@ -452,6 +472,7 @@ mod tests {
     /// A mapping whose `ordinario` selects keyswitch `key`.
     fn keyswitched(key: u8) -> Arc<SamplerMapping> {
         let target = ArticulationTarget {
+            member: 0,
             selector: Some(Selector::Keyswitch(key)),
             legato: false,
         };
@@ -469,7 +490,7 @@ mod tests {
         let media = provider();
         let source = InstrumentSource {
             id: "lib/tone".to_owned(),
-            patch: patch.clone(),
+            patches: vec![patch.clone()],
             mapping: keyswitched(36),
         };
         let setup = media.load_instrument(&source).expect("the patch loads");
@@ -488,7 +509,7 @@ mod tests {
         let media = provider();
         let source = InstrumentSource {
             id: "lib/tone".to_owned(),
-            patch,
+            patches: vec![patch],
             mapping: keyswitched(36),
         };
         let first = media.load_instrument(&source).expect("loads");
@@ -523,7 +544,7 @@ mod tests {
         let dir = tempfile::tempdir().expect("a tempdir");
         let source = InstrumentSource {
             id: "lib/gone".to_owned(),
-            patch: dir.path().join("gone.sfz"),
+            patches: vec![dir.path().join("gone.sfz")],
             mapping: keyswitched(36),
         };
         assert!(matches!(
@@ -532,6 +553,69 @@ mod tests {
                 operation: "read",
                 ..
             })
+        ));
+    }
+
+    /// A library with the two patches of a set: `sus.sfz`, one silent region on key 60, and
+    /// `stac.sfz`, one silent region on key 62 under its keyswitch 24, its default.
+    fn set_library() -> (tempfile::TempDir, Vec<PathBuf>) {
+        let dir = tempfile::tempdir().expect("a tempdir");
+        let sustain = dir.path().join("sus.sfz");
+        let staccato = dir.path().join("stac.sfz");
+        std::fs::write(&sustain, "<region> sample=*silence key=60\n").expect("write a patch");
+        std::fs::write(
+            &staccato,
+            "<global> sw_lokey=24 sw_hikey=24 sw_default=24\n\
+             <region> sw_last=24 sample=*silence key=62\n",
+        )
+        .expect("write a patch");
+        (dir, vec![sustain, staccato])
+    }
+
+    #[test]
+    fn a_set_is_its_patches_loaded_together_once() {
+        let (_dir, patches) = set_library();
+        let media = provider();
+        let source = InstrumentSource {
+            id: "lib/@set".to_owned(),
+            patches: patches.clone(),
+            mapping: keyswitched(24),
+        };
+        let setup = media.load_instrument(&source).expect("the set loads");
+        let regions: Vec<(u8, u8)> = setup
+            .bank
+            .regions
+            .iter()
+            .map(|region| (region.member, region.key_lo))
+            .collect();
+        assert_eq!(
+            regions,
+            [(0, 60), (1, 62)],
+            "each patch is a member, in order"
+        );
+        assert_eq!(setup.bank.keyswitches_of(0).default, None);
+        assert_eq!(setup.bank.keyswitches_of(1).default, Some(24));
+        assert_eq!(setup.mapping, source.mapping);
+        let again = media.load_instrument(&source).expect("loads");
+        assert!(Arc::ptr_eq(&setup, &again), "the set is loaded once");
+        // A patch of the set alone is a bank of its own.
+        let single = media.load_sample_bank(&patches[0]).expect("loads");
+        assert!(!Arc::ptr_eq(&setup.bank, &single));
+        assert_eq!(single.regions.len(), 1);
+        assert_eq!(single.member_count(), 1);
+    }
+
+    #[test]
+    fn a_source_without_a_patch_does_not_load() {
+        let source = InstrumentSource {
+            id: "lib/@empty".to_owned(),
+            patches: Vec::new(),
+            mapping: Arc::default(),
+        };
+        assert!(matches!(
+            provider().load_instrument(&source),
+            Err(MediaError::InvalidArgument(message))
+                if message == "a multi-patch set names no patch"
         ));
     }
 

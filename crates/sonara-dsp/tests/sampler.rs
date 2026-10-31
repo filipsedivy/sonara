@@ -1,10 +1,10 @@
 //! `sonara.sampler` against synthetic banks: layers, round robin, release, release triggers,
 //! the sustain pedal, keyswitches, exclusive groups, controllers, polyphony, the articulation,
 //! dynamics, mute and vibrato parameters, an automated articulation, mute or vibrato change
-//! inside a block, a note's own articulation, the key offset, the overlap legato and the
-//! real-time rules (TST-10: every check compares against a value that follows from the bank,
-//! not "it ran"). Every block, and every parameter change of the articulation, dynamics, mute
-//! and vibrato tests, runs under `assert_no_alloc` (RT-02).
+//! inside a block, a note's own articulation, the key offset, the overlap legato, the patches of
+//! a multi-patch set and the real-time rules (TST-10: every check compares against a value that follows from the bank,
+//! not "it ran"). Every block, and every parameter change of the articulation, dynamics, mute,
+//! vibrato and set tests, runs under `assert_no_alloc` (RT-02).
 //!
 //! The samples are constants, so a voice's steady-state output is its sample value times the
 //! velocity gain `(velocity / 127)²`, which the tests compute independently of the engine; a
@@ -2179,6 +2179,7 @@ fn the_amplitude_opcode_scales_the_region() {
 /// The target that makes keyswitch `key` active.
 fn switch(key: u8) -> ArticulationTarget {
     ArticulationTarget {
+        member: 0,
         selector: Some(Selector::Keyswitch(key)),
         legato: false,
     }
@@ -2395,10 +2396,12 @@ fn articulation_auto_plays_the_patch_as_it_is_whatever_the_targets() {
             Some(switch(25)),
             Some(switch(24)),
             Some(ArticulationTarget {
+                member: 0,
                 selector: Some(Selector::Velocity { lo: 1, hi: 40 }),
                 legato: false,
             }),
             Some(ArticulationTarget {
+                member: 0,
                 selector: Some(Selector::Controller {
                     number: 32,
                     value: 3,
@@ -2495,6 +2498,7 @@ fn four_targets(key_offset: i8) -> SamplerMapping {
             None,
             Some(switch(24)),
             Some(ArticulationTarget {
+                member: 0,
                 selector: None,
                 legato: false,
             }),
@@ -3115,6 +3119,7 @@ fn zone_target() -> SamplerMapping {
     let mut targets = vec![None; 5];
     if let Some(slot) = targets.get_mut(4) {
         *slot = Some(ArticulationTarget {
+            member: 0,
             selector: Some(Selector::Velocity { lo: 1, hi: 40 }),
             legato: false,
         });
@@ -3172,6 +3177,7 @@ fn controller_target() -> SamplerMapping {
     let mut targets = vec![None; 5];
     if let Some(slot) = targets.get_mut(3) {
         *slot = Some(ArticulationTarget {
+            member: 0,
             selector: Some(Selector::Controller {
                 number: 32,
                 value: 100,
@@ -3903,6 +3909,7 @@ fn the_dynamics_scale_a_note_before_an_articulation_moves_it_into_its_zone() {
     let mut targets = vec![None; 5];
     if let Some(slot) = targets.get_mut(4) {
         *slot = Some(ArticulationTarget {
+            member: 0,
             selector: Some(Selector::Velocity { lo: 41, hi: 127 }),
             legato: false,
         });
@@ -4126,6 +4133,7 @@ fn overlap(crossfade_ms: u16, start_offset_ms: u16, gap_ms: u16) -> LegatoSpec {
 fn legato_mapping(spec: Option<LegatoSpec>) -> SamplerMapping {
     let target = |legato| {
         Some(ArticulationTarget {
+            member: 0,
             selector: None,
             legato,
         })
@@ -4682,4 +4690,248 @@ fn a_crossfade_lasts_at_least_five_ms() {
         let (left, entered) = crossfade(index, 240.0);
         0.5 * left + 0.25 * entered
     });
+}
+
+// --- Multi-patch sets ---
+
+/// Three patches of one instrument in one bank, each on the keys from 36 up: patch 0 plays
+/// 0.5, patch 1 plays 0.25, and patch 2 is a keyswitch patch whose switch 24 (its default)
+/// plays 0.125 and switch 25 plays 0.0625. Keys 24 and 25 switch in patch 2 only.
+fn three_patches() -> SampleBank {
+    let on = |member, sample| Region {
+        member,
+        key_lo: 36,
+        ..region(sample)
+    };
+    let switched = |sample, switch| Region {
+        sw_last: Some(switch),
+        ..on(2, sample)
+    };
+    SampleBank {
+        samples: vec![
+            constant(0.5),
+            constant(0.25),
+            constant(0.125),
+            constant(0.0625),
+        ],
+        regions: vec![on(0, 0), on(1, 1), switched(2, 24), switched(3, 25)],
+        keyswitches: switches(&[(24, 25)], None),
+        member_keyswitches: vec![
+            Keyswitches::NONE,
+            Keyswitches::NONE,
+            switches(&[(24, 25)], Some(24)),
+        ],
+        ..SampleBank::default()
+    }
+}
+
+/// The target played by patch `member`, reached there with `selector`.
+fn in_patch(member: u8, selector: Option<Selector>) -> ArticulationTarget {
+    ArticulationTarget {
+        member,
+        ..ArticulationTarget::select(selector)
+    }
+}
+
+/// The mapping of the tests' choices onto [`three_patches`]: `ordinario` patch `ordinario` as
+/// it is, `sustain` patch 2 as it is (with the clips' keyswitch), `staccato` patch 1 and
+/// `pizzicato` patch 2 with its switch 25.
+fn set_targets(ordinario: u8) -> SamplerMapping {
+    SamplerMapping::new(
+        vec![
+            None,
+            Some(in_patch(ordinario, None)),
+            Some(in_patch(2, None)),
+            Some(in_patch(1, None)),
+            Some(in_patch(2, Some(Selector::Keyswitch(25)))),
+        ],
+        DynamicsDrive::Velocity,
+        None,
+        0,
+    )
+}
+
+#[test]
+fn each_patch_of_a_bank_keeps_its_own_keyswitches() {
+    let set = three_patches();
+    assert_eq!(set.member_count(), 3);
+    assert_eq!(*set.keyswitches_of(2), switches(&[(24, 25)], Some(24)));
+    assert_eq!(*set.keyswitches_of(0), Keyswitches::NONE);
+    assert_eq!(
+        *set.keyswitches_of(3),
+        Keyswitches::NONE,
+        "no patch has that number"
+    );
+    // A bank of one patch is patch 0, with the bank's keyswitches.
+    let one = four_articulations();
+    assert_eq!(one.member_count(), 1);
+    assert_eq!(*one.keyswitches_of(0), one.keyswitches);
+    assert_eq!(*one.keyswitches_of(1), Keyswitches::NONE);
+    // `auto` plays the patch of the ordinary sound, else the first.
+    assert_eq!(set_targets(1).default_member(), 1);
+    assert_eq!(SamplerMapping::default().default_member(), 0);
+}
+
+#[test]
+fn a_set_plays_the_patch_each_articulation_names() {
+    let mut processor = mapped(three_patches(), set_targets(0), &Params::new());
+    // `auto` plays the patch of the ordinary sound alone, not every patch of the set.
+    close(note(&mut *processor), 0.5);
+    for (choice, expected) in [
+        ("staccato", 0.25),
+        ("pizzicato", 0.0625),
+        // Patch 2 as it is: its default switch.
+        ("sustain", 0.125),
+        ("ordinario", 0.5),
+        ("auto", 0.5),
+    ] {
+        // The switch is a parameter change at a block start, then the notes, both without
+        // allocating (RT-02).
+        set(&mut *processor, &articulation(choice));
+        let quiet = run(&mut *processor, &[]);
+        assert!(quiet.iter().flatten().all(|v| *v == 0.0), "{choice}");
+        let sounded = run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+        close(level(&sounded), expected);
+        assert_eq!(voices(&*processor), 1.0, "one patch sounds for {choice}");
+        run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+    }
+}
+
+#[test]
+fn auto_on_a_set_plays_the_patch_of_the_ordinary_sound() {
+    let mut processor = mapped(three_patches(), set_targets(1), &Params::new());
+    close(note(&mut *processor), 0.25);
+    assert_eq!(voices(&*processor), 0.0, "the note has faded");
+    // A set about which nothing is claimed plays its first patch.
+    let mut unmapped = sampler(three_patches());
+    let sounded = run(&mut *unmapped, &[event(EventKind::NoteOn, 60, 127)]);
+    close(level(&sounded), 0.5);
+    assert_eq!(voices(&*unmapped), 1.0);
+}
+
+#[test]
+fn an_automated_articulation_switches_patches_from_its_frame() {
+    // In one block under `auto` (patch 0, 0.5): a note at frame 0, a change to `staccato`
+    // (patch 1, 0.25) at frame 700 and a note at frame 1400. The first note rings on in its
+    // patch while the second plays the new one; the whole block runs without allocating.
+    let mut processor = mapped(three_patches(), set_targets(0), &Params::new());
+    let block = run(
+        &mut *processor,
+        &[
+            event(EventKind::NoteOn, 60, 127),
+            choice_event(700, "articulation", 3),
+            at_offset(1400, event(EventKind::NoteOn, 64, 127)),
+        ],
+    );
+    let at = |frame: usize| block.get(frame).expect("a frame")[0];
+    close(at(1399), 0.5);
+    close(level(&block), 0.5 + 0.25);
+    assert_eq!(voices(&*processor), 2.0);
+}
+
+#[test]
+fn a_note_plays_the_patch_of_its_own_articulation() {
+    let mut processor = mapped(three_patches(), set_targets(0), &Params::new());
+    // `staccato` (3) on this note alone: patch 1; `pizzicato` (4): patch 2 with switch 25.
+    close(marked_note(&mut *processor, 3), 0.25);
+    close(marked_note(&mut *processor, 4), 0.0625);
+    // The next note without one plays the parameter's patch again.
+    close(note(&mut *processor), 0.5);
+}
+
+#[test]
+fn each_patch_keeps_the_last_keyswitch_the_clips_selected() {
+    let mut processor = mapped(three_patches(), set_targets(0), &Params::new());
+    // Under `auto` (patch 0), a clip's keyswitch 25 is no switch of patch 0, which plays on,
+    // but it selects switch 25 in patch 2.
+    run(&mut *processor, &[event(EventKind::KeySwitch, 25, 0)]);
+    close(note(&mut *processor), 0.5);
+    set(&mut *processor, &articulation("sustain"));
+    close(note(&mut *processor), 0.0625);
+    // A press of key 24 is a note in patch 0 (silent there, below its keys) and a switch in
+    // patch 2.
+    set(&mut *processor, &articulation("auto"));
+    run(&mut *processor, &[event(EventKind::NoteOn, 24, 127)]);
+    run(&mut *processor, &[event(EventKind::NoteOff, 24, 0)]);
+    set(&mut *processor, &articulation("sustain"));
+    close(note(&mut *processor), 0.125);
+    // `pizzicato` forces switch 25 in patch 2; back on `sustain` the forced switch is gone, and
+    // patch 2 plays the clips' last switch, 24.
+    set(&mut *processor, &articulation("pizzicato"));
+    close(note(&mut *processor), 0.0625);
+    set(&mut *processor, &articulation("sustain"));
+    close(note(&mut *processor), 0.125);
+    // All notes off brings every patch back to its default switch.
+    run(&mut *processor, &[event(EventKind::KeySwitch, 25, 0)]);
+    run(&mut *processor, &[event(EventKind::AllNotesOff, 0, 0)]);
+    close(note(&mut *processor), 0.125);
+}
+
+/// Two patches with a release tail each: patch 0 plays 0.5 and its tail 0.031 25, patch 1
+/// plays 0.25 and its tail 0.015 625.
+fn two_patches_with_tails() -> SampleBank {
+    let on = |member, sample| Region {
+        member,
+        ..region(sample)
+    };
+    let tail = |member, sample| Region {
+        trigger: Trigger::Release,
+        ..on(member, sample)
+    };
+    SampleBank {
+        samples: vec![
+            constant(0.5),
+            constant(0.031_25),
+            constant(0.25),
+            constant(0.015_625),
+        ],
+        regions: vec![on(0, 0), tail(0, 1), on(1, 2), tail(1, 3)],
+        member_keyswitches: vec![Keyswitches::NONE; 2],
+        ..SampleBank::default()
+    }
+}
+
+/// `staccato` plays patch 1; `ordinario` is patch 0.
+fn tail_targets() -> SamplerMapping {
+    SamplerMapping::new(
+        vec![None, Some(in_patch(0, None)), None, Some(in_patch(1, None))],
+        DynamicsDrive::Velocity,
+        None,
+        0,
+    )
+}
+
+#[test]
+fn a_release_plays_the_tail_of_the_patch_its_note_played() {
+    // A note under `auto` (patch 0) is released after the articulation moved to `staccato`
+    // (patch 1): its tail is patch 0's.
+    let mut processor = mapped(two_patches_with_tails(), tail_targets(), &Params::new());
+    close(
+        level(&run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)])),
+        0.5,
+    );
+    set(&mut *processor, &articulation("staccato"));
+    let released = run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+    close(level(&released), 0.031_25);
+    assert_eq!(voices(&*processor), 1.0, "the tail alone sounds");
+    // The same under the sustain pedal: the tail waits for the pedal and keeps the note's
+    // patch, whatever the articulation is when the pedal lifts.
+    let mut processor = mapped(two_patches_with_tails(), tail_targets(), &Params::new());
+    run(
+        &mut *processor,
+        &[pedal(true), event(EventKind::NoteOn, 60, 127)],
+    );
+    set(&mut *processor, &articulation("staccato"));
+    run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+    let lifted = run(&mut *processor, &[pedal(false)]);
+    close(level(&lifted), 0.031_25);
+    // A note pressed under `staccato` releases with patch 1's tail.
+    let mut processor = mapped(
+        two_patches_with_tails(),
+        tail_targets(),
+        &articulation("staccato"),
+    );
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    let released = run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+    close(level(&released), 0.015_625);
 }

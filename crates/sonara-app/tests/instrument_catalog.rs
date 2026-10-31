@@ -1446,22 +1446,41 @@ fn installed_instruments_are_the_playable_presets_by_id() {
     assert_eq!(tuba.availability, Availability::Available);
     assert!(matches!(&tuba.kind, PresetKind::Set { members } if members.len() == 2));
     let installed = InstalledInstruments::from_catalog(&catalog);
-    // The sampler plays one patch per device: the set's patches are offered, the set is not.
+    // One sampler device plays a whole set: the available set is offered beside its patches.
     assert_eq!(
         installed.ids(),
         [
             "lib-one/Brass/Horn",
             "lib-one/Strings/Violin",
+            "vsco2ce/@tuba",
             "vsco2ce/GM-StylePerc",
             "vsco2ce/Tuba-KS",
             "vsco2ce/TubaStac",
             "vsco2ce/TubaSus",
             "vsco2ce/ViolinEns-KS",
         ],
-        "a missing or an invalid preset, or a set, is not offered"
+        "a missing or an invalid preset, or a set with a missing patch, is not offered"
     );
-    assert_eq!(installed.preset_id("vsco2ce/@tuba"), None);
-    assert_eq!(installed.resolve("vsco2ce/@tuba"), None);
+    assert_eq!(installed.preset_id("vsco2ce/@tuba"), Some("vsco2ce/@tuba"));
+    let set = installed
+        .resolve("vsco2ce/@tuba")
+        .expect("the set resolves");
+    let PresetKind::Set { members } = &tuba.kind else {
+        panic!("a set");
+    };
+    assert_eq!(
+        set.patches,
+        members
+            .iter()
+            .map(|member| member.patch_path.clone())
+            .collect::<Vec<_>>(),
+        "the set's patches, in the order its targets number them"
+    );
+    assert_eq!(
+        installed.resolve("vsco2ce/@horn"),
+        None,
+        "a patch is missing"
+    );
     assert!(!installed.is_empty());
     assert!(InstalledInstruments::default().is_empty());
     assert_eq!(
@@ -1481,7 +1500,7 @@ fn an_old_patch_path_resolves_to_its_preset() {
     let text = |path: PathBuf| path.to_str().expect("UTF-8").to_owned();
     let violin = Some(InstrumentSource {
         id: "lib-one/Strings/Violin".to_owned(),
-        patch: one.join("Strings/Violin.sfz"),
+        patches: vec![one.join("Strings/Violin.sfz")],
         mapping: Arc::default(),
     });
     // By its ID, and by the absolute path a project from before preset IDs stored: the scan's

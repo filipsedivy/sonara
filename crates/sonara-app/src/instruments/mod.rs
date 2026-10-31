@@ -47,8 +47,9 @@
 //! **Multi-patch sets.** A version 2 manifest or a profile may gather one instrument's patches
 //! into a set, each patch playing some of its articulations. The catalog lists the set as a
 //! preset of its own, `<library>/@<set>` ([`PresetKind::Set`]), beside its patches, which stay
-//! presets too; the set carries its claims and each member's availability and facts. The
-//! sampler plays one patch per device, so [`InstalledInstruments`] offers only the patches.
+//! presets too; the set carries its claims and each member's availability and facts.
+//! [`InstalledInstruments`] offers the set beside its patches: one sampler device loads all of
+//! the set's patches and switches among them by the articulation.
 //!
 //! A manifest entry whose file is gone is kept as [`Availability::Missing`], so the user sees
 //! what to reinstall. Discovery opens no patch, so a file with no region is listed as available

@@ -242,8 +242,14 @@ every `mute` and `vibrato` choice (a key switch, a velocity zone or a controller
 combination the preset does not record, the nearest it plays), what `dynamics` drives, the legato
 and the key offset. Only the mutes and vibratos a preset records get columns of their own in that
 table; every other choice reads the column of `auto`. A preset about which
-nothing is claimed gets an empty mapping and plays its patch as it is. The same preset with the
-same mapping gets the same setup again on a graph rebuild. Its `instrument_type`, `articulation`,
+nothing is claimed gets an empty mapping and plays its patch as it is. A multi-patch set is one
+setup: its patches are read with one loader into one bank, so a sample file two of them name is
+decoded once and the 3 GiB cap counts the device as a whole; each region carries the number of
+its patch, each patch keeps its own keyswitches and last keyswitch (a fixed array), and each
+target names the patch that plays it. The processor plays a note's regions in its target's patch,
+else in the patch of the preset's ordinary sound, and its release regions in the patch the note
+played, all by comparing that number, so switching patches is a lookup like any other target.
+The same preset with the same mapping gets the same setup again on a graph rebuild. Its `instrument_type`, `articulation`,
 `dynamics`, `mute` and `vibrato` values reach the processor as further parameter slots; a stored
 `instrument_type`, `articulation`, `mute` or `vibrato` that is not one of the choices plays as
 `auto`, with a warning, instead of failing the graph build. The processor reads `articulation`
