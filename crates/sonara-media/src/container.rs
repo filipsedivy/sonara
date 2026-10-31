@@ -9,6 +9,8 @@
 //! - **Text chunks** that libsndfile reports as strings: RIFF `LIST`/`INFO` (symphonia 0.6.1's
 //!   `WavReader` parses the list and then drops it), and AIFF `NAME`, `AUTH`, `ANNO`, `(c) ` and
 //!   `APPL`.
+//! - **The loop of a RIFF `smpl` chunk** (RIFF and RF64), which symphonia does not read: the SFZ
+//!   loader plays it as a sample's default loop.
 //!
 //! CAF files and Ogg Opus have readers of their own ([`crate::caf`], [`crate::opus`]).
 //!
@@ -105,6 +107,19 @@ pub(crate) struct WaveHeader {
     pub(crate) data_len: u64,
     /// The `LIST`/`INFO` strings, mapped to libsndfile's fields, in file order.
     pub(crate) strings: Vec<(&'static str, String)>,
+    /// The first loop of the `smpl` chunk, for a RIFF or RF64 file that has one.
+    pub(crate) sample_loop: Option<SampleLoop>,
+}
+
+/// A loop a sampler chunk (RIFF `smpl`) embeds in the file: its first and last frame, both
+/// played, as the chunk writes them. The chunk's loop type (forward, alternating, backward) and
+/// play count are not kept.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct SampleLoop {
+    /// The first frame of the loop.
+    pub(crate) start: u32,
+    /// The last frame of the loop, which is played too (the SFZ `loop_end` counts the same way).
+    pub(crate) end: u32,
 }
 
 impl WaveHeader {
@@ -205,6 +220,24 @@ fn c_string(bytes: &[u8]) -> String {
     String::from_utf8_lossy(&bytes[..end]).into_owned()
 }
 
+/// The bytes of a `smpl` chunk before its first loop.
+const SMPL_HEADER_BYTES: usize = 36;
+/// The bytes of each loop of a `smpl` chunk.
+const SMPL_LOOP_BYTES: usize = 24;
+
+/// The first loop of a `smpl` chunk: the loop count is at byte 28 of the chunk, and the first
+/// loop follows its 36-byte header, with its start frame at byte 8 and its end frame at byte 12
+/// of the loop. `None` when the chunk lists no loop or is too short to hold one.
+fn parse_smpl(body: &[u8]) -> Option<SampleLoop> {
+    if u32_le(body, 28) == 0 || body.len() < SMPL_HEADER_BYTES + SMPL_LOOP_BYTES {
+        return None;
+    }
+    Some(SampleLoop {
+        start: u32_le(body, SMPL_HEADER_BYTES + 8),
+        end: u32_le(body, SMPL_HEADER_BYTES + 12),
+    })
+}
+
 fn parse_info(list: &[u8], strings: &mut Vec<(&'static str, String)>) {
     if list.get(..4) != Some(b"INFO") {
         return;
@@ -223,8 +256,10 @@ fn parse_info(list: &[u8], strings: &mut Vec<(&'static str, String)>) {
     }
 }
 
-/// Parses the header of a RIFF or RF64 WAVE file: `fmt `, the first `data` chunk and every
-/// `LIST`/`INFO` chunk (also after the data, as libsndfile reads seekable files).
+/// Parses the header of a RIFF or RF64 WAVE file: `fmt `, the first `data` chunk, every
+/// `LIST`/`INFO` chunk (also after the data, as libsndfile reads seekable files) and the first
+/// loop of the first `smpl` chunk that lists one. A `smpl` chunk that cannot be read is ignored,
+/// as a `LIST` chunk is.
 pub(crate) fn read_riff<R: Read + Seek>(
     reader: &mut R,
     file_len: u64,
@@ -235,6 +270,7 @@ pub(crate) fn read_riff<R: Read + Seek>(
     let mut data = None;
     let mut ds64_data_len = None;
     let mut strings = Vec::new();
+    let mut sample_loop = None;
     let mut pos = 12u64;
     while pos.saturating_add(8) <= file_len {
         reader.seek(SeekFrom::Start(pos))?;
@@ -252,6 +288,11 @@ pub(crate) fn read_riff<R: Read + Seek>(
             b"LIST" => {
                 if let Ok(body) = read_body(reader, size, file_len) {
                     parse_info(&body, &mut strings);
+                }
+            }
+            b"smpl" if sample_loop.is_none() => {
+                if let Ok(body) = read_body(reader, size, file_len) {
+                    sample_loop = parse_smpl(&body);
                 }
             }
             b"data" if data.is_none() => {
@@ -277,11 +318,12 @@ pub(crate) fn read_riff<R: Read + Seek>(
         data_offset,
         data_len,
         strings,
+        sample_loop,
     })
 }
 
 /// Parses the header of a Wave64 file: the `fmt ` and `data` chunks (libsndfile reads no
-/// strings from Wave64).
+/// strings from Wave64, and no loop is read from it).
 pub(crate) fn read_w64<R: Read + Seek>(reader: &mut R, file_len: u64) -> io::Result<WaveHeader> {
     reader.seek(SeekFrom::Start(24))?;
     let form: [u8; 16] = read_array(reader)?;
@@ -321,6 +363,7 @@ pub(crate) fn read_w64<R: Read + Seek>(reader: &mut R, file_len: u64) -> io::Res
         data_offset,
         data_len,
         strings: Vec::new(),
+        sample_loop: None,
     })
 }
 
@@ -381,8 +424,8 @@ mod tests {
     use std::io::Cursor;
 
     use super::{
-        Family, WAVE_FORMAT_EXTENSIBLE, WAVE_FORMAT_PCM, read_aiff_strings, read_riff, read_w64,
-        sniff,
+        Family, SampleLoop, WAVE_FORMAT_EXTENSIBLE, WAVE_FORMAT_PCM, read_aiff_strings, read_riff,
+        read_w64, sniff,
     };
 
     fn riff(chunks: &[(&[u8; 4], Vec<u8>)], marker: [u8; 4]) -> Vec<u8> {
@@ -492,6 +535,62 @@ mod tests {
         assert!(header.format.extensible);
         assert_eq!(header.format.tag, 3);
         assert_eq!(header.frames(), 2);
+    }
+
+    /// A `smpl` chunk with the loops `(start, end)`, after a header whose other fields are set.
+    fn smpl(loops: &[(u32, u32)]) -> Vec<u8> {
+        let mut body = Vec::new();
+        for field in [0x47_u32, 0, 22_675, 60, 0, 0, 0] {
+            body.extend_from_slice(&field.to_le_bytes());
+        }
+        body.extend_from_slice(&u32::try_from(loops.len()).unwrap().to_le_bytes());
+        body.extend_from_slice(&0_u32.to_le_bytes());
+        for (id, &(start, end)) in (1_u32..).zip(loops) {
+            for field in [id, 0, start, end, 0, 0] {
+                body.extend_from_slice(&field.to_le_bytes());
+            }
+        }
+        body
+    }
+
+    #[test]
+    fn the_first_loop_of_a_smpl_chunk_is_read() {
+        let header = |chunks: &[(&[u8; 4], Vec<u8>)]| {
+            let file = riff(chunks, *b"RIFF");
+            let len = u64::try_from(file.len()).unwrap();
+            read_riff(&mut Cursor::new(file), len, false).unwrap()
+        };
+        let fmt = || (b"fmt ", fmt(WAVE_FORMAT_PCM, 1, 16));
+        let data = || (b"data", vec![0; 2_000]);
+        // After the data, as most editors write it; the second loop is not read.
+        let looped = header(&[fmt(), data(), (b"smpl", smpl(&[(100, 899), (5, 6)]))]);
+        assert_eq!(
+            looped.sample_loop,
+            Some(SampleLoop {
+                start: 100,
+                end: 899
+            })
+        );
+        assert_eq!(looped.frames(), 1_000, "the audio is unchanged");
+        let before = header(&[fmt(), (b"smpl", smpl(&[(7, 8)])), data()]);
+        assert_eq!(before.sample_loop, Some(SampleLoop { start: 7, end: 8 }));
+        // A chunk without loops, one cut short, and a file without the chunk have none.
+        assert_eq!(
+            header(&[fmt(), data(), (b"smpl", smpl(&[]))]).sample_loop,
+            None
+        );
+        let mut short = smpl(&[(100, 899)]);
+        short.truncate(50);
+        assert_eq!(header(&[fmt(), data(), (b"smpl", short)]).sample_loop, None);
+        assert_eq!(header(&[fmt(), data()]).sample_loop, None);
+        // A later chunk gives the loop when the first lists none.
+        let later = header(&[
+            fmt(),
+            (b"smpl", smpl(&[])),
+            data(),
+            (b"smpl", smpl(&[(1, 2)])),
+        ]);
+        assert_eq!(later.sample_loop, Some(SampleLoop { start: 1, end: 2 }));
     }
 
     #[test]

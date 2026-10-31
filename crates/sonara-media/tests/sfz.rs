@@ -1136,6 +1136,123 @@ fn a_silence_region_plays_nothing_and_chokes_its_group() {
     );
 }
 
+/// A 16-bit mono PCM WAV of `frames` frames of the constant `value` at 44.1 kHz, with a
+/// sampler chunk (`smpl`) after the audio that lists `loops`, each as its first and last frame.
+fn looped_wav(path: &Path, frames: u32, value: i16, loops: &[(u32, u32)]) {
+    wav(path, 44_100, frames, value);
+    let mut bytes = fs::read(path).expect("read the wav");
+    let mut chunk = Vec::new();
+    // Manufacturer, product, sample period, unity note, pitch fraction, SMPTE format and offset.
+    for field in [0_u32, 0, 22_675, 60, 0, 0, 0] {
+        chunk.extend_from_slice(&field.to_le_bytes());
+    }
+    chunk.extend_from_slice(&u32::try_from(loops.len()).expect("few").to_le_bytes());
+    chunk.extend_from_slice(&0_u32.to_le_bytes());
+    for (id, &(start, end)) in (1_u32..).zip(loops) {
+        // Cue point, type (forward), start, end, fraction, play count (endless).
+        for field in [id, 0, start, end, 0, 0] {
+            chunk.extend_from_slice(&field.to_le_bytes());
+        }
+    }
+    bytes.extend_from_slice(b"smpl");
+    bytes.extend_from_slice(&u32::try_from(chunk.len()).expect("small").to_le_bytes());
+    bytes.extend_from_slice(&chunk);
+    let riff = u32::try_from(bytes.len() - 8).expect("small");
+    bytes[4..8].copy_from_slice(&riff.to_le_bytes());
+    fs::write(path, bytes).expect("write the wav");
+}
+
+#[test]
+fn embedded_loop_points_are_the_default() {
+    // A WAV file can carry its loop in a `smpl` chunk; the SFZ format makes `loop_continuous`
+    // over the file's loop the default for such a sample. They were ignored, so a sustain
+    // sample whose loop lives only in the file stopped at its end. The chunk's last frame is
+    // played, as an SFZ `loop_end` is: (100, 899) is the same loop as `loop_end=899`.
+    let dir = library();
+    let samples = dir.path().join("Samples");
+    looped_wav(
+        &samples.join("looped.wav"),
+        1_000,
+        8_000,
+        &[(100, 899), (0, 9)],
+    );
+    looped_wav(&samples.join("backwards.wav"), 1_000, 8_000, &[(900, 100)]);
+    looped_wav(&samples.join("beyond.wav"), 1_000, 8_000, &[(1_000, 1_200)]);
+    looped_wav(&samples.join("long.wav"), 1_000, 8_000, &[(100, 5_000)]);
+    let bank = load_patch(
+        &dir,
+        "<control> default_path=Samples/\n\
+         <group> key=60\n\
+         <region> sample=looped.wav\n\
+         <region> sample=soft1.wav loop_mode=loop_continuous loop_start=100 loop_end=899\n\
+         <region> sample=looped.wav loop_mode=no_loop\n\
+         <region> sample=looped.wav loop_start=200\n\
+         <region> sample=looped.wav loop_mode=loop_sustain loop_end=499\n\
+         <region> sample=looped.wav end=499\n\
+         <region> sample=looped.wav loop_mode=loop_forever\n\
+         <region> sample=looped.wav trigger=release\n\
+         <region> sample=looped.wav trigger=release_key\n\
+         <region> sample=looped.wav on_locc64=64\n\
+         <region> sample=looped.wav trigger=legato\n\
+         <region> sample=soft1.wav\n\
+         <region> sample=backwards.wav\n\
+         <region> sample=beyond.wav\n\
+         <region> sample=long.wav\n",
+    );
+    let loops: Vec<_> = bank
+        .regions
+        .iter()
+        .map(|r| (r.loop_mode, r.loop_start, r.loop_end))
+        .collect();
+    assert_eq!(
+        loops,
+        [
+            (LoopMode::Continuous, 100, 900),
+            (LoopMode::Continuous, 100, 900),
+            (LoopMode::NoLoop, 100, 900),
+            (LoopMode::Continuous, 200, 900),
+            (LoopMode::Sustain, 100, 500),
+            (LoopMode::Continuous, 100, 500),
+            (LoopMode::Continuous, 100, 900),
+            (LoopMode::NoLoop, 100, 900),
+            (LoopMode::NoLoop, 100, 900),
+            (LoopMode::NoLoop, 100, 900),
+            (LoopMode::Continuous, 100, 900),
+            (LoopMode::NoLoop, 0, 4_410),
+            (LoopMode::NoLoop, 0, 1_000),
+            (LoopMode::NoLoop, 0, 1_000),
+            (LoopMode::Continuous, 100, 1_000),
+        ],
+        "the file's loop is the default of each loop opcode a region does not write; a region a \
+         key release does not end (release triggers, controller triggers) does not loop by \
+         default; a loop that starts after its end or past the sample is ignored"
+    );
+    assert_eq!(bank.ignored_opcodes, ["loop_mode=loop_forever"]);
+
+    // The 1000-frame sample still sounds in the second block, from inside its loop.
+    let patch = |region: &str| {
+        load_patch(
+            &dir,
+            &format!("<region> key=60 sample=Samples/{region}.wav\n"),
+        )
+    };
+    let (looping, voices) = play(patch("looped"), &[&[60], &[]]);
+    assert_eq!(voices, 1.0, "the looped note still sounds");
+    assert!(
+        looping
+            .iter()
+            .all(|frame| (frame[0] - 8_000.0 / 32_768.0).abs() < 1e-6),
+        "{:?}",
+        &looping[..4]
+    );
+    let (ended, voices) = play(patch("backwards"), &[&[60], &[]]);
+    assert_eq!(
+        voices, 0.0,
+        "without a valid loop the note ends with its sample"
+    );
+    assert!(ended.iter().all(|frame| *frame == [0.0, 0.0]));
+}
+
 #[test]
 fn off_mode_and_off_time_are_read_with_their_scope() {
     // An explicit `off_mode` decides; `time` without `off_time` fades over the SFZ default of

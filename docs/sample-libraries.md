@@ -173,6 +173,13 @@ is left; a sample file that is there but cannot be decoded still fails it.
 A header may be glued to the opcode before or after it, as the SFZ format site's examples write
 it (`<region>key=36 sample=kick.wav`): an opcode's value ends where a header starts, as in sfizz.
 
+A WAV sample can carry its own loop (a `smpl` chunk, which sample editors write). As in the SFZ
+format and sfizz, a region over such a sample loops between the file's points while it sounds,
+unless it writes its own `loop_mode`, `loop_start` or `loop_end`, which win one by one;
+`loop_mode=no_loop` plays the sample through. Release samples and regions a controller starts do
+not loop by default, since nothing would end the loop. Only the first loop of a WAV file is read,
+and it plays forward; loops stored in AIFF or FLAC files are not read.
+
 ## Instrument type, articulation and dynamics
 
 - **`instrument_type`**: `auto` (the default) or an instrument type ID such as `horn_f` or

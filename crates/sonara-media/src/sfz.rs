@@ -102,6 +102,16 @@
 //! Sonatina's legato patches write `off_mode=time off_time=1`, so a new note overlaps the old one
 //! for a second. `off_curve` and `off_shape` are not supported.
 //!
+//! **Loops a sample file embeds.** A WAV file may carry its loop in a sampler chunk (`smpl`); its
+//! first loop is read. Its points are the defaults of `loop_start` and `loop_end` (the chunk's
+//! last frame is played, as an SFZ `loop_end` is), and it makes `loop_continuous` the default
+//! `loop_mode`, as the SFZ format and sfizz read it: a region that writes none of these loops
+//! between the file's points while it sounds, and `loop_mode=no_loop` turns the loop off. A
+//! region that a key release or a controller starts keeps `no_loop` as its default, since no
+//! release would ever stop its loop. A loop that starts after its end or past the sample's last
+//! frame is ignored, and every loop plays forward, whatever type the file gives it. Loops in
+//! other formats (AIFF markers, FLAC metadata) are not read.
+//!
 //! **Samples a region cannot play.** `sample=*silence` is a region that plays nothing; its note
 //! still switches off the exclusive group it belongs to, which is what patches write it for. The
 //! other generators the SFZ format names with a leading `*` (`*sine`, `*saw`, `*square`,
@@ -132,6 +142,7 @@ use sonara_dsp::bank::{
     OffMode, Region, Sample, SampleBank, Trigger,
 };
 
+use crate::container::WaveHeader;
 use crate::error::MediaError;
 use crate::stream::AudioStream;
 
@@ -1113,9 +1124,9 @@ struct Loader {
     reading: Reading,
     /// The decoded samples, by index; empty when only headers are read.
     samples: Vec<Sample>,
-    /// The frames of each sample, by index, in both readings: the decoded frames, or the
-    /// header's count. The regions are built from these, so both readings build the same ones.
-    frames: Vec<usize>,
+    /// What each sample gives its regions, by index, in both readings. The regions are built
+    /// from these, so both readings build the same ones.
+    infos: Vec<SampleInfo>,
     /// Each sample file named so far: its index, or its note when it cannot be played.
     files: HashMap<PathBuf, FileState>,
     /// The index of the silent sample, once a region names `*silence`.
@@ -1128,6 +1139,39 @@ struct Loader {
     ignored: Vec<String>,
     /// The decoded size of the sample files read so far, in bytes.
     bytes: usize,
+}
+
+/// What the loader knows of a sample in both readings.
+#[derive(Debug, Clone, Copy, Default)]
+struct SampleInfo {
+    /// Its frames: the decoded frames, or the header's count.
+    frames: usize,
+    /// The loop the file embeds, when it lies within the sample.
+    file_loop: Option<FileLoop>,
+}
+
+/// A loop a sample file embeds (a WAV `smpl` chunk), as a region plays it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct FileLoop {
+    /// The first looped frame.
+    start: usize,
+    /// The frame after the last looped one.
+    end: usize,
+}
+
+impl FileLoop {
+    /// The loop of a file of `frames` frames whose header is `wave`: the first loop of its
+    /// `smpl` chunk, `None` when it has none or when the loop starts after its end or past the
+    /// last frame. Its end may lie past the last frame; the region's end bounds it.
+    fn of(wave: Option<&WaveHeader>, frames: usize) -> Option<Self> {
+        let written = wave?.sample_loop?;
+        let start = usize::try_from(written.start).ok()?;
+        let last = usize::try_from(written.end).ok()?;
+        (start <= last && start < frames).then(|| Self {
+            start,
+            end: last.saturating_add(1),
+        })
+    }
 }
 
 /// A sample file the loader has looked for.
@@ -1189,7 +1233,7 @@ impl Loader {
         Self {
             reading,
             samples: Vec::new(),
-            frames: Vec::new(),
+            infos: Vec::new(),
             files: HashMap::new(),
             silence: None,
             generators: HashMap::new(),
@@ -1231,7 +1275,7 @@ impl Loader {
         let Some(sample) = sample else {
             return Ok(None);
         };
-        let frames = self.frames_of(sample);
+        let SampleInfo { frames, file_loop } = self.info_of(sample);
         let num = |key: &str| opcodes.get(key).and_then(|v| v.trim().parse::<f64>().ok());
         let int = |key: &str| num(key).map(|v| v.max(0.0).trunc());
         let key_of = |key: &str| opcodes.get(key).and_then(|v| note(v));
@@ -1297,16 +1341,36 @@ impl Loader {
         region.end = int("end")
             .map_or(frames, |e| to_usize(Some(e), 0) + 1)
             .min(frames);
+        self.read_loop(&mut region, opcodes, file_loop);
+        Ok(Some(region))
+    }
+
+    /// Sets the loop of `region`, whose other fields are read, from its `opcodes`. The loop
+    /// `file_loop` that its sample file embeds gives the defaults of `loop_start` and
+    /// `loop_end`, and makes `loop_continuous` the default `loop_mode`, as the SFZ format and
+    /// sfizz read it; but only for a region a key release ends, since nothing releases a voice
+    /// that a key release or a controller started, which would then loop forever.
+    fn read_loop(&mut self, region: &mut Region, opcodes: &Opcodes, file_loop: Option<FileLoop>) {
+        let int = |key: &str| {
+            let value = opcodes.get(key)?.trim().parse::<f64>().ok()?;
+            Some(value.max(0.0).trunc())
+        };
+        let released_by_key = region.on_key && !region.trigger.is_release();
+        let file_mode = match file_loop {
+            Some(_) if released_by_key => LoopMode::Continuous,
+            _ => LoopMode::NoLoop,
+        };
         region.loop_mode = self
             .value(opcodes, &["loop_mode", "loopmode"], parse_loop_mode)
-            .unwrap_or_default();
+            .unwrap_or(file_mode);
         let loop_start = int("loop_start").or_else(|| int("loopstart"));
         let loop_end = int("loop_end").or_else(|| int("loopend"));
-        region.loop_start = to_usize(loop_start, 0);
+        region.loop_start = to_usize(loop_start, file_loop.map_or(0, |l| l.start));
         region.loop_end = loop_end
-            .map_or(region.end, |e| to_usize(Some(e), 0) + 1)
+            .map_or(file_loop.map_or(region.end, |l| l.end), |e| {
+                to_usize(Some(e), 0) + 1
+            })
             .min(region.end);
-        Ok(Some(region))
     }
 
     /// The value of the first of the opcodes `names` that the region writes, as `parse` reads
@@ -1328,17 +1392,23 @@ impl Loader {
         parsed
     }
 
-    /// The frames of the sample at `index`; 0 for an index the loader has not given out.
-    fn frames_of(&self, index: usize) -> usize {
-        self.frames.get(index).copied().unwrap_or(0)
+    /// What the loader knows of the sample at `index`; no frames for an index the loader has
+    /// not given out.
+    fn info_of(&self, index: usize) -> SampleInfo {
+        self.infos.get(index).copied().unwrap_or_default()
     }
 
-    /// Adds a sample of `frames` frames and returns its index. `sample` is its decoded data,
-    /// kept only when decoding.
-    fn push(&mut self, sample: Option<Sample>, frames: usize) -> usize {
+    /// The frames of the sample at `index`; 0 for an index the loader has not given out.
+    fn frames_of(&self, index: usize) -> usize {
+        self.info_of(index).frames
+    }
+
+    /// Adds a sample `info` describes and returns its index. `sample` is its decoded data, kept
+    /// only when decoding.
+    fn push(&mut self, sample: Option<Sample>, info: SampleInfo) -> usize {
         self.samples.extend(sample);
-        self.frames.push(frames);
-        self.frames.len() - 1
+        self.infos.push(info);
+        self.infos.len() - 1
     }
 
     /// The index of the sample of the generator `name`: the shared silent sample for
@@ -1351,7 +1421,7 @@ impl Loader {
                     channels: 1,
                     data: Vec::new(),
                 });
-                self.silence = Some(self.push(sample, 0));
+                self.silence = Some(self.push(sample, SampleInfo::default()));
             }
             return self.silence;
         }
@@ -1442,6 +1512,7 @@ impl Loader {
     /// exceed [`MAX_BANK_BYTES`]; the reader's errors for a file it cannot decode.
     fn read(&mut self, file: &Path, patch: &Path) -> Result<usize, MediaError> {
         let opened = AudioStream::open(file)?;
+        let wave = opened.wave;
         let mut stream = opened.stream;
         // Makes the decoder without decoding, so a codec the loader cannot decode is found from
         // the header too.
@@ -1457,11 +1528,13 @@ impl Loader {
             .frames()
             .ok_or_else(|| MediaError::malformed(file, "the file states no length"))?;
         let frames = usize::try_from(frames).unwrap_or(usize::MAX);
+        // From the header, so that both readings give the regions the same loop.
+        let file_loop = FileLoop::of(wave.as_ref(), frames);
         self.bytes = self
             .bytes
             .saturating_add(frames.saturating_mul(channels).saturating_mul(4));
         if self.reading == Reading::Header {
-            return Ok(self.push(None, frames));
+            return Ok(self.push(None, SampleInfo { frames, file_loop }));
         }
         if self.bytes > MAX_BANK_BYTES {
             return Err(MediaError::malformed(
@@ -1487,7 +1560,7 @@ impl Loader {
             data,
         };
         let frames = sample.frames();
-        Ok(self.push(Some(sample), frames))
+        Ok(self.push(Some(sample), SampleInfo { frames, file_loop }))
     }
 }
 
@@ -1562,4 +1635,66 @@ fn to_usize(value: Option<f64>, default: usize) -> usize {
 )]
 fn to_f32(value: f64) -> f32 {
     value as f32
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::path::Path;
+
+    use sonara_dsp::bank::LoopMode;
+
+    use super::{Reading, read_patch};
+
+    /// A 16-bit mono PCM WAV of `frames` silent frames at 44.1 kHz with a `smpl` chunk after the
+    /// audio whose one loop runs from `start` to `end`, both played.
+    fn looped_wav(path: &Path, frames: u32, (start, end): (u32, u32)) {
+        let mut chunk = Vec::new();
+        for field in [0_u32, 0, 22_675, 60, 0, 0, 0, 1, 0, 1, 0, start, end, 0, 0] {
+            chunk.extend_from_slice(&field.to_le_bytes());
+        }
+        let data_len = frames * 2;
+        let mut bytes = b"RIFF".to_vec();
+        let riff_len = 4 + 24 + 8 + data_len + 8 + u32::try_from(chunk.len()).unwrap();
+        bytes.extend_from_slice(&riff_len.to_le_bytes());
+        bytes.extend_from_slice(b"WAVEfmt ");
+        for field in [16_u32, 0x0001_0001, 44_100, 88_200, 0x0010_0002] {
+            bytes.extend_from_slice(&field.to_le_bytes());
+        }
+        bytes.extend_from_slice(b"data");
+        bytes.extend_from_slice(&data_len.to_le_bytes());
+        bytes.resize(bytes.len() + usize::try_from(data_len).unwrap(), 0);
+        bytes.extend_from_slice(b"smpl");
+        bytes.extend_from_slice(&u32::try_from(chunk.len()).unwrap().to_le_bytes());
+        bytes.extend_from_slice(&chunk);
+        fs::write(path, bytes).unwrap();
+    }
+
+    #[test]
+    fn both_readings_give_a_region_the_file_loop() {
+        // `inspect` reads only the header; the loop is taken from it in both readings, so the
+        // regions `inspect` describes are the ones `load_sfz` plays.
+        let dir = tempfile::tempdir().unwrap();
+        looped_wav(&dir.path().join("a.wav"), 1_000, (100, 899));
+        let patch = dir.path().join("patch.sfz");
+        fs::write(
+            &patch,
+            "<region> key=60 sample=a.wav\n<region> key=61 sample=a.wav loop_start=300\n",
+        )
+        .unwrap();
+        let decoded = read_patch(&patch, Reading::Decode).unwrap().regions;
+        let header = read_patch(&patch, Reading::Header).unwrap().regions;
+        assert_eq!(decoded, header);
+        let loops: Vec<_> = decoded
+            .iter()
+            .map(|r| (r.loop_mode, r.loop_start, r.loop_end))
+            .collect();
+        assert_eq!(
+            loops,
+            [
+                (LoopMode::Continuous, 100, 900),
+                (LoopMode::Continuous, 300, 900)
+            ]
+        );
+    }
 }
