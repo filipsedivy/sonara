@@ -1716,7 +1716,7 @@ fn the_controllers_start_where_the_patch_sets_them() {
     close(level(&first), 0.25);
     let moved = run(&mut *processor, &[cc(64, 0, 5), press(62, 100, 5)]);
     close(level(&moved), 0.25 + 0.5);
-    processor.reset();
+    assert_no_alloc(|| processor.reset());
     let after_reset = run(&mut *processor, &[press(60, 100, 5)]);
     close(level(&after_reset), 0.25);
 }
@@ -4934,4 +4934,99 @@ fn a_release_plays_the_tail_of_the_patch_its_note_played() {
     run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
     let released = run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
     close(level(&released), 0.015_625);
+}
+
+// --- A dense passage: the microbenchmark's work under the real-time rules ---
+
+#[path = "support/dense_sampler.rs"]
+mod dense_sampler;
+
+use dense_sampler::{DensePassage, Load, PERIOD, WARM_UP};
+
+/// The voices `processor` reports, read as the render thread reads a report: inside
+/// `assert_no_alloc` (RT-02).
+fn reported_voices(processor: &dyn Processor) -> f64 {
+    let report = assert_no_alloc(|| processor.report());
+    report
+        .entries()
+        .iter()
+        .find(|(name, _)| *name == "voices")
+        .map(|(_, value)| *value)
+        .expect("the sampler reports its voices")
+}
+
+/// Plays the blocks `blocks` of `passage`, each inside `assert_no_alloc` (RT-02), and returns
+/// their output.
+fn play_passage(passage: &mut DensePassage, blocks: std::ops::Range<usize>) -> Vec<[f64; 2]> {
+    let mut out = Vec::new();
+    for block in blocks {
+        assert_no_alloc(|| passage.play(block));
+        out.extend_from_slice(passage.output());
+    }
+    out
+}
+
+#[test]
+fn a_dense_passage_allocates_nothing_and_holds_its_voices() {
+    // Each case of the sampler's microbenchmark (`benches/sampler.rs`), the controller table
+    // and the overlap legato on and off, with the `dynamics`, `articulation`, `mute` and
+    // `vibrato` changing as automation changes them: every parameter set, block and report
+    // runs inside `assert_no_alloc` (RT-02). The voices follow from the passage's timing
+    // (TST-07): the chord and the melody hold 62. At the end of a block whose melody note
+    // joins the note before, that note still fades under the 20 ms crossfade (960 frames,
+    // more than the block), so all 64 sound; a melody note that attacks instead releases the
+    // note before at frame 64 over 5 ms (240 frames), which has ended by then. A block later
+    // the crossfade has ended too. No voice is ever stolen, and none is lost.
+    for load in Load::ALL {
+        let name = load.name();
+        let mut passage = DensePassage::new(load);
+        for block in 0..WARM_UP + 3 * PERIOD {
+            assert_no_alloc(|| passage.play(block));
+            let joins = block
+                .checked_sub(WARM_UP)
+                .is_some_and(|beat| beat % 2 == 0 && load.legato);
+            let expected = if joins { 64.0 } else { 62.0 };
+            assert_eq!(
+                reported_voices(&*passage.processor),
+                expected,
+                "{name}: block {block}"
+            );
+            assert!(
+                passage.output().iter().flatten().all(|x| x.is_finite()),
+                "{name}: block {block} is finite"
+            );
+        }
+    }
+}
+
+#[test]
+fn a_reset_plays_the_dense_passage_again_as_a_new_sampler() {
+    // TST-07: a reset, as on play from stop, brings back every part of the sampler's state
+    // that the passage changes: the voices, the keys, the legato's last note and frame clock,
+    // the controller table and the parameters' targets. Reset in the middle of a period (the
+    // `articulation` at `staccato`, the `mute` at `con_sordino`, `dynamics` at 0.8), it plays
+    // the passage again, from its first parameter set, bit for bit as it played from a new
+    // sampler. The reset runs inside `assert_no_alloc` (RT-02).
+    let blocks = 0..WARM_UP + PERIOD + 4;
+    let mut played: Vec<(&str, Vec<[f64; 2]>)> = Vec::new();
+    for load in Load::ALL {
+        let name = load.name();
+        let mut passage = DensePassage::new(load);
+        let first = play_passage(&mut passage, blocks.clone());
+        let peak = first.iter().flatten().fold(0.0, |p: f64, x| p.max(x.abs()));
+        assert!(peak > 0.1, "{name}: the passage sounds: {peak}");
+        assert_no_alloc(|| passage.processor.reset());
+        assert_eq!(reported_voices(&*passage.processor), 0.0, "{name}: silent");
+        let again = play_passage(&mut passage, blocks.clone());
+        assert!(again == first, "{name}: the passage after the reset");
+        played.push((name, first));
+    }
+    // The four cases do different work, so each sounds different from every other: the
+    // controllers move the layers' gains, and the legato crossfades the melody's notes in place
+    // of their attacks.
+    for (index, (name, case)) in played.iter().enumerate() {
+        for (earlier, before) in played.iter().take(index) {
+            assert!(case != before, "{name} sounds as {earlier}");
+        }
+    }
 }

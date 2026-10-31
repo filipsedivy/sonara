@@ -35,3 +35,7 @@ workspace = true
 [[bench]]
 name = "convolution"
 harness = false
+
+[[bench]]
+name = "sampler"
+harness = false

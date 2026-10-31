@@ -288,8 +288,9 @@ preallocated voices. A live graph rebuild keeps a sampler device whose instrumen
 an edit during playback, and a new parameter value, such as an `articulation`, reaches it as a
 parameter change.
 Another preset, or a changed mapping of the same preset, builds the device again from the cached
-patch, and its sounding notes stop. There are no measured load or memory numbers for it yet
-(HW-01: they are measured locally).
+patch, and its sounding notes stop. A microbenchmark measures its block ("The sample player's
+block" under "Measured performance"); there are no measured render-load or memory numbers for it
+in playback yet (HW-01: they are measured locally).
 
 ## Measured performance
 
@@ -524,6 +525,58 @@ time-constraint policy but joins no workgroup.
   the workgroup keep high, but it is not verified (`powermetrics` needs root). Not separated:
   how much of the gain is the time-constraint policy and how much the workgroup. Measured on
   macOS 27 only; the product minimum is macOS 26.
+
+### The sample player's block (2026-10-31)
+
+A microbenchmark of the `sonara.sampler` processor's block (QG-11, PERF-08). Like every number
+in this section, it is a local measurement and never a CI gate (HW-01).
+
+```text
+cargo bench -p sonara-dsp --bench sampler
+```
+
+- **What it plays.** The player's block of 512 frames at 48 kHz, 10.67 ms of audio. One sampler,
+  prepared and given its instrument as the render graph does, plays a set of two patches: 120
+  looping stereo regions, two layers on every pair of keys from C2 to B6, over 120 samples of
+  half a second of deterministic noise (23 MB). A held chord of 30 keys on two MIDI channels and
+  a melody on a third, which changes note every second block, hold 62 voices, and 64 while a
+  melody note joins the one before: the sampler's whole polyphony, none of it stolen. In every
+  case `dynamics` steps twice in each period of eight blocks, and `articulation`, `mute` and
+  `vibrato` change inside blocks as choice events, as automation lanes change them. The cases:
+  - `plain`: the layers at full gain; each melody note attacks, and the note before releases
+    over 5 ms;
+  - `controllers`: the layers crossfade and change level on the modulation wheel, which moves
+    every block on each channel, behind a pedal gate;
+  - `legato`: the overlap legato joins the melody's notes, each with a 20 ms equal-power
+    crossfade from the note before;
+  - `controllers_legato`: both.
+
+  Each iteration plays the passage's next block in steady state, so a case's time is the mean
+  over the eight blocks of its period.
+- **Machine.** Apple M4 Pro (8 performance and 4 efficiency cores), 24 GB, macOS 27.0.1, on mains
+  power. Other agents built and tested on the machine meanwhile: the load average (`uptime`) was
+  1.4–2.4 around the first run and 2.8–3.2 around the second.
+- **Results.** Criterion's mean time a block over 60 samples, with its 95 % interval; the share is
+  of the block's 10.67 ms:
+
+  | Case | First run (load 1.4–2.4) | Second run (load 2.8–3.2) | Share of the block |
+  |---|---|---|---|
+  | `plain` | 91.1 µs (91.0–91.2) | 94.4 µs (94.2–94.5) | 0.85–0.88 % |
+  | `controllers` | 92.3 µs (92.1–92.5) | 97.8 µs (97.2–98.5) | 0.87–0.92 % |
+  | `legato` | 96.3 µs (96.2–96.5) | 99.1 µs (98.9–99.2) | 0.90–0.93 % |
+  | `controllers_legato` | 97.2 µs (97.0–97.3) | 102.8 µs (102.0–103.6) | 0.91–0.96 % |
+
+- **Reading.** A block costs about 1.5 µs a voice. Against `plain` in the same run, the
+  controller table adds 1–4 % and the overlap legato 5–6 %; the legato's share includes the
+  joined note's voices, which sound through the 20 ms crossfade where `plain` releases them over
+  5 ms.
+- **Real-time checks of the same work.** `a_dense_passage_allocates_nothing_and_holds_its_voices`
+  (`cargo test -p sonara-dsp --test sampler`) plays these blocks of every case inside
+  `assert_no_alloc` and checks the voice counts above. The engine's sampler test plays a dense
+  passage through the render graph (a set, a chord that steals voices, legato notes, notes with
+  their own articulations, lanes that change choices inside blocks, live input) inside
+  `assert_no_alloc`, and `scripts/dev.sh rust-rtsan` runs it under RealtimeSanitizer (RT-02,
+  RT-03).
 
 ### Open hardware checks
 
