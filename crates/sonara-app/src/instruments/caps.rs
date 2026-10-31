@@ -33,9 +33,7 @@ use super::model::{InstrumentPreset, PresetKind};
 ///   articulations are reached (a version 2 entry), so a preset that does not, a version 1
 ///   manifest's names, and the keys of a percussion key map give none. `legato` is listed as
 ///   well when the preset claims legato by overlap or by its own legato regions, which play
-///   legato whether or not it maps a legato articulation. The sampler stores the parameter but
-///   does not act on it yet, so the list says which recording each choice maps to, not what a
-///   track sounds like today.
+///   legato whether or not it maps a legato articulation.
 /// - **`legato`**: the preset's legato claim; none when nothing is claimed.
 /// - **`layers`**: the highest velocity of each layer, from the velocity layers of every key the
 ///   check found ([`PatchFacts::sampled`]), for a set of every member's. Where the keys differ,

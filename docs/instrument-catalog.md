@@ -386,10 +386,10 @@ the performance layer (`sonara_midi::performance`) reads, and `SoundSource::caps
 for whatever `choose_sound` chose. Nothing is guessed: a fact the check has not recorded stays
 unknown.
 
-The sampler stores its `articulation` parameter but does not act on it yet
-([sample-libraries.md](sample-libraries.md), "Instrument type, articulation and dynamics"). So
-`articulations`, and the attacks given per articulation, say which recording of the preset each
-choice maps to (the chain's nearest-articulation step), not what a track sounds like today.
+The sampler plays its `articulation` parameter and each note's articulation through the
+preset's compiled mapping ([sample-libraries.md](sample-libraries.md), "Instrument type,
+articulation, dynamics, mute and vibrato"), so `articulations`, and the attacks given per articulation, say
+which recording of the preset each choice plays (the chain's nearest-articulation step).
 
 | Field | From |
 |---|---|
