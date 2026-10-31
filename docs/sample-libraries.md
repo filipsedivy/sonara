@@ -170,6 +170,9 @@ missing file or generator and how many regions it left out. `sample=*silence` is
 plays nothing but still cuts off its exclusive group. A patch fails to load only when no region
 is left; a sample file that is there but cannot be decoded still fails it.
 
+A header may be glued to the opcode before or after it, as the SFZ format site's examples write
+it (`<region>key=36 sample=kick.wav`): an opcode's value ends where a header starts, as in sfizz.
+
 ## Instrument type, articulation and dynamics
 
 - **`instrument_type`**: `auto` (the default) or an instrument type ID such as `horn_f` or

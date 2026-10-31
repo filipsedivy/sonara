@@ -843,6 +843,48 @@ fn a_misspelt_header_is_reported_and_its_opcodes_skipped() {
 }
 
 #[test]
+fn a_header_glued_to_its_first_opcode_is_parsed() {
+    // The SFZ format site's `#define` example writes `<region>key=$KICKKEY sample=kick.wav`,
+    // and Sonatina's Grand Piano writes `<curve>curve_index=11` (TST-06). Read as one opcode
+    // named `<region>key`, such a region was lost; the curve's opcodes landed in the open
+    // scope and were reported one by one.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<control>default_path=Samples/\n\
+         #define $KICKKEY 36\n\
+         <region>key=$KICKKEY sample=soft1.wav\n\
+         <region>key=38 sample=loud1.wav<region>key=40 sample=tail.wav\n\
+         <group>lovel=64<region>sample=loud2.wav key=41\n\
+         <curve>curve_index=11 v000=0 v127=1\n\
+         <region>sample=soft2.wav key=42\n",
+    );
+    assert_eq!(
+        bank.regions
+            .iter()
+            .map(|r| (r.key_lo, r.key_hi))
+            .collect::<Vec<_>>(),
+        [(36, 36), (38, 38), (40, 40), (41, 41), (42, 42)],
+        "every glued region is read, also one glued to the previous value"
+    );
+    let values: Vec<f64> = (0..5).map(|region| first_value(&bank, region)).collect();
+    let expected = [3_000.0, 20_000.0, 1_000.0, 24_000.0, 4_000.0];
+    for (value, written) in values.iter().zip(expected) {
+        assert!((value - written / 32_768.0).abs() < 1e-6, "{values:?}");
+    }
+    assert_eq!(
+        bank.regions.iter().map(|r| r.vel_lo).collect::<Vec<_>>(),
+        [0, 0, 0, 64, 64],
+        "the glued group's opcode reaches its regions, also after the skipped curve"
+    );
+    assert_eq!(
+        bank.ignored_opcodes,
+        ["<curve>"],
+        "the curve is skipped as a header"
+    );
+}
+
+#[test]
 fn a_missing_patch_or_sample_is_a_typed_error() {
     let dir = library();
     let missing = load_sfz(&dir.path().join("nothing.sfz"));

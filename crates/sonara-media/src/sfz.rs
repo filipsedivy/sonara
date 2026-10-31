@@ -71,7 +71,9 @@
 //! `<master>` and `<group>` headers. `<global>`, `<master>` and `<group>` each start their own
 //! scope afresh and clear the scopes inside it; `<control>` clears only the control scope, so a
 //! file included under a `<global>` may start with its own `<control>` and keep that global's
-//! opcodes.
+//! opcodes. A header need not stand apart from its opcodes: an opcode's value ends where a
+//! header starts, as the reference player sfizz reads it, so `<region>key=36 sample=kick.wav`
+//! (the SFZ format site's own example) is a region and `sample=a.wav<region>` ends one.
 //!
 //! **Keyswitches.** The switch keys are the union of the `sw_lokey`..`sw_hikey` ranges of every
 //! region, each with the opcodes it inherits from its headers or writes itself, so disjoint
@@ -672,7 +674,7 @@ fn parse(text: &str) -> Parsed {
                 regions.push(merge(scopes, own));
             }
         };
-    for token in text.split_whitespace() {
+    for token in text.split_whitespace().flat_map(split_headers) {
         if token.starts_with('<') && token.ends_with('>') {
             current = None;
             in_other = false;
@@ -759,6 +761,31 @@ fn parse(text: &str) -> Parsed {
         controllers: patch_wide.controllers,
         ignored,
     }
+}
+
+/// The tokens of the whitespace-separated `word`: the word split around each header written in
+/// it, so that a header glued to an opcode is a token of its own, whichever side the opcode is
+/// on (`<region>sample=a.wav`, `key=60<region>`, `<group><region>`), as the reference player
+/// sfizz reads it: an opcode's value ends where a header starts. A `<` with no `>` after it in
+/// the word stays part of the word.
+fn split_headers(word: &str) -> impl Iterator<Item = &str> {
+    let mut rest = word;
+    std::iter::from_fn(move || {
+        if rest.is_empty() {
+            return None;
+        }
+        let end = match rest.find('<') {
+            // A header: up to its `>`, or the whole word when none closes it.
+            Some(0) => rest.find('>').map_or(rest.len(), |close| close + 1),
+            // Text before a header that a `>` closes.
+            Some(open) if rest.get(open..).is_some_and(|tail| tail.contains('>')) => open,
+            _ => rest.len(),
+        };
+        // `<` and `>` are ASCII, so `end` lies on a character boundary.
+        let (token, after) = rest.split_at_checked(end).unwrap_or((rest, ""));
+        rest = after;
+        Some(token)
+    })
 }
 
 /// What a patch sets for all its regions, from any level: the last valid `sw_default`, and the
