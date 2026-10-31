@@ -599,6 +599,17 @@ and cite it: Rimsky-Korsakov's upright piano for a missing celesta and his choru
 mezzo-soprano and the baritone, Forsyth's piano for the harp, and the tubular bells' origin as a
 substitute for church bells.
 
+## Reference text
+
+`orchestration::reference::render()` writes the instruments as compact plain text for an agent's
+system prompt: one line per type in score order with its id, English and Czech name, playable
+range, comfortable range where it differs, transposition where it is not 0, and the articulation
+ids a note of it may carry. The mute and vibrato ids, which hold over a passage and which a note
+refuses, are named once above the lines. A list equal to an earlier one is written `as <id>`, and
+one within four ids of an earlier list of its own family `as <id> without … plus …` when that is
+shorter. The AI Chat appends the text to its system prompt ([ai-chat.md](ai-chat.md), "The
+system prompt"); its tests read every line back against the records.
+
 ## Validation
 
 A record is an `InstrumentSpec` checked by `Instrument::try_new(instrument_type, spec)`. Records

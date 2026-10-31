@@ -2,8 +2,9 @@
 //! transposition, families, articulations, ensemble profiles, General MIDI voices, keyboard
 //! mechanics and playability facts (SON-P06, `contracts/orchestration-metadata.md`), the
 //! ensemble templates that assemble the instruments into orchestras and smaller groups, the
-//! orchestration rules with the tables they read ([`rules`]), and what to play when no installed
-//! sound plays an instrument or an articulation ([`fallback`]).
+//! orchestration rules with the tables they read ([`rules`]), what to play when no installed
+//! sound plays an instrument or an articulation ([`fallback`]), and a compact plain-text
+//! reference of the instruments for an agent's system prompt ([`mod@reference`]).
 //!
 //! The data is about instruments in general, not about any sample library, audio engine or UI. A
 //! value is either sourced or marked as an estimate, and an articulation counts as supported only
@@ -21,6 +22,7 @@ mod keyboard;
 mod names;
 mod pitch;
 mod playability;
+pub mod reference;
 pub mod rules;
 
 pub use articulation::{
