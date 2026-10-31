@@ -73,6 +73,10 @@
 //! as asked, the legato and dynamics claims, the velocity layers and sampled keys the check
 //! found, and the attacks and longest hold it measured.
 //!
+//! **How far the profiles reach** ([`ProfileCoverage`]): for each instrument type of the
+//! orchestration metadata, whether a patch of the shipped profiles plays it in a size scores give
+//! it, only in the other size, only through a neighbour, or not at all, with the counts.
+//!
 //! **What the agents read** ([`agent_reference`]): the instruments of the orchestration metadata
 //! and the presets of the shipped profiles, by the instrument they play, with their
 //! articulations, switch keys and key maps, as plain text for the AI Chat's system prompt
@@ -80,6 +84,7 @@
 
 mod caps;
 mod chain;
+mod coverage;
 mod discovery;
 mod facts;
 mod family;
@@ -95,6 +100,7 @@ pub use chain::{
     ArticulationChoice, Builtin, ChainPreferences, Confirmation, Notice, Reach, SoundPlan,
     SoundRequest, SoundSource, Step, Substitute, choose_sound, nearest_articulation,
 };
+pub use coverage::{Coverage, CoverageCounts, ProfileCoverage};
 pub use discovery::InstrumentCatalog;
 pub use facts::{KeyZone, PatchFacts, RegionAttack, SoundFacts, VelocityRange};
 pub use family::{FamilyClaim, InstrumentFamily};
