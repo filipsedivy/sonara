@@ -423,6 +423,7 @@
     {
       "path": "Chordophones/Composite Chordophones/Folk Harp.sfz",
       "family": "plucked",
+      "instrument": null,
       "verdict": {"state": "as_is", "lost": []}
     },
     {
@@ -857,6 +858,7 @@
     {
       "path": "Idiophones/Struck Idiophones/Hand Chimes.sfz",
       "family": "percussion",
+      "instrument": null,
       "verdict": {"state": "as_is", "lost": []}
     },
     {
@@ -1069,6 +1071,7 @@
     {
       "path": "Idiophones/Struck Idiophones/Tubular Glockenspiel.sfz",
       "family": "percussion",
+      "instrument": null,
       "verdict": {"state": "partly", "lost": ["ampeg_decay and ampeg_sustain: the samples that set them ring for their full length instead of fading out"]}
     },
     {
@@ -1404,6 +1407,7 @@
     {
       "path": "Membranophones/Struck Membranophones/Timpani 2 - All Samples.sfz",
       "family": "percussion",
+      "instrument": null,
       "verdict": {"state": "as_is", "lost": []}
     },
     {

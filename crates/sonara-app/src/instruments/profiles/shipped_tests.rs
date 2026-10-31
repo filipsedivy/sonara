@@ -12,6 +12,7 @@ use crate::instruments::manifest::{
     ArticulationEntry, ArticulationList, ArticulationVia, CheckMethod, Claimant, DynamicsMode,
     EnsembleKind, EntryTarget, Field, KeymapEntry, ManifestEntry, VerdictState,
 };
+use crate::instruments::{ClaimSource, FamilyClaim, InstrumentCatalog};
 
 /// The profile with library ID `id`.
 fn profile(id: &str) -> &'static Profile {
@@ -812,9 +813,11 @@ fn the_vcsl_saxophones_and_timpani_map_their_switches() {
             format!("{} roll", timpani("Timpani 1 - Roll")),
         ]
     );
-    // One recording per key from C4 up is not a timpani played by pitch.
+    // One recording per key from C4 up is not a timpani played by pitch, so the profile says
+    // that it plays no type of the orchestration metadata, which keeps one from being guessed
+    // from its name.
     let all = entry(vcsl, &timpani("Timpani 2 - All Samples"));
-    assert_eq!(all.instrument, Field::Unset);
+    assert_eq!(all.instrument, Field::Cleared);
     // The vibraphone key-switch patch's own default is the bow; its ordinary sound is the soft
     // mallets, and the hard mallets have no ID of their own.
     assert_eq!(
@@ -924,4 +927,80 @@ fn one_bad_entry_in_a_shipped_profile_rejects_the_profile() {
         Err(super::ProfileError::Entry { entry, reason })
             if entry == "SViolin-KS.sfz" && reason.contains("tremolando")
     ));
+}
+
+/// A copy of each library with every patch its profile lists shows each patch as the profile
+/// says, and never guesses an instrument from a patch's name: a patch the profile says plays no
+/// type of the orchestration metadata stays without one, although its name may read as one
+/// (VCSL's `Folk Harp`, `Hand Chimes`, `Tubular Glockenspiel` and `Timpani 2 - All Samples`
+/// would otherwise be taken for a harp, tubular bells, a glockenspiel and a timpani; TST-06).
+#[test]
+fn a_profiled_patch_never_has_its_instrument_guessed() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let roots: Vec<std::path::PathBuf> = shipped()
+        .iter()
+        .map(|profile| {
+            let root = dir.path().join(profile.id.as_str());
+            for path in paths(profile) {
+                let file = root.join(path);
+                std::fs::create_dir_all(file.parent().expect("a parent")).expect("mkdir");
+                std::fs::write(&file, "<region> sample=a.wav\n").expect("write");
+            }
+            root
+        })
+        .collect();
+
+    let catalog = InstrumentCatalog::discover_with(&roots, shipped());
+
+    assert_eq!(catalog.issues(), []);
+    assert_eq!(catalog.libraries().len(), 2);
+    for preset in catalog.presets() {
+        assert!(
+            preset
+                .instrument
+                .is_none_or(|claim| claim.source == ClaimSource::Profile),
+            "{}: {:?}",
+            preset.id,
+            preset.instrument
+        );
+        assert!(
+            matches!(preset.family, FamilyClaim::Profile(_)),
+            "{}: {:?}",
+            preset.id,
+            preset.family
+        );
+    }
+    let without = |id: &str| {
+        catalog
+            .presets()
+            .iter()
+            .find(|preset| preset.id.as_str() == id)
+            .unwrap_or_else(|| panic!("no preset {id}"))
+            .instrument
+    };
+    for id in [
+        "vcsl/Chordophones/Composite Chordophones/Folk Harp",
+        "vcsl/Idiophones/Struck Idiophones/Hand Chimes",
+        "vcsl/Idiophones/Struck Idiophones/Tubular Glockenspiel",
+        "vcsl/Membranophones/Struck Membranophones/Timpani 2 - All Samples",
+    ] {
+        assert_eq!(without(id), None, "{id}");
+    }
+    // VCSL's timpani are those its profile names, without the single recordings of
+    // `Timpani 2 - All Samples`.
+    assert_eq!(
+        catalog
+            .playing(InstrumentType::Timpani)
+            .map(|preset| preset.id.as_str())
+            .filter(|id| id.starts_with("vcsl/"))
+            .collect::<Vec<_>>(),
+        [
+            "vcsl/@timpani-1",
+            "vcsl/Membranophones/Struck Membranophones/Timpani 1 - Hit",
+            "vcsl/Membranophones/Struck Membranophones/Timpani 1 - Keyswitch",
+            "vcsl/Membranophones/Struck Membranophones/Timpani 1 - Roll",
+            "vcsl/Membranophones/Struck Membranophones/Timpani 2 - Keyswitch",
+            "vcsl/Membranophones/Struck Membranophones/Timpani 2 - Scale",
+        ]
+    );
 }

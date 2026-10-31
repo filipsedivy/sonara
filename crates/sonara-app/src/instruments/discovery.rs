@@ -528,8 +528,9 @@ fn family_claim(entry: &ManifestEntry, words: &str) -> FamilyClaim {
 /// The instrument type of a preset: what the manifest or the shipped profile states, with its
 /// source; else a guess from `words`, the patch's path or the set's slug, kept only when the
 /// guess is of `family`, the preset's family, so a preset never claims a family and an
-/// instrument of another. A source that writes `instrument: null`, or gives the patch a key
-/// map, says that it plays several instruments, so nothing is guessed.
+/// instrument of another. A source that writes `instrument: null` says that the patch plays no
+/// one type of the orchestration metadata (several instruments, or one the metadata does not
+/// name), and a key map that it plays several, so nothing is guessed.
 fn instrument_claim(
     entry: &ManifestEntry,
     words: &str,
@@ -946,7 +947,7 @@ mod tests {
 
     /// An instrument is guessed from the path only where no manifest or profile says what the
     /// patch plays, and only within the preset's family; `instrument: null` says the patch plays
-    /// several, so nothing is guessed.
+    /// no one type of the orchestration metadata, so nothing is guessed.
     #[test]
     fn an_instrument_is_inferred_only_where_nothing_states_one() {
         let dir = tempfile::tempdir().expect("tempdir");

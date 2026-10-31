@@ -250,9 +250,11 @@ pub struct InstrumentPreset {
     /// reason, and invalid when it names no patch.
     pub availability: Availability,
     /// The instrument type the preset plays: declared, stated by the profile, or inferred from
-    /// the path, or a set's slug, when neither says. `None` when nothing names one type, or when the manifest or
-    /// the profile says that the patch plays several (`instrument: null`, a key map). An
-    /// inferred type is kept only when its family is the preset's family.
+    /// the path, or a set's slug, when neither says. `None` when nothing names one type, or when
+    /// the manifest or the profile says that the patch plays no one type of the orchestration
+    /// metadata (`instrument: null`: several instruments, or one the metadata does not name) or
+    /// several (a key map). An inferred type is kept only when its family is the preset's
+    /// family.
     pub instrument: Option<InstrumentClaim>,
     /// Solo or section, with the player count when it is stated.
     pub ensemble: Option<Claim<EnsembleClaim>>,

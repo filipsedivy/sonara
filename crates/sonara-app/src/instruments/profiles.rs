@@ -13,7 +13,9 @@
 //! patch), what drives dynamics, a key offset for patches keyed an octave below sounding pitch, a
 //! key map for percussion patches with one sound per key, and a verdict on how the sampler plays
 //! it; and it groups an instrument's single-articulation patches into multi-patch sets. Patches of
-//! instruments the orchestration metadata does not know claim only a family.
+//! instruments the orchestration metadata does not know claim only a family, and those whose
+//! names read as an instrument it knows also write `instrument: null`, so that none is guessed
+//! from the name.
 //!
 //! **Identity.** A profile names the library `id`, its `name`, and the `detect` paths that
 //! recognize a copy of the library. A library whose manifest declares no `id` (or that has no

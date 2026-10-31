@@ -18,7 +18,7 @@ guess from the words of the patch's path. A claim that nobody makes is `null`.
 | `kind` | `patch`, one patch file, or `set`, a multi-patch set (below) with its `members`: for each patch, its `path` below the library, its `patch_path`, its own `availability` and, once verified, its `facts`. |
 | `display_name` | The manifest's name, else the name in the profile Sonara ships for the library (below), else the file name. |
 | `family` | `strings`, `woodwinds`, `brass`, `percussion`, `keyboards`, `plucked`, `choir` or `other`, with its source: **declared**, **profile**, **inferred** (words in the path, below) or **unknown**. A manifest or profile states the family, or the instrument the patch plays, whose family it is; where one states both, the family it writes wins, and the manifest's word wins over the profile's. An inferred family is a guess; treat it as one. The family is the orchestration metadata's ([orchestration-metadata.md](orchestration-metadata.md)), so a preset and an instrument type share one family type; a manifest must spell the slug exactly, in lower case. |
-| `instrument` | The instrument type the patch plays, an ID of the orchestration metadata, with its source: `{"instrument": "violin", "source": "profile"}`. Declared or stated by a profile; else inferred from the path (below), and then kept only when its family is the preset's family. `null` when nothing names one type, or when the manifest or profile says the patch plays several (`instrument: null`, or a key map). |
+| `instrument` | The instrument type the patch plays, an ID of the orchestration metadata, with its source: `{"instrument": "violin", "source": "profile"}`. Declared or stated by a profile; else inferred from the path (below), and then kept only when its family is the preset's family. `null` when nothing names one type, or when the manifest or profile says the patch plays no one type of the metadata (`instrument: null`) or several (a key map). |
 | `articulations` | Only what the library's manifest declares: the names of a version 1 manifest, the articulation IDs of a version 2 one. Empty means **not verified**, never "none". Keyswitch labels in a patch are not read. |
 | `articulation_map` | The articulations and how each is reached, as the manifest or the profile maps them, with the source: `{"value": [...], "source": "declared"}`. The list is written as in the manifest: names for version 1, objects for version 2. `null` means not verified; articulations are never guessed. |
 | `ensemble`, `keymap`, `key_offset`, `dynamics`, `legato`, `in_situ` | The manifest's or the profile's value of the version 2 field of the same name (below), each as `{"value": …, "source": …}`, written as in the manifest. |
@@ -165,7 +165,7 @@ Sonara can play it:
 | `path` | entry | One patch, as in version 1. It must not start with `@`. An entry has exactly one of `path` and `set`. |
 | `set` | entry | A multi-patch set of one instrument, named by a slug (`a-z`, `0-9`, `-`, at most 64): each of its articulations names its patch with `path`. |
 | `name`, `family` | entry | As in version 1. |
-| `instrument` | entry | The instrument type the patch plays, an ID of the orchestration metadata ([orchestration-metadata.md](orchestration-metadata.md)) such as `violin` or `horn_f`, or `null` for a patch of several instruments, which uses `keymap`. |
+| `instrument` | entry | The instrument type the patch plays, an ID of the orchestration metadata ([orchestration-metadata.md](orchestration-metadata.md)) such as `violin` or `horn_f`, or `null` for a patch of several instruments, which uses `keymap`, or of an instrument the metadata does not name; `null` also keeps an instrument from being guessed from the path. |
 | `ensemble` | entry | `{kind, players}`: `solo`, `section` or `section_emulated`, and the number of players (1 to 64) or `null` when not stated. A solo has one player. |
 | `articulations` | entry | The articulations and how each is reached (below). |
 | `keymap` | entry | For percussion patches with one sound per key: rows of `{keys, instrument, articulation, name}`; `keys` are 0 to 127, at least one per row, and no key is in two rows. `articulation` and `name` (the pad's name) are optional. |
@@ -258,7 +258,9 @@ say:
   sections; everything else in both libraries is taken as solo, as the single-instrument names
   suggest (neither library says). A patch of an instrument the orchestration
   metadata does not know (recorders, harmonicas, congas, the TX81Z synthesizer and the like)
-  claims only a family.
+  claims only a family. Four of VCSL's also write `instrument: null`, because their names read as
+  an orchestral instrument they are not: `Folk Harp`, `Hand Chimes`, `Tubular Glockenspiel` and
+  `Timpani 2 - All Samples` (single recordings, not a timpani played by pitch).
 - **Articulations:** each switch of a key-switch patch that the articulation vocabulary names,
   with the library's own label, and the articulation of each single-articulation patch. The one
   marked `default` is the switch the patch itself starts on (`sw_default`) when that is an
