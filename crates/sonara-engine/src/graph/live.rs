@@ -74,6 +74,7 @@ pub(super) const NO_EVENT: InstrumentEvent = InstrumentEvent {
     channel: 0,
     value: 0,
     number: 0,
+    articulation: None,
 };
 
 /// The post-fader level of a node over the last block, per channel (left, right).
@@ -630,6 +631,7 @@ mod tests {
             channel: 0,
             value: 0,
             number: 0,
+            articulation: None,
         }
     }
 

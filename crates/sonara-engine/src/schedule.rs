@@ -30,6 +30,13 @@
 //!   volume and expression it applies act on every channel). Every other instrument (the Poly
 //!   Synth and the Drum Kit among them) gets the plain chase, so its events and its golden
 //!   renders stay the same (GLD-01).
+//! - **A note's own articulation** travels with its note-on
+//!   ([`InstrumentEvent::articulation`]), the chased one included, so a note that a seek or a
+//!   loop wrap re-sends plays its own articulation again. The build resolves each note's stored
+//!   articulation once, off the real-time thread, into the index of a choice of the sampler's
+//!   `articulation` parameter, with the resolver the graph gives it: a sampler's resolver looks
+//!   the id up among its choices, every other instrument's names none, so its events stay the
+//!   same (GLD-01).
 //!
 //! The event buffer is sized at build for the worst case, every event in one block
 //! (`1 + 2 · notes + controls`: a chased note cannot also start in the block), and a sampler's
@@ -67,6 +74,9 @@ struct Note {
     pitch: u8,
     velocity: u8,
     channel: u8,
+    /// The choice of the sampler's `articulation` parameter the note plays with, resolved at
+    /// build; `None` for a note that plays the parameter's choice.
+    articulation: Option<u16>,
 }
 
 /// A controller event of the schedule.
@@ -88,6 +98,7 @@ const NO_EVENT: InstrumentEvent = InstrumentEvent {
     channel: 0,
     value: 0,
     number: 0,
+    articulation: None,
 };
 
 /// The notes and controller events of an instrument track in timeline frames.
@@ -135,6 +146,7 @@ impl SamplerChase {
         {
             out.push(InstrumentEvent {
                 kind: EventKind::KeySwitch,
+                articulation: None,
                 ..note_on(note, 0)
             });
         }
@@ -180,7 +192,10 @@ fn chased_bit(number: u8) -> u8 {
 }
 
 impl NoteSchedule {
-    /// The schedule of `clips` (a track's MIDI clips in track order) at `sample_rate`.
+    /// The schedule of `clips` (a track's MIDI clips in track order) at `sample_rate`, whose
+    /// note-ons carry the articulation `articulation` resolves each note's stored id to: the
+    /// index of a choice of the sampler's `articulation` parameter, or `None`, so the note plays
+    /// the parameter's choice. A note without a stored articulation carries none.
     ///
     /// Setup: allocates, so it runs off the real-time thread, when the graph is built.
     #[expect(
@@ -192,6 +207,7 @@ impl NoteSchedule {
         clips: impl Iterator<Item = &'a MidiClip>,
         tempo: &TempoMap,
         sample_rate: u32,
+        mut articulation: impl FnMut(&str) -> Option<u16>,
     ) -> Self {
         let mut notes = Vec::new();
         let mut controls = Vec::new();
@@ -209,6 +225,7 @@ impl NoteSchedule {
                     pitch: note.pitch,
                     velocity: note.velocity,
                     channel: note.channel,
+                    articulation: note.articulation.as_deref().and_then(&mut articulation),
                 });
             }
             if clip.loop_length.is_some() {
@@ -439,6 +456,7 @@ impl NoteBits {
                     channel,
                     value: 0,
                     number: 0,
+                    articulation: None,
                 })
         })
     }
@@ -493,6 +511,7 @@ fn note_on(note: &Note, offset: usize) -> InstrumentEvent {
         channel: note.channel,
         value: 0,
         number: 0,
+        articulation: note.articulation,
     }
 }
 
@@ -505,6 +524,7 @@ fn note_off(note: &Note, offset: usize) -> InstrumentEvent {
         channel: note.channel,
         value: 0,
         number: 0,
+        articulation: None,
     }
 }
 
@@ -517,6 +537,7 @@ fn control_event(control: &Control, offset: usize) -> InstrumentEvent {
         channel: control.channel,
         value: control.value,
         number: control.number,
+        articulation: None,
     }
 }
 
@@ -577,7 +598,7 @@ mod tests {
             &[(60, 0.0, 1.0), (64, 1.0, 1.0), (67, 0.75, 4.0)],
             None,
         );
-        let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8);
+        let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8, |_| None);
         assert_eq!(
             kinds(schedule.events(0, 4, true)),
             [
@@ -621,7 +642,7 @@ mod tests {
         )
         .unwrap();
         let c = clip(0.0, 16.0, &[(60, 6.0, 1.0)], None);
-        let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8);
+        let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8, |_| None);
         let notes = |events: &[InstrumentEvent]| {
             kinds(events)
                 .into_iter()
@@ -642,7 +663,7 @@ mod tests {
     fn looped_clips_repeat_notes_and_drop_controls() {
         let tempo = TempoMap::constant(120.0).unwrap();
         let c = clip(0.0, 4.0, &[(60, 0.0, 0.5)], Some(2.0));
-        let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8);
+        let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8, |_| None);
         let all = kinds(schedule.events(0, 16, false));
         assert_eq!(
             all,
@@ -660,7 +681,7 @@ mod tests {
         let tempo = TempoMap::constant(120.0).unwrap();
         let a = clip(0.0, 4.0, &[(36, 0.0, 0.5), (42, 1.0, 0.5)], Some(2.0));
         let b = clip(4.0, 2.0, &[(38, 0.5, 1.0), (36, 1.0, 1.0)], None);
-        let mut schedule = NoteSchedule::build([&a, &b].into_iter(), &tempo, 8);
+        let mut schedule = NoteSchedule::build([&a, &b].into_iter(), &tempo, 8, |_| None);
         let pitches = schedule.pitches();
         let members: Vec<u8> = (0..=u8::MAX).filter(|&p| pitches.contains(p)).collect();
         assert_eq!(members, [36, 38, 42]);
@@ -680,7 +701,7 @@ mod tests {
         sent.sort_unstable();
         sent.dedup();
         assert_eq!(sent, members);
-        let empty = NoteSchedule::build(std::iter::empty(), &tempo, 8);
+        let empty = NoteSchedule::build(std::iter::empty(), &tempo, 8, |_| None);
         assert_eq!(empty.pitches(), NoteSet::EMPTY);
     }
 
@@ -742,7 +763,7 @@ mod tests {
         let tempo = TempoMap::constant(120.0).unwrap();
         // The clip also holds CC 1 at beat 0.5, before the position.
         let c = clip(0.0, 4.0, &[(24, 0.0, 0.25), (60, 2.0, 1.0)], None);
-        let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8);
+        let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8, |_| None);
         assert_eq!(schedule.capacity(), 1 + 2 * 2 + 1);
         // Beat 2.5 is frame 10, inside the note C4 (frames 8 to 12).
         assert_eq!(
@@ -774,7 +795,7 @@ mod tests {
                 (3.0, ControlKind::Cc, 40, 11, 0),
             ],
         );
-        let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8);
+        let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8, |_| None);
         schedule.chase_sampler(switch_keys());
         schedule
     }
@@ -836,7 +857,7 @@ mod tests {
         // A sampler without keyswitch keys gets the controllers only.
         let tempo = TempoMap::constant(120.0).unwrap();
         let c = clip(0.0, 4.0, &[(24, 0.0, 0.25), (60, 2.0, 1.0)], None);
-        let mut plain = NoteSchedule::build([&c].into_iter(), &tempo, 8);
+        let mut plain = NoteSchedule::build([&c].into_iter(), &tempo, 8, |_| None);
         plain.chase_sampler(NoteSet::EMPTY);
         assert_eq!(plain.capacity(), 1 + 2 * 2 + 1 + 1);
         assert_eq!(
@@ -855,7 +876,7 @@ mod tests {
         // comes first as the keyswitch.
         let tempo = TempoMap::constant(120.0).unwrap();
         let c = clip_with(&[(25, 0.0, 4.0), (60, 1.0, 2.0)], &[]);
-        let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8);
+        let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8, |_| None);
         schedule.chase_sampler(switch_keys());
         assert_eq!(schedule.capacity(), 1 + 2 * 2 + 1);
         assert_eq!(
@@ -866,6 +887,119 @@ mod tests {
                 (0, EventKind::NoteOn, 25),
                 (0, EventKind::NoteOn, 60),
             ]
+        );
+    }
+
+    /// A clip of 4 beats from beat 0 with `notes` (pitch, start, length and the stored
+    /// articulation) at velocity 100 on channel 0, and CC 1 at 64 from beat 0.5.
+    fn marked_clip(notes: &[(u8, f64, f64, Option<&str>)]) -> MidiClip {
+        let ids = ["n_0", "n_1", "n_2", "n_3"];
+        assert!(notes.len() <= ids.len(), "an ID for every note");
+        let notes = ids
+            .iter()
+            .zip(notes)
+            .map(|(id, &(pitch, s, l, articulation))| {
+                MidiNote::new(*id, i64::from(pitch), s, l, 100, 0)
+                    .unwrap()
+                    .with_articulation(articulation.map(str::to_owned))
+                    .unwrap()
+            })
+            .collect();
+        let controls = [MidiControlEvent::new(0.5, ControlKind::Cc, 64, 1, 0).unwrap()].to_vec();
+        MidiClip::new(MidiClipData {
+            id: "clp_1".to_owned(),
+            name: "Clip".to_owned(),
+            start: 0.0,
+            length: 4.0,
+            notes: Arc::new(notes),
+            controls: Arc::new(controls),
+            content_offset: 0.0,
+            loop_length: None,
+            muted: false,
+            color: None,
+            extra: JsonMap::new(),
+        })
+        .unwrap()
+    }
+
+    /// Offset, kind, pitch and articulation of each event.
+    fn marks(events: &[InstrumentEvent]) -> Vec<(usize, EventKind, u8, Option<u16>)> {
+        events
+            .iter()
+            .map(|e| (e.offset, e.kind, e.pitch, e.articulation))
+            .collect()
+    }
+
+    /// The notes of the articulation tests: C1, a keyswitch key, at beat 0 marked `staccato`;
+    /// C4 from beat 0 to 1 marked `staccato`, E4 from 1 to 2 without an articulation and G4
+    /// from 2 to 3 marked with an id the resolver does not know.
+    const MARKED: [(u8, f64, f64, Option<&str>); 4] = [
+        (24, 0.0, 0.25, Some("staccato")),
+        (60, 0.0, 1.0, Some("staccato")),
+        (64, 1.0, 1.0, None),
+        (67, 2.0, 1.0, Some("flutter")),
+    ];
+
+    #[test]
+    fn a_note_on_carries_the_articulation_its_resolver_names() {
+        let tempo = TempoMap::constant(120.0).unwrap();
+        let c = marked_clip(&MARKED);
+        // How often the resolver is asked for `staccato` and for another id.
+        let mut asked = (0, 0);
+        let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8, |id| {
+            if id == "staccato" {
+                asked.0 += 1;
+                Some(3)
+            } else {
+                asked.1 += 1;
+                None
+            }
+        });
+        // The resolver is asked once for each note with a stored articulation, at the build.
+        assert_eq!(asked, (2, 1));
+        // Only the note-ons carry one: the note-offs and the controller event carry none.
+        let marked = [
+            (0, EventKind::NoteOn, 24, Some(3)),
+            (0, EventKind::NoteOn, 60, Some(3)),
+            (1, EventKind::NoteOff, 24, None),
+            (2, EventKind::Cc, 0, None),
+            (4, EventKind::NoteOff, 60, None),
+            (4, EventKind::NoteOn, 64, None),
+            (8, EventKind::NoteOff, 64, None),
+            (8, EventKind::NoteOn, 67, None),
+            (12, EventKind::NoteOff, 67, None),
+        ];
+        assert_eq!(marks(schedule.events(0, 16, false)), marked);
+        // A chase inside C4 re-sends it with its articulation.
+        assert_eq!(
+            marks(schedule.events(3, 1, true)),
+            [
+                (0, EventKind::AllNotesOff, 0, None),
+                (0, EventKind::NoteOn, 60, Some(3)),
+            ]
+        );
+        // A sampler's chased keyswitch selects the switch alone: it carries no articulation.
+        schedule.chase_sampler(switch_keys());
+        assert_eq!(
+            marks(schedule.events(3, 1, true)),
+            [
+                (0, EventKind::AllNotesOff, 0, None),
+                (0, EventKind::KeySwitch, 24, None),
+                (0, EventKind::Cc, 0, None),
+                (0, EventKind::NoteOn, 60, Some(3)),
+            ]
+        );
+        // A resolver that names none (every instrument but a sampler) gives the same events
+        // without an articulation, so their order and timing do not depend on it.
+        let mut plain = NoteSchedule::build([&c].into_iter(), &tempo, 8, |_| None);
+        assert_eq!(
+            marks(plain.events(0, 16, false)),
+            marked.map(|(offset, kind, pitch, _)| (offset, kind, pitch, None))
+        );
+        assert_eq!(
+            plain.capacity(),
+            schedule.capacity() - 2,
+            "only the chase grows it"
         );
     }
 
@@ -890,7 +1024,7 @@ mod tests {
             &notes.map(|(pitch, on, off)| (pitch, beats(on), beats(off - on))),
             &controls.map(|(frame, number)| (beats(frame), ControlKind::Cc, 64, number, 0)),
         );
-        let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8);
+        let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8, |_| None);
         schedule.chase_sampler(switch_keys());
         let capacity = schedule.capacity();
         assert_eq!(capacity, 1 + 2 * 6 + 6 + 4);

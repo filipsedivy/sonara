@@ -102,6 +102,12 @@ pub struct InstrumentEvent {
     pub value: i32,
     /// Controller number.
     pub number: u8,
+    /// The articulation a note-on plays with: the index of a choice of the sampler's
+    /// `articulation` parameter, which takes the place of the parameter's choice for this note
+    /// only. `None` for a note that plays the parameter's choice and for every other event. A
+    /// sampler's schedule sets it from the note's stored articulation; every other instrument
+    /// ignores it.
+    pub articulation: Option<u16>,
 }
 
 /// What a block is processed with.

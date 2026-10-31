@@ -262,6 +262,7 @@ fn process(record: &Value, input: &[[f64; 2]]) -> Vec<[f64; 2]> {
                 channel: 0,
                 value: i32::try_from(e[4].as_i64().expect("a value")).expect("an i32"),
                 number: byte(&e[5]),
+                articulation: None,
             };
             (count(&e[0]), event)
         })

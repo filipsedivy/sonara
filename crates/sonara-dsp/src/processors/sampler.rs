@@ -32,6 +32,19 @@
 //!   which sends the clip's last keyswitch and controller values after its all notes off,
 //!   restores what the clips selected before the new position. Back at `auto`, the clips' last
 //!   keyswitch and controller values apply again.
+//! - **A note's own articulation** ([`InstrumentEvent::articulation`]) takes the place of the
+//!   parameter's choice for that note alone, at the note's own frame: the note plays its
+//!   choice's target as the parameter would play it (its keyswitch, its velocity zone, its
+//!   controller value; a target without one plays the clips' last keyswitch and the controllers
+//!   as they are). It changes nothing that later notes play: the parameter's target and the
+//!   clips' last keyswitch stay as they were, so the next note without an articulation of its
+//!   own plays them again. The note's release regions play with the note's own keyswitch, or
+//!   the clips' last one at the release when its target forces none, and the controller values
+//!   its target forces; its voices read those values for as long as they sound, also when a
+//!   clip's event of the controller comes after them. A note whose choice has no target in the
+//!   preset's mapping, such as any choice of a preset about which nothing is claimed, plays the
+//!   parameter's choice. The engine's chase re-sends a note that sounds at the new position
+//!   with its articulation, so a seek into it plays it as before.
 //! - **Key offset.** The preset's key offset moves every note and keyswitch event of the clips
 //!   onto the patch's keys before anything else reads it, for a patch keyed away from the pitch
 //!   it sounds ([`SamplerMapping::patch_key`]): a note moved onto a keyswitch key selects that
@@ -225,6 +238,10 @@ struct Voice {
     /// The `dynamics` the voice started with, at least [`MIN_DYNAMICS`]: what the parameter's
     /// later values are measured against ([`dynamics_gain`]).
     dynamics: f64,
+    /// What the articulation of the voice's note forces, when the note has its own
+    /// ([`InstrumentEvent::articulation`]): the voice reads the controllers with it in place of
+    /// the parameter's while it sounds. `None` for a voice that follows the parameter's.
+    articulation: Option<Forced>,
     /// The gain that follows the voice while it sounds: the gain the controllers give the
     /// region ([`Region::controller_gain`]) times the gain the `dynamics` parameter gives the
     /// voice ([`dynamics_gain`]), ramped linearly from block to block.
@@ -254,6 +271,7 @@ impl Voice {
         step: 0.0,
         gain: 0.0,
         dynamics: 1.0,
+        articulation: None,
         live_gain: 1.0,
         live_step: 0.0,
         live_target: 1.0,
@@ -270,22 +288,25 @@ impl Voice {
 /// What starts a voice.
 #[derive(Debug, Clone, Copy)]
 enum Start {
-    /// A key press or release: the key, the velocity it was pressed with, its channel and the
-    /// `dynamics` it was pressed with (at least [`MIN_DYNAMICS`]).
+    /// A key press or release: the key, the velocity it was pressed with, its channel, the
+    /// `dynamics` it was pressed with (at least [`MIN_DYNAMICS`]) and what the note's own
+    /// articulation forces, if it has one.
     Key {
         key: u8,
         velocity: u8,
         channel: u8,
         dynamics: f64,
+        articulation: Option<Forced>,
     },
     /// A controller event on a channel: the region plays at its `pitch_keycenter`, and no
     /// velocity changes its gain.
     Controller { channel: u8 },
 }
 
-/// What the choice of the `articulation` parameter forces over what the clips select: its
-/// target in the preset's mapping ([`SamplerMapping::target`]), nothing for `auto` and for a
-/// choice without a target.
+/// What a choice of the `articulation` parameter forces over what the clips select: its target
+/// in the preset's mapping ([`SamplerMapping::target`]), nothing for `auto` and for a choice
+/// without a target. The parameter's choice forces it for every new note; a note's own
+/// articulation forces it in place of the parameter's for that note alone.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Forced {
     /// The active keyswitch for new notes, until a keyswitch from a clip replaces it.
@@ -357,11 +378,15 @@ impl Forced {
 struct KeyRelease {
     /// The velocity the key was pressed with.
     velocity: u8,
-    /// The last keyswitch when the key was released.
+    /// The keyswitch active when the key was released, or the one the note's own articulation
+    /// forces.
     switch: Option<u8>,
     /// The `dynamics` the key was pressed with, so the note's tail follows the parameter as
     /// the note did.
     dynamics: f64,
+    /// What the note's own articulation forces, if it had one: its tail reads the controllers
+    /// with it in place of the parameter's.
+    articulation: Option<Forced>,
 }
 
 /// The sample player.
@@ -377,6 +402,9 @@ pub(crate) struct Sampler {
     /// The `dynamics` each key was pressed with, for its release-trigger regions; `None` for a
     /// key not pressed since the last reset.
     key_dynamics: [Option<f64>; 128],
+    /// What the own articulation of the note last pressed on each key forces, for its release;
+    /// `None` for a key whose note follows the parameter's choice.
+    key_articulation: [Option<Forced>; 128],
     key_down: [bool; 128],
     /// The keys released while the sustain pedal was down: their release regions start when
     /// the pedal lifts.
@@ -411,6 +439,7 @@ impl Sampler {
             voices: [Voice::IDLE; MAX_VOICES],
             key_velocity: [0; 128],
             key_dynamics: [None; 128],
+            key_articulation: [None; 128],
             key_down: [false; 128],
             released_under_pedal: [None; 128],
             controllers: [Controllers::INITIAL; CHANNELS],
@@ -432,6 +461,7 @@ impl Sampler {
         self.voices = [Voice::IDLE; MAX_VOICES];
         self.key_velocity = [0; 128];
         self.key_dynamics = [None; 128];
+        self.key_articulation = [None; 128];
         self.key_down = [false; 128];
         self.released_under_pedal = [None; 128];
         self.controllers = [self.initial_controllers(); CHANNELS];
@@ -456,9 +486,25 @@ impl Sampler {
         self.forced = Forced::of(target.and_then(|target| target.selector));
     }
 
+    /// What the articulation of a note-on, the `articulation` choice with index `choice`,
+    /// forces in place of the parameter's choice: its target in the mapping of the preset the
+    /// sampler plays, a lookup like [`Self::force`]. `None` for a note without an articulation
+    /// of its own and for a choice the mapping has no target for (`auto` among them), so the
+    /// note plays the parameter's choice.
+    fn own_articulation(&self, choice: Option<u16>) -> Option<Forced> {
+        let target = self.setup.as_deref()?.mapping.target(choice?)?;
+        Some(Forced::of(target.selector))
+    }
+
     /// The keyswitch new notes play with: the forced one, else the clips' last one.
     fn active_switch(&self) -> Option<u8> {
-        self.forced.switch.or(self.last_switch)
+        self.switch_with(self.forced)
+    }
+
+    /// The keyswitch a note plays with when `forced` is what its articulation forces: the
+    /// forced one, else the clips' last one.
+    fn switch_with(&self, forced: Forced) -> Option<u8> {
+        forced.switch.or(self.last_switch)
     }
 
     /// What the `dynamics` parameter drives in the preset the sampler plays: the velocity
@@ -537,15 +583,16 @@ impl Sampler {
         bank_of(self.setup.as_ref()).map_or(Controllers::INITIAL, |bank| bank.controllers)
     }
 
-    /// The controller values of `channel` as the regions read them, with the value an
-    /// articulation forces; the initial ones for a channel above 15, which is no MIDI channel.
-    fn controllers_of(&self, channel: u8) -> Controllers {
+    /// The controller values of `channel` as the regions read them, with the value that
+    /// `forced`, what an articulation forces, sets; the initial ones for a channel above 15,
+    /// which is no MIDI channel.
+    fn controllers_of(&self, channel: u8, forced: Forced) -> Controllers {
         let controllers = self
             .controllers
             .get(usize::from(channel))
             .copied()
             .unwrap_or_else(|| self.initial_controllers());
-        self.forced.read(controllers)
+        forced.read(controllers)
     }
 
     /// A uniform number in `[0, 1)` (xorshift32).
@@ -658,7 +705,7 @@ impl Sampler {
         let Some(bank) = self.shared_bank() else {
             return;
         };
-        let controllers = self.controllers_of(channel);
+        let controllers = self.controllers_of(channel, self.forced);
         let switch = self.active_switch();
         let mut roll = None;
         for (index, region) in bank.regions.iter().enumerate() {
@@ -682,8 +729,13 @@ impl Sampler {
             return;
         };
         let key = event.pitch;
+        // The note's own articulation, if it has one with a target, plays in place of the
+        // parameter's, for this note alone: `self.forced` stays as it is.
+        let own = self.own_articulation(event.articulation);
         // The dynamics first, then the articulation's zone, so a softer note stays in the zone.
-        let velocity = self.forced.velocity(self.dynamic_velocity(event.velocity));
+        let velocity = own
+            .unwrap_or(self.forced)
+            .velocity(self.dynamic_velocity(event.velocity));
         let dynamics = self.start_dynamics();
         // Counted before this key is marked down, so a press of a key that is still down
         // counts that key (sfizz counts both presses too).
@@ -700,15 +752,21 @@ impl Sampler {
         if let Some(pressed) = self.key_dynamics.get_mut(usize::from(key)) {
             *pressed = Some(dynamics);
         }
+        if let Some(articulation) = self.key_articulation.get_mut(usize::from(key)) {
+            *articulation = own;
+        }
         let roll = self.random();
         let counter = self.round_robin;
-        let controllers = self.controllers_of(event.channel);
-        let switch = self.active_switch();
+        // Read after a press of a keyswitch key has selected its switch.
+        let forced = own.unwrap_or(self.forced);
+        let controllers = self.controllers_of(event.channel, forced);
+        let switch = self.switch_with(forced);
         let start = Start::Key {
             key,
             velocity,
             channel: event.channel,
             dynamics,
+            articulation: own,
         };
         let mut advanced = false;
         for (index, region) in bank.regions.iter().enumerate() {
@@ -774,13 +832,21 @@ impl Sampler {
                 start_release(voice, rate, region.release.max(MIN_RELEASE) * scale);
             }
         }
+        // A note with an articulation of its own releases with its keyswitch, else with the
+        // switch active now.
+        let own = self
+            .key_articulation
+            .get(usize::from(key))
+            .copied()
+            .flatten();
         let release = KeyRelease {
             velocity: self
                 .key_velocity
                 .get(usize::from(key))
                 .copied()
                 .unwrap_or(event.velocity),
-            switch: self.active_switch(),
+            switch: self.switch_with(own.unwrap_or(self.forced)),
+            articulation: own,
             dynamics: self
                 .key_dynamics
                 .get(usize::from(key))
@@ -835,12 +901,13 @@ impl Sampler {
         release: KeyRelease,
         starts: fn(Trigger) -> bool,
     ) {
-        let controllers = self.controllers_of(channel);
+        let controllers = self.controllers_of(channel, release.articulation.unwrap_or(self.forced));
         let start = Start::Key {
             key,
             velocity: release.velocity,
             channel,
             dynamics: release.dynamics,
+            articulation: release.articulation,
         };
         for (index, region) in bank.regions.iter().enumerate() {
             if starts(region.trigger)
@@ -876,18 +943,20 @@ impl Sampler {
         if sample.frames() == 0 || self.spec.sample_rate == 0 {
             return;
         }
-        let (key, pitch, velocity_gain, channel, dynamics) = match start {
+        let (key, pitch, velocity_gain, channel, dynamics, articulation) = match start {
             Start::Key {
                 key,
                 velocity,
                 channel,
                 dynamics,
+                articulation,
             } => (
                 Some(key),
                 key,
                 region.velocity_gain(velocity),
                 channel,
                 dynamics,
+                articulation,
             ),
             Start::Controller { channel } => (
                 None,
@@ -895,6 +964,7 @@ impl Sampler {
                 1.0,
                 channel,
                 self.start_dynamics(),
+                None,
             ),
         };
         let rate = f64::from(self.spec.sample_rate);
@@ -910,7 +980,8 @@ impl Sampler {
         }
         // The dynamics gain is exactly 1 for a voice a key press starts now; a release region
         // starts where the note's level has moved since its press.
-        let live_gain = region.controller_gain(&self.controllers_of(channel))
+        let controllers = self.controllers_of(channel, articulation.unwrap_or(self.forced));
+        let live_gain = region.controller_gain(&controllers)
             * dynamics_gain(self.drive(), self.dynamics, dynamics);
         let attack = region.attack.max(MIN_ATTACK);
         self.clock = self.clock.wrapping_add(1);
@@ -924,6 +995,7 @@ impl Sampler {
             step,
             gain,
             dynamics,
+            articulation,
             live_gain,
             live_step: 0.0,
             live_target: live_gain,
@@ -1239,10 +1311,10 @@ impl Processor for Sampler {
 
 impl Sampler {
     /// Block start: aims the live gain of every sounding voice at the gain the controllers of
-    /// its channel give its region now, times the gain the `dynamics` parameter gives it now,
-    /// reached linearly on the last of the block's `frames`. The parameter's ramp reuses the
-    /// controllers' (DES-01): one ramp per voice, exact at the block's end, and a change of
-    /// either never clicks.
+    /// its channel give its region now, with the value its articulation forces, times the gain
+    /// the `dynamics` parameter gives it now, reached linearly on the last of the block's
+    /// `frames`. The parameter's ramp reuses the controllers' (DES-01): one ramp per voice,
+    /// exact at the block's end, and a change of either never clicks.
     fn aim_live_gains(&mut self, frames: usize) {
         let (drive, now) = (self.drive(), self.dynamics);
         let Some(bank) = bank_of(self.setup.as_ref()) else {
@@ -1258,6 +1330,8 @@ impl Sampler {
                 .controllers
                 .get(usize::from(voice.channel))
                 .unwrap_or(&bank.controllers);
+            // A voice of a note with an articulation of its own reads the controllers with it.
+            let forced = voice.articulation.unwrap_or(forced);
             voice.live_target = region.controller_gain(&forced.read(*controllers))
                 * dynamics_gain(drive, now, voice.dynamics);
             voice.live_step = (voice.live_target - voice.live_gain) / frames;

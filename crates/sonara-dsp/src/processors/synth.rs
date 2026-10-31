@@ -1046,6 +1046,7 @@ mod tests {
             channel: 0,
             value: 0,
             number: 0,
+            articulation: None,
         }
     }
 

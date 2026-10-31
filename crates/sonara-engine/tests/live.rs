@@ -413,6 +413,7 @@ fn note_on(pitch: u8, offset: usize) -> InstrumentEvent {
         channel: 0,
         value: 0,
         number: 0,
+        articulation: None,
     }
 }
 

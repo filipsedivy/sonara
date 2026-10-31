@@ -1,9 +1,9 @@
 //! `sonara.sampler` against synthetic banks: layers, round robin, release, release triggers,
 //! the sustain pedal, keyswitches, exclusive groups, controllers, polyphony, the articulation
-//! and dynamics parameters, the key offset and the real-time rules (TST-10: every check
-//! compares against a value that follows from the bank, not "it ran"). Every block, and every
-//! parameter change of the articulation and dynamics tests, runs under `assert_no_alloc`
-//! (RT-02).
+//! and dynamics parameters, a note's own articulation, the key offset and the real-time rules
+//! (TST-10: every check compares against a value that follows from the bank, not "it ran").
+//! Every block, and every parameter change of the articulation and dynamics tests, runs under
+//! `assert_no_alloc` (RT-02).
 //!
 //! The samples are constants, so a voice's steady-state output is its sample value times the
 //! velocity gain `(velocity / 127)²`, which the tests compute independently of the engine.
@@ -100,6 +100,7 @@ fn event(kind: EventKind, pitch: u8, velocity: u8) -> InstrumentEvent {
         channel: 0,
         value: 0,
         number: 0,
+        articulation: None,
     }
 }
 
@@ -2789,6 +2790,222 @@ fn a_controller_target_reaches_the_crossfades_of_sounding_notes() {
     set(&mut *processor, &articulation("auto"));
     let faded = run(&mut *processor, &[]);
     close(level(&faded), 0.0);
+}
+
+/// A key press at full velocity that plays the `articulation` choice with index `choice` as the
+/// note's own articulation: 2 `sustain`, 3 `staccato`, 4 `pizzicato` (see [`descriptor`]).
+fn marked(key: u8, choice: u16) -> InstrumentEvent {
+    InstrumentEvent {
+        articulation: Some(choice),
+        ..event(EventKind::NoteOn, key, 127)
+    }
+}
+
+/// `event` at frame `offset` of its block.
+fn at_offset(offset: usize, event: InstrumentEvent) -> InstrumentEvent {
+    InstrumentEvent { offset, ..event }
+}
+
+/// The level of a note on key 60 at full velocity with the note's own articulation `choice`,
+/// played alone as in [`note`].
+fn marked_note(processor: &mut dyn Processor, choice: u16) -> f64 {
+    let quiet = run(processor, &[]);
+    assert!(
+        quiet.iter().flatten().all(|v| *v == 0.0),
+        "nothing sounds before the note"
+    );
+    let sounded = level(&run(processor, &[marked(60, choice)]));
+    run(processor, &[event(EventKind::NoteOff, 60, 0)]);
+    sounded
+}
+
+#[test]
+fn a_note_plays_its_own_articulation_from_its_frame_over_the_parameter() {
+    // The parameter plays `pizzicato` (switch 27, 0.0625). In one block, an unmarked note at
+    // frame 0, a `staccato` note (switch 26, 0.125) at frame 700 and an unmarked note at frame
+    // 1400: the marked note sounds from its own frame, and the note after it plays the
+    // parameter's articulation again.
+    let mut processor = mapped(
+        four_articulations(),
+        four_targets(0),
+        &articulation("pizzicato"),
+    );
+    let out = run(
+        &mut *processor,
+        &[
+            event(EventKind::NoteOn, 60, 127),
+            at_offset(700, marked(62, 3)),
+            at_offset(1_400, event(EventKind::NoteOn, 64, 127)),
+        ],
+    );
+    let left = |frame: usize| out[frame][0];
+    close(left(699), 0.0625);
+    assert!(left(700) > 0.0625, "the marked note starts at its frame");
+    close(left(1_399), 0.0625 + 0.125);
+    close(level(&out), 0.0625 + 0.125 + 0.0625);
+    assert_eq!(voices(&*processor), 3.0, "no voice of a switch key");
+    run(
+        &mut *processor,
+        &[
+            event(EventKind::NoteOff, 60, 0),
+            event(EventKind::NoteOff, 62, 0),
+            event(EventKind::NoteOff, 64, 0),
+        ],
+    );
+    // Later notes play the parameter's articulation; another marked note its own again.
+    close(note(&mut *processor), 0.0625);
+    close(marked_note(&mut *processor, 3), 0.125);
+    close(note(&mut *processor), 0.0625);
+}
+
+#[test]
+fn two_notes_at_one_frame_play_their_own_articulations() {
+    let mut processor = mapped(four_articulations(), four_targets(0), &articulation("auto"));
+    let out = run(&mut *processor, &[marked(60, 3), marked(62, 4)]);
+    close(level(&out), 0.125 + 0.0625);
+}
+
+#[test]
+fn a_note_articulation_leaves_the_clip_keyswitch_and_the_parameter_in_place() {
+    // In `auto`, the clip selects switch 25 (0.25); a `staccato` note and an `ordinario` note
+    // (the default switch 24, 0.5) play their own switches, and the clip's switch plays after
+    // them. All notes off still restores the patch's default.
+    let mut processor = mapped(four_articulations(), four_targets(0), &articulation("auto"));
+    run(&mut *processor, &[event(EventKind::KeySwitch, 25, 0)]);
+    close(marked_note(&mut *processor, 3), 0.125);
+    close(note(&mut *processor), 0.25);
+    close(marked_note(&mut *processor, SamplerMapping::ORDINARIO), 0.5);
+    close(note(&mut *processor), 0.25);
+    run(&mut *processor, &[event(EventKind::AllNotesOff, 0, 0)]);
+    close(note(&mut *processor), 0.5);
+    // Under `staccato` a clip keyswitch after it wins for unmarked notes; a `pizzicato` note
+    // plays its own switch over both, and the clip's switch stays.
+    set(&mut *processor, &articulation("staccato"));
+    run(&mut *processor, &[event(EventKind::KeySwitch, 25, 0)]);
+    close(marked_note(&mut *processor, 4), 0.0625);
+    close(note(&mut *processor), 0.25);
+    // All notes off applies the parameter's target again, not the marked note's.
+    run(&mut *processor, &[event(EventKind::AllNotesOff, 0, 0)]);
+    close(note(&mut *processor), 0.125);
+}
+
+#[test]
+fn a_note_articulation_without_a_target_plays_the_parameter() {
+    // A choice the mapping has no target for (`auto`, or an index beyond the choices) plays
+    // the parameter's `staccato` (0.125); a target without a selector (`sustain`) plays the
+    // patch as it is, its default switch 24 (0.5), in place of the parameter's.
+    let mut processor = mapped(
+        four_articulations(),
+        four_targets(0),
+        &articulation("staccato"),
+    );
+    close(marked_note(&mut *processor, SamplerMapping::AUTO), 0.125);
+    close(marked_note(&mut *processor, u16::MAX), 0.125);
+    close(marked_note(&mut *processor, 2), 0.5);
+    close(note(&mut *processor), 0.125);
+    // A preset about which nothing is claimed has no target: every note plays the patch.
+    let mut unclaimed = sampler_with(four_articulations(), &articulation("staccato"));
+    for choice in 0..=4 {
+        close(marked_note(&mut *unclaimed, choice), 0.5);
+    }
+}
+
+#[test]
+fn a_marked_note_releases_with_its_own_switch() {
+    // Release regions of the switches 24 (0.25) and 26 (0.125): in `auto` (switch 24), a
+    // `staccato` note plays the tail of switch 26 and an unmarked note that of switch 24, also
+    // when the sustain pedal holds the release until it lifts.
+    let tail = |sample, switch| Region {
+        sw_last: Some(switch),
+        trigger: Trigger::Release,
+        key_lo: 36,
+        ..region(sample)
+    };
+    let bank = SampleBank {
+        samples: vec![constant(0.5), constant(0.25), constant(0.125)],
+        regions: vec![
+            Region {
+                key_lo: 36,
+                release: 0.001,
+                ..region(0)
+            },
+            tail(1, 24),
+            tail(2, 26),
+        ],
+        keyswitches: switches(&[(24, 27)], Some(24)),
+        ..SampleBank::default()
+    };
+    for held in [false, true] {
+        for (press, tail) in [
+            (marked(60, 3), 0.125),
+            (event(EventKind::NoteOn, 60, 127), 0.25),
+        ] {
+            let mut processor = mapped(bank.clone(), four_targets(0), &articulation("auto"));
+            run(&mut *processor, &[pedal(held), press]);
+            let mut events = vec![event(EventKind::NoteOff, 60, 0)];
+            if held {
+                events.push(at_offset(BLOCK / 2, pedal(false)));
+            }
+            close(level(&run(&mut *processor, &events)), tail);
+        }
+    }
+}
+
+#[test]
+fn a_note_plays_in_the_velocity_zone_of_its_own_articulation() {
+    // `pizzicato` plays the zone 1-40 of the two layers: a marked note at 127 plays the soft
+    // layer at velocity 40, and its release region too; the next note its own velocity.
+    let mut processor = mapped(two_layers(), zone_target(), &articulation("auto"));
+    let attack = run(&mut *processor, &[marked(60, 4)]);
+    close(level(&attack), 0.5 * gain(40));
+    let release = run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+    close(level(&release), 0.125 * gain(40));
+    run(&mut *processor, &[event(EventKind::AllNotesOff, 0, 0)]);
+    run(&mut *processor, &[]);
+    let attack = run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    close(level(&attack), 0.25);
+}
+
+#[test]
+fn a_note_reads_the_controller_value_of_its_own_articulation_while_it_sounds() {
+    // `staccato` sets controller 32 to 100. Gated layers: a marked note opens the upper layer
+    // (0.25) and the next note the lower one again (0.5), so the marked note wrote nothing into
+    // the controllers.
+    let mut processor = mapped(
+        controller_layers(),
+        controller_target(),
+        &articulation("auto"),
+    );
+    close(marked_note(&mut *processor, 3), 0.25);
+    close(note(&mut *processor), 0.5);
+    assert_eq!(voices(&*processor), 0.0, "no controller region started");
+    // A crossfade over controller 32: the marked note sounds at the value 100 for as long as
+    // it is held, also after a clip's event sets the controller to 10, which a note pressed
+    // after the event reads.
+    let bank = SampleBank {
+        samples: vec![constant(0.5)],
+        regions: vec![Region {
+            cc_crossfades: Box::new([CcCrossfade {
+                controller: 32,
+                fade: Crossfade {
+                    in_lo: 0,
+                    in_hi: 127,
+                    curve: CrossfadeCurve::Gain,
+                    ..Crossfade::NONE
+                },
+            }]),
+            amp_veltrack: 0.0,
+            ..region(0)
+        }],
+        ..SampleBank::default()
+    };
+    let mut processor = mapped(bank, controller_target(), &articulation("auto"));
+    run(&mut *processor, &[marked(60, 3)]);
+    close(level(&run(&mut *processor, &[])), 0.5 * 100.0 / 127.0);
+    run(&mut *processor, &[cc(32, 10, 0)]);
+    let both = run(&mut *processor, &[event(EventKind::NoteOn, 62, 127)]);
+    // The values 100 and 10 sum to 110.
+    close(level(&both), 0.5 * 110.0 / 127.0);
 }
 
 #[test]

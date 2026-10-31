@@ -718,6 +718,7 @@ fn service_call(
                 channel: 0,
                 value: 0,
                 number: 0,
+                articulation: None,
             };
             let _ = transport.audition_note(synth, event);
         }

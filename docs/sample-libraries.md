@@ -228,6 +228,17 @@ playback starts, and when it jumps (a seek or a loop wrap). After a jump the eng
 again what the clip selected before the new position, so the clip's last keyswitch before it
 wins over the articulation. Back at `auto`, the clip's last keyswitch plays again.
 
+**A note's own articulation.** A note can carry an articulation of its own (a note's
+`articulation`, project format version 2). The sampler plays that note in it, in place of the
+device's `articulation`, from the note's own start rather than at the next block: what the
+preset maps for that articulation, or the nearest one it has, as above. Nothing else changes: the
+next note without an articulation of its own plays the device's articulation, or the clip's last
+keyswitch, as before. The note's release samples play in its articulation, and a controller value
+that its articulation sets stays with the note for as long as it sounds. A seek or a loop wrap
+into the note plays it in its articulation again. A note articulation the preset has nothing for,
+such as any articulation of a preset about which nothing is claimed, plays the device's
+articulation. Other instruments (the Poly Synth, the Drum Kit) ignore a note's articulation.
+
 **Key offset.** A preset whose library gives a key offset (a patch keyed away from the pitch it
 sounds) has every note of a clip moved by it before it plays, so the clip is written at the
 pitch the instrument sounds. Keyswitch notes are moved too: a clip writes them where the offset
@@ -261,7 +272,10 @@ that block.
 
 A project saved by a newer version of Sonara can hold an instrument type or an articulation that
 this version does not know. It opens unchanged, and the device plays as `auto`; the render warns
-`articulation '…' of '…' is unknown to this version of Sonara; it plays as 'auto'`.
+`articulation '…' of '…' is unknown to this version of Sonara; it plays as 'auto'`. A note whose
+articulation this version does not know plays the device's articulation; the render warns
+`note articulation '…' on '…' is unknown to this version of Sonara; the note plays the device's
+articulation`.
 
 ## Memory
 

@@ -1302,6 +1302,7 @@ mod tests {
             channel: 9,
             value: 0,
             number: 0,
+            articulation: None,
         }
     }
 

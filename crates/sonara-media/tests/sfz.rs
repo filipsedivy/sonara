@@ -571,6 +571,7 @@ fn salamander_pedal_noises_do_not_sound_on_a_note() {
         channel: 0,
         value: 0,
         number: 0,
+        articulation: None,
     };
     sampler.process(
         &mut buffer,
@@ -1062,6 +1063,7 @@ fn play(bank: SampleBank, blocks: &[&[u8]]) -> (Vec<[f64; 2]>, f64) {
                     channel: 0,
                     value: 0,
                     number: 0,
+                    articulation: None,
                 })
                 .collect()
         })
@@ -1385,6 +1387,7 @@ fn pedal_at(value: i32) -> InstrumentEvent {
         channel: 0,
         value,
         number: 64,
+        articulation: None,
     }
 }
 

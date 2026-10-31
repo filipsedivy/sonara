@@ -480,6 +480,7 @@ impl AppContext {
             channel: 0,
             value: 0,
             number: 0,
+            articulation: None,
         };
         self.transport().audition_note(track_id, event)
     }

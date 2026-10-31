@@ -154,13 +154,14 @@ audio hardware and no sleeping.
   level and the pedal that playing up to that frame leaves. A controller with no event before
   the frame keeps its value. Each controller is restored once, from its last event on whichever
   channel sent it, not once per channel. The schedule's buffer has room for these events from
-  the build on.
+  the build on. A chased note-on carries the note's own articulation, as any of its note-ons
+  does (below).
   Every other instrument, the Poly Synth and the Drum Kit among them, gets the plain chase.
 - **Tests.** `crates/sonara-engine/tests/player/transport.rs` (position, restart, end of range,
   concurrency), `hanging_notes.rs` (a held voice after seek, resume and stop),
   `schedule.rs` (order, chase, tempo change, a sampler's chase), `tests/sampler.rs` (a sampler
-  after a seek, a loop wrap and a later start, with clip keyswitches and with its `articulation`
-  parameter) and `crates/sonara-app/tests/transport*.rs`.
+  after a seek, a loop wrap and a later start, with clip keyswitches, with its `articulation`
+  parameter and with a note's own articulation) and `crates/sonara-app/tests/transport*.rs`.
 
 ## Offline renderer (`sonara_engine::renderer`)
 
@@ -232,7 +233,13 @@ forced keyswitch, a velocity zone or a controller value that the regions read in
 clip's), without allocating. It applies the target again on a reset and at every all-notes-off,
 so a seek or a loop wrap keeps it; the keyswitch and controller events that the chase sends
 after the all-notes-off, like any keyswitch or such controller event from a clip, win after it
-until it is applied again. Every note and keyswitch event is moved by the mapping's key offset
+until it is applied again. A note's own articulation travels with its note-on: when the graph
+builds a sampler's schedule, it resolves each note's stored articulation to the index of an
+`articulation` choice (an id it does not offer is a warning, and the note carries none), and
+every other instrument's note-ons carry none. The processor looks that choice's target up at the
+note-on and plays the note with it in place of the parameter's, from the note's own frame,
+without changing what later notes play; the note's release regions and its voices' controller
+reads keep the note's target. Every note and keyswitch event is moved by the mapping's key offset
 before the processor reads it, and one moved outside 0 to 127 is dropped; the chase's keyswitch
 notes are the clip notes that the offset moves onto a keyswitch key. `instrument_type` names the
 instrument. `dynamics` acts as the mapping's drive says: with velocity (the default) or a fixed

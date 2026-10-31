@@ -38,6 +38,7 @@ const NOTES: [InstrumentEvent; 2] = [
         channel: 0,
         value: 0,
         number: 0,
+        articulation: None,
     },
     InstrumentEvent {
         offset: 7,
@@ -47,6 +48,7 @@ const NOTES: [InstrumentEvent; 2] = [
         channel: 0,
         value: 0,
         number: 0,
+        articulation: None,
     },
 ];
 

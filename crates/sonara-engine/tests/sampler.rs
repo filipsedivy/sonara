@@ -15,6 +15,12 @@
 //! keyswitch notes that select the same switches; a seek and every pass of a loop must play as
 //! straight play does, with the clip's own keyswitches winning after the parameter's.
 //!
+//! **A note's own articulation** plays that note from its own frame over the device's
+//! `articulation`, and the notes after it play the device's again. The oracle is the same notes
+//! in `auto` with keyswitch notes at the marked note's frame and after it; a seek into the marked
+//! note chases it with its articulation. Other instruments ignore it: the base project's Drum
+//! Kit and Poly Synth render bit for bit as without.
+//!
 //! **The `dynamics` parameter** scales the velocity of later notes from a lane, as notes
 //! written softer play; on a preset whose dynamics drive expression it sets CC 11 as a clip's
 //! event does, also after a seek and on every pass of a loop.
@@ -1014,6 +1020,217 @@ fn controller_dynamics_set_the_expression_as_a_clip_event_does_also_after_a_seek
         &[],
     );
     plays_as_through(&driven, &oracle, &media, &[0, AFTER_SWITCH, AFTER_CHANGE]);
+}
+
+/// [`note`] with the note's own `articulation`.
+fn marked_note(id: &str, pitch: u8, start: f64, length: f64, articulation: &str) -> Value {
+    let mut note = note(id, pitch, start, length);
+    note["articulation"] = json!(articulation);
+    note
+}
+
+/// A block start inside the note of [`three_notes`] at beat 1 (beat 1.067).
+const INSIDE_SECOND_NOTE: i64 = 50 * BLOCK;
+
+/// Plays `project` and `oracle` from frame 0 to after the last note, seeks each to `to` and
+/// plays on to [`END`], and checks that both play the same from there.
+fn jumps_as(
+    project: &(Project, PluginRegistry),
+    oracle: &(Project, PluginRegistry),
+    media: &MediaProvider,
+    to: i64,
+) {
+    let mut expected = graph_of(oracle, media);
+    play(&mut expected, 0, AFTER_LAST_NOTE);
+    let expected = play(&mut expected, to, END);
+    assert!(loudest(&expected) > 0.1, "the oracle sounds after the seek");
+    let mut jumping = graph_of(project, media);
+    play(&mut jumping, 0, AFTER_LAST_NOTE);
+    assert!(
+        play(&mut jumping, to, END) == expected,
+        "a seek to frame {to}"
+    );
+}
+
+#[test]
+fn a_note_plays_its_own_articulation_from_its_frame_also_after_a_seek() {
+    // The device plays `sustain` (C#1). D4 at beat 63/64 plays it; C4 at beat 1, in the same
+    // block, plays its own `staccato` (D1) from its own frame; D4 at beat 3.5 plays `sustain`
+    // again. The oracle is the same notes in `auto` with keyswitch notes, which sound nothing:
+    // C#1 at beat 0, D1 at beat 1 (before C4, which starts with it) and C#1 again at beat 2,
+    // after C4 has ended. Applied at the block start instead of the note's frame, `staccato`
+    // would reach the D4 of beat 63/64 too.
+    let (_dir, patch) = keyswitch_patch();
+    let media = articulations(&patch);
+    let [first, second, third] = three_notes();
+    let early = note("n_000000000006", 62, 63.0 / 64.0, 0.5);
+    let staccato = marked_note("n_000000000003", 60, 1.0, 0.5, "staccato");
+    let marked = sampler_project(
+        &json!({"instrument": "lib/articulations", "articulation": "sustain"}),
+        &[first.clone(), early.clone(), staccato, third.clone()],
+        &[],
+        &[],
+    );
+    let oracle = sampler_project(
+        &json!({"instrument": "lib/articulations"}),
+        &[
+            first,
+            early,
+            second,
+            third,
+            note("n_000000000002", 25, 0.0, 0.03125),
+            note("n_000000000004", 26, 1.0, 0.03125),
+            note("n_000000000007", 25, 2.0, 0.03125),
+        ],
+        &[],
+        &[],
+    );
+    plays_as_through(&marked, &oracle, &media, &[0, AFTER_SWITCH, AFTER_CHANGE]);
+}
+
+#[test]
+fn a_seek_into_a_note_plays_its_own_articulation() {
+    // A seek into the C4 of beat 1 chases it with its own `staccato` (D1) over the device's
+    // `sustain` (C#1), exactly as a seek there into the oracle's C4, which its chased keyswitch
+    // D1 selects; the later D4 plays `sustain` again. A chase that dropped the note's
+    // articulation would play C4 on C#1.
+    let (_dir, patch) = keyswitch_patch();
+    let media = articulations(&patch);
+    let [first, second, third] = three_notes();
+    let marked = sampler_project(
+        &json!({"instrument": "lib/articulations", "articulation": "sustain"}),
+        &[
+            first.clone(),
+            marked_note("n_000000000003", 60, 1.0, 0.5, "staccato"),
+            third.clone(),
+        ],
+        &[],
+        &[],
+    );
+    let oracle = sampler_project(
+        &json!({"instrument": "lib/articulations"}),
+        &[
+            first,
+            second,
+            third,
+            note("n_000000000002", 25, 0.0, 0.03125),
+            note("n_000000000004", 26, 1.0, 0.03125),
+            note("n_000000000007", 25, 2.0, 0.03125),
+        ],
+        &[],
+        &[],
+    );
+    jumps_as(&marked, &oracle, &media, INSIDE_SECOND_NOTE);
+    // The oracle discriminates: without its articulation the chased C4 plays C#1.
+    let (unmarked, registry) = sampler_project(
+        &json!({"instrument": "lib/articulations", "articulation": "sustain"}),
+        &three_notes(),
+        &[],
+        &[],
+    );
+    let mut sustained = graph_of(&(unmarked, registry), &media);
+    play(&mut sustained, 0, AFTER_LAST_NOTE);
+    let mut expected = graph_of(&oracle, &media);
+    play(&mut expected, 0, AFTER_LAST_NOTE);
+    assert!(
+        play(&mut sustained, INSIDE_SECOND_NOTE, END)
+            != play(&mut expected, INSIDE_SECOND_NOTE, END),
+        "the note's articulation changes what the chase plays"
+    );
+}
+
+#[test]
+fn an_unknown_note_articulation_plays_the_device_articulation_with_a_warning() {
+    // A project saved by a newer version can name an articulation this one does not offer:
+    // the note plays the device's `staccato`, as the same note without an articulation does,
+    // and the build warns once for the id.
+    let (_dir, patch) = keyswitch_patch();
+    let media = articulations(&patch);
+    let [first, _, third] = three_notes();
+    let (project, registry) = sampler_project(
+        &json!({"instrument": "lib/articulations", "articulation": "staccato"}),
+        &[
+            marked_note("n_000000000001", 60, 0.0625, 0.5, "flutter_tongue"),
+            marked_note("n_000000000003", 60, 1.0, 0.5, "flutter_tongue"),
+            third,
+        ],
+        &[],
+        &[],
+    );
+    let mut graph = RenderGraph::new(
+        &project,
+        &registry,
+        &media,
+        DEFAULT_BLOCK,
+        &GraphOptions::default(),
+    )
+    .expect("the graph builds");
+    assert_eq!(
+        graph.warnings(),
+        [
+            "note articulation 'flutter_tongue' on 'Kick' is unknown to this version of Sonara; \
+             the note plays the device's articulation"
+        ]
+    );
+    graph.reset();
+    let unmarked = sampler_project(
+        &json!({"instrument": "lib/articulations", "articulation": "staccato"}),
+        &[first, three_notes()[1].clone(), three_notes()[2].clone()],
+        &[],
+        &[],
+    );
+    let heard = play(&mut graph_of(&unmarked, &media), 0, END);
+    assert!(loudest(&heard) > 0.1, "the notes sound");
+    assert!(
+        play(&mut graph, 0, END) == heard,
+        "the notes play the device's articulation"
+    );
+}
+
+#[test]
+fn other_instruments_ignore_note_articulations() {
+    // The base project's Drum Kit and Poly Synth tracks with an articulation on every note
+    // render bit for bit as without, and without a warning: only a sampler plays them.
+    let golden = Golden::open().expect("golden data");
+    let bytes = golden
+        .bytes("workflows/sidechain_preview/final.project.json")
+        .expect("the base project");
+    let mut data = loads(&bytes).expect("project JSON");
+    let mut marked = 0;
+    for track in data
+        .get_mut("tracks")
+        .and_then(Value::as_array_mut)
+        .expect("tracks")
+    {
+        for clip in track["clips"].as_array_mut().expect("clips") {
+            for note in clip["notes"].as_array_mut().into_iter().flatten() {
+                note["articulation"] = json!("staccato");
+                marked += 1;
+            }
+        }
+    }
+    assert_eq!(marked, 65, "the kick's note and the bass line");
+    let project = project_from_value(&data).expect("the marked project loads");
+    let media = no_media();
+    let audio = OfflineRenderer::new(&builtin_registry(), &media)
+        .render(
+            &project,
+            &RenderRequest {
+                end_beat: Some(2.0),
+                tail: Tail::None,
+                ..RenderRequest::default()
+            },
+            None,
+        )
+        .expect("renders");
+    let drums = render_drums();
+    assert!(
+        audio.stats.warnings.is_empty(),
+        "{:?}",
+        audio.stats.warnings
+    );
+    assert!(peak(&drums) > 0.01, "the base project sounds");
+    assert!(audio.data == drums.data, "bit for bit");
 }
 
 /// The presets of [`articulations`], resolved as the application resolves them: every lookup

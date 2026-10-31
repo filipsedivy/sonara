@@ -52,7 +52,7 @@ use sonara_core::ids::MASTER_ID;
 use sonara_core::model::device::{Device, ParamValue};
 use sonara_core::model::project::Project;
 use sonara_core::model::track::{Track, TrackKind, db_to_gain};
-use sonara_core::plugins::{ParamKind, PluginDescriptor, PluginRegistry, SAMPLER_ID};
+use sonara_core::plugins::{ParamKind, PluginDescriptor, PluginRegistry, SAMPLER_AUTO, SAMPLER_ID};
 use sonara_core::pyfmt::str_repr;
 use sonara_core::routing;
 use sonara_dsp::filters::{DelayLine, SmoothedValue};
@@ -846,11 +846,7 @@ impl Builder<'_> {
         let mut schedule = None;
         let mut instrument = None;
         if track.kind == TrackKind::Instrument {
-            let mut track_schedule = NoteSchedule::build(
-                track.midi_clips(),
-                &self.project.tempo_map,
-                self.spec.sample_rate,
-            );
+            let mut track_schedule = self.schedule(track);
             let playable = match self.options.playable_notes {
                 PlayableNotes::All => NoteSet::ALL,
                 PlayableNotes::Scheduled => track_schedule.pitches(),
@@ -931,6 +927,46 @@ impl Builder<'_> {
             insert_latency: 0,
             live,
         })
+    }
+
+    /// The MIDI schedule of the instrument track `track`.
+    ///
+    /// A sampler plays each note's own articulation: its note-on carries the index of the
+    /// note's id among the choices of the sampler's `articulation` parameter, the list its
+    /// automation indexes too. Every other instrument gets none, so its events stay the same
+    /// (GLD-01). A project saved by a newer version of Sonara can name an articulation that
+    /// this one does not offer: such a note plays the device's articulation, with a warning, as
+    /// an unknown stored choice of the parameter does ([`Self::sampler_params`]).
+    fn schedule(&mut self, track: &Track) -> NoteSchedule {
+        let choices = track
+            .instrument
+            .as_ref()
+            .filter(|device| device.enabled && device.plugin_id == SAMPLER_ID)
+            .and_then(|_| self.registry.find(SAMPLER_ID))
+            .and_then(|descriptor| descriptor.param("articulation").ok())
+            .map(|spec| spec.choices.as_slice());
+        let mut unknown = BTreeSet::new();
+        let schedule = NoteSchedule::build(
+            track.midi_clips(),
+            &self.project.tempo_map,
+            self.spec.sample_rate,
+            |id| {
+                let choice = note_articulation(choices?, id);
+                if choice.is_none() {
+                    unknown.insert(id.to_owned());
+                }
+                choice
+            },
+        );
+        for id in unknown {
+            self.warnings.push(format!(
+                "note articulation {} on {} is unknown to this version of Sonara; the note \
+                 plays the device's articulation",
+                str_repr(&id),
+                str_repr(&track.name)
+            ));
+        }
+        schedule
     }
 
     /// The sends of `track`, each starting at its level.
@@ -1246,6 +1282,17 @@ impl Builder<'_> {
         };
         Ok((state, Some(full)))
     }
+}
+
+/// The index of the articulation `id` of a note among `choices`, the choices of a sampler's
+/// `articulation` parameter; `None` when it is not one of them. `auto` names no articulation, so
+/// it is none either.
+fn note_articulation(choices: &[String], id: &str) -> Option<u16> {
+    if id == SAMPLER_AUTO {
+        return None;
+    }
+    let index = choices.iter().position(|choice| choice == id)?;
+    u16::try_from(index).ok()
 }
 
 /// The text of a string parameter value.

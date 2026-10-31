@@ -606,6 +606,7 @@ impl EventSource {
                 channel: 0,
                 value: 0,
                 number: 0,
+                articulation: None,
             };
             events.push((at(start), event(EventKind::NoteOn, velocity)));
             events.push((at(start + length), event(EventKind::NoteOff, 0)));

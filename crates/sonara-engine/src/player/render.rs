@@ -75,6 +75,7 @@ const NO_EVENT: InstrumentEvent = InstrumentEvent {
     channel: 0,
     value: 0,
     number: 0,
+    articulation: None,
 };
 
 /// The most MIDI events one step takes from the inputs; the rest wait for the next step.
@@ -912,6 +913,7 @@ fn to_event(message: MidiEvent) -> Option<InstrumentEvent> {
         channel,
         value,
         number,
+        articulation: None,
     };
     match message.kind() {
         MidiKind::NoteOn => Some(event(
