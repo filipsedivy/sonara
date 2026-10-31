@@ -545,19 +545,19 @@ notes at sounding pitch) with a `ScoreContext` for the tempo and the metre, and 
 per place a rule finds: the rule, its level for the case, the parts and notes concerned, where
 it starts and ends, and the numbers in words. `check_rule` runs one rule. A note's dynamic is
 read from its velocity (`velocity_band`: 1–54 soft, 55–84 medium, 85–127 loud, an estimate),
-through the level table of `sonara_midi::performance::dynamics` that also gives the velocities a
-performance writes (pp 1–39 at 32, p 40–54 at 47, mp 55–69 at 62, mf 70–84 at 76, f 85–104 at 95,
-ff 105–127 at 115), so the two readings cannot disagree; a muted note carries its mute as its articulation and a plucked note `pizzicato`; whether an
-instrument double-tongues comes from its articulations, so the flutes, the B♭, A and bass
-clarinets, the horns and the trumpets do, and the oboes, bassoons, saxophones and trombones do
-not. A span the sources give in moderate time converts
-at the moderate tempo, and the time a piece leaves is measured at its own tempo. The other rules
-need a part's role, the harmony or a notated dynamic; the voicing helpers apply those while
-they write. Two derivations work out what a player sets: `harp_pedals` a pedal setting per
-passage (the fewest changes that keep each foot's changes within the time the music leaves; the
-enharmonic choice is an estimate) and `timpani_tunings` the drums' pitches per passage (a
-semitone's retuning taking half the record's whole tone), each with the notes no setting covers
-and the changes that come too soon.
+through the level table of `sonara_midi::performance::dynamics` that also gives the velocities
+a performance writes (pp 1–39 at 32, p 40–54 at 47, mp 55–69 at 62, mf 70–84 at 76, f 85–104
+at 95, ff 105–127 at 115), so the two readings cannot disagree; a muted note carries its mute
+as its articulation and a plucked note `pizzicato`; whether an instrument double-tongues comes
+from its articulations, so the flutes, the B♭, A and bass clarinets, the horns and the trumpets
+do, and the oboes, bassoons, saxophones and trombones do not. A span the sources give in
+moderate time converts at the moderate tempo, and the time a piece leaves is measured at its
+own tempo. The other rules need a part's role, the harmony or a notated dynamic; the voicing
+helpers apply those while they write. Two derivations work out what a player sets:
+`harp_pedals` a pedal setting per passage (the fewest changes that keep each foot's changes
+within the time the music leaves; the enharmonic choice is an estimate) and `timpani_tunings`
+the drums' pitches per passage (a semitone's retuning taking half the record's whole tone), each
+with the notes no setting covers and the changes that come too soon.
 
 ## Fallbacks
 
