@@ -8,8 +8,9 @@ use sonara_core::midi::MidiNote;
 use sonara_core::time::{TempoMap, TimeSignatureMap};
 use sonara_midi::orchestration::{Articulation, PitchRange, ensembles, instrument};
 use sonara_midi::performance::{
-    CapsError, Dynamic, Dynamics, DynamicsKind, DynamicsRequest, LegatoKind, MAX_PART_ID_BYTES,
-    PartId, PartLine, PerformanceError, Performed, Role, ScoreContext, Seed, SoundCaps, perform,
+    CapsError, Dynamic, Dynamics, DynamicsKind, DynamicsRequest, HumanizeRequest, Humanized,
+    LegatoKind, MAX_PART_ID_BYTES, PartId, PartLine, PerformanceError, Performed, Role,
+    ScoreContext, Seed, SoundCaps, perform,
 };
 
 /// A change made to a sound's capabilities.
@@ -40,6 +41,7 @@ fn line(slug: &str, notes: Vec<MidiNote>) -> PartLine {
         notes,
         caps: SoundCaps::default(),
         dynamics: DynamicsRequest::default(),
+        humanize: HumanizeRequest::default(),
     }
 }
 
@@ -315,8 +317,9 @@ fn perform_returns_the_notes_in_project_order_with_their_fields() {
         note("n_d", 64, 1.0, 0.5),
         note("n_a", 72, 0.0, 1.0),
     ];
-    let performed =
-        perform(&line("violins_1", notes), &score(), Seed::default()).expect("valid caps");
+    let mut exact = line("violins_1", notes);
+    exact.humanize = HumanizeRequest::EXACT;
+    let performed = perform(&exact, &score(), Seed::default()).expect("valid caps");
     assert_eq!(performed.part, part("violins_1"));
     let order: Vec<&str> = performed.notes.iter().map(|n| n.id.as_str()).collect();
     // By start, then pitch, then id: the chord at beat 1 rises, and its two E4s keep id order.
@@ -353,6 +356,10 @@ fn a_tacet_part_performs_to_no_notes() {
                 notes: Vec::new(),
                 lane: Vec::new(),
                 remarks: Vec::new(),
+            },
+            humanized: Humanized {
+                request: HumanizeRequest::default(),
+                notes: Vec::new(),
             },
         }
     );
@@ -411,8 +418,9 @@ fn notes_strategy() -> impl Strategy<Value = Vec<MidiNote>> {
 
 proptest! {
     /// Whatever order the line lists its notes in, the performance holds the same notes in the
-    /// project's note order (TST-09). The line's sound lists no articulation, so no stroke is
-    /// merged and every note comes back unchanged.
+    /// project's note order (TST-09), humanized alike: the deviations are drawn in note order.
+    /// The line's sound lists no articulation, so no stroke is merged and every note comes back
+    /// with its id, pitch, channel and articulation.
     #[test]
     fn perform_ignores_the_order_of_the_input(
         (notes, shuffled) in notes_strategy().prop_flat_map(|notes| {
@@ -426,10 +434,15 @@ proptest! {
             .expect("valid caps");
         prop_assert_eq!(&in_order, &reordered);
         prop_assert_eq!(in_order.notes.len(), notes.len());
-        // Every note comes back with its fields; only its velocity follows the dynamics.
+        // Every note comes back with the fields humanization and the dynamics leave alone.
         for note in &notes {
             let kept = in_order.notes.iter().any(|performed| {
-                performed == &MidiNote { velocity: performed.velocity, ..note.clone() }
+                performed == &MidiNote {
+                    start: performed.start,
+                    length: performed.length,
+                    velocity: performed.velocity,
+                    ..note.clone()
+                }
             });
             prop_assert!(kept, "{} is missing", note.id);
         }

@@ -29,7 +29,7 @@ use sonara_core::model::project::SUPPORTED_SAMPLE_RATES;
 use sonara_core::plugins::{SAMPLER_AUTO, SAMPLER_ORDINARIO};
 
 use super::check::{is_valid, note_order};
-use super::{PartLine, PerformanceError, ScoreContext, SoundCaps};
+use super::{OnsetSpan, PartLine, PerformanceError, ScoreContext, SoundCaps};
 use crate::orchestration::fallback::{self, Emulation, Scope, StandIn, Substitution};
 use crate::orchestration::{Articulation, Family, Instrument};
 
@@ -197,9 +197,13 @@ pub struct NoteArticulation {
 pub struct Passage {
     /// The articulation the passage plays; `None` is the ordinary sound.
     pub articulation: Option<Articulation>,
-    /// The content beat of its first note-on.
+    /// The content beat of its first note-on: as played in a performance ([`perform`]), as
+    /// written by [`articulate()`].
+    ///
+    /// [`perform`]: super::perform
     pub start: f64,
-    /// The content beat of its last note-on.
+    /// The content beat of its last note-on, as played or as written like
+    /// [`Passage::start`].
     pub last_onset: f64,
     /// The point of the sampler's `articulation` lane that switches to the passage: a `hold` of
     /// [`articulation_choice`] at a timeline beat. The first passage's point sits at the clip's
@@ -251,6 +255,50 @@ pub(super) fn lane(passages: &[Passage]) -> Vec<AutomationPoint> {
 /// - [`PerformanceError::UnknownArticulation`] for a note whose `articulation` is no id of the
 ///   vocabulary, such as one a newer version wrote.
 pub fn articulate(line: &PartLine, score: &ScoreContext) -> Result<Articulated, PerformanceError> {
+    let Analysis {
+        notes,
+        articulations,
+        drafts,
+        groups,
+    } = analyse(line, score)?;
+    let onsets = written_onsets(&notes, &groups);
+    let passages = switches(&drafts, &onsets, score);
+    Ok(Articulated {
+        notes,
+        articulations,
+        passages,
+    })
+}
+
+/// The articulation of a line before its switches are placed.
+pub(super) struct Analysis {
+    /// The notes, as [`Articulated::notes`] holds them.
+    pub(super) notes: Vec<MidiNote>,
+    /// The articulation of each note, in the order of `notes`.
+    pub(super) articulations: Vec<NoteArticulation>,
+    /// The passages, each a run of onset groups.
+    pub(super) drafts: Vec<Draft>,
+    /// The onset groups of `notes` ([`onset_groups`]).
+    pub(super) groups: Vec<Range<usize>>,
+}
+
+/// The note-ons of each onset group as written: every note of a group starts at its first.
+pub(super) fn written_onsets(notes: &[MidiNote], groups: &[Range<usize>]) -> Vec<OnsetSpan> {
+    groups
+        .iter()
+        .map(|group| {
+            let start = notes.get(group.start).map_or(0.0, |note| note.start);
+            OnsetSpan {
+                first: start,
+                last: start,
+            }
+        })
+        .collect()
+}
+
+/// Reads the articulation of every note of `line` and groups the notes into passages; see
+/// [`articulate()`].
+pub(super) fn analyse(line: &PartLine, score: &ScoreContext) -> Result<Analysis, PerformanceError> {
     line.caps.check()?;
     let mut entries = Vec::with_capacity(line.notes.len());
     for note in &line.notes {
@@ -297,11 +345,12 @@ pub fn articulate(line: &PartLine, score: &ScoreContext) -> Result<Articulated, 
             }
         }
     }
-    let passages = view.switches(&drafts);
-    Ok(Articulated {
+    let groups = view.groups;
+    Ok(Analysis {
         notes: entries.into_iter().map(|entry| entry.note).collect(),
         articulations,
-        passages,
+        drafts,
+        groups,
     })
 }
 
@@ -384,6 +433,11 @@ impl<'a> Clock<'a> {
     /// The seconds from content beat `from` to content beat `to`.
     pub(super) fn span(&self, from: f64, to: f64) -> f64 {
         self.seconds(to) - self.seconds(from)
+    }
+
+    /// The content beat at `seconds` from the timeline's start.
+    pub(super) fn beat(&self, seconds: f64) -> f64 {
+        self.score.tempo().seconds_to_beat(seconds) - self.score.origin()
     }
 }
 
@@ -783,55 +837,66 @@ impl<'a> LineView<'a> {
         });
         state.loose && end - start < PASSAGE_MIN_BEATS - BEAT_EPSILON
     }
+}
 
-    /// The passages with their switches placed.
-    fn switches(&self, drafts: &[Draft]) -> Vec<Passage> {
-        let block_s = block_seconds();
-        let lead_s = f64::from(SWITCH_LEAD_BLOCKS) * block_s;
-        let tempo = self.clock.score.tempo();
-        let origin = self.clock.score.origin();
-        let mut passages: Vec<Passage> = Vec::with_capacity(drafts.len());
-        for draft in drafts {
-            let start = self.group_start(draft.groups.start).unwrap_or(0.0);
-            let last_onset = draft
-                .groups
-                .end
-                .checked_sub(1)
-                .and_then(|group| self.group_start(group))
-                .unwrap_or(start);
-            let (beat, possibly_late) = match passages.last() {
-                None => (origin, false),
-                Some(previous) => {
-                    let first_s = self.clock.seconds(start);
-                    let previous_s = self.clock.seconds(previous.last_onset);
-                    let at_s = (first_s - lead_s).max(f64::midpoint(previous_s, first_s));
-                    (
-                        tempo.seconds_to_beat(at_s).max(origin),
-                        first_s - at_s < block_s,
-                    )
-                }
-            };
-            passages.push(Passage {
-                articulation: draft.articulation,
-                start,
-                last_onset,
-                switch: AutomationPoint {
-                    beat,
-                    value: f64::from(articulation_choice(draft.articulation)),
-                    curve: CurveKind::Hold,
-                },
-                possibly_late,
-            });
-        }
-        passages
+/// The passages `drafts` with their switches placed, where `onsets` holds the note-ons of each
+/// onset group: a passage starts at the first note-on of its first group and its last note-on is
+/// the last of its last group. Every note of a group starts after every note of the group before
+/// it, so these are the passage's earliest and latest note-ons.
+pub(super) fn switches(
+    drafts: &[Draft],
+    onsets: &[OnsetSpan],
+    score: &ScoreContext,
+) -> Vec<Passage> {
+    let clock = Clock::new(score);
+    let block_s = block_seconds();
+    let lead_s = f64::from(SWITCH_LEAD_BLOCKS) * block_s;
+    let tempo = score.tempo();
+    let origin = score.origin();
+    let mut passages: Vec<Passage> = Vec::with_capacity(drafts.len());
+    for draft in drafts {
+        let start = onsets
+            .get(draft.groups.start)
+            .map_or(0.0, |onset| onset.first);
+        let last_onset = draft
+            .groups
+            .end
+            .checked_sub(1)
+            .and_then(|group| onsets.get(group))
+            .map_or(start, |onset| onset.last);
+        let (beat, possibly_late) = match passages.last() {
+            None => (origin, false),
+            Some(previous) => {
+                let first_s = clock.seconds(start);
+                let previous_s = clock.seconds(previous.last_onset);
+                let at_s = (first_s - lead_s).max(f64::midpoint(previous_s, first_s));
+                (
+                    tempo.seconds_to_beat(at_s).max(origin),
+                    first_s - at_s < block_s,
+                )
+            }
+        };
+        passages.push(Passage {
+            articulation: draft.articulation,
+            start,
+            last_onset,
+            switch: AutomationPoint {
+                beat,
+                value: f64::from(articulation_choice(draft.articulation)),
+                curve: CurveKind::Hold,
+            },
+            possibly_late,
+        });
     }
+    passages
 }
 
 /// A passage before its switch is placed.
-struct Draft {
-    articulation: Option<Articulation>,
+pub(super) struct Draft {
+    /// The articulation the passage plays; `None` is the ordinary sound.
+    pub(super) articulation: Option<Articulation>,
     /// Its onset groups.
-    groups: Range<usize>,
+    pub(super) groups: Range<usize>,
 }
 
 /// What an onset group plays, as the passages read it.

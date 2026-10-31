@@ -59,9 +59,11 @@
 //! **When the lane is read.** The engine reads a device parameter once per block, at the block's
 //! first frame, so a value that must hold at a note-on is held from two blocks (at the slowest
 //! sample rate a project supports) before it, or from halfway after the previous note-on when that
-//! is nearer: whichever block holds the note-on reads exactly its level. On a sound without a
-//! `dynamics` parameter the same shape can drive the track's `volume_db` lane
-//! ([`Dynamics::volume_lane`]).
+//! is nearer: whichever block holds the note-on reads exactly its level. The phrases and their
+//! shapes are read from the notes as written, but the holds follow the note-ons as played: when
+//! humanization moves the notes of an onset ([`perform`](super::perform)), the value holds from
+//! before the earliest of them to the latest. On a sound without a `dynamics` parameter the same
+//! shape can drive the track's `volume_db` lane ([`Dynamics::volume_lane`]).
 //!
 //! Everything is a pure function of the line and the score: no random choice is made, so the same
 //! input gives the same result (TST-04). Nothing here runs on a real-time thread (RT-01).
@@ -77,7 +79,7 @@ use super::articulate::{
     ACCENT_VELOCITY, BEAT_EPSILON, Class, Clock, NoteArticulation, PHRASE_REST_BEATS,
     SWITCH_LEAD_BLOCKS, block_seconds, onset_groups,
 };
-use super::{DynamicsKind, PartLine, Role, ScoreContext};
+use super::{DynamicsKind, OnsetSpan, PartLine, Role, ScoreContext};
 use crate::num::py_round;
 use crate::orchestration::fallback::Emulation;
 use crate::orchestration::rules::Dynamic;
@@ -360,9 +362,9 @@ impl Default for DynamicsRequest {
 /// One phrase of a line.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Phrase {
-    /// The content beat of its first note-on.
+    /// The content beat of its first note-on as written.
     pub start: f64,
-    /// The content beat where its last note ends.
+    /// The content beat where its last note ends as written.
     pub end: f64,
     /// The content beat of an arc's peak; `None` for a phrase that holds the part's level.
     pub peak: Option<f64>,
@@ -513,15 +515,23 @@ const VALUE_EPSILON: f64 = 1e-12;
 pub(super) struct Shaped {
     pub(super) notes: Vec<MidiNote>,
     pub(super) dynamics: Dynamics,
+    /// For each note, the factor its written velocity sounds at: its note-on plays
+    /// `velocity_of(written · factor)`, which picks its layer. The lane at the note-on in velocity
+    /// mode, 1 in controller mode, and `None` in fixed mode, where the written velocity does not
+    /// sound.
+    pub(super) scales: Vec<Option<f64>>,
 }
 
 /// Shapes the dynamics of `notes`, the articulated notes of `line` in the project's note order,
-/// with `articulations` their articulations in the same order.
+/// with `articulations` their articulations in the same order. `onsets` holds the note-ons each
+/// onset group of `notes` is played at: the lane holds each onset's value from before the first
+/// to the last of them ([`OnsetSpan`]).
 pub(super) fn shape(
     line: &PartLine,
     score: &ScoreContext,
     notes: Vec<MidiNote>,
     articulations: &[NoteArticulation],
+    onsets: &[OnsetSpan],
 ) -> Shaped {
     let kind = line.caps.dynamics;
     let part_level = part_marking(line.dynamics.marking, line.role);
@@ -550,6 +560,7 @@ pub(super) fn shape(
     .points(
         &notes,
         &groups,
+        onsets,
         &spans,
         &points,
         &shape_points,
@@ -566,7 +577,7 @@ pub(super) fn shape(
             remarks.push(Remark::FixedCeiling { velocity, wanted });
         }
     }
-    let (notes, levels) = write_notes(
+    let (notes, levels, scales) = write_notes(
         notes,
         articulations,
         &groups,
@@ -595,6 +606,7 @@ pub(super) fn shape(
             lane: lane_points,
             remarks,
         },
+        scales,
     }
 }
 
@@ -1074,8 +1086,9 @@ impl Lane<'_> {
         }
     }
 
-    /// The content beat from which the value at onset `start` holds: two blocks before it, or
-    /// halfway after the previous onset `previous` when that is later, and never before beat 0.
+    /// The content beat from which the value at the note-on `start` holds: two blocks before it,
+    /// or halfway after the previous note-on `previous` when that is later, and never before
+    /// beat 0.
     fn lead(&self, start: f64, previous: Option<f64>) -> f64 {
         let lead_s = f64::from(SWITCH_LEAD_BLOCKS) * block_seconds();
         let start_s = self.clock.seconds(start);
@@ -1087,12 +1100,20 @@ impl Lane<'_> {
         beat.clamp(0.0, start)
     }
 
-    /// The lane's points at timeline beats: at each onset its level, held from the onset's lead
-    /// on, and between the onsets the shape's own points.
+    /// The lane's points at timeline beats: at each onset its level, held from the lead of its
+    /// first note-on to its last note-on (`onsets`, one per onset group, as played), where the
+    /// shape's curve from the onset as written continues, and between the onsets the shape's own
+    /// points.
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "the lane reads the notes, their onsets as written and as played, the phrases \
+                  and the shape"
+    )]
     fn points(
         &self,
         notes: &[MidiNote],
         groups: &[Range<usize>],
+        onsets: &[OnsetSpan],
         spans: &[Span],
         points: &[ShapePoint],
         shape: &[AutomationPoint],
@@ -1106,7 +1127,14 @@ impl Lane<'_> {
                 continue;
             };
             let phrase = phrase_of(spans, group_index);
-            let lead = self.lead(start, previous);
+            let onset = onsets.get(group_index).copied().unwrap_or(OnsetSpan {
+                first: start,
+                last: start,
+            });
+            let lead = self.lead(onset.first, previous);
+            // The next onset's lead lies after this onset's last note-on, so the hold never runs
+            // into it; as written, the last note-on is the onset's start.
+            let held_until = onset.last;
             let level = onset_levels.get(group_index).copied().unwrap_or(Level(0.0));
             // The shape's points before the onset end where the onset's value starts to hold, and
             // so do those at the onset that close what came before it: the end of an earlier
@@ -1136,11 +1164,11 @@ impl Lane<'_> {
             let value = self.value(level, phrase);
             // Before its first point a lane holds the first value, so the first onset needs no
             // lead.
-            if !lane.is_empty() && lead < start - BEAT_EPSILON {
+            if !lane.is_empty() && lead < held_until - BEAT_EPSILON {
                 push(&mut lane, lead, value, CurveKind::Hold);
             }
-            push(&mut lane, start, value, curve_at(shape, start));
-            previous = Some(start);
+            push(&mut lane, held_until, value, curve_at(shape, start));
+            previous = Some(onset.last);
         }
         for point in points.get(cursor..).unwrap_or_default() {
             let value = self.value(Level::from_steps(point.point.value), point.phrase);
@@ -1168,7 +1196,8 @@ fn push(lane: &mut Vec<AutomationPoint>, beat: f64, value: f64, curve: CurveKind
     lane.push(AutomationPoint { beat, value, curve });
 }
 
-/// The notes written at their velocities, with the level of each.
+/// The notes written at their velocities, with the level of each and the factor its written
+/// velocity sounds at ([`Shaped::scales`]).
 fn write_notes(
     mut notes: Vec<MidiNote>,
     articulations: &[NoteArticulation],
@@ -1177,7 +1206,7 @@ fn write_notes(
     onset_levels: &[Level],
     written: &[Option<u8>],
     kind: DynamicsKind,
-) -> (Vec<MidiNote>, Vec<NoteLevel>) {
+) -> (Vec<MidiNote>, Vec<NoteLevel>, Vec<Option<f64>>) {
     // The median velocity the notes of each phrase were given, before they are rewritten.
     let medians: Vec<f64> = spans
         .iter()
@@ -1190,6 +1219,7 @@ fn write_notes(
         })
         .collect();
     let mut levels = Vec::with_capacity(notes.len());
+    let mut scales = Vec::with_capacity(notes.len());
     for (group_index, group) in groups.iter().enumerate() {
         let phrase = phrase_of(spans, group_index);
         let median = medians.get(phrase).copied().unwrap_or(0.0);
@@ -1200,7 +1230,7 @@ fn write_notes(
                 continue;
             };
             let target = level.up(accent(note, articulations.get(index), median));
-            let (velocity, plays) = match kind {
+            let (velocity, plays, scale) = match kind {
                 DynamicsKind::Velocity => {
                     let phrase_written = written.get(phrase).copied().flatten();
                     let full = f64::from(phrase_written.unwrap_or_else(|| level.velocity()));
@@ -1210,15 +1240,24 @@ fn write_notes(
                     } else {
                         velocity_of(f64::from(target.velocity()) / lane)
                     };
-                    (velocity, velocity_of(f64::from(velocity) * lane))
+                    (
+                        velocity,
+                        velocity_of(f64::from(velocity) * lane),
+                        Some(lane),
+                    )
                 }
                 DynamicsKind::Fixed(fixed) => {
                     let lane = (at_level / f64::from(fixed.max(1))).min(1.0);
-                    (target.velocity(), velocity_of(f64::from(fixed) * lane))
+                    (
+                        target.velocity(),
+                        velocity_of(f64::from(fixed) * lane),
+                        None,
+                    )
                 }
-                DynamicsKind::Cc => (target.velocity(), target.velocity()),
+                DynamicsKind::Cc => (target.velocity(), target.velocity(), Some(1.0)),
             };
             note.velocity = velocity;
+            scales.push(scale);
             levels.push(NoteLevel {
                 note: note.id.clone(),
                 level: target,
@@ -1226,11 +1265,11 @@ fn write_notes(
             });
         }
     }
-    (notes, levels)
+    (notes, levels, scales)
 }
 
 /// A velocity rounded as Python rounds and kept within 1-127.
-fn velocity_of(value: f64) -> u8 {
+pub(super) fn velocity_of(value: f64) -> u8 {
     u8::try_from(py_round(value).clamp(1, 127)).expect("a velocity clamped to 1-127 fits a u8")
 }
 

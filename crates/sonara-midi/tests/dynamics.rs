@@ -16,8 +16,8 @@ use sonara_midi::performance::dynamics::{
     LEVELS, Level, Remark, cc_value, level_velocity, marking, part_marking, value_at,
 };
 use sonara_midi::performance::{
-    Dynamic, DynamicsKind, DynamicsRequest, LegatoKind, PartId, PartLine, PerformanceError,
-    Performed, Role, ScoreContext, Seed, SoundCaps, perform,
+    Dynamic, DynamicsKind, DynamicsRequest, HumanizeRequest, LegatoKind, PartId, PartLine,
+    PerformanceError, Performed, Role, ScoreContext, Seed, SoundCaps, perform,
 };
 
 use Dynamic::{Forte, Fortissimo, MezzoForte, MezzoPiano, Pianissimo, Piano};
@@ -78,6 +78,8 @@ fn line(
         notes,
         caps,
         dynamics,
+        // The dynamics are checked on the notes as written.
+        humanize: HumanizeRequest::EXACT,
     }
 }
 

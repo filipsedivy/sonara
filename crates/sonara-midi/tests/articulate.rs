@@ -12,8 +12,9 @@ use sonara_core::time::{TempoMap, TempoPoint, TimeSignatureMap};
 use sonara_midi::orchestration::fallback::Emulation;
 use sonara_midi::orchestration::{Articulation, instrument};
 use sonara_midi::performance::{
-    Articulated, DynamicsRequest, NoteArticulation, PartId, PartLine, PerformanceError, Role, Rule,
-    ScoreContext, Seed, SoundCaps, Source, articulate, articulation_choice, perform,
+    Articulated, DynamicsRequest, HumanizeRequest, NoteArticulation, PartId, PartLine,
+    PerformanceError, Role, Rule, ScoreContext, Seed, SoundCaps, Source, articulate,
+    articulation_choice, perform,
 };
 
 use Articulation::{
@@ -62,6 +63,7 @@ fn line(instrument_id: &str, notes: Vec<MidiNote>, listed: &[Articulation]) -> P
             ..SoundCaps::default()
         },
         dynamics: DynamicsRequest::default(),
+        humanize: HumanizeRequest::EXACT,
     }
 }
 

@@ -4,8 +4,10 @@
 //! that plays it, the part's role in the texture, what the chosen sound can do ([`SoundCaps`])
 //! and what the request asks of its dynamics ([`DynamicsRequest`]). It returns the notes to write,
 //! the articulation of each note and the passages of the sampler's `articulation` lane that play
-//! them ([`Performed`], [`articulate()`]), and the velocity each note is written at with the points
-//! of the sampler's `dynamics` lane that shape its phrases ([`dynamics`]).
+//! them ([`Performed`], [`articulate()`]), the velocity each note is written at with the points
+//! of the sampler's `dynamics` lane that shape its phrases ([`dynamics`]), and how each note was
+//! humanized: moved by the small deviations of its family's players and earlier by the attack of
+//! the sound that plays it ([`humanize`]).
 //!
 //! The lines come from [`voicing`], whose helpers give the parts of an ensemble their notes for a
 //! melody or a run of chords, family by family, applying the orchestration rules as they write.
@@ -14,7 +16,8 @@
 //! hash-ordered output and no state shared between calls, so the same line, score and seed always
 //! give the same performance (TST-04). Each part draws its random numbers from a stream of its own,
 //! keyed by the part's id rather than by its position among the parts ([`Seed::stream`]), so
-//! adding, removing or reordering parts never changes another part's result.
+//! adding, removing or reordering parts never changes another part's result. Humanization is the
+//! only stage that draws from it.
 //!
 //! What a sound can do is known to the application's instrument catalog, which this crate cannot
 //! see (ARC-11). The application copies those facts into a [`SoundCaps`] (ARC-08), and
@@ -25,6 +28,7 @@
 pub mod articulate;
 pub mod check;
 pub mod dynamics;
+pub mod humanize;
 mod seed;
 pub mod voicing;
 
@@ -43,6 +47,7 @@ pub use articulate::{
     Articulated, NoteArticulation, Passage, Rule, Source, articulate, articulation_choice,
 };
 pub use dynamics::{Dynamics, DynamicsRequest};
+pub use humanize::{Compensation, HumanizeRequest, Humanized, NoteTiming};
 pub use seed::Seed;
 
 /// The most bytes a [`PartId`] holds.
@@ -372,6 +377,18 @@ pub struct PartLine {
     pub caps: SoundCaps,
     /// What the request asks of the part's dynamics.
     pub dynamics: DynamicsRequest,
+    /// What the request asks of the part's humanization; [`HumanizeRequest::default`] humanizes.
+    pub humanize: HumanizeRequest,
+}
+
+/// The note-ons of one onset group of a line as it is played, in content beats: the first and
+/// the last of them. As written, every note of a group starts at once and both are its start.
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct OnsetSpan {
+    /// The earliest note-on of the group.
+    first: f64,
+    /// The latest note-on of the group.
+    last: f64,
 }
 
 /// The performance of one part.
@@ -380,7 +397,8 @@ pub struct Performed {
     /// The part performed.
     pub part: PartId,
     /// The notes to write, in the project's note order: by start, then pitch, then id, each
-    /// written at the velocity its dynamics give it.
+    /// written at the velocity its dynamics give it and at the start, length and velocity its
+    /// humanization moved it to.
     pub notes: Vec<MidiNote>,
     /// The articulation of each note, in the order of [`Performed::notes`].
     pub articulations: Vec<NoteArticulation>,
@@ -390,6 +408,8 @@ pub struct Performed {
     /// The part's dynamics: its phrases, the level of each note and the points of the sampler's
     /// `dynamics` lane.
     pub dynamics: Dynamics,
+    /// How each note was humanized, in the order of [`Performed::notes`].
+    pub humanized: Humanized,
 }
 
 impl Performed {
@@ -409,43 +429,66 @@ impl Performed {
 }
 
 /// Performs `line` within `score`. The same line, score and seed give the same result, whatever
-/// other parts are performed (TST-04): a stage that makes a random choice draws it from the part's
-/// own stream of `seed` ([`Seed::stream`]). Articulation and dynamics, the stages so far, make
-/// none.
+/// other parts are performed (TST-04): humanization, the one stage that makes random choices,
+/// draws them from the part's own stream of `seed` ([`Seed::stream`]).
+///
+/// The stages run in this order:
+///
+/// 1. **Articulation** ([`articulate()`]) reads the notes as written: the articulation of each and
+///    the passages that play them. Only the strokes of a tremolo or a roll that the sound plays
+///    are merged into one held note.
+/// 2. **Humanization** ([`humanize`]) moves each note by its family's deviations and its note-on
+///    earlier by the attack of the sound that plays it, as `line.humanize` asks.
+/// 3. **Dynamics** ([`dynamics`]) shapes the phrases of the notes as written and writes each note
+///    at the velocity they give it; the `dynamics` lane holds each onset's level across the
+///    note-ons as played. Humanization then moves each written velocity by its deviation, inside
+///    the velocity layer its note-on plays.
+/// 4. The switches of the `articulation` lane are placed ahead of the note-ons as played, so an
+///    advanced note-on still starts with its passage's articulation.
 ///
 /// The notes come back in the project's note order (start, then pitch, then id; the order of
-/// [`sort_notes`](sonara_core::midi::sort_notes)), each with its fields kept but its velocity, with
-/// the articulation of each and the passages that play them ([`articulate()`]): only the strokes of
-/// a tremolo or a roll that the sound plays are merged into one held note. Each note is then
-/// written at the velocity its phrase's dynamics give it, and the dynamics hold the points of the
-/// sampler's `dynamics` lane that shape the phrases ([`dynamics`]).
+/// [`sort_notes`](sonara_core::midi::sort_notes)) with their ids, pitches, channels and
+/// articulations kept, and [`Performed::articulations`], the levels of
+/// [`Performed::dynamics`] and [`Performed::humanized`] follow the same order.
 ///
 /// # Errors
 /// - [`PerformanceError::InvalidCaps`] when `line.caps` fails [`SoundCaps::check`]; its source is
 ///   the [`CapsError`];
 /// - [`PerformanceError::InvalidNote`] and [`PerformanceError::UnknownArticulation`] for a note
 ///   that [`articulate()`] rejects.
-#[expect(
-    unused_variables,
-    reason = "the signature fixes what every stage of a performance reads, the part's own random \
-              stream included; articulation and dynamics make no random choice"
-)]
 pub fn perform(
     line: &PartLine,
     score: &ScoreContext,
     seed: Seed,
 ) -> Result<Performed, PerformanceError> {
-    let Articulated {
+    let analysis = articulate::analyse(line, score)?;
+    let timed = humanize::time(line, score, seed, &analysis);
+    let articulate::Analysis {
         notes,
         articulations,
-        passages,
-    } = articulate(line, score)?;
-    let dynamics::Shaped { notes, dynamics } = dynamics::shape(line, score, notes, &articulations);
+        drafts,
+        groups: _,
+    } = analysis;
+    let dynamics::Shaped {
+        mut notes,
+        mut dynamics,
+        scales,
+    } = dynamics::shape(line, score, notes, &articulations, &timed.onsets);
+    humanize::apply(&timed, &line.caps, &scales, &mut notes, &mut dynamics.notes);
+    let passages = articulate::switches(&drafts, &timed.onsets, score);
+    let humanize::Timed { notes: timings, .. } = timed;
+    let (notes, articulations, levels, timings) =
+        humanize::in_note_order(notes, articulations, dynamics.notes, timings);
+    dynamics.notes = levels;
     Ok(Performed {
         part: line.part.clone(),
         notes,
         articulations,
         passages,
         dynamics,
+        humanized: Humanized {
+            request: line.humanize,
+            notes: timings,
+        },
     })
 }
