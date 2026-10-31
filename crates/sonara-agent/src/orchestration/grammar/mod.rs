@@ -561,9 +561,13 @@ fn read_group(tokens: &[Token], start: usize) -> Option<GroupRead> {
         at += 1;
     }
     if parts.is_empty() {
+        // A number with a full stop counts too: the one that ends a sentence ("horns 1 and 2.").
         let part = |at: usize| match kind(at) {
             Some(Kind::Number(number)) if !starts_group_word(kind(at + 1)) => {
                 u8::try_from(*number).ok().filter(|&part| part > 0)
+            }
+            Some(Kind::Word(Word::Ordinal(ordinal))) if !starts_group_word(kind(at + 1)) => {
+                Some(*ordinal)
             }
             _ => None,
         };

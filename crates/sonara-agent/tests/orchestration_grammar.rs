@@ -223,6 +223,9 @@ fn parts_and_sizes_of_a_section() {
         assert_eq!(assignment.groups[0].size, size, "{request:?}");
         assert_eq!(assignment.groups[0].count, None, "{request:?}");
     }
+    // A full stop that ends the sentence keeps the last part number a part.
+    assert_eq!(one("horns 1 and 2.").groups[0].parts, [1, 2]);
+    assert_eq!(one("Hraje lesní roh 3.").groups[0].parts, [3]);
     // "sólové housle": the Czech size word before the instrument.
     assert_eq!(
         clear("sólové housle hrají melodii").groups[0].size,
