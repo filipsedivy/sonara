@@ -1030,11 +1030,11 @@ fn bass_loop(unrolled: bool, with_controls: bool) -> Project {
 
 /// A looping clip plays its controller events on every pass, as its notes, also on the Poly
 /// Synth: the bends and the pedal repeat with the loop, and the bend one pass leaves holds into
-/// the next. The oracle is the same clip written out without a loop, bit for bit, from a start
-/// and from a seek into the third pass. The prototype dropped the controller events of looping
-/// clips (TST-06 pins the change); no golden project has a clip with controller events, so the
-/// golden renders stay the same (`tests/golden_render.rs`, GLD-01). Every block is processed
-/// inside `assert_no_alloc` (RT-02).
+/// the next. The oracle is the same clip written out without a loop, bit for bit, played from
+/// the start and from a later start in the third pass. The prototype dropped the controller
+/// events of looping clips (TST-06 pins the change); no golden project has a clip with
+/// controller events, so the golden renders stay the same (`tests/golden_render.rs`, GLD-01).
+/// Every block is processed inside `assert_no_alloc` (RT-02).
 #[test]
 fn a_looping_clip_bends_the_poly_synth_on_every_pass() {
     let registry = builtin_registry();
