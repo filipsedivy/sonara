@@ -342,6 +342,25 @@ fn create_track_stores_the_part() {
     assert!(part.name.is_none() && part.players.is_none() && part.notation.is_empty());
 }
 
+/// Every clef the schema lists reaches the part as that clef: the table's spellings and the
+/// argument struct's agree.
+#[test]
+fn every_clef_of_the_schema_is_stored() {
+    let (_dir, app, service) = world();
+    for clef in Clef::ALL {
+        let reply = call(
+            &service,
+            "create_track",
+            &json!({"name": "Part", "part": {"instrument": "violin",
+                                             "notation": {"clef": clef.as_str()}}}),
+        );
+        let track_id = reply["result"]["track_id"].as_str().expect("a track ID");
+        let project = project(&app);
+        let part = project.track(track_id).expect("the track").part.clone();
+        assert_eq!(part.and_then(|part| part.notation.clef), Some(clef));
+    }
+}
+
 #[test]
 fn a_dry_run_with_a_part_creates_nothing() {
     let (_dir, app, service) = world();
