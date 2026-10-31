@@ -235,7 +235,29 @@ moves them onto the patch's keyswitch keys, and a note moved onto a keyswitch ke
 switch. A note moved below 0 or above 127 is not played. The articulation parameter selects the
 patch's own keyswitch and is not moved.
 
-**`dynamics` is stored but not played yet**: a track sounds the same whatever it is set to.
+**How `dynamics` plays.** What it drives depends on the preset, as its library's manifest or
+Sonara's profile says (`dynamics` in [instrument-catalog.md](instrument-catalog.md)):
+
+- **Velocity** (the default, and every preset about which nothing is claimed): each new note
+  plays at its velocity times `dynamics`, rounded and at least 1, which picks the dynamic layer
+  and the gain. A note that already sounds follows a later change as a gain, the square of the
+  new value over the value it started with, by at most +12 dB: a swell on a held chord changes
+  its level, and its timbre changes from the next note on. The default 1 plays every note
+  exactly as written.
+- **Fixed velocity**: every note plays at the preset's velocity in place of its own, scaled and
+  followed in the same way.
+- **A controller** (`{"via": "cc", "cc": 1}`): `dynamics` sets that controller to
+  `dynamics · 127`, rounded, which the patch's controller crossfades read; velocities stay as they
+  are. For volume (7) or expression (11) it sets the level as such a controller in a clip does.
+  The default 1 sets 127, so such a preset plays its loudest layer until a lane or a lower value
+  chooses another. A clip's event of that controller wins after it, until `dynamics` changes or
+  is applied again when playback starts or jumps; after a jump, the engine then sends the clip's
+  last modulation (1) or expression (11) value before the new position, if it has one.
+
+The dynamics act before the articulation's velocity zone, so a softer note stays in the zone. A
+note's release samples play at the velocity it was pressed with, at the level the note has
+reached. An automated change reaches sounding notes at the next 512-frame block, ramped over
+that block.
 
 A project saved by a newer version of Sonara can hold an instrument type or an articulation that
 this version does not know. It opens unchanged, and the device plays as `auto`; the render warns

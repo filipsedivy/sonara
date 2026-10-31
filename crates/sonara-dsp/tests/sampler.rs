@@ -1,8 +1,9 @@
 //! `sonara.sampler` against synthetic banks: layers, round robin, release, release triggers,
 //! the sustain pedal, keyswitches, exclusive groups, controllers, polyphony, the articulation
-//! parameter, the key offset and the real-time rules (TST-10: every check compares against a
-//! value that follows from the bank, not "it ran"). Every block, and every parameter change of
-//! the articulation tests, runs under `assert_no_alloc` (RT-02).
+//! and dynamics parameters, the key offset and the real-time rules (TST-10: every check
+//! compares against a value that follows from the bank, not "it ran"). Every block, and every
+//! parameter change of the articulation and dynamics tests, runs under `assert_no_alloc`
+//! (RT-02).
 //!
 //! The samples are constants, so a voice's steady-state output is its sample value times the
 //! velocity gain `(velocity / 127)²`, which the tests compute independently of the engine.
@@ -19,7 +20,7 @@ use sonara_dsp::bank::{
     SamplerMapping, SamplerSetup, Selector, Trigger,
 };
 use sonara_dsp::processor::{
-    BlockContext, DeviceState, EventKind, InstrumentEvent, ProcessSpec, Processor,
+    BlockContext, DeviceState, EventKind, InstrumentEvent, ParamSlot, ProcessSpec, Processor,
 };
 use sonara_dsp::processors::{create, param_slots};
 
@@ -2936,4 +2937,506 @@ fn the_switch_notes_are_the_clip_keys_the_offset_moves_onto_switch_keys() {
         ]
     });
     assert_eq!(keys, [Some(0), None, Some(127), None, Some(127), None]);
+}
+
+// --- The `dynamics` parameter: velocity, fixed velocity and controller drives ---
+
+/// The parameters with `dynamics` at `value`.
+fn dynamics(value: f64) -> Params {
+    let mut params = Params::new();
+    params.insert("dynamics".to_owned(), ParamValue::Float(value));
+    params
+}
+
+/// The mapping of a preset whose dynamics are driven by `drive`, with nothing else claimed.
+fn driven(drive: DynamicsDrive) -> SamplerMapping {
+    SamplerMapping::new(Vec::new(), drive, None, 0)
+}
+
+/// Every sample of `frames` as its bits, so that a comparison is bit for bit.
+fn bits(frames: &[[f64; 2]]) -> Vec<u64> {
+    frames.iter().flatten().map(|x| x.to_bits()).collect()
+}
+
+/// Velocity layers with a crossfade, a release tail, a layer that controller 1 fades in and a
+/// layer that the sustain pedal gates: what the velocity, the controllers and the release give
+/// a note.
+fn expressive_bank() -> SampleBank {
+    SampleBank {
+        samples: vec![
+            constant(0.5),
+            constant(0.25),
+            constant(0.125),
+            constant(0.0625),
+        ],
+        regions: vec![
+            Region {
+                velocity_crossfade: fade_out(70, 90, CrossfadeCurve::Power),
+                release: 0.01,
+                ..region(0)
+            },
+            Region {
+                velocity_crossfade: fade_in(70, 90, CrossfadeCurve::Power),
+                cc_crossfades: cc_fade(true, CrossfadeCurve::Gain),
+                amp_veltrack: 50.0,
+                release: 0.01,
+                ..region(1)
+            },
+            Region {
+                trigger: Trigger::Release,
+                ..region(2)
+            },
+            Region {
+                cc_gates: range(64, 64, 127),
+                ..region(3)
+            },
+        ],
+        ..SampleBank::default()
+    }
+}
+
+/// A phrase on [`expressive_bank`]: notes inside and outside the crossfade, a controller swell,
+/// the pedal, releases with tails, all notes off and a loud note after it.
+fn expressive_phrase(processor: &mut dyn Processor) -> Vec<[f64; 2]> {
+    let at = |offset, event| InstrumentEvent { offset, ..event };
+    let blocks: [&[InstrumentEvent]; 8] = [
+        &[
+            event(EventKind::NoteOn, 60, 100),
+            at(300, event(EventKind::NoteOn, 64, 75)),
+        ],
+        &[cc(1, 90, 0)],
+        &[
+            pedal(true),
+            at(10, event(EventKind::NoteOff, 60, 0)),
+            at(500, event(EventKind::NoteOn, 67, 40)),
+        ],
+        &[],
+        &[pedal(false), event(EventKind::NoteOff, 64, 0)],
+        &[
+            event(EventKind::AllNotesOff, 0, 0),
+            event(EventKind::NoteOn, 72, 127),
+        ],
+        &[at(100, event(EventKind::NoteOff, 72, 0))],
+        &[],
+    ];
+    blocks
+        .iter()
+        .flat_map(|events| run(processor, events))
+        .collect()
+}
+
+#[test]
+fn dynamics_one_is_identical_to_today() {
+    // The default 1 plays every note exactly as the sampler did before the parameter acted:
+    // every other test of this file runs at it against values computed from the bank, and here
+    // the same phrase renders bit for bit alike with the parameter left out, set to 1, moved
+    // to 0.5 and back before the phrase, and with a drive that changes neither velocities nor
+    // levels (a controller that no region reads).
+    let oracle = expressive_phrase(&mut *sampler(expressive_bank()));
+    assert!(
+        oracle.iter().all(|frame| frame[0].is_finite())
+            && oracle.iter().filter(|frame| frame[0] != 0.0).count() > 6 * BLOCK,
+        "the phrase sounds"
+    );
+    let explicit = expressive_phrase(&mut *sampler_with(expressive_bank(), &dynamics(1.0)));
+    assert_eq!(bits(&explicit), bits(&oracle), "dynamics set to 1");
+    let mut moved = sampler_with(expressive_bank(), &dynamics(1.0));
+    set(&mut *moved, &dynamics(0.5));
+    set(&mut *moved, &dynamics(1.0));
+    assert_eq!(
+        bits(&expressive_phrase(&mut *moved)),
+        bits(&oracle),
+        "moved and back"
+    );
+    let velocity = mapped(
+        expressive_bank(),
+        driven(DynamicsDrive::Velocity),
+        &dynamics(1.0),
+    );
+    let controller = mapped(
+        expressive_bank(),
+        driven(DynamicsDrive::Controller(100)),
+        &dynamics(1.0),
+    );
+    for (mut processor, what) in [(velocity, "velocity drive"), (controller, "controller")] {
+        assert_eq!(
+            bits(&expressive_phrase(&mut *processor)),
+            bits(&oracle),
+            "{what}"
+        );
+    }
+}
+
+#[test]
+fn dynamics_scale_the_velocity_of_new_notes() {
+    // `max(1, round(v · d))` picks the layer (1-40: 0.5, 41 up: 0.25) and the gain, and the
+    // note's release region (1-40: 0.125) plays at it too. 0 plays the softest note, not none.
+    for (pressed, value, played) in [
+        (100, 0.5, 50),
+        (127, 0.5, 64),
+        (100, 0.4, 40),
+        (127, 0.3, 38),
+        (64, 0.75, 48),
+        (1, 0.5, 1),
+        (100, 0.0, 1),
+        (127, 1.0, 127),
+    ] {
+        let mut processor = sampler_with(two_layers(), &dynamics(value));
+        let attack = run(&mut *processor, &[event(EventKind::NoteOn, 60, pressed)]);
+        let layer = if played <= 40 { 0.5 } else { 0.25 };
+        close(level(&attack), layer * gain(played));
+        assert_eq!(voices(&*processor), 1.0, "{pressed} at {value}");
+        let release = run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+        let tail = if played <= 40 {
+            0.125 * gain(played)
+        } else {
+            0.0
+        };
+        close(level(&release), tail);
+    }
+}
+
+/// A note whose level ignores its velocity (`amp_veltrack=0`): a constant 0.5.
+fn untracked() -> SampleBank {
+    SampleBank {
+        samples: vec![constant(0.5)],
+        regions: vec![Region {
+            amp_veltrack: 0.0,
+            ..region(0)
+        }],
+        ..SampleBank::default()
+    }
+}
+
+#[test]
+fn dynamics_scales_held_notes() {
+    // A held note follows a change as the gain `(d / d₀)²`, ramped linearly over the next block
+    // and exact on its last frame, as the controller gains are.
+    let mut processor = sampler(untracked());
+    let held = run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    close(level(&held), 0.5);
+    set(&mut *processor, &dynamics(0.5));
+    let ramp = run(&mut *processor, &[]);
+    for (i, frame) in (1..=BLOCK).zip(&ramp) {
+        let at = 1.0 - 0.75 * f64::from(u32::try_from(i).expect("a block")) / 2_048.0;
+        close(frame[0], 0.5 * at);
+    }
+    close(level(&ramp), 0.125);
+    for frame in &run(&mut *processor, &[]) {
+        close(frame[0], 0.125);
+    }
+    // A note pressed now starts at its own level; the held one keeps the level of the change.
+    let both = run(&mut *processor, &[event(EventKind::NoteOn, 62, 127)]);
+    close(level(&both), 0.125 + 0.5);
+    set(&mut *processor, &dynamics(1.0));
+    run(&mut *processor, &[]);
+    let louder = run(&mut *processor, &[]);
+    close(level(&louder), 0.5 + 0.5 * 4.0);
+}
+
+#[test]
+fn a_held_note_rises_at_most_twelve_db() {
+    // From 0.1 a rise to 0.15 gives (1.5)² = 2.25; a rise to 1 would give 100, capped at 4.
+    for (to, gain) in [(0.15, 2.25), (1.0, 4.0)] {
+        let mut processor = sampler_with(untracked(), &dynamics(0.1));
+        let held = run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+        close(level(&held), 0.5);
+        set(&mut *processor, &dynamics(to));
+        close(level(&run(&mut *processor, &[])), 0.5 * gain);
+    }
+    // Below 1/127 the parameter counts as 1/127: a note pressed at 0 starts at its own level,
+    // rises by (2/127 · 127)² = 4 at 2/127, and a note pressed at 0.5 falls to
+    // ((1/127) / 0.5)² at 0, all but silent.
+    let mut processor = sampler_with(untracked(), &dynamics(0.0));
+    close(
+        level(&run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)])),
+        0.5,
+    );
+    set(&mut *processor, &dynamics(2.0 / 127.0));
+    close(level(&run(&mut *processor, &[])), 2.0);
+    let mut processor = sampler_with(untracked(), &dynamics(0.5));
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    set(&mut *processor, &dynamics(0.0));
+    let faded = level(&run(&mut *processor, &[]));
+    let expected = 0.5 * (2.0_f64 / 127.0).powi(2);
+    assert!((faded - expected).abs() < 1e-12, "{faded} != {expected}");
+}
+
+#[test]
+fn a_release_tail_follows_the_dynamics_its_note_was_pressed_with() {
+    // Pressed at 0.5 (velocity 64), raised to 1 while held: the tail plays at the note's
+    // velocity and at the note's gain (1 / 0.5)² = 4, at the release and at the pedal's lift.
+    let mut processor = sampler_with(note_with_tail(0.125), &dynamics(0.5));
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    set(&mut *processor, &dynamics(1.0));
+    close(level(&run(&mut *processor, &[])), 4.0 * 0.5 * gain(64));
+    let tail = run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+    close(level(&tail), 4.0 * 0.125 * gain(64));
+
+    let mut processor = sampler_with(note_with_tail(0.125), &dynamics(0.5));
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    run(
+        &mut *processor,
+        &[pedal(true), event(EventKind::NoteOff, 60, 0)],
+    );
+    set(&mut *processor, &dynamics(0.25));
+    run(&mut *processor, &[]);
+    let lifted = run(&mut *processor, &[pedal(false)]);
+    close(level(&lifted), 0.25 * 0.125 * gain(64));
+}
+
+#[test]
+fn a_controller_voice_follows_the_dynamics_from_its_start() {
+    // A pedal noise has no velocity: it starts at its own level and follows later changes.
+    let mut processor = sampler_with(pedal_noises(), &dynamics(0.5));
+    let down = run(&mut *processor, &[pedal(true)]);
+    let start = level(&down);
+    assert!(start > 0.0, "the pedal noise sounds");
+    set(&mut *processor, &dynamics(1.0));
+    close(level(&run(&mut *processor, &[])), 4.0 * start);
+}
+
+#[test]
+fn a_fixed_velocity_replaces_the_notes_own() {
+    // Every note plays at 100 (the loud layer), whatever its velocity; the dynamics scale the
+    // fixed velocity: at 0.4 every note plays at 40, the soft layer, with its tail.
+    for pressed in [1, 64, 127] {
+        let mut processor = mapped(
+            two_layers(),
+            driven(DynamicsDrive::Fixed(100)),
+            &dynamics(1.0),
+        );
+        let attack = run(&mut *processor, &[event(EventKind::NoteOn, 60, pressed)]);
+        close(level(&attack), 0.25 * gain(100));
+        let mut processor = mapped(
+            two_layers(),
+            driven(DynamicsDrive::Fixed(100)),
+            &dynamics(0.4),
+        );
+        let attack = run(&mut *processor, &[event(EventKind::NoteOn, 60, pressed)]);
+        close(level(&attack), 0.5 * gain(40));
+        let release = run(&mut *processor, &[event(EventKind::NoteOff, 60, 0)]);
+        close(level(&release), 0.125 * gain(40));
+    }
+    // A held note follows a change as with the velocity drive.
+    let mut processor = mapped(
+        untracked(),
+        driven(DynamicsDrive::Fixed(100)),
+        &dynamics(0.5),
+    );
+    close(
+        level(&run(&mut *processor, &[event(EventKind::NoteOn, 60, 10)])),
+        0.5,
+    );
+    set(&mut *processor, &dynamics(0.25));
+    close(level(&run(&mut *processor, &[])), 0.5 * 0.25);
+}
+
+#[test]
+fn the_dynamics_scale_a_note_before_an_articulation_moves_it_into_its_zone() {
+    // `pizzicato` plays the zone 41-127, the loud layer. At 0.25 a press at 127 plays at 32,
+    // which the zone moves to 41 + 31 · 86 / 126 = 62: still the loud layer. Moved first and
+    // scaled after, it would play at 32, the soft layer outside the zone.
+    let mut targets = vec![None; 5];
+    if let Some(slot) = targets.get_mut(4) {
+        *slot = Some(ArticulationTarget {
+            selector: Some(Selector::Velocity { lo: 41, hi: 127 }),
+            legato: false,
+        });
+    }
+    let mapping = SamplerMapping::new(targets, DynamicsDrive::Velocity, None, 0);
+    let mut params = articulation("pizzicato");
+    params.insert("dynamics".to_owned(), ParamValue::Float(0.25));
+    let mut processor = mapped(two_layers(), mapping, &params);
+    let attack = run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    close(level(&attack), 0.25 * gain(62));
+}
+
+/// Two layers that controller 1 crossfades (equal power): the soft one (0.5) fades out and the
+/// loud one (0.25) in over 0 to 127. Velocity does not change their level.
+fn controller_dynamics_bank() -> SampleBank {
+    SampleBank {
+        samples: vec![constant(0.5), constant(0.25)],
+        regions: vec![
+            Region {
+                cc_crossfades: cc_fade(false, CrossfadeCurve::Power),
+                amp_veltrack: 0.0,
+                ..region(0)
+            },
+            Region {
+                cc_crossfades: cc_fade(true, CrossfadeCurve::Power),
+                amp_veltrack: 0.0,
+                ..region(1)
+            },
+        ],
+        ..SampleBank::default()
+    }
+}
+
+/// The level of [`controller_dynamics_bank`] at controller 1 = `value`.
+fn crossfaded(value: u8) -> f64 {
+    let x = f64::from(value) / 127.0;
+    0.5 * (1.0 - x).sqrt() + 0.25 * x.sqrt()
+}
+
+/// A prepared sampler playing [`controller_dynamics_bank`] with its dynamics on controller 1.
+fn on_controller_one(params: &Params) -> Box<dyn Processor> {
+    mapped(
+        controller_dynamics_bank(),
+        driven(DynamicsDrive::Controller(1)),
+        params,
+    )
+}
+
+#[test]
+fn controller_dynamics_drive_the_crossfade() {
+    // The default 1 sets controller 1 to 127: the loudest layer alone.
+    let mut processor = on_controller_one(&Params::new());
+    close(note(&mut *processor), crossfaded(127));
+    // `round(d · 127)`: 0.5 sets 64, and a held chord follows from the next block.
+    let held = run(
+        &mut *processor,
+        &[event(EventKind::NoteOn, 60, 127), press(64, 1, 9)],
+    );
+    close(level(&held), 2.0 * crossfaded(127));
+    set(&mut *processor, &dynamics(0.5));
+    close(level(&run(&mut *processor, &[])), 2.0 * crossfaded(64));
+    set(&mut *processor, &dynamics(0.0));
+    close(level(&run(&mut *processor, &[])), 2.0 * crossfaded(0));
+}
+
+#[test]
+fn controller_dynamics_leave_velocities_and_held_levels_alone() {
+    // On the velocity layers of [`two_layers`], with the dynamics on a controller no region
+    // reads: a press at 100 plays the loud layer at its own velocity at 0.3 (the velocity drive
+    // would play it at 30, the soft layer), and a held note keeps its level when the value
+    // changes.
+    let mut processor = mapped(
+        two_layers(),
+        driven(DynamicsDrive::Controller(1)),
+        &dynamics(0.3),
+    );
+    let attack = run(&mut *processor, &[event(EventKind::NoteOn, 60, 100)]);
+    close(level(&attack), 0.25 * gain(100));
+    set(&mut *processor, &dynamics(1.0));
+    for frame in &run(&mut *processor, &[]) {
+        close(frame[0], 0.25 * gain(100));
+    }
+}
+
+#[test]
+fn the_last_writer_of_the_controller_wins() {
+    let mut processor = on_controller_one(&dynamics(0.5));
+    run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+    // A clip's event after the parameter wins.
+    run(&mut *processor, &[cc(1, 10, 0)]);
+    close(level(&run(&mut *processor, &[])), crossfaded(10));
+    // A change of another parameter does not write the dynamics again.
+    let mut louder = dynamics(0.5);
+    louder.insert("volume".to_owned(), ParamValue::Float(0.0));
+    louder.insert("pan".to_owned(), ParamValue::Float(0.0));
+    louder.insert("release_scale".to_owned(), ParamValue::Float(2.0));
+    set(&mut *processor, &louder);
+    close(level(&run(&mut *processor, &[])), crossfaded(10));
+    // A change of the parameter after the clip's event wins.
+    set(&mut *processor, &dynamics(0.75));
+    close(level(&run(&mut *processor, &[])), crossfaded(95));
+}
+
+#[test]
+fn controller_dynamics_are_applied_again_at_all_notes_off_and_on_a_reset() {
+    let mut processor = on_controller_one(&dynamics(0.5));
+    run(&mut *processor, &[cc(1, 10, 0)]);
+    close(note(&mut *processor), crossfaded(10));
+    // All notes off, as at a jump, writes the parameter's value again.
+    run(&mut *processor, &[event(EventKind::AllNotesOff, 0, 0)]);
+    run(&mut *processor, &[]);
+    close(note(&mut *processor), crossfaded(64));
+    // The chase's restored value of the controller follows the all notes off and wins.
+    run(
+        &mut *processor,
+        &[event(EventKind::AllNotesOff, 0, 0), cc(1, 20, 0)],
+    );
+    run(&mut *processor, &[]);
+    close(note(&mut *processor), crossfaded(20));
+    // A reset, as on play from stop, and a new instrument write it again.
+    assert_no_alloc(|| processor.reset());
+    close(note(&mut *processor), crossfaded(64));
+    run(&mut *processor, &[cc(1, 20, 0)]);
+    processor.set_state(&DeviceState {
+        sampler: Some(Arc::new(SamplerSetup {
+            bank: Arc::new(controller_dynamics_bank()),
+            mapping: Arc::new(driven(DynamicsDrive::Controller(1))),
+        })),
+        ..DeviceState::default()
+    });
+    close(note(&mut *processor), crossfaded(64));
+}
+
+#[test]
+fn controller_dynamics_reach_every_channel_but_start_no_region() {
+    // A region that an event of controller 1 from 64 up starts: the parameter's value is no
+    // event, so it starts nothing, while a clip's event does. The value reaches every channel.
+    let bank = SampleBank {
+        samples: vec![constant(0.5), constant(0.125)],
+        regions: vec![
+            Region {
+                cc_gates: range(1, 64, 127),
+                amp_veltrack: 0.0,
+                ..region(0)
+            },
+            Region {
+                on_key: false,
+                cc_triggers: range(1, 64, 127),
+                ..region(1)
+            },
+        ],
+        ..SampleBank::default()
+    };
+    let mut processor = mapped(bank, driven(DynamicsDrive::Controller(1)), &dynamics(0.9));
+    run(&mut *processor, &[]);
+    assert_eq!(voices(&*processor), 0.0);
+    set(&mut *processor, &dynamics(0.8));
+    run(&mut *processor, &[]);
+    assert_eq!(voices(&*processor), 0.0);
+    let gated = run(&mut *processor, &[press(60, 127, 15)]);
+    close(level(&gated), 0.5);
+    run(&mut *processor, &[event(EventKind::AllNotesOff, 0, 0)]);
+    run(&mut *processor, &[]);
+    run(&mut *processor, &[cc(1, 100, 3)]);
+    assert_eq!(voices(&*processor), 1.0, "a clip's event starts the region");
+}
+
+#[test]
+fn controller_dynamics_on_expression_set_the_level() {
+    // Volume (7) and expression (11) set the sampler's level: the parameter does too, and a
+    // clip's event replaces it.
+    for number in [7, 11] {
+        let mut processor = mapped(
+            untracked(),
+            driven(DynamicsDrive::Controller(number)),
+            &dynamics(0.5),
+        );
+        close(note(&mut *processor), 0.5 * 64.0 / 127.0);
+        run(&mut *processor, &[cc(number, 127, 0)]);
+        close(note(&mut *processor), 0.5);
+        set(&mut *processor, &dynamics(0.25));
+        close(note(&mut *processor), 0.5 * 32.0 / 127.0);
+    }
+}
+
+#[test]
+fn a_dynamics_value_outside_its_range_plays_as_the_nearest_end() {
+    // The descriptor keeps the value between 0 and 1; slots built by hand are clamped, and a
+    // value that is not a number plays as the default 1.
+    let defaults = param_slots(&descriptor(), &Params::new()).expect("valid parameters");
+    for (value, played) in [(f64::NAN, 127), (2.0, 127), (-1.0, 1), (0.5, 64)] {
+        let mut slots = defaults;
+        slots.set(6, ParamSlot::Float(value));
+        let mut processor = sampler(two_layers());
+        assert_no_alloc(|| processor.set_params(&slots));
+        let attack = run(&mut *processor, &[event(EventKind::NoteOn, 60, 127)]);
+        let layer = if played <= 40 { 0.5 } else { 0.25 };
+        close(level(&attack), layer * gain(played));
+    }
 }

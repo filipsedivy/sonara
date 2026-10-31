@@ -39,6 +39,30 @@
 //!   ([`SamplerSetup::switch_notes`]). A note the offset moves out of the MIDI keys 0 to 127 is
 //!   dropped, with its release. An articulation's keyswitch target names the patch's key and is
 //!   not moved.
+//! - **The `dynamics` parameter** (0 to 1, default 1) acts as the preset's mapping says
+//!   ([`SamplerMapping::dynamics`]):
+//!   - **Velocity** (the default): a key press at velocity `v` plays at
+//!     `max(1, round(v · dynamics))`, which picks the layer and sets the gain. A sounding voice
+//!     then follows later changes as a gain, `(dynamics / dynamics at its start)²`, both taken
+//!     as at least 1/127, at most 4 (+12 dB): a swell on a held chord changes its level, and its
+//!     timbre changes from the next note on. At 1 every note plays exactly as without the
+//!     parameter.
+//!   - **Fixed velocity**: every key press plays at the preset's velocity in place of its own,
+//!     scaled and followed as with velocity, for patches whose layers should not follow the
+//!     note's velocity.
+//!   - **Controller**: the parameter sets the controller to `round(dynamics · 127)` on every
+//!     channel, as a clip's event of it would (for volume, 7, and expression, 11, the level they
+//!     set too, but no region starts and the sustain pedal does not move), so the patch's
+//!     controller crossfades and gates play the dynamics; velocities and levels stay as they are.
+//!     It writes the value when the parameter changes, on a reset and at all notes off, and a
+//!     clip's event of the controller wins after it, as the chase's restored value does after a
+//!     jump. The default 1 sets 127, the loudest layer.
+//!
+//!   The dynamics act before an articulation's velocity zone, so a softer note stays in the
+//!   zone. A note's release regions play at the velocity it was pressed with and follow the
+//!   parameter from the dynamics it was pressed with. A voice that a controller starts follows
+//!   the parameter from its start. A change reaches sounding voices at the next block start,
+//!   ramped linearly over the block with their controller gains.
 //! - **Legato triggers.** A `trigger=first` region starts only on a press while no other key is
 //!   down, and a `trigger=legato` region only on a press while one is, as the SFZ format and the
 //!   reference player sfizz read them ([`Trigger::starts_on_press`]). Sonatina's legato patches
@@ -119,8 +143,8 @@ use std::sync::Arc;
 use super::DEFAULT_SPEC;
 use super::params::{choice, float};
 use crate::bank::{
-    Controllers, LoopMode, OffMode, Region, SampleBank, SamplerMapping, SamplerSetup, Selector,
-    Trigger,
+    Controllers, DynamicsDrive, LoopMode, OffMode, Region, SampleBank, SamplerMapping,
+    SamplerSetup, Selector, Trigger,
 };
 use crate::filters::db_to_amp;
 use crate::processor::{
@@ -137,6 +161,7 @@ const VOLUME_DB: usize = 0;
 const PAN: usize = 1;
 const RELEASE_SCALE: usize = 2;
 const ARTICULATION: usize = 5;
+const DYNAMICS: usize = 6;
 
 /// Voices that can sound at once.
 const MAX_VOICES: usize = 64;
@@ -157,6 +182,13 @@ const BEND_RANGE: f64 = 2.0;
 const RNG_SEED: u32 = 0x2545_F491;
 /// The highest MIDI key and velocity.
 const MIDI_MAX: u8 = 127;
+/// The lowest `dynamics` a sounding note's level is measured against: the value at which a
+/// note of velocity 127 plays at velocity 1. A lower value plays as this one, so no ratio of
+/// two dynamics divides by zero.
+const MIN_DYNAMICS: f64 = 1.0 / 127.0;
+/// The most the `dynamics` parameter raises a sounding note's level above the level it started
+/// with: 4, +12 dB.
+const MAX_DYNAMICS_GAIN: f64 = 4.0;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct Settings {
@@ -190,13 +222,17 @@ struct Voice {
     step: f64,
     /// Region gain times the gain the note's velocity gives the region.
     gain: f64,
-    /// The gain the controllers give the region ([`Region::controller_gain`]), ramped
-    /// linearly from block to block.
-    cc_gain: f64,
-    /// The change of `cc_gain` per frame in this block.
-    cc_step: f64,
-    /// The value `cc_gain` reaches on this block's last frame.
-    cc_target: f64,
+    /// The `dynamics` the voice started with, at least [`MIN_DYNAMICS`]: what the parameter's
+    /// later values are measured against ([`dynamics_gain`]).
+    dynamics: f64,
+    /// The gain that follows the voice while it sounds: the gain the controllers give the
+    /// region ([`Region::controller_gain`]) times the gain the `dynamics` parameter gives the
+    /// voice ([`dynamics_gain`]), ramped linearly from block to block.
+    live_gain: f64,
+    /// The change of `live_gain` per frame in this block.
+    live_step: f64,
+    /// The value `live_gain` reaches on this block's last frame.
+    live_target: f64,
     level: f64,
     attack_step: f64,
     release_step: f64,
@@ -217,9 +253,10 @@ impl Voice {
         pos: 0.0,
         step: 0.0,
         gain: 0.0,
-        cc_gain: 1.0,
-        cc_step: 0.0,
-        cc_target: 1.0,
+        dynamics: 1.0,
+        live_gain: 1.0,
+        live_step: 0.0,
+        live_target: 1.0,
         level: 0.0,
         attack_step: 0.0,
         release_step: 0.0,
@@ -233,8 +270,14 @@ impl Voice {
 /// What starts a voice.
 #[derive(Debug, Clone, Copy)]
 enum Start {
-    /// A key press or release: the key, the velocity it was pressed with and its channel.
-    Key { key: u8, velocity: u8, channel: u8 },
+    /// A key press or release: the key, the velocity it was pressed with, its channel and the
+    /// `dynamics` it was pressed with (at least [`MIN_DYNAMICS`]).
+    Key {
+        key: u8,
+        velocity: u8,
+        channel: u8,
+        dynamics: f64,
+    },
     /// A controller event on a channel: the region plays at its `pitch_keycenter`, and no
     /// velocity changes its gain.
     Controller { channel: u8 },
@@ -309,13 +352,16 @@ impl Forced {
     }
 }
 
-/// What selects the `trigger=release` regions of a key release.
+/// What selects the `trigger=release` regions of a key release, and what they play with.
 #[derive(Debug, Clone, Copy)]
 struct KeyRelease {
     /// The velocity the key was pressed with.
     velocity: u8,
     /// The last keyswitch when the key was released.
     switch: Option<u8>,
+    /// The `dynamics` the key was pressed with, so the note's tail follows the parameter as
+    /// the note did.
+    dynamics: f64,
 }
 
 /// The sample player.
@@ -328,6 +374,9 @@ pub(crate) struct Sampler {
     voices: [Voice; MAX_VOICES],
     /// The velocity each key was pressed with, for release-trigger regions.
     key_velocity: [u8; 128],
+    /// The `dynamics` each key was pressed with, for its release-trigger regions; `None` for a
+    /// key not pressed since the last reset.
+    key_dynamics: [Option<f64>; 128],
     key_down: [bool; 128],
     /// The keys released while the sustain pedal was down: their release regions start when
     /// the pedal lifts.
@@ -340,6 +389,8 @@ pub(crate) struct Sampler {
     articulation: u16,
     /// What that choice forces over what the clips select.
     forced: Forced,
+    /// The value of the `dynamics` parameter, 0 to 1.
+    dynamics: f64,
     round_robin: u32,
     rng: u32,
     bend: f64,
@@ -359,12 +410,14 @@ impl Sampler {
             setup: None,
             voices: [Voice::IDLE; MAX_VOICES],
             key_velocity: [0; 128],
+            key_dynamics: [None; 128],
             key_down: [false; 128],
             released_under_pedal: [None; 128],
             controllers: [Controllers::INITIAL; CHANNELS],
             last_switch: None,
             articulation: SamplerMapping::AUTO,
             forced: Forced::NONE,
+            dynamics: 1.0,
             round_robin: 0,
             rng: RNG_SEED,
             bend: 0.0,
@@ -378,6 +431,7 @@ impl Sampler {
     fn rest(&mut self) {
         self.voices = [Voice::IDLE; MAX_VOICES];
         self.key_velocity = [0; 128];
+        self.key_dynamics = [None; 128];
         self.key_down = [false; 128];
         self.released_under_pedal = [None; 128];
         self.controllers = [self.initial_controllers(); CHANNELS];
@@ -389,6 +443,7 @@ impl Sampler {
         self.expression_cc = 1.0;
         self.pedal = false;
         self.force();
+        self.drive_controller();
     }
 
     /// Applies the target of the `articulation` choice in force, from the mapping of the
@@ -404,6 +459,54 @@ impl Sampler {
     /// The keyswitch new notes play with: the forced one, else the clips' last one.
     fn active_switch(&self) -> Option<u8> {
         self.forced.switch.or(self.last_switch)
+    }
+
+    /// What the `dynamics` parameter drives in the preset the sampler plays: the velocity
+    /// without an instrument.
+    fn drive(&self) -> DynamicsDrive {
+        self.setup
+            .as_deref()
+            .map_or(DynamicsDrive::Velocity, |setup| setup.mapping.dynamics)
+    }
+
+    /// The velocity a key pressed at `velocity` plays with, before an articulation's velocity
+    /// zone moves it: scaled by the `dynamics` parameter ([`scaled_velocity`]), from the
+    /// preset's fixed velocity in place of the note's own when it has one. A preset whose
+    /// dynamics drive a controller keeps the note's velocity.
+    fn dynamic_velocity(&self, velocity: u8) -> u8 {
+        match self.drive() {
+            DynamicsDrive::Velocity => scaled_velocity(velocity, self.dynamics),
+            DynamicsDrive::Fixed(fixed) => scaled_velocity(fixed.clamp(1, MIDI_MAX), self.dynamics),
+            DynamicsDrive::Controller(_) => velocity,
+        }
+    }
+
+    /// The `dynamics` a voice that starts now remembers: the parameter's value, at least
+    /// [`MIN_DYNAMICS`].
+    fn start_dynamics(&self) -> f64 {
+        self.dynamics.max(MIN_DYNAMICS)
+    }
+
+    /// For a preset whose dynamics drive a controller, sets that controller to the `dynamics`
+    /// parameter's value, `round(dynamics · 127)`, on every channel, as an event of the
+    /// controller from a clip would, and so for volume (7) and expression (11) the level they
+    /// set too. It starts no region and does not move the sustain pedal. A later event of the
+    /// controller from a clip replaces the value, until this runs again: when the parameter
+    /// changes, on a reset and at all notes off.
+    fn drive_controller(&mut self) {
+        let DynamicsDrive::Controller(number) = self.drive() else {
+            return;
+        };
+        let value = controller_value(self.dynamics);
+        for controllers in &mut self.controllers {
+            controllers.set(number, value);
+        }
+        let level = f64::from(value) / 127.0;
+        match number {
+            7 => self.volume_cc = level,
+            11 => self.expression_cc = level,
+            _ => {}
+        }
     }
 
     /// `event`, a note on, a note off or a keyswitch event of a clip, on the key of the patch:
@@ -493,6 +596,9 @@ impl Sampler {
                 for controllers in &mut self.controllers {
                     controllers.set(SUSTAIN, 0);
                 }
+                // The `dynamics` value again for a preset whose dynamics drive a controller;
+                // the chased value of the controller, if any, follows and wins.
+                self.drive_controller();
                 for voice in &mut self.voices {
                     if voice.active {
                         start_release(voice, self.spec.sample_rate, CHOKE_RELEASE);
@@ -576,7 +682,9 @@ impl Sampler {
             return;
         };
         let key = event.pitch;
-        let velocity = self.forced.velocity(event.velocity);
+        // The dynamics first, then the articulation's zone, so a softer note stays in the zone.
+        let velocity = self.forced.velocity(self.dynamic_velocity(event.velocity));
+        let dynamics = self.start_dynamics();
         // Counted before this key is marked down, so a press of a key that is still down
         // counts that key (sfizz counts both presses too).
         let another_key_down = self.another_key_down(&bank);
@@ -589,6 +697,9 @@ impl Sampler {
         if let Some(vel) = self.key_velocity.get_mut(usize::from(key)) {
             *vel = velocity;
         }
+        if let Some(pressed) = self.key_dynamics.get_mut(usize::from(key)) {
+            *pressed = Some(dynamics);
+        }
         let roll = self.random();
         let counter = self.round_robin;
         let controllers = self.controllers_of(event.channel);
@@ -597,6 +708,7 @@ impl Sampler {
             key,
             velocity,
             channel: event.channel,
+            dynamics,
         };
         let mut advanced = false;
         for (index, region) in bank.regions.iter().enumerate() {
@@ -669,6 +781,12 @@ impl Sampler {
                 .copied()
                 .unwrap_or(event.velocity),
             switch: self.active_switch(),
+            dynamics: self
+                .key_dynamics
+                .get(usize::from(key))
+                .copied()
+                .flatten()
+                .unwrap_or_else(|| self.start_dynamics()),
         };
         if let Some(bank) = bank {
             // `trigger=release_key` "ignores sustain pedal" and starts now in any case; a
@@ -722,6 +840,7 @@ impl Sampler {
             key,
             velocity: release.velocity,
             channel,
+            dynamics: release.dynamics,
         };
         for (index, region) in bank.regions.iter().enumerate() {
             if starts(region.trigger)
@@ -757,13 +876,26 @@ impl Sampler {
         if sample.frames() == 0 || self.spec.sample_rate == 0 {
             return;
         }
-        let (key, pitch, velocity_gain, channel) = match start {
+        let (key, pitch, velocity_gain, channel, dynamics) = match start {
             Start::Key {
                 key,
                 velocity,
                 channel,
-            } => (Some(key), key, region.velocity_gain(velocity), channel),
-            Start::Controller { channel } => (None, region.pitch_keycenter, 1.0, channel),
+                dynamics,
+            } => (
+                Some(key),
+                key,
+                region.velocity_gain(velocity),
+                channel,
+                dynamics,
+            ),
+            Start::Controller { channel } => (
+                None,
+                region.pitch_keycenter,
+                1.0,
+                channel,
+                self.start_dynamics(),
+            ),
         };
         let rate = f64::from(self.spec.sample_rate);
         let cents =
@@ -776,7 +908,10 @@ impl Sampler {
             // controllers are not asked: they can still raise a voice they start silent.
             return;
         }
-        let cc_gain = region.controller_gain(&self.controllers_of(channel));
+        // The dynamics gain is exactly 1 for a voice a key press starts now; a release region
+        // starts where the note's level has moved since its press.
+        let live_gain = region.controller_gain(&self.controllers_of(channel))
+            * dynamics_gain(self.drive(), self.dynamics, dynamics);
         let attack = region.attack.max(MIN_ATTACK);
         self.clock = self.clock.wrapping_add(1);
         let voice = Voice {
@@ -788,9 +923,10 @@ impl Sampler {
             pos: frames_f64(region.offset),
             step,
             gain,
-            cc_gain,
-            cc_step: 0.0,
-            cc_target: cc_gain,
+            dynamics,
+            live_gain,
+            live_step: 0.0,
+            live_target: live_gain,
             level: 0.0,
             attack_step: 1.0 / (attack * rate),
             release_step: 0.0,
@@ -881,8 +1017,8 @@ impl Sampler {
                     },
                     end,
                 );
-                voice.cc_gain += voice.cc_step;
-                let amp = voice.gain * voice.cc_gain * voice.level * master;
+                voice.live_gain += voice.live_step;
+                let amp = voice.gain * voice.live_gain * voice.level * master;
                 frame[0] += l * amp * pan_l;
                 frame[1] += r * amp * pan_r;
                 voice.pos += step;
@@ -895,6 +1031,48 @@ impl Sampler {
 /// voices meanwhile.
 fn bank_of(setup: Option<&Arc<SamplerSetup>>) -> Option<&SampleBank> {
     setup.map(|setup| &*setup.bank)
+}
+
+/// The `dynamics` parameter in `slots`, 0 to 1: its default 1 when the slot is missing or not
+/// a number.
+fn dynamics_of(slots: &ParamSlots) -> f64 {
+    float(slots, DYNAMICS)
+        .filter(|dynamics| !dynamics.is_nan())
+        .map_or(1.0, |dynamics| dynamics.clamp(0.0, 1.0))
+}
+
+/// The velocity a key pressed at `velocity` plays with at `dynamics` (0 to 1):
+/// `max(1, round(velocity · dynamics))`, so 1 keeps every velocity and 0 plays the softest.
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "the product lies between 1 and the velocity, a u8, once rounded and raised to 1"
+)]
+fn scaled_velocity(velocity: u8, dynamics: f64) -> u8 {
+    (f64::from(velocity) * dynamics).round().max(1.0) as u8
+}
+
+/// The controller value of `dynamics` (0 to 1): `round(dynamics · 127)`.
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "the value is clamped to 0..=127 first"
+)]
+fn controller_value(dynamics: f64) -> u8 {
+    (dynamics * 127.0).round().clamp(0.0, 127.0) as u8
+}
+
+/// The gain the `dynamics` parameter at `now` gives a sounding voice that started at `start`
+/// (at least [`MIN_DYNAMICS`]): `(now / start)²`, with `now` at least [`MIN_DYNAMICS`] too and
+/// the gain at most [`MAX_DYNAMICS_GAIN`]. So an unchanged value gives exactly 1, and a swell
+/// changes the level of a held note, whose layer its velocity chose at the press. 1 for a
+/// preset whose dynamics drive a controller, which the controller's crossfades follow instead.
+fn dynamics_gain(drive: DynamicsDrive, now: f64, start: f64) -> f64 {
+    if let DynamicsDrive::Controller(_) = drive {
+        return 1.0;
+    }
+    let ratio = now.max(MIN_DYNAMICS) / start;
+    (ratio * ratio).min(MAX_DYNAMICS_GAIN)
 }
 
 /// The release time of region `region` in seconds, scaled.
@@ -1022,7 +1200,7 @@ impl Processor for Sampler {
             return;
         };
         let n = buffer.len();
-        self.aim_controller_gains(n);
+        self.aim_live_gains(n);
         let events = ctx.events;
         let (mut next, mut pos) = (0, 0);
         while pos < n {
@@ -1039,7 +1217,7 @@ impl Processor for Sampler {
             }
             pos = end;
         }
-        self.settle_controller_gains();
+        self.settle_live_gains();
     }
 
     fn reset(&mut self) {
@@ -1060,10 +1238,13 @@ impl Processor for Sampler {
 }
 
 impl Sampler {
-    /// Block start: aims the controller gain of every sounding voice at the gain the
-    /// controllers of its channel give its region now, reached linearly on the last of the
-    /// block's `frames`.
-    fn aim_controller_gains(&mut self, frames: usize) {
+    /// Block start: aims the live gain of every sounding voice at the gain the controllers of
+    /// its channel give its region now, times the gain the `dynamics` parameter gives it now,
+    /// reached linearly on the last of the block's `frames`. The parameter's ramp reuses the
+    /// controllers' (DES-01): one ramp per voice, exact at the block's end, and a change of
+    /// either never clicks.
+    fn aim_live_gains(&mut self, frames: usize) {
+        let (drive, now) = (self.drive(), self.dynamics);
         let Some(bank) = bank_of(self.setup.as_ref()) else {
             return;
         };
@@ -1077,23 +1258,25 @@ impl Sampler {
                 .controllers
                 .get(usize::from(voice.channel))
                 .unwrap_or(&bank.controllers);
-            voice.cc_target = region.controller_gain(&forced.read(*controllers));
-            voice.cc_step = (voice.cc_target - voice.cc_gain) / frames;
+            voice.live_target = region.controller_gain(&forced.read(*controllers))
+                * dynamics_gain(drive, now, voice.dynamics);
+            voice.live_step = (voice.live_target - voice.live_gain) / frames;
         }
     }
 
-    /// Block end: every voice's controller gain is exactly at its target, without the rounding
-    /// of the ramp.
-    fn settle_controller_gains(&mut self) {
+    /// Block end: every voice's live gain is exactly at its target, without the rounding of the
+    /// ramp.
+    fn settle_live_gains(&mut self) {
         for voice in &mut self.voices {
-            voice.cc_gain = voice.cc_target;
-            voice.cc_step = 0.0;
+            voice.live_gain = voice.live_target;
+            voice.live_step = 0.0;
         }
     }
 
-    /// Takes the stored parameters: the settings, and the `articulation` choice, whose target
-    /// is applied only when the choice changes, so that a change of another parameter (an
-    /// automated volume) leaves what the clips selected since alone.
+    /// Takes the stored parameters: the settings, the `articulation` choice, whose target is
+    /// applied only when the choice changes, and the `dynamics` value, which a preset whose
+    /// dynamics drive a controller writes into it only when the value changes. So a change of
+    /// another parameter (an automated volume) leaves what the clips selected since alone.
     fn apply_params(&mut self) {
         if let Some(settings) = Settings::from_slots(&self.params) {
             self.settings = Some(settings);
@@ -1102,6 +1285,11 @@ impl Sampler {
         if articulation != self.articulation {
             self.articulation = articulation;
             self.force();
+        }
+        let dynamics = dynamics_of(&self.params);
+        if dynamics.to_bits() != self.dynamics.to_bits() {
+            self.dynamics = dynamics;
+            self.drive_controller();
         }
     }
 }

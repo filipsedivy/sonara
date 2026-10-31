@@ -642,12 +642,15 @@ pub struct ArticulationTarget {
 /// What the sampler's `dynamics` parameter drives in a preset.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum DynamicsDrive {
-    /// The note velocity picks the layer and the gain (the default).
+    /// The note velocity picks the layer and the gain (the default): the parameter scales the
+    /// velocity of each new note, and a sounding note's level follows its later changes.
     #[default]
     Velocity,
-    /// The controller with this number, 0 to 127, crossfades the layers.
+    /// The controller with this number, 0 to 127, crossfades the layers: the parameter sets
+    /// the controller, and velocities stay as they are.
     Controller(u8),
-    /// Every note plays at this velocity, 1 to 127, whatever its own.
+    /// Every note plays at this velocity, 1 to 127, whatever its own, which the parameter
+    /// scales as it scales the velocity in [`DynamicsDrive::Velocity`].
     Fixed(u8),
 }
 

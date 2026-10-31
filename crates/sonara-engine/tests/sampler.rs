@@ -15,6 +15,10 @@
 //! keyswitch notes that select the same switches; a seek and every pass of a loop must play as
 //! straight play does, with the clip's own keyswitches winning after the parameter's.
 //!
+//! **The `dynamics` parameter** scales the velocity of later notes from a lane, as notes
+//! written softer play; on a preset whose dynamics drive expression it sets CC 11 as a clip's
+//! event does, also after a seek and on every pass of a loop.
+//!
 //! **Live rebuilds** (an edit during playback) keep a sampler whose instrument is unchanged, so
 //! its sounding notes ring on: the oracle is the graph that was never rebuilt, bit for bit, and
 //! a new `articulation` reaches the kept sampler exactly as a lane that steps there does.
@@ -795,11 +799,17 @@ fn switch(key: u8) -> ArticulationTarget {
 /// An automation lane of the sampler's `articulation`, holding the choice index of each point
 /// from its beat on.
 fn articulation_lane(points: &[(f64, f64)]) -> Value {
+    hold_lane("articulation", points)
+}
+
+/// An automation lane of the sampler's parameter `param`, holding the value of each point from
+/// its beat on.
+fn hold_lane(param: &str, points: &[(f64, f64)]) -> Value {
     let points: Vec<Value> = points
         .iter()
         .map(|&(beat, value)| json!({"beat": beat, "value": value, "curve": "hold"}))
         .collect();
-    json!({"id": "aut_000000000009", "target": {"device_id": SAMPLER, "param": "articulation"},
+    json!({"id": "aut_000000000009", "target": {"device_id": SAMPLER, "param": param},
            "enabled": true, "points": points})
 }
 
@@ -930,6 +940,80 @@ fn a_key_offset_moves_the_clip_and_its_keyswitch_notes_also_after_a_seek() {
         &media,
         &[0, AFTER_SWITCH, AFTER_CHANGE],
     );
+}
+
+/// The presets `lib/by-velocity`, whose dynamics drive the velocity, and `lib/on-expression`,
+/// whose dynamics drive expression (CC 11), played from the [`keyswitch_patch`] at `patch`
+/// without articulation targets.
+fn dynamics_presets(patch: &Path) -> MediaProvider {
+    let patch = patch.to_owned();
+    no_media().with_instruments(move |value| {
+        let drive = match value {
+            "lib/by-velocity" => DynamicsDrive::Velocity,
+            "lib/on-expression" => DynamicsDrive::Controller(11),
+            _ => return None,
+        };
+        Some(InstrumentSource {
+            id: value.to_owned(),
+            patch: patch.clone(),
+            mapping: Arc::new(SamplerMapping::new(Vec::new(), drive, None, 0)),
+        })
+    })
+}
+
+#[test]
+fn an_automated_dynamics_scales_later_notes_also_after_a_seek() {
+    // A lane holds `dynamics` at 1 from beat 0 and at 0.5 from beat 2, where no note sounds:
+    // the notes before play as written, and the note at beat 3.5 plays at velocity
+    // round(100 · 0.5) = 50, exactly as the same note written at 50, also after a seek and on
+    // every pass of a loop.
+    let (_dir, patch) = keyswitch_patch();
+    let media = dynamics_presets(&patch);
+    let automated = sampler_project(
+        &json!({"instrument": "lib/by-velocity"}),
+        &three_notes(),
+        &[],
+        &[hold_lane("dynamics", &[(0.0, 1.0), (2.0, 0.5)])],
+    );
+    let [first, second, mut third] = three_notes();
+    third["velocity"] = json!(50);
+    let oracle = sampler_project(
+        &json!({"instrument": "lib/by-velocity"}),
+        &[first, second, third],
+        &[],
+        &[],
+    );
+    plays_as_through(
+        &automated,
+        &oracle,
+        &media,
+        &[0, AFTER_SWITCH, AFTER_CHANGE],
+    );
+}
+
+#[test]
+fn controller_dynamics_set_the_expression_as_a_clip_event_does_also_after_a_seek() {
+    // A preset whose dynamics drive expression, stored at 0.5, plays as the same clip on a
+    // preset with velocity dynamics whose CC 11 is 64 (round(0.5 · 127)) from beat 0: the
+    // clip's own CC 11 at beat 3.25 wins after the parameter. A jump's all notes off writes the
+    // parameter's value again, as the chase restores the oracle's CC 11 of beat 0, so a seek
+    // and every pass of a loop play as straight play does.
+    let (_dir, patch) = keyswitch_patch();
+    let media = dynamics_presets(&patch);
+    let expression = |beat: f64, value: u8| json!({"beat": beat, "kind": "cc", "value": value, "number": 11, "channel": 0});
+    let driven = sampler_project(
+        &json!({"instrument": "lib/on-expression", "dynamics": 0.5}),
+        &three_notes(),
+        &[expression(3.25, 50)],
+        &[],
+    );
+    let oracle = sampler_project(
+        &json!({"instrument": "lib/by-velocity"}),
+        &three_notes(),
+        &[expression(0.0, 64), expression(3.25, 50)],
+        &[],
+    );
+    plays_as_through(&driven, &oracle, &media, &[0, AFTER_SWITCH, AFTER_CHANGE]);
 }
 
 /// The presets of [`articulations`], resolved as the application resolves them: every lookup
