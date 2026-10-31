@@ -13,7 +13,10 @@
 //! **The `articulation` parameter** of a profiled preset selects the keyswitch its mapping
 //! names, from a stored choice or an automation lane. The oracle is the same clip in `auto` with
 //! keyswitch notes that select the same switches; a seek and every pass of a loop must play as
-//! straight play does, with the clip's own keyswitches winning after the parameter's.
+//! straight play does, with the clip's own keyswitches winning after the parameter's. A lane's
+//! change lands at its own frame inside a block: a note on a point's beat plays the new choice,
+//! as it does after a keyswitch note on that beat, and a linear lane changes at the first frame
+//! of each choice.
 //!
 //! **A note's own articulation** plays that note from its own frame over the device's
 //! `articulation`, and the notes after it play the device's again. The oracle is the same notes
@@ -50,6 +53,7 @@ use serde_json::{Value, json};
 use sonara_core::model::project::Project;
 use sonara_core::plugins::{PluginRegistry, SamplerChoices, builtin_registry, sampler_descriptor};
 use sonara_dsp::bank::{ArticulationTarget, DynamicsDrive, LegatoSpec, SamplerMapping, Selector};
+use sonara_dsp::processor::{EventKind, InstrumentEvent};
 use sonara_engine::{
     Applied, DEFAULT_BLOCK, GraphBuilder, GraphOptions, OfflineRenderer, RenderGraph,
     RenderRequest, RenderedAudio, Tail, Update, apply,
@@ -845,8 +849,8 @@ fn three_notes() -> [Value; 3] {
 const AFTER_CHANGE: i64 = 100 * BLOCK;
 
 /// Checks that playing `project` straight through equals the clip-switched `oracle`, and that a
-/// seek from after the last note to each of `seeks` and a loop from there play as straight
-/// play does there.
+/// seek from after the last note to each of `seeks`, a block start or a frame between two, and a
+/// loop from there play as straight play does there.
 fn plays_as_through(
     project: &(Project, PluginRegistry),
     oracle: &(Project, PluginRegistry),
@@ -862,7 +866,11 @@ fn plays_as_through(
         play(&mut jumping, 0, AFTER_LAST_NOTE);
         let after = play(&mut jumping, to, END);
         let from = usize::try_from(to).expect("a frame of the render");
-        assert!(after == heard[from..], "a seek to frame {to}");
+        // From a frame between block starts the last block runs past the end.
+        assert!(
+            after[..heard.len() - from] == heard[from..],
+            "a seek to frame {to}"
+        );
         let mut looping = graph_of(project, media);
         let first = play(&mut looping, to, AFTER_LAST_NOTE);
         for pass in 2..=3 {
@@ -956,6 +964,163 @@ fn a_key_offset_moves_the_clip_and_its_keyswitch_notes_also_after_a_seek() {
         &switched_project("lib/articulations", 0),
         &media,
         &[0, AFTER_SWITCH, AFTER_CHANGE],
+    );
+}
+
+/// A lane of the sampler's parameter `param` with `points` (beat, value, curve).
+fn curved_lane(param: &str, points: &[(f64, f64, &str)]) -> Value {
+    let points: Vec<Value> = points
+        .iter()
+        .map(|&(beat, value, curve)| json!({"beat": beat, "value": value, "curve": curve}))
+        .collect();
+    json!({"id": "aut_000000000009", "target": {"device_id": SAMPLER, "param": param},
+           "enabled": true, "points": points})
+}
+
+/// A beat whose note starts on frame 24 000 (the beat lies at frame 24 000.3), inside a block.
+const CHANGE: f64 = 1.000_012_5;
+
+/// A lane of `sustain` (C#1) from beat 0, `staccato` (D1) from [`CHANGE`] and `ordinario` (C1)
+/// from beat 3.5, with a note on each of the last two beats, and its oracle: the same notes in
+/// `auto` with a keyswitch note listed before each note on its beat.
+fn changes_on_notes() -> ((Project, PluginRegistry), (Project, PluginRegistry)) {
+    let notes = [
+        note("n_000000000001", 60, 0.0625, 0.5),
+        note("n_000000000003", 60, CHANGE, 0.5),
+        note("n_000000000005", 62, 3.5, 0.5),
+    ];
+    let lane = curved_lane(
+        "articulation",
+        &[
+            (0.0, 2.0, "hold"),
+            (CHANGE, 3.0, "hold"),
+            (3.5, 1.0, "hold"),
+        ],
+    );
+    let automated = sampler_project(
+        &json!({"instrument": "lib/articulations"}),
+        &notes,
+        &[],
+        &[lane],
+    );
+    let [first, second, third] = notes;
+    let oracle = sampler_project(
+        &json!({"instrument": "lib/articulations"}),
+        &[
+            note("n_000000000002", 25, 0.0, 0.031_25),
+            first,
+            note("n_000000000004", 26, CHANGE, 0.031_25),
+            second,
+            note("n_000000000006", 24, 3.5, 0.031_25),
+            third,
+        ],
+        &[],
+        &[],
+    );
+    (automated, oracle)
+}
+
+#[test]
+fn an_automated_articulation_plays_from_its_own_frame_also_after_a_seek() {
+    // Each change lies inside a block, with a note on its beat. The note at CHANGE starts on
+    // frame 24 000, whose own beat is still before the point: the change must land there too,
+    // or the note plays `sustain`. The lane plays as the oracle, also after a seek (to a block
+    // start, and to a change's own frame) and on every pass of a loop.
+    let (_dir, patch) = keyswitch_patch();
+    let media = articulations(&patch);
+    let (automated, oracle) = changes_on_notes();
+    assert_eq!(BEAT % BLOCK, 448);
+    assert_eq!((BEAT * 7 / 2) % BLOCK, 32);
+    plays_as_through(
+        &automated,
+        &oracle,
+        &media,
+        &[0, AFTER_SWITCH, BEAT, AFTER_CHANGE, BEAT * 7 / 2],
+    );
+}
+
+#[test]
+fn a_live_graph_merges_the_changes_with_its_live_input() {
+    // A live graph merges live input into the block of the change: a key the patch does not
+    // play, pressed on the change's frame. The change and the note on its beat still play as
+    // the oracle does, every block inside `assert_no_alloc`.
+    let (_dir, patch) = keyswitch_patch();
+    let media = articulations(&patch);
+    let ((automated, registry), oracle) = changes_on_notes();
+    let heard = play(&mut graph_of(&oracle, &media), 0, END);
+    let mut graph = fresh(
+        &mut GraphBuilder::new(DEFAULT_BLOCK),
+        &automated,
+        &registry,
+        &media,
+    );
+    let node = graph.node_index(KICK).expect("the sampler track");
+    let silent_key = InstrumentEvent {
+        offset: 448,
+        kind: EventKind::NoteOn,
+        pitch: 100,
+        velocity: 100,
+        channel: 0,
+        value: 0,
+        number: 0,
+        articulation: None,
+    };
+    let mut played = Vec::new();
+    let mut frame = 0;
+    while frame < END {
+        if frame == BEAT - 448 {
+            assert!(assert_no_alloc(|| graph.inject(node, &[silent_key])));
+        }
+        graph.read_media(frame).expect("no media to read");
+        played.extend_from_slice(assert_no_alloc(|| graph.process(frame, true)));
+        frame += BLOCK;
+    }
+    assert_eq!(graph.live_events_dropped(), 0);
+    assert!(played == heard, "the live graph plays as the oracle");
+}
+
+#[test]
+fn a_ramped_articulation_changes_at_the_first_frame_of_each_choice() {
+    // A linear lane from `ordinario` (1) at beat 1 to `staccato` (3) at beat 3 rounds to
+    // `sustain` (2) from beat 1.5 (frame 36 000) and to `staccato` once it passes 2.5, from
+    // frame 60 001 (at frame 60 000 it is exactly 2.5, which rounds to the even 2). A note on
+    // each side of both frames: the oracle is the same notes in `auto` with a keyswitch note
+    // listed before the notes on frames 36 000 and 60 001.
+    let after = 60_001.0 / 24_000.0;
+    let (_dir, patch) = keyswitch_patch();
+    let media = articulations(&patch);
+    let notes = [
+        note("n_000000000001", 60, 1.25, 0.2),
+        note("n_000000000003", 60, 1.5, 0.5),
+        note("n_000000000005", 64, 2.5, 0.25),
+        note("n_000000000007", 62, after, 0.25),
+    ];
+    let lane = curved_lane("articulation", &[(1.0, 1.0, "linear"), (3.0, 3.0, "hold")]);
+    let automated = sampler_project(
+        &json!({"instrument": "lib/articulations"}),
+        &notes,
+        &[],
+        &[lane],
+    );
+    let [first, second, third, fourth] = notes;
+    let oracle = sampler_project(
+        &json!({"instrument": "lib/articulations"}),
+        &[
+            first,
+            note("n_000000000002", 25, 1.5, 0.031_25),
+            second,
+            third,
+            note("n_000000000006", 26, after, 0.031_25),
+            fourth,
+        ],
+        &[],
+        &[],
+    );
+    plays_as_through(
+        &automated,
+        &oracle,
+        &media,
+        &[0, AFTER_SWITCH, AFTER_CHANGE, 60_000],
     );
 }
 
@@ -1441,9 +1606,9 @@ fn an_unchanged_sampler_keeps_its_voices_across_a_rebuild() {
 #[test]
 fn an_articulation_edit_reaches_the_kept_sampler_as_a_lane_step_does() {
     // The articulation goes from `sustain` (C#1) to `staccato` (D1) at the rebuild: by an edit
-    // and a rebuild, or by a hold lane whose step lies between the clocks of the blocks before
-    // and at REBUILD_AT (beat 0.84). The held note rings on as `sustain`; the later note plays
-    // `staccato`.
+    // and a rebuild, or by a hold lane that steps at its own frame shortly before REBUILD_AT
+    // (beat 0.84), where no note starts. The held note rings on as `sustain`; the later note
+    // plays `staccato`.
     let (_dir, patch) = keyswitch_patch();
     let media = revisable(&patch, Arc::default());
     let registry = both_presets();

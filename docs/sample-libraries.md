@@ -221,7 +221,11 @@ keyswitch, selected without sounding its key; a velocity zone, into which each n
 moved so that some dynamic range remains; or a controller value, which the patch's controller
 gates and crossfades read. A choice the preset has nothing for, such as any choice of a preset
 about which nothing is claimed, plays as `auto`. A change applies to the notes that start after
-it; sounding notes ring on. An automated change takes effect at the next 512-frame block.
+it; sounding notes ring on. An automated change takes effect at its own frame, also inside a
+512-frame block: a point at the beat where a note starts applies to that note, and a note that
+ends there releases in the articulation it played. A linear or smooth lane changes at the first
+frame of each choice it passes. Other sampler parameters, such as `dynamics`, change once per
+block.
 
 A keyswitch note in a clip, or a clip's event of the controller the articulation sets, still
 wins after the articulation, until the articulation is applied again: when it changes, when
@@ -231,8 +235,8 @@ wins over the articulation. Back at `auto`, the clip's last keyswitch plays agai
 
 **A note's own articulation.** A note can carry an articulation of its own (a note's
 `articulation`, project format version 2). The sampler plays that note in it, in place of the
-device's `articulation`, from the note's own start rather than at the next block: what the
-preset maps for that articulation, or the nearest one it has, as above. Nothing else changes: the
+device's `articulation`, from the note's own start: what the preset maps for that
+articulation, or the nearest one it has, as above. Nothing else changes: the
 next note without an articulation of its own plays the device's articulation, or the clip's last
 keyswitch, as before. The note's release samples play in its articulation, and a controller value
 that its articulation sets stays with the note for as long as it sounds. A seek or a loop wrap

@@ -38,10 +38,20 @@
 //!   the id up among its choices, every other instrument's names none, so its events stay the
 //!   same (GLD-01).
 //!
+//! - **A sampler's automated enum parameters** ([`NoteSchedule::send_choices`]): each change
+//!   of one (its articulation), computed at build ([`crate::automation::choice_changes`]), is
+//!   a choice event ([`EventKind::ParamChoice`]) at its frame. On equal offsets it comes after
+//!   the note-offs and before the note-ons, so a note that ends on the change's frame releases
+//!   in the choice it played, and a note that starts there plays the new one; a chase block's
+//!   own group comes first, so a change on the chase frame follows the chased notes. The
+//!   block's parameters still carry the choice at the block's first frame, so a change on that
+//!   frame can arrive twice, as a parameter and as an event, and the sampler applies it once.
+//!   Every other instrument gets no choice events, so its events stay the same (GLD-01).
+//!
 //! The event buffer is sized at build for the worst case, every event in one block
 //! (`1 + 2 · notes + controls`: a chased note cannot also start in the block), and a sampler's
 //! chase adds a slot for the keyswitch and one for each restored controller that the schedule
-//! has, at most 4, so no event is ever dropped.
+//! has, at most 4, and one for each choice change, so no event is ever dropped.
 //!
 //! **Held notes** ([`NoteSchedule::held_at`]): a live graph's rebuild compares the
 //! notes the old and the edited schedule hold at the carried frame, and releases those that
@@ -62,6 +72,8 @@ use sonara_core::midi::ControlKind;
 use sonara_core::model::clip::MidiClip;
 use sonara_core::time::TempoMap;
 use sonara_dsp::processor::{EventKind, InstrumentEvent, NoteSet};
+
+use crate::automation::ChoiceChange;
 
 /// How many controllers a sampler's chase restores ([`chased_bit`]).
 const CHASED_CONTROLLERS: usize = 3;
@@ -114,6 +126,9 @@ pub(crate) struct NoteSchedule {
     controls: Vec<Control>,
     /// What the chase restores besides the notes, for a sampler only.
     sampler: Option<SamplerChase>,
+    /// The changes of a sampler's automated enum parameters, sorted by frame; empty for every
+    /// other instrument.
+    choices: Vec<ChoiceChange>,
     /// The events of the last block: the first `len` slots.
     events: Vec<InstrumentEvent>,
     len: usize,
@@ -267,6 +282,7 @@ impl NoteSchedule {
             notes,
             controls,
             sampler: None,
+            choices: Vec::new(),
             events: vec![NO_EVENT; capacity],
             len: 0,
         }
@@ -295,14 +311,31 @@ impl NoteSchedule {
         let present = controls
             .iter()
             .fold(0, |bits, control| bits | chased_bit(control.number));
-        let chase = SamplerChase {
+        self.sampler = Some(SamplerChase {
             switches,
             controls,
             present,
-        };
-        let capacity = plain_capacity(&self.notes, &self.controls).saturating_add(chase.slots());
-        self.events.resize(capacity, NO_EVENT);
-        self.sampler = Some(chase);
+        });
+        self.events.resize(self.worst_case(), NO_EVENT);
+    }
+
+    /// Makes the schedule send `changes`, the changes of a sampler's automated enum parameters
+    /// sorted by frame ([`crate::automation::choice_changes`]), as choice events at their
+    /// frames (see the module docs). The graph calls it for sampler instruments only.
+    ///
+    /// Setup: allocates (the event buffer grows by a slot per change), so it runs off the
+    /// real-time thread, when the graph is built, before the first block.
+    pub(crate) fn send_choices(&mut self, changes: Vec<ChoiceChange>) {
+        self.choices = changes;
+        self.events.resize(self.worst_case(), NO_EVENT);
+    }
+
+    /// The most events one block can have: every note, controller and choice change in it,
+    /// and a sampler's chase (see the module docs).
+    fn worst_case(&self) -> usize {
+        plain_capacity(&self.notes, &self.controls)
+            .saturating_add(self.sampler.as_ref().map_or(0, SamplerChase::slots))
+            .saturating_add(self.choices.len())
     }
 
     /// The size of the event buffer: the most events one block can have.
@@ -329,7 +362,8 @@ impl NoteSchedule {
 
     /// The events of the block `[frame, frame + n)`, sorted by offset; with `chase`, preceded
     /// by an all-notes-off and the notes sounding at `frame` (`NoteSchedule.events`), and for a
-    /// sampler by the keyswitch and controllers between them (see the module docs).
+    /// sampler by the keyswitch and controllers between them; for a sampler with automated
+    /// enum parameters, with their choice events among them (see the module docs).
     pub(crate) fn events(&mut self, frame: i64, n: usize, chase: bool) -> &[InstrumentEvent] {
         let end = frame.saturating_add(i64::try_from(n).unwrap_or(i64::MAX));
         let Self {
@@ -338,6 +372,7 @@ impl NoteSchedule {
             off_order,
             controls,
             sampler,
+            choices,
             events,
             len,
         } = self;
@@ -357,6 +392,7 @@ impl NoteSchedule {
         let offs = window(off_sorted, frame, end, |&off| off);
         let ons = window(notes, frame, end, |note| note.on);
         let ctls = window(controls, frame, end, |control| control.frame);
+        let chosen = window(choices, frame, end, |change| change.frame);
         let mut offs = off_order
             .get(offs)
             .unwrap_or_default()
@@ -376,17 +412,34 @@ impl NoteSchedule {
             .iter()
             .map(|control| control_event(control, offset(control.frame, frame)))
             .peekable();
+        let mut chosen = choices
+            .get(chosen)
+            .unwrap_or_default()
+            .iter()
+            .map(|change| choice_event(change, offset(change.frame, frame)))
+            .peekable();
         // The merge: the smallest offset first; on equal offsets note-offs, then note-ons,
-        // then controller events (their order in the prototype's list before its stable sort).
+        // then controller events (their order in the prototype's list before its stable sort),
+        // with a sampler's choice events between the note-offs and the note-ons. Without
+        // choice events (`choice` is `None`) it is the merge of the other three alone.
         loop {
             let off = offs.peek().map(|e| e.offset);
+            let choice = chosen.peek().map(|e| e.offset);
             let on = ons.peek().map(|e| e.offset);
             let ctl = ctls.peek().map(|e| e.offset);
-            let take_off =
-                off.is_some_and(|o| on.is_none_or(|x| o <= x) && ctl.is_none_or(|x| o <= x));
-            let take_on = !take_off && on.is_some_and(|o| ctl.is_none_or(|x| o <= x));
+            let take_off = off.is_some_and(|o| {
+                choice.is_none_or(|x| o <= x)
+                    && on.is_none_or(|x| o <= x)
+                    && ctl.is_none_or(|x| o <= x)
+            });
+            let take_choice = !take_off
+                && choice.is_some_and(|o| on.is_none_or(|x| o <= x) && ctl.is_none_or(|x| o <= x));
+            let take_on =
+                !take_off && !take_choice && on.is_some_and(|o| ctl.is_none_or(|x| o <= x));
             let next = if take_off {
                 offs.next()
+            } else if take_choice {
+                chosen.next()
             } else if take_on {
                 ons.next()
             } else {
@@ -528,6 +581,20 @@ fn note_off(note: &Note, offset: usize) -> InstrumentEvent {
     }
 }
 
+/// The choice event of `change` at `offset` ([`EventKind::ParamChoice`]).
+fn choice_event(change: &ChoiceChange, offset: usize) -> InstrumentEvent {
+    InstrumentEvent {
+        offset,
+        kind: EventKind::ParamChoice,
+        pitch: 0,
+        velocity: 0,
+        channel: 0,
+        value: i32::from(change.choice),
+        number: change.slot,
+        articulation: None,
+    }
+}
+
 fn control_event(control: &Control, offset: usize) -> InstrumentEvent {
     InstrumentEvent {
         offset,
@@ -552,6 +619,7 @@ mod tests {
     use sonara_dsp::processor::{EventKind, InstrumentEvent, NoteSet};
 
     use super::NoteSchedule;
+    use crate::automation::ChoiceChange;
 
     fn clip(
         start: f64,
@@ -834,6 +902,61 @@ mod tests {
         );
     }
 
+    /// A change of a sampler's parameter 5 (its `articulation`) to `choice` at `frame`.
+    fn change(frame: i64, choice: u16) -> ChoiceChange {
+        ChoiceChange {
+            frame,
+            slot: 5,
+            choice,
+        }
+    }
+
+    /// A sampler's choice events come, on equal offsets, after the note-offs and before the
+    /// note-ons and controllers, and in a chase block after the chase's own events. Each
+    /// change has a slot in the buffer, whichever setup call comes last; no change, none.
+    #[test]
+    fn choice_events_sit_between_note_offs_and_note_ons() {
+        let mut schedule = sampler_schedule();
+        let capacity = schedule.capacity();
+        schedule.send_choices(Vec::new());
+        assert_eq!(schedule.capacity(), capacity);
+        schedule.send_choices([change(8, 3), change(12, 4), change(13, 2)].to_vec());
+        assert_eq!(schedule.capacity(), capacity + 3);
+        schedule.chase_sampler(switch_keys());
+        assert_eq!(schedule.capacity(), capacity + 3);
+        // Frame 12: C4 ends, a change, C1 starts and CC 11 moves; frame 13: C1 ends, a change.
+        assert_eq!(
+            details(schedule.events(12, 4, false)),
+            [
+                (0, EventKind::NoteOff, 60, 0, 0, 0),
+                (0, EventKind::ParamChoice, 0, 5, 4, 0),
+                (0, EventKind::NoteOn, 24, 0, 0, 0),
+                (0, EventKind::Cc, 0, 11, 40, 0),
+                (1, EventKind::NoteOff, 24, 0, 0, 0),
+                (1, EventKind::ParamChoice, 0, 5, 2, 0),
+            ]
+        );
+        // A chase at frame 8, where C4 starts with a change: the chase's events first.
+        assert_eq!(
+            details(schedule.events(8, 1, true)),
+            [
+                (0, EventKind::AllNotesOff, 0, 0, 0, 0),
+                (0, EventKind::KeySwitch, 25, 0, 0, 0),
+                (0, EventKind::Cc, 0, 11, 90, 0),
+                (0, EventKind::Cc, 0, 1, 20, 0),
+                (0, EventKind::Cc, 0, 64, 100, 1),
+                (0, EventKind::ParamChoice, 0, 5, 3, 0),
+                (0, EventKind::NoteOn, 60, 0, 0, 0),
+            ]
+        );
+        // Outside the changes' frames, the events are those without them.
+        let mut plain = sampler_schedule();
+        for frame in [0, 3, 9, 14] {
+            let with = details(schedule.events(frame, 1, true));
+            assert_eq!(with, details(plain.events(frame, 1, true)), "frame {frame}");
+        }
+    }
+
     #[test]
     fn a_sampler_chase_restores_only_what_lies_before_the_position() {
         let mut schedule = sampler_schedule();
@@ -1003,8 +1126,9 @@ mod tests {
         );
     }
 
-    /// TST-07: a chase never drops an event. The oracle counts the events of each block from
-    /// the clip's own frames (a beat is 4 frames), not from the schedule.
+    /// TST-07: a chase never drops an event, choice events included. The oracle counts the
+    /// events of each block from the clip's own frames (a beat is 4 frames) and the frames of
+    /// the changes, not from the schedule.
     #[test]
     fn chase_events_fit_the_buffer() {
         // (pitch, on, off) in frames; C1 and C#1 are keyswitch keys.
@@ -1024,10 +1148,23 @@ mod tests {
             &notes.map(|(pitch, on, off)| (pitch, beats(on), beats(off - on))),
             &controls.map(|(frame, number)| (beats(frame), ControlKind::Cc, 64, number, 0)),
         );
+        // Changes of two parameters, two of them on one frame.
+        let changes = [
+            change(0, 3),
+            change(4, 2),
+            change(12, 4),
+            ChoiceChange {
+                frame: 16,
+                slot: 4,
+                choice: 1,
+            },
+            change(16, 3),
+        ];
         let mut schedule = NoteSchedule::build([&c].into_iter(), &tempo, 8, |_| None);
+        schedule.send_choices(changes.to_vec());
         schedule.chase_sampler(switch_keys());
         let capacity = schedule.capacity();
-        assert_eq!(capacity, 1 + 2 * 6 + 6 + 4);
+        assert_eq!(capacity, 1 + 2 * 6 + 6 + 4 + 5);
         let mut largest = 0;
         for frame in 0..24_i64 {
             for n in [1_i64, 3, 1_000] {
@@ -1051,13 +1188,17 @@ mod tests {
                 let ctls = controls
                     .iter()
                     .filter(|&&(at, _)| (frame..end).contains(&at));
+                let chosen = changes
+                    .iter()
+                    .filter(|change| (frame..end).contains(&change.frame));
                 let expected = 1
                     + usize::from(switch)
                     + chased_controllers
                     + held.count()
                     + offs.count()
                     + ons.count()
-                    + ctls.count();
+                    + ctls.count()
+                    + chosen.count();
                 let n = usize::try_from(n).unwrap();
                 let got = schedule.events(frame, n, true).len();
                 assert_eq!(got, expected, "frame {frame}, {n} frames");

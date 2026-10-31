@@ -133,7 +133,8 @@ audio hardware and no sleeping.
   every later note. Frames are `i64`; the generation and frame counters wrap on purpose.
 - **Per block.** The render thread asks the schedule for the events of `[frame, frame + n)`:
   note-offs, then note-ons, then controller events, each with its offset in the block. Events
-  with the same offset keep that order. The buffer is sized at build, so no event is dropped and
+  with the same offset keep that order; a sampler's articulation changes (below) come between
+  the note-offs and the note-ons. The buffer is sized at build, so no event is dropped and
   nothing allocates on the render thread.
 - **Play** builds a fresh graph at the start frame; **pause** halts the stream at the device's
   software position and keeps it as the resting position; **resume** is a play from there;
@@ -161,7 +162,8 @@ audio hardware and no sleeping.
   concurrency), `hanging_notes.rs` (a held voice after seek, resume and stop),
   `schedule.rs` (order, chase, tempo change, a sampler's chase), `tests/sampler.rs` (a sampler
   after a seek, a loop wrap and a later start, with clip keyswitches, with its `articulation`
-  parameter and with a note's own articulation) and `crates/sonara-app/tests/transport*.rs`.
+  parameter, its changes inside a block and a note's own articulation) and
+  `crates/sonara-app/tests/transport*.rs`.
 
 ## Offline renderer (`sonara_engine::renderer`)
 
@@ -184,6 +186,11 @@ audio hardware and no sleeping.
   all-notes-off, then the notes already sounding are retriggered. A sampler also gets its last
   keyswitch and its last CC 1, 11 and 64 values (above), so a render that starts later than the
   first keyswitch note plays the same articulation as the full render.
+- **Device automation.** Device parameters are sampled once per 512-frame block, at the
+  block's first frame. A sampler's automated `articulation` also changes inside the block: each
+  change is an event among its MIDI events, at the frame a note on the point's beat starts on,
+  after the note-offs and before the note-ons of that frame. The Poly Synth, the Drum Kit and
+  every effect keep the block rate, so their renders are unchanged.
 - **Tails.** The `auto` tail renders until the output stays below −100 dBFS for 250 ms,
   bounded by the summed processor tails (at most 30 s).
 - **Media.** Uncompressed media at the project rate is read directly with seeks. Other media

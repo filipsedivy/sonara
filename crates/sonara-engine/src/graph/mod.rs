@@ -69,7 +69,7 @@ pub(crate) use live::is_clipping_peak;
 pub use live::{LIVE_EVENTS, NodeMeter, StalePlan};
 
 use crate::EngineError;
-use crate::automation::{DeviceLane, Lane, TempoCurve};
+use crate::automation::{DeviceLane, Lane, TempoCurve, choice_changes};
 use crate::clips::{AudioClipSource, ClipsSignature};
 use crate::schedule::NoteSchedule;
 use crate::timeline::Timeline;
@@ -855,16 +855,22 @@ impl Builder<'_> {
                 && let Some((slot, state)) =
                     self.slot(track, device, position, SlotPosition::Instrument, playable)?
             {
-                // Only a sampler gets the keyswitch and controllers in its chase; every other
-                // instrument keeps the plain chase and its golden output (GLD-01).
-                // The keyswitch notes are clip notes, which the preset's key offset moves onto
-                // the patch's keyswitch keys.
+                // Only a sampler gets the keyswitch and controllers in its chase, and the
+                // changes of its automated articulation at their own frames inside a block;
+                // every other instrument keeps the plain chase, block-rate parameters and its
+                // golden output (GLD-01). The keyswitch notes are clip notes, which the
+                // preset's key offset moves onto the patch's keyswitch keys.
                 if device.plugin_id == SAMPLER_ID {
                     let switch_notes = state
                         .sampler
                         .as_ref()
                         .map_or(NoteSet::EMPTY, |setup| setup.switch_notes());
                     track_schedule.chase_sampler(switch_notes);
+                    track_schedule.send_choices(choice_changes(
+                        &slot.lanes,
+                        &self.project.tempo_map,
+                        self.spec.sample_rate,
+                    ));
                 }
                 instrument = Some(slot);
             }

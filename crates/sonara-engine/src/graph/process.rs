@@ -17,7 +17,9 @@
 //!   `10^(v/20) · (target > 0)`; a pre-fader send multiplies by the mute value after this
 //!   block's fader step. The contribution is delayed by the edge's compensation, then added.
 //! - **Automation clock:** device parameters at the source frame's beat once per block; the
-//!   mixer at `frame − output_latency` per sample.
+//!   mixer at `frame − output_latency` per sample. A sampler's automated enum parameters (its
+//!   articulation) also change at their own frames inside the block: its schedule sends each
+//!   change as a choice event among the instrument's events.
 //!
 //! A live graph also merges each instrument's live input into its events and meters every node
 //! ([`super::live`]); an offline graph has neither, so its path is unchanged.
