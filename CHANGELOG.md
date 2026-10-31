@@ -20,15 +20,53 @@ break the API. The project format is versioned independently, see
   an articulation vocabulary with passage states and refinements (mute, vibrato), ensemble
   templates, a catalogue of orchestration rules with doubling, weight and register tables, and the
   neighbours and articulation substitutes to fall back on when no sound is installed. Library API
-  only: no agent tool or GUI uses it yet. See
+  only, apart from the agent tools below and the catalog's family guesses. See
   [docs/orchestration-metadata.md](docs/orchestration-metadata.md).
 - **Project schema version 2:** an instrument track may carry a `part` (the instrument type, the
   printed name, players, solo or section, the player who doubles it, notation overrides), and a
   MIDI note an `articulation`. Sonara writes the lowest version a project needs, so a project
   without parts or articulations is still written as version 1 and older versions open it. The
   required features are `parts` and `note-articulations`. An id Sonara does not know stays in the
-  project and is reported as a warning when it opens. No tool or GUI sets them yet. See
-  [docs/project-format.md](docs/project-format.md).
+  project and is reported as a warning when it opens. Agents set them (below); the GUI does not
+  yet. See [docs/project-format.md](docs/project-format.md).
+- **Agent API 1.1:** the recorded 1.0 plus exactly three additions, so a 1.0 client works
+  unchanged: an optional `part` argument of `create_track`, an optional `articulation` of a note
+  (`create_midi_clip`, `add_midi_notes`, `edit_midi_notes`), and the tool `write_midi_controllers`,
+  which writes one MIDI controller's events (expression, modulation, the sustain pedal) into a clip
+  as one undoable step. 58 tools. An id the orchestration vocabulary does not know returns
+  `INVALID_ARGUMENT` with the closest ids. `get_capabilities` and the IPC `hello` and `info`
+  replies report 1.1. See [docs/agent-api.md](docs/agent-api.md).
+- **Sample library profiles:** Sonara ships a profile of VSCO 2 CE and of VCSL (tag `v1.2.2-RC`)
+  that maps every patch to the instrument it plays, its articulations and key switches, how it
+  plays dynamics and a verdict on how well the sampler plays it. VSCO 2 CE's patches get readable
+  names in the Instrument combo. A `sonara-library.json` manifest may now be version 2, read
+  entry by entry so that one bad entry is rejected alone, and it overrides the profile field by
+  field. The catalog shows each claim with its source (manifest, profile, key map or guess), the
+  facts of a checked patch, and multi-patch sets. See
+  [docs/instrument-catalog.md](docs/instrument-catalog.md).
+- **Choosing a sound for a part (`sonara_app::instruments::chain`):** for an instrument and an
+  articulation, the catalog's best preset, then the nearest articulation, the other ensemble, a
+  neighbouring instrument, a built-in sound or silence, each step with a message for the user.
+  Library API only.
+- **Sampler parameters `instrument_type`, `articulation` and `dynamics`:** stored with the device,
+  and `articulation` and `dynamics` can be automated. The sampler does not play them yet.
+- **SFZ playback:** `amp_veltrack`; velocity crossfades; `off_mode` `normal` and `time`;
+  `trigger=first`, `legato` and `release_key`; controller gates, controller-triggered regions,
+  controller crossfades and level changes (`loccN`/`hiccN`, `on_loccN`/`on_hiccN`,
+  `xfin_loccN`…, `volume_onccN`, `gain_ccN`, `amplitude_onccN`, `set_ccN`); loops a WAV sample
+  embeds. When playback jumps, the sampler gets back the last keyswitch and the last modulation,
+  expression and sustain pedal before the new position. See
+  [docs/sample-libraries.md](docs/sample-libraries.md).
+- **Performance layer (`sonara_midi::performance`):** the types and seeded per-part random streams
+  of a performance, voicing helpers by family (string divisi, woodwind pairs, horn and brass
+  chorales, a melody's carrier and its doubling, timpani on tonic and dominant), checks of notes
+  against the playability and texture rules, and harp pedal and timpani tuning derivations.
+  Library API only.
+- **Orchestration requests:** `sonara_agent::orchestration` reads requests in English and Czech
+  into clauses (instruments, counts, roles, articulations, dynamics, bars, key) and the questions
+  they leave open, with "did you mean" suggestions. Plan steps can use the replies of earlier
+  steps, and a plan that fails part-way is rolled back. Library API only. See
+  [docs/orchestration.md](docs/orchestration.md).
 
 ### Changed
 
@@ -40,6 +78,11 @@ break the API. The project format is versioned independently, see
   [docs/sample-libraries.md](docs/sample-libraries.md).
 - **Device editor:** the sampler's Instrument combo lists the presets by name, grouped by library.
   An instrument that is not installed shows as `Not installed: <name>`.
+- **Family guesses in the instrument catalog** come from the English names and aliases of the
+  orchestration metadata, read word by word also in run-together names such as `TubularBells`. A
+  word that names two families, such as "bass", is no clue on its own, so a bare `Bass.sfz` now has
+  no family; a folder can still decide it. Words the metadata does not list (`drums`, `chorus`,
+  `voice`) no longer give a family.
 
 ### Fixed
 
@@ -54,6 +97,11 @@ break the API. The project format is versioned independently, see
     patch, and unsupported trigger and loop mode values and skipped headers are reported;
   - release samples start when the sustain pedal lifts, for keys released while it was down;
   - the library scan skips folders named `includes`, which hold fragments, not instruments.
+  - a header written next to an opcode without a space (`<region>key=36`) is read as a header;
+  - a `#define` keeps every word of its value, and defines expand in the same order on every
+    load;
+  - a `/*` inside a line comment no longer hides the rest of the file, and note names or loop
+    ends too large to compute name no key or end at the sample instead of failing.
 - **`sonara_media::sfz::inspect`** reports a patch's structure from the sample headers, without
   decoding the samples.
 
