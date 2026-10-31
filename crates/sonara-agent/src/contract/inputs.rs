@@ -259,6 +259,71 @@ pub static SET_LOOP: Model = Model::tool_input(
 
 // -- tracks -------------------------------------------------------------------------------
 
+/// `NotationSpec`: how a part of `create_track` is notated where it differs from its
+/// instrument. The bounds and clefs are those of a track part in the project format.
+pub static NOTATION_SPEC: Model = Model::plain(
+    "NotationSpec",
+    &[
+        Field::new(
+            "transposition",
+            Kind::Nullable(&Kind::Int(
+                NumberBounds::NONE.ge(Number::Int(-36)).le(Number::Int(36)),
+            )),
+        )
+        .default_value(Constant::Null)
+        .description("Sounding minus written pitch, in semitones"),
+        Field::new(
+            "clef",
+            Kind::Nullable(&Kind::StrLiteral(&[
+                "treble",
+                "treble_8vb",
+                "bass",
+                "alto",
+                "tenor",
+                "percussion",
+                "single_line",
+            ])),
+        )
+        .default_value(Constant::Null),
+    ],
+);
+
+/// `PartSpec`: the part an instrument track of `create_track` plays. The fields and their
+/// bounds are those of a track part in the project format.
+pub static PART_SPEC: Model = Model::plain(
+    "PartSpec",
+    &[
+        Field::new("instrument", Kind::STR)
+            .description("Instrument type id, e.g. 'violin', 'horn_f', 'timpani'"),
+        Field::new(
+            "name",
+            Kind::Nullable(&Kind::Str(StrRules::NONE.min_length(1))),
+        )
+        .default_value(Constant::Null)
+        .description("Printed part name, e.g. 'Violins I', 'Horn 3'"),
+        Field::new(
+            "players",
+            Kind::Nullable(&Kind::Int(
+                NumberBounds::NONE.ge(Number::Int(1)).le(Number::Int(128)),
+            )),
+        )
+        .default_value(Constant::Null)
+        .description("How many players play the part"),
+        Field::new("solo", Kind::Nullable(&Kind::Bool))
+            .default_value(Constant::Null)
+            .description("One player (true) or a section (false)"),
+        Field::new(
+            "player",
+            Kind::Nullable(&Kind::Str(StrRules::NONE.min_length(1))),
+        )
+        .default_value(Constant::Null)
+        .description("The player who doubles this instrument, e.g. 'Flute 2' for a piccolo part"),
+        Field::new("notation", Kind::Nullable(&Kind::Model(&NOTATION_SPEC)))
+            .default_value(Constant::Null)
+            .description("Notation where it differs from the instrument's"),
+    ],
+);
+
 /// `CreateTrack`: the arguments of `create_track`.
 pub static CREATE_TRACK: Model = Model::tool_input(
     "CreateTrack",
@@ -296,6 +361,12 @@ pub static CREATE_TRACK: Model = Model::tool_input(
         Field::new("parent_id", Kind::Nullable(&Kind::STR))
             .default_value(Constant::Null)
             .description("Folder track to place the track in"),
+        Field::new("part", Kind::Nullable(&Kind::Model(&PART_SPEC)))
+            .default_value(Constant::Null)
+            .description(
+                "The part an instrument track plays: its instrument type, printed name, \
+                 players and notation",
+            ),
     ],
 );
 
@@ -459,6 +530,13 @@ pub static NOTE_INPUT: Model = Model::plain(
             Kind::Int(NumberBounds::NONE.ge(Number::Int(0)).le(Number::Int(15))),
         )
         .default_value(Constant::Int(0)),
+        Field::new("articulation", Kind::Nullable(&Kind::STR))
+            .default_value(Constant::Null)
+            .description(
+                "How the note is played: an articulation id such as 'staccato', 'pizzicato', \
+                 'legato' or 'tremolo'; null = the instrument's ordinary sound. Mutes and \
+                 vibrato hold over a passage and are not note articulations",
+            ),
     ],
 );
 

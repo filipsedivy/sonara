@@ -1,7 +1,8 @@
 //! Argument conversion (the "argument conversion" helpers of the prototype's `AgentContext` in
 //! `sonara.agent.tools.registry`): positions, lengths and pitches in the forms the tool schemas
 //! accept (docs/agent-api.md, "Conventions"), turned into beats and MIDI pitches against a
-//! project's tempo map and time signatures.
+//! project's tempo map and time signatures; and a note's articulation and a track's part, whose
+//! ids are checked against the orchestration metadata.
 //!
 //! The functions reproduce the prototype's parsing exactly, including its quirks: text is
 //! stripped and lowercased; a number in text form is read by Python's `float()` rules
@@ -13,12 +14,14 @@
 use sonara_core::error::{DomainError, Result};
 use sonara_core::ids::IdGenerator;
 use sonara_core::midi::{MidiNote, parse_note_name};
+use sonara_core::model::part::{self, Notation, Part};
 use sonara_core::model::project::Project;
 use sonara_core::pyfmt::str_repr;
 use sonara_core::time::parse_position;
 
-use crate::contract::args::{Length, NoteInput, Pitch, Position};
+use crate::contract::args::{Clef, Length, NoteInput, PartSpec, Pitch, Position};
 use crate::pystr::{py_float, py_strip};
+use crate::vocabulary;
 
 /// A position in beats (`AgentContext.beats`): a JSON number is beats; text is seconds
 /// (`"12.5s"`), a number (`"16"`), or `"bar:beat[:tick]"` (1-based, 960 ticks per beat).
@@ -123,17 +126,24 @@ pub fn pitch(value: &Pitch) -> Result<u8> {
 }
 
 /// New notes with fresh IDs from `ids` (`AgentContext.notes`), in order; a negative start is
-/// clamped to 0.
+/// clamped to 0. A note's articulation must be an articulation of the orchestration vocabulary
+/// that a note can carry; it is stored on the note.
 ///
 /// # Errors
 ///
-/// The first failing note's error: those of [`pitch`] and of [`MidiNote::create`] (for example
-/// `note length must be > 0`).
+/// The first failing note's error: those of [`pitch`], an unknown articulation or a mute or
+/// vibrato id ([`sonara_core::error::ErrorCode::InvalidArgument`] with suggestions for an
+/// unknown id), and those of [`MidiNote::create`] (for example `note length must be > 0`).
 pub fn notes(items: &[NoteInput], ids: &mut dyn IdGenerator) -> Result<Vec<MidiNote>> {
     items
         .iter()
         .map(|note| {
             let pitch = pitch(&note.pitch)?;
+            let articulation = note
+                .articulation
+                .as_deref()
+                .map(vocabulary::articulation)
+                .transpose()?;
             MidiNote::create(
                 ids,
                 i64::from(pitch),
@@ -141,7 +151,48 @@ pub fn notes(items: &[NoteInput], ids: &mut dyn IdGenerator) -> Result<Vec<MidiN
                 note.length,
                 i64::from(note.velocity),
                 i64::from(note.channel),
-            )
+            )?
+            .with_articulation(articulation.map(|articulation| articulation.id().to_owned()))
         })
         .collect()
+}
+
+/// The part a track plays (`create_track.part`), with its instrument type checked against the
+/// orchestration metadata.
+///
+/// # Errors
+///
+/// [`sonara_core::error::ErrorCode::InvalidArgument`]: an unknown instrument type, with
+/// suggestions, or a broken rule of [`Part::validate`].
+pub fn part(spec: &PartSpec) -> Result<Part> {
+    let instrument = vocabulary::instrument(&spec.instrument)?;
+    let notation = spec
+        .notation
+        .as_ref()
+        .map_or_else(Notation::default, |notation| Notation {
+            transposition: notation.transposition,
+            clef: notation.clef.map(clef),
+        });
+    let part = Part {
+        instrument: instrument.id().to_owned(),
+        name: spec.name.clone(),
+        players: spec.players,
+        solo: spec.solo,
+        player: spec.player.clone(),
+        notation,
+    };
+    part.validate()?;
+    Ok(part)
+}
+
+fn clef(clef: Clef) -> part::Clef {
+    match clef {
+        Clef::Treble => part::Clef::Treble,
+        Clef::Treble8vb => part::Clef::Treble8vb,
+        Clef::Bass => part::Clef::Bass,
+        Clef::Alto => part::Clef::Alto,
+        Clef::Tenor => part::Clef::Tenor,
+        Clef::Percussion => part::Clef::Percussion,
+        Clef::SingleLine => part::Clef::SingleLine,
+    }
 }

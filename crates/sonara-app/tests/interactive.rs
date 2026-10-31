@@ -68,6 +68,7 @@ fn create_track(app: &AppContext, name: &str, source: &str) -> String {
         parent_id: None,
         track_id: ids.new_id(ids::TRACK),
         instrument_id: ids.new_id(ids::DEVICE),
+        part: None,
     };
     app.session()
         .lock()

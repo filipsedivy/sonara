@@ -165,6 +165,7 @@ mod tests {
             parent_id: None,
             track_id: ids.new_id(ids::TRACK),
             instrument_id: ids.new_id(ids::DEVICE),
+            part: None,
         };
         app.session()
             .lock()

@@ -16,6 +16,7 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value, json};
 use sonara_agent::contract::args::{self, ToolArgs};
+use sonara_agent::contract::versions::recorded_arguments;
 use sonara_agent::contract::{Model, TOOLS, find, parse, validate};
 use sonara_core::error::{DomainError, ErrorCode};
 use sonara_testkit::Golden;
@@ -220,17 +221,25 @@ fn fixtures_match_the_prototype() {
                 changed.insert(field.to_owned(), repeated(&list, count));
             }
         }
-        let result = validate(find(tool).unwrap(), &input);
+        let spec = find(tool).unwrap();
+        let result = validate(spec, &input);
         let problem = match (ok, result) {
             (Some(changed), Ok(values)) => {
                 accepted += 1;
+                // The prototype normalized the recorded version's arguments, without the
+                // fields a later version adds (CTR-01); the struct takes them all.
+                if let Some(problem) = check_struct(tool, &values).err() {
+                    failures.push((index, case, problem));
+                    continue;
+                }
+                let values = recorded_arguments(spec.input, &values);
                 let mut expected = fixture["tools"][tool]["base_output"]
                     .as_object()
                     .unwrap()
                     .clone();
                 expected.extend(changed);
                 if values == expected {
-                    check_struct(tool, &values).err()
+                    None
                 } else {
                     Some(format!(
                         "expected {}, got {}",

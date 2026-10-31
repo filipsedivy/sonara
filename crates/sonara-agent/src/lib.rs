@@ -3,9 +3,10 @@
 //!
 //! In place so far: the tool contract ([`contract`]), the MCP view of it ([`mcp`]), the file
 //! sandbox and confirmations ([`permissions`]), the audit log ([`audit`]), the conversion of
-//! position, length and pitch arguments ([`conversion`]), the dispatcher ([`registry`]) with
-//! the handler context ([`context`]) and the service facade ([`service`]), the state views
-//! ([`state`]), the first handlers ([`handlers`]), and the IPC server and client ([`ipc`]).
+//! position, length, pitch, articulation and part arguments ([`conversion`]), the dispatcher
+//! ([`registry`]) with the handler context ([`context`]) and the service facade ([`service`]),
+//! the state views ([`state`]), the first handlers ([`handlers`]), and the IPC server and client
+//! ([`ipc`]).
 #![forbid(unsafe_code)]
 
 pub mod audit;
@@ -21,3 +22,4 @@ mod pystr;
 pub mod registry;
 pub mod service;
 pub mod state;
+mod vocabulary;

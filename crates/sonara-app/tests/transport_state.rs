@@ -82,6 +82,7 @@ impl App {
             parent_id: None,
             track_id: ids.new_id(ids::TRACK),
             instrument_id: ids.new_id(ids::DEVICE),
+            part: None,
         };
         let notes = (0..16)
             .map(|beat| {

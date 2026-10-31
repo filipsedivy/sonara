@@ -99,6 +99,15 @@ Options: `--connect auto|always|never`, `--allow PATH` (repeatable), `--base-dir
 - **Errors** are `{"ok": false, "error": {"code", "message", "details"}}`.
 - **`dry_run: true`** on any mutating tool validates the call and reports what would change,
   without committing it.
+- **Orchestration ids.** A note's `articulation` (`staccato`, `pizzicato`, `legato`) and the
+  `instrument` of a `create_track` part (`violin`, `horn_f`) are ids of the orchestration
+  vocabulary, matched exactly. A note without an articulation plays the instrument's ordinary
+  sound; mute and vibrato ids (`con_sordino`, `non_vibrato`) hold over a passage and are refused
+  on a note. An id that names nothing returns `INVALID_ARGUMENT` with the closest ids in
+  `details.suggestions` and every accepted id in `details.available`. A part, which only an
+  instrument track takes, is `{instrument, name, players, solo, player, notation: {transposition,
+  clef}}`. The project stores a note's articulation with the note and a part with its track
+  (project format version 2).
 
 ## Safety
 

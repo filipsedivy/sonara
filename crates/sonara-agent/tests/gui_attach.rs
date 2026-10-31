@@ -261,6 +261,7 @@ fn gui_adds_an_audio_track(app: &AppContext) {
         parent_id: None,
         track_id: ids.new_id(ids::TRACK),
         instrument_id: ids.new_id(ids::DEVICE),
+        part: None,
     };
     app.session()
         .lock()

@@ -160,6 +160,7 @@ fn command(name: &str, f: &Value) -> Box<dyn Command> {
             parent_id: opt_string(f, "parent_id"),
             track_id: string(f, "track_id"),
             instrument_id: string(f, "instrument_id"),
+            part: None,
         }),
         "SetAutomation" => Box::new(SetAutomation {
             track_id: string(f, "track_id"),

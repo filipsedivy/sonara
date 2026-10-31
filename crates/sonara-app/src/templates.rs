@@ -115,6 +115,7 @@ fn track(
         parent_id: None,
         track_id,
         instrument_id,
+        part: None,
     }
 }
 

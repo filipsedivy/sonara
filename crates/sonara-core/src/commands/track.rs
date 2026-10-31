@@ -7,6 +7,7 @@ use crate::error::{DomainError, ErrorCode, Result};
 use crate::ids;
 use crate::model::JsonMap;
 use crate::model::device::{Device, DeviceData};
+use crate::model::part::Part;
 use crate::model::project::Project;
 use crate::model::track::{InputSettings, MixerSettings, MonitorMode, Send, TrackData, TrackKind};
 use crate::plugins::PluginKind;
@@ -82,7 +83,7 @@ pub fn build_device(
     })
 }
 
-/// Creates a track, optionally with an instrument.
+/// Creates a track, optionally with an instrument and the part it plays.
 #[derive(Debug, Clone)]
 pub struct CreateTrack {
     /// Display name ("Track" when blank).
@@ -101,6 +102,8 @@ pub struct CreateTrack {
     pub instrument_preset: Option<String>,
     /// The folder track the new track belongs to.
     pub parent_id: Option<String>,
+    /// The part an instrument track plays (project schema version 2); `None` states none.
+    pub part: Option<Part>,
     /// The new track's ID.
     pub track_id: String,
     /// The new instrument's ID (used only with an instrument).
@@ -157,6 +160,7 @@ impl Command for CreateTrack {
         data.output_id = Some(self.output_id.clone());
         data.color.clone_from(&self.color);
         data.parent_id.clone_from(&self.parent_id);
+        data.part.clone_from(&self.part);
         let track = crate::model::track::Track::new(data)?;
         let p = project.adding_track(track, self.index)?;
         let mut created = vec![(ObjectKind::Track, self.track_id.as_str())];

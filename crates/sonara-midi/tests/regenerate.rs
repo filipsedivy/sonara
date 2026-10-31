@@ -104,6 +104,7 @@ fn fixture() -> Fixture {
             parent_id: None,
             track_id: id.to_owned(),
             instrument_id: format!("{id}_inst"),
+            part: None,
         };
         session.execute(&command, false, "test").expect("track");
     };

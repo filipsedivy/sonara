@@ -511,6 +511,55 @@ impl ToolArgs for SetLoop {
     const MODEL: &'static Model = &inputs::SET_LOOP;
 }
 
+/// `NotationSpec.clef`: the clefs a part can be notated in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Clef {
+    /// The treble (G) clef.
+    Treble,
+    /// The treble clef with an 8 below it.
+    #[serde(rename = "treble_8vb")]
+    Treble8vb,
+    /// The bass (F) clef.
+    Bass,
+    /// The alto (C) clef.
+    Alto,
+    /// The tenor (C) clef.
+    Tenor,
+    /// The neutral percussion clef.
+    Percussion,
+    /// A one-line staff.
+    SingleLine,
+}
+
+/// `NotationSpec`.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct NotationSpec {
+    /// Sounding minus written pitch, in semitones (-36 to 36).
+    pub transposition: Option<i8>,
+    /// The clef.
+    pub clef: Option<Clef>,
+}
+
+/// `PartSpec`.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct PartSpec {
+    /// Instrument type id, e.g. `'violin'`, `'horn_f'`.
+    pub instrument: String,
+    /// Printed part name, e.g. 'Violins I'.
+    pub name: Option<String>,
+    /// How many players play the part, 1 to 128.
+    pub players: Option<u8>,
+    /// One player (`true`) or a section (`false`).
+    pub solo: Option<bool>,
+    /// The player who doubles this instrument, e.g. 'Flute 2' for a piccolo part.
+    pub player: Option<String>,
+    /// Notation where it differs from the instrument's.
+    pub notation: Option<NotationSpec>,
+}
+
 /// `CreateTrack`: the arguments of `create_track`.
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -533,6 +582,8 @@ pub struct CreateTrack {
     pub output: String,
     /// Folder track to place the track in.
     pub parent_id: Option<String>,
+    /// The part an instrument track plays.
+    pub part: Option<PartSpec>,
 }
 
 impl ToolArgs for CreateTrack {
@@ -699,6 +750,8 @@ pub struct NoteInput {
     pub velocity: u8,
     /// MIDI channel, 0 to 15.
     pub channel: u8,
+    /// Articulation id; `None` is the instrument's ordinary sound.
+    pub articulation: Option<String>,
 }
 
 /// `CreateMidiClip`: the arguments of `create_midi_clip`.

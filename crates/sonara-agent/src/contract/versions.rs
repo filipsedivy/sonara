@@ -20,6 +20,7 @@ use std::collections::BTreeSet;
 
 use serde_json::{Map, Value};
 
+use super::model::{Kind, Model};
 use super::tools::find;
 
 /// The agent API version this build speaks: reported by `get_capabilities`, by the IPC `hello`
@@ -48,7 +49,18 @@ pub enum Addition {
 
 /// What [`API_VERSION`] adds to [`RECORDED_API_VERSION`], in the order the additions were made.
 /// A tool or field added to the contract is recorded here in the same change.
-pub static ADDITIONS: &[Addition] = &[];
+pub static ADDITIONS: &[Addition] = &[
+    // The part an instrument track plays (`PartSpec`), stored as the track's part.
+    Addition::Field {
+        model: "CreateTrack",
+        field: "part",
+    },
+    // A note's own articulation, stored on the note.
+    Addition::Field {
+        model: "NoteInput",
+        field: "articulation",
+    },
+];
 
 /// Whether `name` is a tool that [`API_VERSION`] adds.
 #[must_use]
@@ -86,6 +98,64 @@ pub fn recorded_tools(tools: &[Value]) -> Vec<Value> {
 #[must_use]
 pub fn missing_additions(tools: &[Value]) -> Vec<Addition> {
     missing(tools, ADDITIONS)
+}
+
+/// `values`, the normalized arguments of `model` ([`super::validation::validate_model`]), as
+/// the recorded version normalizes them: without the added fields, which validation fills in
+/// with their defaults, in nested models too (a note of `notes`). Everything else is kept as it
+/// is.
+///
+/// The members of a union are plain values in the table, so a union's value is kept whole.
+#[must_use]
+pub fn recorded_arguments(model: &Model, values: &Map<String, Value>) -> Map<String, Value> {
+    strip_arguments(model, values, ADDITIONS)
+}
+
+fn strip_arguments(
+    model: &Model,
+    values: &Map<String, Value>,
+    additions: &[Addition],
+) -> Map<String, Value> {
+    values
+        .iter()
+        .filter(|(name, _)| {
+            !additions.iter().any(|addition| {
+                matches!(*addition, Addition::Field { model: added, field }
+                    if added == model.name && field == name.as_str())
+            })
+        })
+        .map(|(name, value)| {
+            let value = match model.field(name) {
+                Some(field) => strip_value(&field.kind, value, additions),
+                None => value.clone(),
+            };
+            (name.clone(), value)
+        })
+        .collect()
+}
+
+fn strip_value(kind: &Kind, value: &Value, additions: &[Addition]) -> Value {
+    match (kind, value) {
+        (Kind::Model(model), Value::Object(values)) => {
+            Value::Object(strip_arguments(model, values, additions))
+        }
+        (Kind::List(item, _), Value::Array(items)) => Value::Array(
+            items
+                .iter()
+                .map(|value| strip_value(item, value, additions))
+                .collect(),
+        ),
+        (Kind::Dict(item), Value::Object(entries)) => Value::Object(
+            entries
+                .iter()
+                .map(|(key, value)| (key.clone(), strip_value(item, value, additions)))
+                .collect(),
+        ),
+        (Kind::Nullable(inner) | Kind::Described(inner, _), _) => {
+            strip_value(inner, value, additions)
+        }
+        _ => value.clone(),
+    }
 }
 
 fn added_tool(additions: &[Addition], name: &str) -> bool {
@@ -302,10 +372,11 @@ mod tests {
     use serde_json::{Map, Value, json};
 
     use super::{
-        ADDITIONS, API_VERSION, Addition, RECORDED_API_VERSION, is_added_tool, missing, strip, view,
+        ADDITIONS, API_VERSION, Addition, RECORDED_API_VERSION, is_added_tool, missing,
+        recorded_arguments, strip, strip_arguments, view,
     };
     use crate::contract::model::{Kind, Model};
-    use crate::contract::{TOOLS, tool_contract};
+    use crate::contract::{TOOLS, find, inputs, tool_contract, validate};
     use crate::mcp;
 
     /// The additions of a made-up next version: a tool, an optional field of a tool's input
@@ -472,6 +543,63 @@ mod tests {
                 .get("velocity")
                 .is_some()
         );
+    }
+
+    #[test]
+    fn recorded_arguments_lose_the_added_fields_wherever_they_are() {
+        let notes = json!([{"pitch": 60, "start": 0, "length": 1},
+                           {"pitch": "C5", "start": 1, "length": 1, "articulation": "staccato"}]);
+        let clip = validate(
+            find("create_midi_clip").expect("a tool"),
+            &json!({"track_id": "trk_1", "start": 0, "length": 4, "notes": notes}),
+        )
+        .expect("valid");
+        assert_eq!(clip["notes"][0]["articulation"], Value::Null);
+        assert_eq!(clip["notes"][1]["articulation"], "staccato");
+        let recorded = recorded_arguments(&inputs::CREATE_MIDI_CLIP, &clip);
+        let mut expected = clip.clone();
+        for note in expected["notes"].as_array_mut().expect("notes") {
+            note.as_object_mut()
+                .expect("a note")
+                .shift_remove("articulation");
+        }
+        assert_eq!(Value::Object(recorded), Value::Object(expected));
+
+        // A list that may be null, and a top-level field of a tool's input.
+        let edit = validate(
+            find("edit_midi_notes").expect("a tool"),
+            &json!({"clip_id": "clp_1", "replace_all": notes}),
+        )
+        .expect("valid");
+        let recorded = recorded_arguments(&inputs::EDIT_MIDI_NOTES, &edit);
+        assert!(recorded["replace_all"][1].get("articulation").is_none());
+        assert_eq!(recorded["replace_all"][1]["velocity"], 100);
+        let track = validate(
+            find("create_track").expect("a tool"),
+            &json!({"name": "Horn 1", "part": {"instrument": "horn_f"}}),
+        )
+        .expect("valid");
+        let recorded = recorded_arguments(&inputs::CREATE_TRACK, &track);
+        assert!(recorded.get("part").is_none());
+        assert_eq!(recorded.len(), track.len() - 1);
+
+        // A field of another model with the same name stays.
+        let velocity = [Addition::Field {
+            model: "NoteInput",
+            field: "velocity",
+        }];
+        let generate = validate(
+            find("generate_midi").expect("a tool"),
+            &json!({"track_id": "trk_1", "kind": "melody", "start": 0}),
+        )
+        .expect("valid");
+        assert_eq!(
+            strip_arguments(&inputs::GENERATE_MIDI, &generate, &velocity),
+            generate
+        );
+        let stripped = strip_arguments(&inputs::CREATE_MIDI_CLIP, &clip, &velocity);
+        assert!(stripped["notes"][0].get("velocity").is_none());
+        assert_eq!(stripped["notes"][0]["pitch"], 60);
     }
 
     #[test]

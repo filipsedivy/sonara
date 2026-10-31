@@ -53,6 +53,7 @@ impl Fx {
             parent_id: None,
             track_id: track_id.clone(),
             instrument_id: ids.new_id(ids::DEVICE),
+            part: None,
         };
         session.execute(&create, false, "user").expect("track");
         let clip_id = ids.new_id(ids::CLIP);

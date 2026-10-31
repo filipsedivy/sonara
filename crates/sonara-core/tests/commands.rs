@@ -43,6 +43,7 @@ use sonara_core::model::automation::{AutomationPoint, CurveKind};
 use sonara_core::model::clip::{Fade, FadeCurve, MidiClip};
 use sonara_core::model::device::ParamValue;
 use sonara_core::model::media::{MediaAsset, MediaAssetData, MediaKind, MediaLocation};
+use sonara_core::model::part::Part;
 use sonara_core::model::project::Project;
 use sonara_core::model::track::{MonitorMode, TrackKind};
 use sonara_core::plugins::builtin_registry;
@@ -181,6 +182,7 @@ impl Fx {
             parent_id: None,
             track_id: self.id(ids::TRACK),
             instrument_id: self.id(ids::DEVICE),
+            part: None,
         }
     }
 
@@ -1258,6 +1260,38 @@ fn asset_commands() {
 }
 
 // -- tracks -----------------------------------------------------------------------------------
+
+/// A new instrument track can state the part it plays (project schema version 2); the part is
+/// undone with the track, and no other kind of track takes one.
+#[test]
+fn create_track_states_the_part_of_an_instrument_track() {
+    let mut fx = Fx::new();
+    let mut part = Part::new("horn_f").expect("an instrument type id");
+    part.name = Some("Horn 3".into());
+    part.players = Some(1);
+    let cmd = CreateTrack {
+        part: Some(part.clone()),
+        ..fx.create_track("Horn 3", TrackKind::Instrument)
+    };
+    let tid = fx.add_track(&cmd);
+    assert_eq!(fx.project().track(&tid).expect("exists").part, Some(part));
+    fx.session.undo("user").expect("one step");
+    assert!(fx.project().track(&tid).is_err());
+    for kind in [TrackKind::Audio, TrackKind::Bus, TrackKind::Folder] {
+        let cmd = CreateTrack {
+            part: Some(Part::new("violin").expect("an instrument type id")),
+            ..fx.create_track("Strings", kind)
+        };
+        fx.fails(&cmd, INVALID, "only instrument tracks have a part");
+    }
+    let mut broken = Part::new("violin").expect("an instrument type id");
+    broken.players = Some(0);
+    let cmd = CreateTrack {
+        part: Some(broken),
+        ..fx.create_track("Violins", TrackKind::Instrument)
+    };
+    fx.fails(&cmd, INVALID, "part players must be 1-128, got 0");
+}
 
 #[test]
 #[expect(

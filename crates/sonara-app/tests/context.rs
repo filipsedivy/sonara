@@ -46,6 +46,7 @@ fn track(app: &AppContext, name: &str) -> String {
         parent_id: None,
         track_id: source.new_id(ids::TRACK),
         instrument_id: source.new_id(ids::DEVICE),
+        part: None,
     };
     app.session()
         .lock()

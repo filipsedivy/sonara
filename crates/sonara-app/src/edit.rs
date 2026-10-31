@@ -710,6 +710,7 @@ fn command(app: &AppContext, edit: Edit) -> Result<Box<dyn Command>, DomainError
                 parent_id: None,
                 track_id,
                 instrument_id,
+                part: None,
             })
         }
         Edit::DeleteTrack { track_id } => Box::new(DeleteTrack { track_id }),

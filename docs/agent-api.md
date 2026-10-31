@@ -48,6 +48,15 @@ Options: `--connect auto|always|never`, `--allow PATH` (repeatable), `--base-dir
 - **Errors** are `{"ok": false, "error": {"code", "message", "details"}}`.
 - **`dry_run: true`** on any mutating tool validates the call and reports what would change,
   without committing it.
+- **Orchestration ids.** A note's `articulation` (`staccato`, `pizzicato`, `legato`) and the
+  `instrument` of a `create_track` part (`violin`, `horn_f`) are ids of the orchestration
+  vocabulary, matched exactly. A note without an articulation plays the instrument's ordinary
+  sound; mute and vibrato ids (`con_sordino`, `non_vibrato`) hold over a passage and are refused
+  on a note. An id that names nothing returns `INVALID_ARGUMENT` with the closest ids in
+  `details.suggestions` and every accepted id in `details.available`. A part, which only an
+  instrument track takes, is `{instrument, name, players, solo, player, notation: {transposition,
+  clef}}`. The project stores a note's articulation with the note and a part with its track
+  (project format version 2).
 
 ## Safety
 
@@ -79,7 +88,10 @@ optional fields of nested objects such as a note. Every tool, argument, default,
 result and error code of 1.0 keeps its meaning, so a client written for 1.0 works unchanged.
 `get_capabilities` and the IPC `hello` and `info` replies report the version.
 
-1.1 adds no tool or argument to 1.0.
+1.1 adds to 1.0:
+
+- the optional argument `part` of [`create_track`](#create_track)
+- the optional field `articulation` of `NoteInput`, in [`create_midi_clip`](#create_midi_clip), [`add_midi_notes`](#add_midi_notes), [`edit_midi_notes`](#edit_midi_notes)
 
 ## Error codes
 
@@ -278,6 +290,7 @@ Create an audio, instrument, bus or folder track. Instrument tracks take an inst
 | `index` | integer \| null | null | Position in the track list (default: end) |
 | `output` | string | "master" | Output: 'master' or a bus track_id |
 | `parent_id` | string \| null | null | Folder track to place the track in |
+| `part` | PartSpec \| null | null | The part an instrument track plays: its instrument type, printed name, players and notation |
 
 ### `delete_clips`
 

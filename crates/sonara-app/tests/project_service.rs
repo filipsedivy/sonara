@@ -193,6 +193,7 @@ fn audio_track(app: &AppContext, name: &str) -> CreateTrack {
         parent_id: None,
         track_id: source.new_id(ids::TRACK),
         instrument_id: source.new_id(ids::DEVICE),
+        part: None,
     }
 }
 

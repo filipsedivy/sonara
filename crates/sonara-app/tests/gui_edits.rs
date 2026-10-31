@@ -1018,6 +1018,7 @@ fn notices_reach_the_window_from_every_thread() {
             parent_id: None,
             track_id: ids.new_id("trk"),
             instrument_id: ids.new_id("dev"),
+            part: None,
         };
         session
             .lock()

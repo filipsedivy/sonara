@@ -164,6 +164,7 @@ fn first_edits(app: &AppContext, workspace: &Path) -> Script {
         parent_id: None,
         track_id: source.new_id(ids::TRACK),
         instrument_id: source.new_id(ids::DEVICE),
+        part: None,
     };
     let commands: Vec<Box<dyn Command>> = vec![
         Box::new(AddAsset {

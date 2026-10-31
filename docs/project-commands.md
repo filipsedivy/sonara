@@ -70,7 +70,7 @@ this list changing.
 | `project` | `ReplaceAsset` | Updates an asset record in place (relinking, re-hashing) |
 | `project` | `RemoveAsset` | Removes an unused media asset record |
 | `project` | `SetEditorState` | Persisted editor settings (zoom, snap, track heights) |
-| `track` | `CreateTrack` | Creates a track, optionally with an instrument |
+| `track` | `CreateTrack` | Creates a track, optionally with an instrument; an instrument track can also state the part it plays |
 | `track` | `RenameTrack` | Renames a track (surrounding whitespace removed) |
 | `track` | `SetTrackColor` | Sets or clears a track's color |
 | `track` | `DeleteTrack` | Deletes a track and repairs every reference to it: outputs to a deleted bus go to the master, sends to it are removed, sidechains from it are cleared and folder children move up |

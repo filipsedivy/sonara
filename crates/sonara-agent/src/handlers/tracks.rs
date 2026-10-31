@@ -21,6 +21,7 @@ use crate::contract::args::{
     self, ConfigureRouting, CreateTrack, DeleteTrack, RenameTrack, SetInstrument, SetTrackPan,
     SetTrackState, SetTrackVolume,
 };
+use crate::conversion;
 use crate::registry::ToolResult;
 
 /// The instrument of a new instrument track that names none.
@@ -42,10 +43,10 @@ fn track_kind(kind: args::TrackKind) -> TrackKind {
 }
 
 /// `create_track`: an audio, instrument, bus or folder track; instrument tracks get the poly
-/// synth unless they name an instrument.
+/// synth unless they name an instrument, and may state the part they play.
 ///
 /// Both new IDs are drawn for every kind, the instrument's too, as the prototype's command
-/// draws them.
+/// draws them. A part is checked first, so a part that names no instrument type draws none.
 pub(super) fn create_track(ctx: &AgentContext, args: CreateTrack) -> ToolResult {
     let CreateTrack {
         dry_run,
@@ -57,7 +58,9 @@ pub(super) fn create_track(ctx: &AgentContext, args: CreateTrack) -> ToolResult 
         index,
         output,
         parent_id,
+        part,
     } = args;
+    let part = part.as_ref().map(conversion::part).transpose()?;
     let kind = track_kind(kind);
     let instrument = match instrument {
         None if kind == TrackKind::Instrument => Some(DEFAULT_INSTRUMENT.to_owned()),
@@ -75,6 +78,7 @@ pub(super) fn create_track(ctx: &AgentContext, args: CreateTrack) -> ToolResult 
         instrument_plugin: instrument,
         instrument_preset: preset,
         parent_id,
+        part,
         track_id,
         instrument_id,
     };
