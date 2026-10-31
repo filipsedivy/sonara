@@ -141,6 +141,14 @@
 //! sampler ignores, the samples it cannot play and the memory the decoded samples would take.
 //! Where `load_sfz` fails the patch for a sample file that cannot be read, or for the memory
 //! cap, `inspect` reports it and says that the patch does not load.
+//!
+//! **Measuring decoded samples.** [`measure`] reads the bank `load_sfz` built and gives, in a
+//! [`SoundReport`], how long each region a key press starts takes to be heard and how long a
+//! held note can last before its samples end.
+
+mod sound;
+
+pub use sound::{ONSET_LEVEL_DB, RegionOnset, SoundReport, measure};
 
 use std::collections::{BTreeMap, HashMap};
 use std::fs;
