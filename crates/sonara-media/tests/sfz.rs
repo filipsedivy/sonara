@@ -1612,6 +1612,75 @@ fn a_directive_in_a_comment_is_ignored() {
 }
 
 #[test]
+fn a_block_comment_opener_in_a_line_comment_opens_nothing() {
+    // Block comments were removed before line comments, so a `/*` written in a line comment
+    // opened a block that ran to the end of the file and took every region after it.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<region> sample=Samples/soft1.wav key=60 // was /* soft2\n\
+         <region> sample=Samples/loud1.wav key=62\n\
+         /* a // in a block comment ends nothing */ <region> sample=Samples/tail.wav key=64\n",
+    );
+    assert_eq!(
+        bank.regions.iter().map(|r| r.key_lo).collect::<Vec<_>>(),
+        [60, 62, 64]
+    );
+}
+
+#[test]
+fn a_block_comment_keeps_tokens_and_lines_apart() {
+    // A block comment used to vanish without a trace: the opcodes on either side were glued
+    // into one (`key=60lovel=10`), and one spanning lines joined them, so a define before it
+    // took the next line as its value. Like sfizz, which ends a value at a comment, the comment
+    // now leaves a space, or the line breaks it spans.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "#define $TOP 26 /* the top of\n the soft layer */ <region> sample=Samples/soft1.wav\n\
+         <region> sample=Samples/loud1.wav key=60/* c */lovel=10 hivel=$TOP\n",
+    );
+    assert_eq!(bank.regions.len(), 2, "the define stops at its line");
+    let loud = &bank.regions[1];
+    assert_eq!((loud.key_lo, loud.vel_lo, loud.vel_hi), (60, 10, 26));
+}
+
+#[test]
+fn a_note_name_with_a_huge_octave_names_no_key() {
+    // The key of a note name was computed unchecked, so an octave near the end of `i32`
+    // overflowed (a panic in a debug build). It now names no key, as any other value that is
+    // not a key.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<region> sample=Samples/soft1.wav key=c2147483647\n\
+         <region> sample=Samples/loud1.wav lokey=c178956970 hikey=b-2147483648\n\
+         <region> sample=Samples/tail.wav sw_lokey=c-178956971 sw_hikey=c2147483646 key=60\n",
+    );
+    assert_eq!(
+        bank.regions
+            .iter()
+            .map(|r| (r.key_lo, r.key_hi))
+            .collect::<Vec<_>>(),
+        [(0, 127), (0, 127), (60, 60)]
+    );
+    assert_eq!(bank.keyswitches, Keyswitches::NONE);
+}
+
+#[test]
+fn a_huge_end_or_loop_end_ends_at_the_sample() {
+    // `end` and `loop_end` name a last frame, so one is added to them; at the end of `usize`
+    // (`1e300`, `inf`) that overflowed (a panic in a debug build). They now end at the sample.
+    let dir = library();
+    let bank = load_patch(
+        &dir,
+        "<region> sample=Samples/soft1.wav end=1e300 loop_mode=loop_continuous loop_end=inf\n",
+    );
+    let region = &bank.regions[0];
+    assert_eq!((region.end, region.loop_end), (4_410, 4_410));
+}
+
+#[test]
 fn an_include_cycle_is_malformed() {
     let dir = library();
     let path = dir.path().join("self.sfz");

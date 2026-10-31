@@ -4231,6 +4231,7 @@ dependencies = [
  "ogg",
  "opus",
  "opusic-sys",
+ "proptest",
  "rustix",
  "serde_json",
  "sonara-core",

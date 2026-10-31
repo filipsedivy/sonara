@@ -57,6 +57,8 @@ vorbis_rs.workspace = true
 rustix = { workspace = true, features = ["fs"] }
 
 [dev-dependencies]
+# Property tests of the SFZ parser (TST-09).
+proptest.workspace = true
 serde_json.workspace = true
 sonara-testkit.workspace = true
 tempfile.workspace = true

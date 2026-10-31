@@ -73,6 +73,11 @@
 //! longest first and names of the same length in name order, so `$KEY2` is not read as `$KEY`
 //! followed by `2`, and a value that names another define expands the same way on every load.
 //!
+//! **Comments** are read left to right, as sfizz reads them: a `//` comment runs to the end of
+//! its line and a `/* … */` comment to its close, so a `/*` written in a line comment opens
+//! nothing. A block comment keeps the text on either side apart, as a space or the line breaks
+//! it spans.
+//!
 //! **Header scopes.** A region inherits the opcodes of the open `<control>`, `<global>`,
 //! `<master>` and `<group>` headers. `<global>`, `<master>` and `<group>` each start their own
 //! scope afresh and clear the scopes inside it; `<control>` clears only the control scope, so a
@@ -436,7 +441,7 @@ struct ReadPatch {
 /// The errors of [`read_preprocessed`] and of [`Loader::region`].
 fn read_patch(path: &Path, reading: Reading) -> Result<ReadPatch, MediaError> {
     let dir = path.parent().unwrap_or_else(|| Path::new("."));
-    let text = read_preprocessed(path, dir, &mut HashMap::new(), 0)?;
+    let text = read_preprocessed(path, dir, &mut Defines::new(), 0)?;
     let parsed = parse(&text);
     let mut loader = Loader::new(reading);
     let mut regions = Vec::new();
@@ -481,30 +486,55 @@ fn tail_seconds(bank: &SampleBank) -> f64 {
 
 // --- Preprocessing: comments, #include, #define ---
 
-/// The text of the patch file `path` without comments, with each `#include` replaced by the
-/// file it names and the `$defines` known so far substituted. The directives are read wherever
-/// a token starts, so the line goes on after an `#include` (see the module documentation).
-/// Every include path, at any depth, is joined to `root`, the main patch file's directory.
+/// The text of the patch file `path` preprocessed ([`preprocess`]), each `#include` replaced by
+/// the file it names, preprocessed in turn. Every include path, at any depth, is joined to
+/// `root`, the main patch file's directory.
+///
+/// # Errors
+///
+/// [`MediaError::Io`] when the file or an included one cannot be read, and
+/// [`MediaError::Malformed`] when the includes nest deeper than [`MAX_INCLUDE_DEPTH`].
 fn read_preprocessed(
     path: &Path,
     root: &Path,
-    defines: &mut HashMap<String, String>,
+    defines: &mut Defines,
     depth: usize,
 ) -> Result<String, MediaError> {
     if depth > MAX_INCLUDE_DEPTH {
         return Err(MediaError::malformed(path, "#include nesting is too deep"));
     }
     let raw = fs::read_to_string(path).map_err(|e| MediaError::io("read", path, e))?;
+    preprocess(&raw, defines, &mut |file, defines| {
+        read_preprocessed(&root.join(file), root, defines, depth + 1)
+    })
+}
+
+/// The `$defines` of a patch: each name, with its `$`, and its value.
+type Defines = HashMap<String, String>;
+
+/// `raw` without comments ([`strip_comments`]), with the `$defines` known so far substituted
+/// and each `#include` replaced by what `include` gives for the path it names, with its
+/// defines substituted and `\` read as `/`. The directives are read wherever a token starts, so
+/// the line goes on after an `#include` (see the module documentation).
+///
+/// # Errors
+///
+/// The errors of `include`.
+fn preprocess(
+    raw: &str,
+    defines: &mut Defines,
+    include: &mut dyn FnMut(&str, &mut Defines) -> Result<String, MediaError>,
+) -> Result<String, MediaError> {
     let mut out = String::new();
-    for line in strip_block_comments(&raw).lines() {
-        let mut rest = line.split("//").next().unwrap_or("");
+    for line in strip_comments(raw).lines() {
+        let mut rest = line;
         loop {
             let (text, directive) = split_directive(rest);
             push_expanded(&mut out, text, defines);
             match directive {
                 Some(Directive::Include { file, after }) => {
-                    let file = root.join(expand_defines(file, defines).replace('\\', "/"));
-                    out.push_str(&read_preprocessed(&file, root, defines, depth + 1)?);
+                    let file = expand_defines(file, defines).replace('\\', "/");
+                    out.push_str(&include(&file, defines)?);
                     rest = after;
                 }
                 Some(Directive::Define(definition)) => {
@@ -581,7 +611,7 @@ fn include_file(rest: &str) -> (&str, &str) {
 
 /// Appends `text` with its `$defines` substituted, on a line of its own, so that its tokens stay
 /// apart from an included file's.
-fn push_expanded(out: &mut String, text: &str, defines: &HashMap<String, String>) {
+fn push_expanded(out: &mut String, text: &str, defines: &Defines) {
     let text = text.trim();
     if text.is_empty() {
         return;
@@ -594,7 +624,7 @@ fn push_expanded(out: &mut String, text: &str, defines: &HashMap<String, String>
 /// stays as written. The names are replaced one after another, the longest first, so `$KEY2` is
 /// not eaten by `$KEY`, and names of the same length in name order, so that the result does not
 /// depend on the map's order when a value names another define.
-fn expand_defines(text: &str, defines: &HashMap<String, String>) -> String {
+fn expand_defines(text: &str, defines: &Defines) -> String {
     let mut text = text.to_owned();
     let mut names: Vec<_> = defines.iter().collect();
     names.sort_by(|(a, _), (b, _)| b.len().cmp(&a.len()).then_with(|| a.cmp(b)));
@@ -606,15 +636,36 @@ fn expand_defines(text: &str, defines: &HashMap<String, String>) -> String {
     text
 }
 
-fn strip_block_comments(text: &str) -> String {
+/// `text` without its comments, read left to right as the reference player sfizz reads them: a
+/// `//` comment runs to the end of its line, and a `/* … */` comment to its close, or to the end
+/// of the text when it is not closed. So a `/*` inside a line comment opens nothing, and a `//`
+/// inside a block comment ends nothing. A block comment leaves the line breaks it spans, or a
+/// space when it spans none, so that the tokens and lines on either side stay apart.
+fn strip_comments(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
     let mut rest = text;
-    while let Some(start) = rest.find("/*") {
-        out.push_str(rest.get(..start).unwrap_or(""));
-        let after = rest.get(start + 2..).unwrap_or("");
-        match after.find("*/") {
-            Some(end) => rest = after.get(end + 2..).unwrap_or(""),
-            None => return out,
+    while let Some(slash) = rest.find('/') {
+        // `/` is ASCII, so every split below lies on a character boundary.
+        let (before, from) = rest.split_at_checked(slash).unwrap_or((rest, ""));
+        out.push_str(before);
+        if let Some(comment) = from.strip_prefix("//") {
+            rest = comment
+                .find('\n')
+                .and_then(|end| comment.get(end..))
+                .unwrap_or("");
+        } else if let Some(comment) = from.strip_prefix("/*") {
+            let Some((spanned, after)) = comment.split_once("*/") else {
+                return out;
+            };
+            let breaks = spanned.matches('\n').count();
+            if breaks == 0 {
+                out.push(' ');
+            }
+            out.extend(std::iter::repeat_n('\n', breaks));
+            rest = after;
+        } else {
+            out.push('/');
+            rest = from.get(1..).unwrap_or("");
         }
     }
     out.push_str(rest);
@@ -623,6 +674,8 @@ fn strip_block_comments(text: &str) -> String {
 
 // --- Parsing: headers and opcodes ---
 
+/// A preprocessed patch, parsed.
+#[derive(Debug, PartialEq)]
 struct Parsed {
     regions: Vec<Opcodes>,
     keyswitches: Keyswitches,
@@ -1112,7 +1165,13 @@ fn note(value: &str) -> Option<u8> {
         'b' => (-1, rest.get(1..)?),
         _ => (0, rest),
     };
-    let key = (octave.parse::<i32>().ok()? + 1) * 12 + semitone + accidental;
+    // Checked, so an octave of any size names no key instead of overflowing.
+    let key = octave
+        .parse::<i32>()
+        .ok()?
+        .checked_add(1)?
+        .checked_mul(12)?
+        .checked_add(semitone + accidental)?;
     u8::try_from(key).ok().filter(|n| *n <= 127)
 }
 
@@ -1347,8 +1406,9 @@ impl Loader {
             .value(opcodes, &["trigger"], parse_trigger)
             .unwrap_or_default();
         region.offset = to_usize(int("offset"), 0).min(frames);
+        // `end` is the last frame played; a huge one saturates instead of overflowing.
         region.end = int("end")
-            .map_or(frames, |e| to_usize(Some(e), 0) + 1)
+            .map_or(frames, |e| to_usize(Some(e), 0).saturating_add(1))
             .min(frames);
         self.read_loop(&mut region, opcodes, file_loop);
         Ok(Some(region))
@@ -1377,7 +1437,7 @@ impl Loader {
         region.loop_start = to_usize(loop_start, file_loop.map_or(0, |l| l.start));
         region.loop_end = loop_end
             .map_or(file_loop.map_or(region.end, |l| l.end), |e| {
-                to_usize(Some(e), 0) + 1
+                to_usize(Some(e), 0).saturating_add(1)
             })
             .min(region.end);
     }
@@ -1651,9 +1711,13 @@ mod tests {
     use std::fs;
     use std::path::Path;
 
+    use proptest::collection::vec;
+    use proptest::prelude::*;
+    use proptest::sample::select;
+    use proptest::test_runner::RngSeed;
     use sonara_dsp::bank::LoopMode;
 
-    use super::{Reading, read_patch};
+    use super::{Defines, Loader, Parsed, Reading, parse, preprocess, read_patch};
 
     /// A 16-bit mono PCM WAV of `frames` silent frames at 44.1 kHz with a `smpl` chunk after the
     /// audio whose one loop runs from `start` to `end`, both played.
@@ -1705,5 +1769,251 @@ mod tests {
                 (LoopMode::Continuous, 300, 900)
             ]
         );
+    }
+
+    /// Preprocesses `text` with includes that give nothing, so that no file is read, and
+    /// parses it. Returns the preprocessed text too.
+    fn parse_text(text: &str) -> (String, Parsed) {
+        let mut defines = Defines::new();
+        let preprocessed = preprocess(text, &mut defines, &mut |_, _| Ok(String::new()))
+            .expect("an include that gives nothing never fails");
+        let parsed = parse(&preprocessed);
+        (preprocessed, parsed)
+    }
+
+    /// Pieces of SFZ text that [`soup`] glues together: headers, directives, defines, comment
+    /// marks and the characters the parser splits at.
+    const FRAGMENTS: &[&str] = &[
+        "<region>",
+        "<group>",
+        "<global>",
+        "<master>",
+        "<control>",
+        "<curve>",
+        "<",
+        ">",
+        "=",
+        " ",
+        "\n",
+        "\t",
+        "\r",
+        "#include ",
+        "#define ",
+        "#",
+        "$",
+        "$A",
+        "$B",
+        "$AB",
+        "\"",
+        "//",
+        "/*",
+        "*/",
+        "/",
+        "\\",
+        "é",
+        "日",
+    ];
+
+    /// Opcode names that [`soup`] writes, each read differently.
+    const NAMES: &[&str] = &[
+        "sample",
+        "key",
+        "lokey",
+        "hikey",
+        "pitch_keycenter",
+        "lovel",
+        "hivel",
+        "lorand",
+        "seq_length",
+        "end",
+        "offset",
+        "loop_mode",
+        "loop_start",
+        "loop_end",
+        "trigger",
+        "off_mode",
+        "off_time",
+        "amp_veltrack",
+        "amplitude",
+        "xfin_lovel",
+        "xf_velcurve",
+        "sw_lokey",
+        "sw_hikey",
+        "sw_default",
+        "sw_last",
+        "group",
+        "off_by",
+        "on_locc64",
+        "on_hicc64",
+        "locc1",
+        "hicc1",
+        "xfin_locc1",
+        "xfout_hicc1",
+        "volume_oncc7",
+        "amplitude_cc7",
+        "gain_cc7",
+        "set_cc7",
+        "set_cc300",
+        "lohdcc1",
+        "$A",
+        "Cutoff",
+    ];
+
+    /// Values that [`soup`] writes: the edges of the ranges, numbers that overflow, words.
+    const VALUES: &[&str] = &[
+        "-1",
+        "0",
+        "127",
+        "128",
+        "2147483647",
+        "-2147483648",
+        "178956970",
+        "1e300",
+        "-1e300",
+        "nan",
+        "inf",
+        "-inf",
+        "64",
+        "4.5",
+        "*silence",
+        "*sine",
+        "loop_continuous",
+        "release_key",
+        "time",
+        "gain",
+        "$A",
+        "$B",
+        "",
+    ];
+
+    /// Arbitrary text, mostly made of [`FRAGMENTS`], headers, defines of `$A`, `$B` and `$AB`,
+    /// and opcodes with a name of [`NAMES`] and a value of [`VALUES`], sometimes after a note
+    /// letter, glued together with any characters between them.
+    fn soup() -> impl Strategy<Value = String> {
+        let headers = select(&["<region>", "<group>", "<global>", "<control>"][..]);
+        let note = prop_oneof![3 => Just(""), 1 => select(&["c", "C#", "b", "db"][..])];
+        let opcode = (select(NAMES), note, select(VALUES))
+            .prop_map(|(name, note, value)| format!(" {name}={note}{value}"));
+        let define = (select(&["$A", "$B", "$AB"][..]), select(VALUES))
+            .prop_map(|(name, value)| format!("\n#define {name} {value}\n"));
+        let piece = prop_oneof![
+            2 => select(FRAGMENTS).prop_map(str::to_owned),
+            2 => headers.prop_map(str::to_owned),
+            1 => define,
+            4 => opcode,
+            1 => any::<char>().prop_map(String::from),
+        ];
+        vec(piece, 0..60).prop_map(|pieces| pieces.concat())
+    }
+
+    /// A patch line without directives, defines or comment marks: headers, opcodes and
+    /// words, glued or spaced.
+    fn plain_line() -> impl Strategy<Value = String> {
+        let headers = select(&["<region>", "<group>", "<global>", "<control>", "<curve>"][..])
+            .prop_map(str::to_owned);
+        let names = select(
+            &[
+                "sample",
+                "key",
+                "lokey",
+                "hivel",
+                "sw_lokey",
+                "sw_hikey",
+                "sw_default",
+                "on_locc64",
+                "locc1",
+                "set_cc7",
+                "cutoff",
+                "Lovel",
+                "trigger",
+            ][..],
+        );
+        let opcode =
+            (names, "[A-Za-z0-9_.*-]{0,8}").prop_map(|(name, value)| format!("{name}={value}"));
+        let item = prop_oneof![headers, opcode, "[^#$/\n]{0,6}"];
+        let gap = select(&[" ", "", "\t"][..]);
+        vec((item, gap), 0..8).prop_map(|items| {
+            items
+                .into_iter()
+                .flat_map(|(item, gap)| [item, gap.to_owned()])
+                .collect()
+        })
+    }
+
+    /// The fixed seed of the property tests (TST-04).
+    fn config() -> ProptestConfig {
+        ProptestConfig {
+            cases: 2_048,
+            rng_seed: RngSeed::Fixed(0x5f2_2026),
+            ..ProptestConfig::default()
+        }
+    }
+
+    proptest! {
+        #![proptest_config(config())]
+
+        /// Any text preprocesses and parses without a panic (TST-09), the same way every time
+        /// although each run builds its defines anew, and every region it gives comes from a
+        /// `<region>` header. Each region then builds without a panic, read over the silent
+        /// sample so that no file is opened.
+        #[test]
+        fn any_text_parses_the_same_way_without_panicking(
+            text in prop_oneof![soup(), any::<String>()],
+        ) {
+            let (preprocessed, parsed) = parse_text(&text);
+            prop_assert_eq!(&parse_text(&text).1, &parsed);
+            prop_assert!(parsed.regions.len() <= preprocessed.matches("<region>").count());
+            for opcodes in &parsed.regions {
+                for name in opcodes.keys() {
+                    prop_assert!(!name.contains('=') && !name.contains(char::is_whitespace));
+                    prop_assert_eq!(name, &name.to_ascii_lowercase());
+                }
+            }
+            let mut loader = Loader::new(Reading::Header);
+            for opcodes in &parsed.regions {
+                let mut silent = opcodes.clone();
+                silent.insert("sample".to_owned(), "*silence".to_owned());
+                let region = loader
+                    .region(Path::new("/nonexistent"), &silent, Path::new("/nonexistent/p.sfz"))
+                    .expect("the silent sample opens no file");
+                if let Some(region) = region {
+                    prop_assert!(region.offset <= region.end && region.loop_end <= region.end);
+                    prop_assert!(region.key_lo <= 127 && region.key_hi <= 127);
+                }
+            }
+        }
+
+        /// A patch without directives parses the same with comments after its lines as
+        /// without them, whatever the comments say: a `/*` inside a line comment opens nothing.
+        #[test]
+        fn a_trailing_comment_changes_nothing(
+            lines in vec(
+                (
+                    plain_line(),
+                    prop::option::of((any::<bool>(), any::<bool>(), "[^\n]{0,20}", "[^*]{0,20}")),
+                ),
+                0..12,
+            ),
+        ) {
+            let mut plain = String::new();
+            let mut commented = String::new();
+            for (line, comment) in &lines {
+                plain.push_str(line);
+                commented.push_str(line);
+                if let Some((spaced, block, text, block_text)) = comment {
+                    if *spaced {
+                        commented.push(' ');
+                    }
+                    if *block {
+                        commented.extend(["/*", block_text.as_str(), "*/"]);
+                    } else {
+                        commented.extend(["//", text.as_str()]);
+                    }
+                }
+                plain.push('\n');
+                commented.push('\n');
+            }
+            prop_assert_eq!(parse_text(&commented).1, parse_text(&plain).1, "{:?}", commented);
+        }
     }
 }
